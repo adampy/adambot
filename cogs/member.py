@@ -46,7 +46,7 @@ class Member(commands.Cog):
         await member.remove_roles(role)
         role = get(member.guild.roles, name='Revising')
         await member.add_roles(role)
-        self.bot.get_channel(518901847981948938).send(f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `-stoprevising` in this channel!')
+        await self.bot.get_channel(518901847981948938).send(f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `-stoprevising` in this channel!')
 
     @commands.command(pass_context=True)
     @commands.guild_only()
@@ -58,7 +58,7 @@ class Member(commands.Cog):
             await member.remove_roles(role)
             role = get(member.guild.roles, name='Members')
             await member.add_roles(role)
-            self.bot.get_channel(445199175244709898).send(f'{member.mention} welcome back from revising mode!')
+            await self.bot.get_channel(445199175244709898).send(f'{member.mention} welcome back from revising mode!')
         else:
             channel = get(member.guild.text_channels, name='revision-escape')
             await ctx.send(f'Go to {channel.mention} to stop revising')
