@@ -10,7 +10,7 @@ class WaitingRoom(commands.Cog):
     async def on_member_join(self, member):
         message = f'''Welcome to the server, {member.mention}. Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're going into next year!
 
-Ping a {get(member.guild.roles, name='Trial-Assistant').mention} or an {get(member.guild.roles, name='Assistant').mention} to be verified into the server (if none are present ping a mod).'''
+Ping an {get(member.guild.roles, name='Assistant').mention} to be verified into the server (if none are present ping a mod).'''
         channel = member.guild.system_channel
         await channel.send(message)
 
