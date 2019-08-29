@@ -305,6 +305,10 @@ class Member(commands.Cog):
 
         await ctx.send(new)
 
+    @commands.command(aliases=['yikes'])
+    async def yike(self, ctx):
+        await ctx.send('https://cdn.discordapp.com/attachments/445199175244709898/616755258890387486/29e02f54-4741-40e5-b77d-788bf78b33ba.png')
+
 
 #-----------------------USER AND SERVER INFO------------------------------
 

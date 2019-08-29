@@ -384,9 +384,7 @@ Staff role needed.'''
     @commands.has_role('Staff')
     @commands.guild_only()
     async def warnlist(self, ctx, member: discord.Member = None, *reason: str):
-        key = os.environ.get('DATABASE_URL')
-
-        conn = psycopg2.connect(key, sslmode='require')
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'), sslmode='require')
         cur = conn.cursor()
 
         if member is None:
