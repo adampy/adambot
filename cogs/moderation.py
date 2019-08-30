@@ -457,7 +457,7 @@ Staff role needed.'''
             await ctx.send(f"The warning's have been deleted.")
 
     @commands.command(aliases=['announce'])
-    @commands.has_role('Staff')
+    @has_permissions(ban_members=True)
     async def say(self, ctx, channel: discord.TextChannel, *text):
         await channel.send(' '.join(text))
         
