@@ -8,9 +8,20 @@ import time
 import os
 import psycopg2
 from datetime import datetime
+from csv import reader
+
+LOCAL_HOST = False
+try:
+    with open('credentials.csv') as f:
+        for credential in reader(f):
+            os.environ[credential[0]] = credential[1]
+    LOCAL_HOST = True
+except FileNotFoundError:
+    pass
 
 DB = os.environ.get('DATABASE_URL')
 TOKEN = os.environ.get('TOKEN')
+
 COGS = ['member',
         'moderation',
         'questionotd',
@@ -21,6 +32,12 @@ COGS = ['member',
 PREFIX = '-'
 
 #purge mental health, purge serious command
+#support connections command
+#warnlist pages
+#qotd member not found error
+#purge for specific member
+#order trivia leaderboard by score
+#add score to trivia leaderboard
 
 #-----------------------------------------------------------------
 
@@ -40,6 +57,11 @@ async def on_message(message):
     if message.author.bot:
         return
     await bot.process_commands(message)
+
+@bot.command()
+async def host(ctx):
+    '''Check if the bot is currently hosted locally or remotely'''
+    await ctx.send(f"Adam-bot is {'locally' if LOCAL_HOST else 'remotely'} hosted right now.")
 
 #-----------------------------------------------------------------
 

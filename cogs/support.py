@@ -93,7 +93,7 @@ class Support(commands.Cog):
         if message.guild is None and not message.author.bot: #valid dm message
             #if support requested
             connection = self.in_connections(message.author) #holds connection data or False if a connection is not open
-            if message.content.startswith('support start'):
+            if message.content.lower().startswith('support start'):
                 if not connection:
                     #start connection
                     connection_id = self.create_connection(message.author)
@@ -103,7 +103,7 @@ class Support(commands.Cog):
                 else:
                     #in connection, trying to start another
                     await message.author.send('You cannot start another ticket. You must finish this one by typing `support end`.')
-            elif message.content.startswith('support end') and connection:
+            elif message.content.lower().startswith('support end') and connection:
                 if connection[1] == message.author.id: #member sending
                     self.remove_connection(connection[0])
                     await message.author.send('The ticket has been closed!')
@@ -115,8 +115,8 @@ class Support(commands.Cog):
                     await self.bot.get_user(connection[1]).send('The ticket was closed by staff.')
                     await self.log(f'delete-Staff: {message.author.name} ', connection[0])
             else:
-                if not connection:
-                    #not in connection and not starts with -support
+                if not connection and not message.content.startswith('-'):
+                    #not in connection and not starts with -support AND not trying to do a command
                     await message.author.send('Hi! You are not in a support chat with a staff member. If you would like to start an anonymous chat with an anonymous staff member then please type `support start` in our DM chat.')
                 else:
                     #doesnt start with -support and in a connection
@@ -128,6 +128,49 @@ class Support(commands.Cog):
                         member = self.bot.get_user(connection[1])
                         await member.send(f'Staff: {message.content}')
                         await self.log(f'log-Staff: {message.author.name} ', connection[0], message)
+
+    @commands.group()
+    @commands.has_role('Staff')
+    @commands.guild_only()
+    async def support(self, ctx):
+        '''Support module'''
+        if ctx.invoked_subcommand is None:
+            await ctx.send('```-support accept <ticket_id>```')
+
+    @support.command(pass_context=True)
+    @commands.has_role('Staff')
+    async def accept(self, ctx, ticket):
+        '''Accept a support ticket.
+Staff role needed.'''
+        try:
+            ticket = int(ticket)
+        except ValueError:
+            ctx.send('Ticket must be an integer.')
+            return
+
+        key = os.environ.get('DATABASE_URL')
+
+        conn = psycopg2.connect(key, sslmode='require')
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM support WHERE id = (%s)', (ticket,))
+        connection = cur.fetchall()[0]
+        
+        if connection:
+            if connection[1] != ctx.author.id:
+                cur.execute('UPDATE support SET (staff_id, started_at) = (%s, now()) WHERE id = (%s)', (ctx.author.id, ticket))
+                conn.commit()
+                await ctx.send(f'{ctx.author.mention} is now connected with the member.')
+                await ctx.author.send('You are now connected anonymously with a member. DM me to get started!')
+                member = self.bot.get_user(connection[1])
+                await member.send('You are now connected anonymously with a staff member. DM me to get started!')
+                embed = Embed(color=Colour.from_rgb(0,0,255))
+                embed.add_field(name='New Ticket DM', value=f"ID: {connection[0]}", inline=False)
+                await self.bot.get_guild(445194262947037185).get_channel(597068935829127168).send(embed=embed)
+            else:
+                await ctx.send('You cannot open a support ticket with yourself.')
+                cur.execute('DELETE FROM support WHERE id = (%s)', (ticket,))
+
+        conn.close()
 
 def setup(bot):
     bot.add_cog(Support(bot))

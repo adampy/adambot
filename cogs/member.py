@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import time_arg
+from .utils import separate_args
 import requests
 import re
 import os
@@ -101,7 +101,7 @@ class Member(commands.Cog):
                 for search_role in member.roles:
                     if search_role == role:
                         people.append(member)
-                        message.append(f'`{member.id}` **{member.nick if member.nick else member.name}**')
+                        message.append(f'`{member.id}` **{member.name}**')
                         break
             new_message = '\n'.join(message)
             new_message += f'\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** users with this role.'
@@ -440,7 +440,8 @@ class Member(commands.Cog):
         reminder = ' '.join(args[:index])
         if len(reminder) >= 256:
             await ctx.send('Please shorten your reminder to under 256 characters.')
-        seconds = time_arg(timeperiod)
+        #seconds = time_arg(timeperiod)
+        seconds = separate_args(timeperiod)[0]
         write(self, reminder, seconds, ctx.author.id)
         await ctx.send(':ok_hand: The reminder has been added!')
 
@@ -474,12 +475,26 @@ class Member(commands.Cog):
             string = f'{hour-12}PM'
         else:
             string = f'{hour}AM'
-        time = datetime(year=2019, month=8, day=22, hour=hour, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
+        time = datetime(year=2020, month=8, day=20, hour=hour, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
 
         await ctx.send(f'''Until GCSE results day at {string} it is
-**{(time.days*24)+h}** hours
+**{time.days}** days
+**{h}** hours
+**{m}** minutes
+**{s}** seconds''') #**{(time.days*24)+h}** hours
+
+    @commands.command(pass_context=True)
+    async def gcses(self, ctx):
+        time = datetime(year=2020, month=5, day=11, hour=9, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
+        
+        m, s = divmod(time.seconds, 60)
+        h, m = divmod(m, 60)
+
+        await ctx.send(f'''Until CS Paper 1 (the first GCSE exam) is
+**{time.days}** days
+**{h}** hours
 **{m}** minutes
 **{s}** seconds''')
 

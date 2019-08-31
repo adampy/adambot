@@ -205,7 +205,10 @@ class Trivia(commands.Cog):
         await ctx.send(f'```{message}```')
 
     @trivia.command(pass_context=True)
-    async def start(self, ctx, trivia):
+    async def start(self, ctx, trivia = None):
+        if trivia is None:
+            await ctx.send('You must choose a trivia from `-trivia list`.')
+            return
         if trivia not in self.trivia_list:
             await ctx.send('This trivia doesn\'t exist. :sob:')
             return

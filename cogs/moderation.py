@@ -315,50 +315,6 @@ Administrator role needed.'''
         if isinstance(error, commands.CheckFailure):
             await ctx.send('`Administrator` role needed.')
 
-#-----------------------SUPPORT------------------------------
-
-    @commands.group()
-    @commands.has_role('Staff')
-    @commands.guild_only()
-    async def support(self, ctx):
-        '''Support module'''
-        if ctx.invoked_subcommand is None:
-            await ctx.send('```-support accept <ticket_id>```')
-
-    @support.command(pass_context=True)
-    @commands.has_role('Staff')
-    async def accept(self, ctx, ticket):
-        '''Accept a support ticket.
-Staff role needed.'''
-        try:
-            ticket = int(ticket)
-        except ValueError:
-            ctx.send('Ticket must be an integer.')
-            return
-
-        key = os.environ.get('DATABASE_URL')
-
-        conn = psycopg2.connect(key, sslmode='require')
-        cur = conn.cursor()
-        cur.execute('SELECT * FROM support WHERE id = (%s)', (ticket,))
-        connection = cur.fetchall()[0]
-        
-        if connection:
-            if connection[1] != ctx.author.id:
-                cur.execute('UPDATE support SET (staff_id, started_at) = (%s, now()) WHERE id = (%s)', (ctx.author.id, ticket))
-                conn.commit()
-                await ctx.send(f'{ctx.author.mention} is now connected with the member.')
-                await ctx.author.send('You are now connected anonymously with a member. DM me to get started!')
-                member = self.bot.get_user(connection[1])
-                await member.send('You are now connected anonymously with a staff member. DM me to get started!')
-                embed = Embed(color=Colour.from_rgb(0,0,255))
-                embed.add_field(name='New Ticket DM', value=f"ID: {connection[0]}", inline=False)
-                await self.bot.get_guild(445194262947037185).get_channel(597068935829127168).send(embed=embed)
-            else:
-                await ctx.send('You cannot open a support ticket with yourself.')
-
-        conn.close()
-
 #-----------------------WARNS------------------------------
 
     @commands.command(pass_context=True)
