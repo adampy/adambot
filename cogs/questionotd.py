@@ -19,6 +19,9 @@ class QuestionOTD(commands.Cog):
     def in_gcse(ctx):
         return ctx.guild.id == 445194262947037185
 
+    def staff(self, member: discord.Member):
+        return 'Staff' in [y.name for y in member.roles]
+
     @commands.group()
     @commands.check(in_gcse)
     async def qotd(self, ctx):
@@ -46,7 +49,7 @@ class QuestionOTD(commands.Cog):
         today = datetime.datetime.utcnow().date()
         today_date = datetime.datetime(today.year, today.month, today.day)
         self.cur.execute('SELECT * FROM qotd WHERE submitted_by = %s AND submitted_at > %s', (str(member), today_date))
-        if len(self.cur.fetchall()) >= 2 and member != 394978551985602571: #adam bypass
+        if len(self.cur.fetchall()) >= 2 and member != 394978551985602571 and not self.staff(member): #adam bypass
             await ctx.send('You can only submit 2 QOTD per day - this is to stop bot abuse.')
         else:
             self.cur.execute('INSERT INTO qotd (question, submitted_by) VALUES (%s, %s); SELECT MAX(id) FROM qotd', (qotd, member))
