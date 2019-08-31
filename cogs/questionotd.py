@@ -19,7 +19,7 @@ class QuestionOTD(commands.Cog):
     def in_gcse(ctx):
         return ctx.guild.id == 445194262947037185
 
-    def staff(self, member: discord.Member):
+    def staff(self, member):
         return 'Staff' in [y.name for y in member.roles]
 
     @commands.group()
