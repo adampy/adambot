@@ -349,6 +349,8 @@ Administrator role needed.'''
             warns = cur.fetchall()
             if len(warns) > 25: #need multiple embeds
                 await ctx.send('More than 25 fields; contact Adam.')
+                for x in warns:
+                    await ctx.send(str(x))
             elif len(warns) == 0:
                 await ctx.send('No warnings!')
             else:
