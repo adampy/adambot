@@ -426,13 +426,7 @@ class Member(commands.Cog):
         timeperiod =''
         index = 0
         if args:
-            arg_list = [arg for arg in ' '.join(args).split('-') if arg]
-            for item in arg_list:
-                if item[0] == 't':
-                    index = args.index('-t')
-                    timeperiod = item[2:]
-                    if timeperiod[len(timeperiod)-1] == ' ':
-                        timeperiod = timeperiod[:-1]
+            timeperiod, reason = separate_args(args)
         if not args or not timeperiod:
             await ctx.send('```-remind <sentence...> -t <time>```')
             return
