@@ -329,12 +329,13 @@ Administrator role needed.'''
         if len(reason) > 255:
             await ctx.send('The reason must be below 256 characters. Please shorten it before trying again.')
             return
-        cur.execute('INSERT INTO warn (member_id, staff_id, reason) values (%s, %s, %s)', (member.id, ctx.author.id, reason))
+        cur.execute('INSERT INTO warn (member_id, staff_id, reason) values (%s, %s, %s); SELECT COUNT(*) FROM warn WHERE member_id = (%s)', (member.id, ctx.author.id, reason, member.id))
         conn.commit()
+        warns = cur.fetchall()[0][0]
         conn.close()
         
-        await member.send(f'You have been warned by a member of the staff team. The reason for your warn is: {reason}.')
-        await ctx.send(f':ok_hand: {member.mention} has been warned.')
+        await member.send(f'You have been warned by a member of the staff team. The reason for your warn is: {reason}. You now have {warns} warns.')
+        await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
 
     @commands.command(pass_context=True)
     @commands.has_role('Staff')
@@ -349,8 +350,6 @@ Administrator role needed.'''
             warns = cur.fetchall()
             if len(warns) > 25: #need multiple embeds
                 await ctx.send('More than 25 fields; contact Adam.')
-                for x in warns:
-                    await ctx.send(str(x))
             elif len(warns) == 0:
                 await ctx.send('No warnings!')
             else:
@@ -368,10 +367,11 @@ Administrator role needed.'''
 
         else:
             #specific to one member
-            cur.execute('SELECT * FROM warn WHERE member_id = (%s)', (member.id,))
+            cur.execute('SELECT * FROM warn WHERE member_id = (%s) ORDER BY id', (member.id,))
             warns = cur.fetchall()
             if len(warns) > 25: #need multiple embeds
-                await ctx.send('More than 25 fields; contact Adam.')
+                for warn in warns:
+                    await ctx.send(f'{warn[0]} - {warn[1]} - {warn[4]}')
             elif len(warns) == 0:
                 await ctx.send(f'{member.mention} has no warnings!')
             else:
