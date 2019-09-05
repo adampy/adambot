@@ -91,9 +91,10 @@ class Trivia(commands.Cog):
         else:
             color = member.color
             
+        sorted_scores = sorted(self.scores.items(), key=lambda x: x[1], reverse=True)
         embed = Embed(title='Trivia results' if reset else 'Trivia scores', color=color)
-        for indv in self.score:
-            embed.add_field(name=indv, value=f'{round(self.score[indv]*100/self.question_number,4)}%', inline=True)
+        for indv in sorted_scores:
+            embed.add_field(name=indv, value=f'{round(self.score[indv]*100/self.question_number,4)}% ({self.score[indv]})', inline=True)
         if reset:
             embed.set_footer(text=f'This trivia took {(datetime.utcnow()-self.started_at).seconds} seconds to complete.')
             await self.trivia_channel.send('Trivia stopped.')
@@ -225,7 +226,10 @@ class Trivia(commands.Cog):
 
     @trivia.command(aliases=['finish'])
     async def stop(self, ctx):
-        await self.trivia_end_leaderboard(ctx.author)
+        if self.running:
+            await self.trivia_end_leaderboard(ctx.author)
+        else:
+            await ctx.send('No trivia session running!')
 
     @trivia.command(aliases=['answers','cheat'])
     @commands.has_role('Staff')
@@ -237,12 +241,18 @@ class Trivia(commands.Cog):
 
     @trivia.command()
     async def skip(self, ctx):
-        await self.increment_score(self.bot)
-        await self.ask_question()
+        if self.running:
+            await self.increment_score(self.bot)
+            await self.ask_question()
+        else:
+            await ctx.send('No trivia session running!')
 
     @trivia.command(aliases=['lb'])
     async def leaderboard(self, ctx):
-        await self.trivia_end_leaderboard(reset=False)
+        if self.running:
+            await self.trivia_end_leaderboard(reset=False)
+        else:
+            await ctx.send('No trivia session running!')
 
     @trivia.command()
     @commands.check(is_adam)

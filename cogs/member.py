@@ -104,7 +104,7 @@ class Member(commands.Cog):
                         message.append(f'`{member.id}` **{member.name}**')
                         break
             new_message = '\n'.join(message)
-            new_message += f'\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** users with this role.'
+            new_message += f"\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** user{'' if len(message) == 0 else 's'} with this role."
             try:
                 await ctx.send(new_message)
             except Exception as e: #longer than 2000 letters causes this to be run
@@ -135,10 +135,10 @@ class Member(commands.Cog):
         role = get(author.guild.roles, name='Maths Challenge')
         if 'Maths Challenge' in [y.name for y in author.roles]:
             await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your Maths Challenge role has vanished!')
+            await ctx.send(':ok_hand: Your `Maths Challenge` role has vanished!')
         else:
             await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given Maths Challenge role!')
+            await ctx.send(':ok_hand: You have been given `Maths Challenge` role!')
 
     @commands.command(pass_context=True)
     @commands.has_role('Members')
@@ -149,10 +149,10 @@ class Member(commands.Cog):
         role = get(author.guild.roles, name='Languages Challenge')
         if 'Languages Challenge' in [y.name for y in author.roles]:
             await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your Languages Challenge role has vanished!')
+            await ctx.send(':ok_hand: Your `Languages Challenge` role has vanished!')
         else:
             await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given Languages Challenge role!')
+            await ctx.send(':ok_hand: You have been given `Languages Challenge` role!')
 
     @commands.command(pass_context=True)
     @commands.has_role('Members')
@@ -163,10 +163,24 @@ class Member(commands.Cog):
         role = get(author.guild.roles, name='Weeaboo')
         if 'Weeaboo' in [y.name for y in author.roles]:
             await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your Weeaboo role has vanished!')
+            await ctx.send(':ok_hand: Your `Weeaboo` role has vanished!')
         else:
             await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given Weeaboo role!')
+            await ctx.send(':ok_hand: You have been given `Weeaboo` role!')
+
+    @commands.command(pass_context=True, aliases=['announcements', 'notifications'])
+    @commands.has_role('Members')
+    @commands.guild_only()
+    async def announcement(self, ctx):
+        '''Gives you the Announcements role.'''
+        author = ctx.author
+        role = get(author.guild.roles, name='Announcements')
+        if 'Announcements' in [y.name for y in author.roles]:
+            await author.remove_roles(role)
+            await ctx.send(':ok_hand: Your `Announcements` role has vanished!')
+        else:
+            await author.add_roles(role)
+            await ctx.send(':ok_hand: You have been given `Announcements` role!')
 
 #-----------------------PIN------------------------------
 
@@ -195,7 +209,6 @@ class Member(commands.Cog):
     @commands.has_role('Members')
     async def quote(self, ctx, messageid, channelid=None):
         '''Quote a message to remember it.'''
-        print(channelid)
         if channelid is not None:
             try:
                 channel = self.bot.get_channel(int(channelid))

@@ -340,7 +340,7 @@ Administrator role needed.'''
     @commands.command(pass_context=True)
     @commands.has_role('Staff')
     @commands.guild_only()
-    async def warnlist(self, ctx, member: discord.Member = None, *reason: str):
+    async def warnlist(self, ctx, member: discord.User = None, *reason: str):
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'), sslmode='require')
         cur = conn.cursor()
 

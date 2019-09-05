@@ -8,9 +8,9 @@ class WaitingRoom(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        message = f'''Welcome to the server, {member.mention}. Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're going into next year!
+        message = f'''Welcome to the server, {member.mention}! Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're currently in. We do not allow anyone under Y9 into the server.
 
-Ping an {get(member.guild.roles, name='Assistant').mention} to be verified into the server (if none are present ping a mod).'''
+If an {get(member.guild.roles, name='Assistant').mention} does not come to assist you with entering the server, please ping one (if none are present ping a mod).'''
         channel = member.guild.system_channel
         await channel.send(message)
 

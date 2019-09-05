@@ -154,7 +154,9 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    async def check(self, ctx, member: discord.Member):
+    async def check(self, ctx, member: discord.Member = None):
+        if member is None:
+            member = ctx.author
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
         cur.execute('SELECT reps FROM rep WHERE member_id = (%s)', (member.id,))
