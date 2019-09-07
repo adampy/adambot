@@ -91,9 +91,8 @@ class Trivia(commands.Cog):
         else:
             color = member.color
             
-        sorted_scores = sorted(self.scores.items(), key=lambda x: x[1], reverse=True)
         embed = Embed(title='Trivia results' if reset else 'Trivia scores', color=color)
-        for indv in sorted_scores:
+        for indv in self.score:
             embed.add_field(name=indv, value=f'{round(self.score[indv]*100/self.question_number,4)}% ({self.score[indv]})', inline=True)
         if reset:
             embed.set_footer(text=f'This trivia took {(datetime.utcnow()-self.started_at).seconds} seconds to complete.')
