@@ -8,7 +8,7 @@ class WaitingRoom(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        message = f'''Welcome to the server, {member.mention}! Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're currently in. We do not allow anyone under Y9 into the server.
+        message = f'''Welcome to the server, {member.mention}! Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're currently in.
 
 If an {get(member.guild.roles, name='Assistant').mention} does not come to assist you with entering the server, please ping one (if none are present ping a mod).'''
         channel = member.guild.system_channel
@@ -62,6 +62,13 @@ Staff role needed.'''
         await member.add_roles(role)
         await ctx.send(f'{member.mention} has been verified!')
         await get(member.guild.text_channels, name='general').send(f'Welcome {member.mention} to the server :wave:')
+
+    @commands.command(aliases=['lurker'])
+    @commands.has_role('Staff')
+    async def lurkers(self, ctx):
+        members = [x.mention for x in ctx.guild.members if len(x.roles) <= 1]
+        message = ', '.join(members) + ' please tell us your year to be verified into the server!'
+        await ctx.send(message)
 
 def setup(bot):
     bot.add_cog(WaitingRoom(bot))
