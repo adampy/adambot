@@ -167,7 +167,8 @@ class Trivia(commands.Cog):
                 #answer checking
                 correct = False
                 
-                for override in self.settings['overrides']:
+                roles = [y.name for y in message.author]
+                for override in self.settings['overrides'] and ('Staff' in roles or 'Server Elitist'):
                     if override.lower() in message.content.lower():
                         correct = True
                         break
