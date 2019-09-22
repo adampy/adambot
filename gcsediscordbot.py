@@ -112,7 +112,7 @@ async def execute_todos():
         #if now.hour == 16 and now.minute == 38 and now.second < 5:
         #   await bot.get_channel(445199175244709898).send(f'**17:38** <@287272584033337344> <@394978551985602571> <@349881698944548864> <@213596989873586176> <@313321234576179200> <@285460324134682634> https://cdn.discordapp.com/attachments/418467941294538772/577594985369829386/1738.compressed.mp4')
         #
-        #await asyncio.sleep(5)
+        await asyncio.sleep(5)
 
 
 bot.loop.create_task(execute_todos())
