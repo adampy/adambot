@@ -167,8 +167,8 @@ class Trivia(commands.Cog):
                 #answer checking
                 correct = False
                 
-                roles = [y.name for y in message.author]
-                for override in self.settings['overrides'] and ('Staff' in roles or 'Server Elitist'):
+                roles = [y.name for y in message.author.roles]
+                for override in self.settings['overrides'] and ('Staff' in roles or 'Server Elitist' or self.is_adam(message)):
                     if override.lower() in message.content.lower():
                         correct = True
                         break
@@ -224,7 +224,7 @@ class Trivia(commands.Cog):
         self.started_at = datetime.utcnow()
         await self.ask_question()
 
-    @trivia.command(aliases=['finish'])
+    @trivia.command(aliases=['finish', 'end'])
     async def stop(self, ctx):
         if self.running:
             await self.trivia_end_leaderboard(ctx.author)
