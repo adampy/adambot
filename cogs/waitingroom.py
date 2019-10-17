@@ -64,9 +64,6 @@ class WaitingRoom(commands.Cog):
 
 
         #formatting stuffs
-#        message = f'''Welcome to the server, {member.mention}! Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're currently in.
-#
-#If an {get(member.guild.roles, name='Assistant').mention} does not come to assist you with entering the server, please ping one (if none are present ping a mod).'''
         message = f'''Welcome to the server, {member.mention}! Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're currently in.
 
 If an assistant does not come to assist you with entering the server, please ping one (if none are present ping a mod).'''
