@@ -239,7 +239,7 @@ Assistants have permission in #general only.'''
 #-----------------------JAIL & BANISH------------------------------
 
     @commands.command(pass_context=True)
-    @has_permissions(manage_roles=True)
+    @has_permissions(kick_members=True)
     async def jail(self, ctx, member: discord.Member):
         '''Puts a member in #the-court.
 Staff role needed.'''
@@ -248,7 +248,7 @@ Staff role needed.'''
         await ctx.send(f':ok_hand: {member.mention} has been jailed.')
 
     @commands.command(pass_context=True)
-    @has_permissions(manage_roles=True)
+    @has_permissions(kick_members=True)
     async def unjail(self, ctx, member: discord.Member):
         '''Puts a member in #the-court.
 Staff role needed.'''
