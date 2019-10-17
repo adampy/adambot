@@ -419,6 +419,25 @@ Administrator role needed.'''
     async def say(self, ctx, channel: discord.TextChannel, *text):
         await channel.send(' '.join(text))
         
+    @commands.command()
+    @commands.check(is_bot_owner)
+    async def reset_invites(self, ctx):
+        '''A command for adam only which resets the invites'''
+        invites = await ctx.guild.invites()
+        for invite in invites:
+            try:
+                data = [invite.inviter.id,
+                        invite.code,
+                        invite.uses,
+                        invite.max_uses,
+                        invite.created_at,
+                        invite.max_age]
+
+                self.cur.execute('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values (%s, %s, %s, %s, %s, %s)', data)
+            except:
+                pass
+        self.conn.commit()
+        
 
 
 

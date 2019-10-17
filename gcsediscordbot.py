@@ -104,14 +104,30 @@ async def execute_todos():
                 conn.commit()
             except Exception as e:
                 print(e)
-        
-        conn.close()
-
-
+ 
+        #1738 stuffs
         now = datetime.utcnow()
         if now.hour == 16 and now.minute == 38 and now.second < 5:
            await bot.get_channel(445199175244709898).send(f'**17:38** <@287272584033337344> <@394978551985602571> <@349881698944548864> <@213596989873586176> <@313321234576179200> <@285460324134682634> https://cdn.discordapp.com/attachments/418467941294538772/577594985369829386/1738.compressed.mp4')
         
+        #invite stuffs
+        guild = bot.get_guild(445194262947037185)
+        invites = await guild.invites()
+        for invite in invites:
+            try:
+                data = [invite.inviter.id,
+                        invite.code,
+                        invite.uses,
+                        invite.max_uses,
+                        invite.created_at,
+                        invite.max_age]
+
+                cur.execute('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values (%s, %s, %s, %s, %s, %s)', data)
+            except:
+                pass
+        conn.commit()
+        conn.close()
+
         await asyncio.sleep(5)
 
 

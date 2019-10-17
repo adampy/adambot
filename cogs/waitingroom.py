@@ -1,16 +1,75 @@
 import discord
+from discord import Embed, Colour
 from discord.ext import commands
 from discord.utils import get
+import os
+import psycopg2
 
 class WaitingRoom(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        key = os.environ.get('DATABASE_URL')
+
+        self.conn = psycopg2.connect(key, sslmode='require')
+        self.cur = self.conn.cursor()
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        #invite stuffs
+        guild = self.bot.get_guild(445194262947037185)
+        self.cur.execute('SELECT * FROM invites')
+        old_invites = self.cur.fetchall()
+        invites = await guild.invites()
+        invite_data = None
+        
+        #for each new invite find the old one - if not avaliable then that invite is the one
+        breakloop = False
+        for new_invite in invites:
+            if breakloop:
+                break
+            #find old invite
+            for old_invite in old_invites:
+                if new_invite.code == old_invite[1]: #same codes
+                    if new_invite.uses - 1 == old_invite[2]: #uses correlate
+                        invite_data = new_invite
+                        breakloop = True
+                        break
+
+        #staff embed
+        if invite_data:
+            embed = Embed(title='Invite data', color=Colour.from_rgb(76, 176, 80))
+            embed.add_field(name='Inviter', value=invite_data.inviter.mention)
+            embed.add_field(name='Code', value=invite_data.code)
+            embed.add_field(name='Uses', value=invite_data.uses)
+            embed.add_field(name='Created at', value=invite_data.created_at.strftime('%x'))
+            embed.set_thumbnail(url=invite_data.inviter.avatar_url)
+            await get(guild.text_channels, name='staff-chat').send(embed=embed)
+        else:
+            await get(guild.text_channels, name='staff-chat').send('No invite data avaliable.')
+
+        #reset invites
+        for invite in invites:
+            try:
+                data = [invite.inviter.id,
+                        invite.code,
+                        invite.uses,
+                        invite.max_uses,
+                        invite.created_at,
+                        invite.max_age]
+
+                self.cur.execute('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values (%s, %s, %s, %s, %s, %s)', data)
+            except:
+                pass
+        self.conn.commit()
+
+
+        #formatting stuffs
+#        message = f'''Welcome to the server, {member.mention}! Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're currently in.
+#
+#If an {get(member.guild.roles, name='Assistant').mention} does not come to assist you with entering the server, please ping one (if none are present ping a mod).'''
         message = f'''Welcome to the server, {member.mention}! Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're currently in.
 
-If an {get(member.guild.roles, name='Assistant').mention} does not come to assist you with entering the server, please ping one (if none are present ping a mod).'''
+If an assistant does not come to assist you with entering the server, please ping one (if none are present ping a mod).'''
         channel = member.guild.system_channel
         await channel.send(message)
 
