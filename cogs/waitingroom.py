@@ -43,9 +43,9 @@ class WaitingRoom(commands.Cog):
             embed.add_field(name='Uses', value=invite_data.uses)
             embed.add_field(name='Created at', value=invite_data.created_at.strftime('%x'))
             embed.set_thumbnail(url=invite_data.inviter.avatar_url)
-            await get(guild.text_channels, name='staff-chat').send(embed=embed)
+            await get(guild.text_channels, name='adambot-logs').send(embed=embed)
         else:
-            await get(guild.text_channels, name='staff-chat').send('No invite data avaliable.')
+            await get(guild.text_channels, name='adambot-logs').send('No invite data avaliable.')
 
         #reset invites
         for invite in invites:
