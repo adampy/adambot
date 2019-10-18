@@ -424,6 +424,7 @@ Administrator role needed.'''
     async def reset_invites(self, ctx):
         '''A command for adam only which resets the invites'''
         invites = await ctx.guild.invites()
+        self.cur.execute('DELETE FROM invites')
         for invite in invites:
             try:
                 data = [invite.inviter.id,

@@ -113,6 +113,7 @@ async def execute_todos():
         #invite stuffs
         guild = bot.get_guild(445194262947037185)
         invites = await guild.invites()
+        cur.execute('DELETE FROM invites')
         for invite in invites:
             try:
                 data = [invite.inviter.id,

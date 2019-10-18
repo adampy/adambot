@@ -48,6 +48,7 @@ class WaitingRoom(commands.Cog):
             await get(guild.text_channels, name='adambot-logs').send('No invite data avaliable.')
 
         #reset invites
+        self.cur.execute('DELETE FROM invites')
         for invite in invites:
             try:
                 data = [invite.inviter.id,
