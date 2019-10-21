@@ -452,12 +452,16 @@ class Member(commands.Cog):
         write(self, reminder, seconds, ctx.author.id)
         await ctx.send(':ok_hand: The reminder has been added!')
 
+#-----------------------AVATAR------------------------------
+
     @commands.command(pass_context=True)
     async def avatar(self, ctx, member: discord.Member = None):
         if not member:
             member = ctx.author
 
         await ctx.send(member.avatar_url)
+
+#-----------------------COUNTDOWNS------------------------------
 
     @commands.command(pass_context=True, aliases=['results'])
     async def resultsday(self, ctx, hour = None):
@@ -504,6 +508,28 @@ class Member(commands.Cog):
 **{h}** hours
 **{m}** minutes
 **{s}** seconds''')
+
+#-----------------------1738------------------------------
+
+    @commands.command(pass_context=True)
+    async def toggle1738(self, ctx):
+        #db connections
+        conn = psycopg2.connect(self.key, sslmode='require')
+        cur = conn.cursor()
+        #check if already joined
+        cur.execute("SELECT * FROM ping WHERE member_id = (%s)", (ctx.author.id,))
+        member = cur.fetchall()
+        if not member:
+            #not on - turn it on
+            cur.execute('INSERT INTO ping (member_id) values (%s)', (ctx.author.id, ))
+            await ctx.send(":ok_hand: You will recieve notifications for 1738. :tada:")
+        else:
+            #on - turn it off
+            cur.execute('DELETE FROM ping WHERE member_id = (%s)', (ctx.author.id, ))
+            await ctx.send(":ok_hand: You will no longer recieve notifications for 1738. :sob:")
+        conn.commit()
+        conn.close()
+        
 
 
 
