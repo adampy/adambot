@@ -23,10 +23,12 @@ class WaitingRoom(commands.Cog):
         invite_data = None
         
         #for each new invite find the old one - if not avaliable then that invite is the one
+        seen_invites = []
         breakloop = False
         for new_invite in invites:
             if breakloop:
                 break
+            seen_invites.append(new_invite)
             #find old invite
             for old_invite in old_invites:
                 if new_invite.code == old_invite[1]: #same codes
@@ -34,18 +36,29 @@ class WaitingRoom(commands.Cog):
                         invite_data = new_invite
                         breakloop = True
                         break
+        for inv in old_invites:
+            if inv not in invites and inv[3] == 1:
+                invite_data = invite
 
         #staff embed
+        date = member.joined_at - member.created_at
+        day_warning = False
+        if date.days < 7:
+            day_warning = True
+        
         if invite_data:
             embed = Embed(title='Invite data', color=Colour.from_rgb(76, 176, 80))
+            embed.add_field(name='Member', value=member.mention)
             embed.add_field(name='Inviter', value=invite_data.inviter.mention)
             embed.add_field(name='Code', value=invite_data.code)
             embed.add_field(name='Uses', value=invite_data.uses)
             embed.add_field(name='Created at', value=invite_data.created_at.strftime('%x'))
-            embed.set_thumbnail(url=invite_data.inviter.avatar_url)
-            await get(guild.text_channels, name='adambot-logs').send(embed=embed)
+            embed.set_thumbnail(url=member.avatar_url)
+            await get(guild.text_channels, name='brainlets-being-brainlets').send(f'{member.mention}\'s account is less than 7 days old.', embed=embed)
         else:
-            await get(guild.text_channels, name='adambot-logs').send('No invite data avaliable.')
+            await get(guild.text_channels, name='brainlets-being-brainlets').send('No invite data avaliable.' if not day_warning else f'No invite data avaliable. {member.mention}\'s account is less than 7 days old.')
+
+
 
         #reset invites
         self.cur.execute('DELETE FROM invites')

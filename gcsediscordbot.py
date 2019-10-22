@@ -106,11 +106,11 @@ async def execute_todos():
                 print(e)
  
         #1738 stuffs
-        now = datetime.utcnow()
-        if now.hour+1 == 17 and now.minute == 38 and now.second < 5:
-           cur.execute("SELECT * FROM ping")
-           members = ' '.join([f'<@{x[0]}>' for x in cur.fetchall()])
-           await bot.get_channel(445199175244709898).send(f'**17:38** {members} https://cdn.discordapp.com/attachments/418467941294538772/577594985369829386/1738.compressed.mp4')
+        #now = datetime.utcnow()
+        #if now.hour+1 == 17 and now.minute == 38 and now.second < 5:
+        #   cur.execute("SELECT * FROM ping")
+        #   members = ' '.join([f'<@{x[0]}>' for x in cur.fetchall()])
+        #   await bot.get_channel(445199175244709898).send(f'**17:38** {members} https://cdn.discordapp.com/attachments/418467941294538772/577594985369829386/1738.compressed.mp4')
         
         #invite stuffs
         guild = bot.get_guild(445194262947037185)
