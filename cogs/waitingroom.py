@@ -52,7 +52,8 @@ class WaitingRoom(commands.Cog):
             embed.add_field(name='Inviter', value=invite_data.inviter.mention)
             embed.add_field(name='Code', value=invite_data.code)
             embed.add_field(name='Uses', value=invite_data.uses)
-            embed.add_field(name='Invite created at', value=invite_data.created_at.strftime('%x'))
+            embed.add_field(name='Invite created', value=invite_data.created_at.strftime('%H:%M on %d/%m/%y'))
+            embed.add_field(name='Account created', value=member.created_at.strftime('%H:%M on %d/%m/%y'))
             embed.set_thumbnail(url=member.avatar_url)
             await get(guild.text_channels, name='brainlets-being-brainlets').send(f'{member.mention}\'s account is **less than 7 days old.**', embed=embed)
         else:
