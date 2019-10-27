@@ -95,7 +95,7 @@ Staff role needed.'''
         role = get(member.guild.roles, name='Members')
         await member.add_roles(role)
         await ctx.send('<@{}> has been verified!'.format(member.id))
-        await get(member.guild.text_channels, name='general').send(f'Welcome {member.mention} to the server :wave: This new member is year 9 so expect ~~retardation~~ fun')
+        await get(member.guild.text_channels, name='general').send(f'Welcome {member.mention} to the server :wave:')
 
 
     @commands.command(pass_context=True)
