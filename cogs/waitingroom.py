@@ -36,9 +36,6 @@ class WaitingRoom(commands.Cog):
                         invite_data = new_invite
                         breakloop = True
                         break
-        for inv in old_invites:
-            if inv not in invites and inv[3] == 1:
-                invite_data = inv
 
         #staff embed
         date = member.joined_at - member.created_at
