@@ -58,9 +58,6 @@ class Trivia(commands.Cog):
         self.reset()
         self.reload_trivias()
 
-    def is_adam(self, ctx):
-        return ctx.author.id == 394978551985602571
-
     def reload_trivias(self):
         for trivia in self.trivia_list:
             try:
@@ -86,6 +83,7 @@ class Trivia(commands.Cog):
         self.timeout = 0
 
     async def trivia_end_leaderboard(self, member:discord.Member = None, reset=True):
+        self.reload_trivias()
         if not member:
             color = Colour.from_rgb(177,252,129)
         else:
@@ -257,11 +255,14 @@ class Trivia(commands.Cog):
     @trivia.command()
     @commands.check(is_adam)
     async def reload(self, ctx):
-        result = await self.reload_trivias()
-        if result:
-            await ctx.send('Done!')
+        if ctx.author.id == 394978551985602571:
+            result = await self.reload_trivias()
+            if result:
+                await ctx.send('Done!')
+            else:
+                await ctx.send('Please reload the bot instead.')
         else:
-            await ctx.send('Please reload the bot instead.')
+            await ctx.send("Insufficient permission.")
 
 
         
