@@ -170,7 +170,7 @@ class Trivia(commands.Cog):
                 
                 roles = [y.name for y in message.author.roles]
                 for override in self.settings['overrides']:
-                    if (override.lower() in message.content.lower()) and ('Staff' in roles or 'Server Elitist' in roles or self.is_adam(message)):
+                    if (override.lower() in message.content.lower()) and ('Staff' in roles or 'Server Elitist' in roles or message.author.id == 394978551985602571):
                         correct = True
                         break
                 
