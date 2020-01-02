@@ -71,6 +71,7 @@ class Trivia(commands.Cog):
                 self.trivias[trivia] = questions_dict
             except Exception as e:
                 print(f'Error whilst loading {trivia}: {e}')
+        return True
 
     def reset(self):
         self.running = '' #string with name of current category
