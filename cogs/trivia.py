@@ -83,7 +83,9 @@ class Trivia(commands.Cog):
         self.timeout = 0
 
     async def trivia_end_leaderboard(self, member:discord.Member = None, reset=True):
-        self.reload_trivias()
+        result = self.reload_trivias()
+        if not result:
+            await ctx.send("Issue when reloading trivias - ping Adam for a fix.")
         if not member:
             color = Colour.from_rgb(177,252,129)
         else:
@@ -255,7 +257,7 @@ class Trivia(commands.Cog):
     @trivia.command()
     async def reload(self, ctx):
         if ctx.author.id == 394978551985602571:
-            result = await self.reload_trivias()
+            result = self.reload_trivias()
             if result:
                 await ctx.send('Done!')
             else:
