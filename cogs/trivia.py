@@ -253,7 +253,6 @@ class Trivia(commands.Cog):
             await ctx.send('No trivia session running!')
 
     @trivia.command()
-    @commands.check(is_adam)
     async def reload(self, ctx):
         if ctx.author.id == 394978551985602571:
             result = await self.reload_trivias()
