@@ -323,13 +323,22 @@ class Member(commands.Cog):
         await ctx.send('https://cdn.discordapp.com/attachments/445199175244709898/616755258890387486/29e02f54-4741-40e5-b77d-788bf78b33ba.png')
 
     @commands.command()
-    async def spamping(self, ctx, amount, message, user: discord.Member):
+    async def spamping(self, ctx, amount, user: discord.Member, *message):
         '''For annoying certain people'''
-        if ctx.author.id == 394978551985602571:
-            for i in range(int(amount)):
-                await ctx.send(message + " " + user.mention)
+        await ctx.message.delete()
+        
+        try:
+            iterations = int(amount)
+        except Exception as e:
+            await ctx.send(f"Please use a number for the amount, not {amount}")
+            return
+        
+        if ctx.guild.id == 593788906646929439:
+            msg = message + " " + user.mention
+            for i in range(iterations):
+                await ctx.send(msg)
         else:
-            await ctx.send("Insufficient permission")
+            await ctx.send("Insufficient permission to use this command in this server.")
 
 
 #-----------------------USER AND SERVER INFO------------------------------
