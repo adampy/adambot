@@ -326,7 +326,7 @@ class Member(commands.Cog):
     async def spamping(self, ctx, amount, message, user: discord.Member):
         '''For annoying certain people'''
         if ctx.author.id == 394978551985602571:
-            for i in range(amount):
+            for i in range(int(amount)):
                 await ctx.send(message + " " + user.mention)
         else:
             await ctx.send("Insufficient permission")
