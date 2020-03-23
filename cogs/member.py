@@ -334,7 +334,7 @@ class Member(commands.Cog):
             return
         
         if ctx.guild.id == 593788906646929439:
-            msg = message + " " + user.mention
+            msg = ' '.join(message) + " " + user.mention
             for i in range(iterations):
                 await ctx.send(msg)
         else:
