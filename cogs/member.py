@@ -17,7 +17,6 @@ class Member(commands.Cog):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
         self.pastebin = os.environ.get('PASTEBIN_KEY')
-        self.spampinging = False
 
     def is_subject_head(ctx):
         reference = {'Head History Helper':['history'],
@@ -335,24 +334,12 @@ class Member(commands.Cog):
             await ctx.send(f"Please use a number for the amount, not {amount}")
             return
         
-        if ctx.guild.id == 593788906646929439 and self.spampinging == False:
-            self.spampinging = True
+        if ctx.guild.id == 593788906646929439:
             msg = message + " " + user.mention
             for i in range(iterations):
-                if self.spampinging == False:
-                    return
                 await ctx.send(msg)
         else:
             await ctx.send("Insufficient permission to use this command in this server.")
-
-    @commands.command()
-    async def spampingstop(self, ctx):
-        await ctx.message.delete()
-        self.spampinging = False
-        msg = await ctx.send(":ok_hand: Stopping spamping")
-        await asyncio.sleep(3)
-        msg.delete()
-
 
 #-----------------------USER AND SERVER INFO------------------------------
 
