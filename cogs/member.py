@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import psycopg2
 from random import choice as randchoice
 import asyncio
+from bs4 import BeautifulSoup
 
 class Member(commands.Cog):
     def __init__(self, bot):
@@ -36,7 +37,34 @@ class Member(commands.Cog):
             return False
 
     def in_private_server(ctx):
-        return ctx.guild.id == 593788906646929439
+        return (ctx.guild.id == 593788906646929439) or (ctx.author.id == 394978551985602571) #in priv server or is adam
+    
+    def get_corona_data(self, country):
+        '''Get COVID19 tracking data from worldometers HTML'''
+        data = {}
+        URL = "https://www.worldometers.info/coronavirus/country/{}/"
+        r = requests.get(URL.format(country))
+        soup = BeautifulSoup(r.text, features="html.parser")
+        numbers = soup.find_all(class_=re.compile("maincounter-number"))
+        number_tables = soup.find_all(class_=re.compile("number-table"))
+
+        data['total'] = numbers[0].text.strip()
+        data['deaths'] = numbers[1].text.strip()
+        data['recovered'] = numbers[2].text.strip()
+
+        active = {}
+        active['current'] = number_tables[0].text.strip()
+        active['mild'] = number_tables[1].text.strip()
+        active['critical'] = number_tables[2].text.strip()
+        data['active'] = active
+
+        closed = {}
+        closed['outcome'] = number_tables[3].text.strip()
+        closed['recovered'] = number_tables[4].text.strip()
+        closed['deaths'] = number_tables[5].text.strip()
+        data['closed'] = closed
+
+        return data
 
 #-----------------------REVISE------------------------------        
 
@@ -327,6 +355,7 @@ class Member(commands.Cog):
         await ctx.send('https://cdn.discordapp.com/attachments/445199175244709898/616755258890387486/29e02f54-4741-40e5-b77d-788bf78b33ba.png')
 
     @commands.command()
+    @commands.check(in_private_server)
     async def spamping(self, ctx, amount, user: discord.Member, *message):
         '''For annoying certain people'''
         await ctx.message.delete()
@@ -338,7 +367,7 @@ class Member(commands.Cog):
             return
         
         if ctx.guild.id == 593788906646929439:
-            msg = message + " " + user.mention
+            msg = ' '.join(message) + " " + user.mention
             for i in range(iterations):
                 await ctx.send(msg)
         else:
@@ -550,6 +579,23 @@ class Member(commands.Cog):
             await ctx.send(":ok_hand: You will no longer recieve notifications for 1738. :sob:")
         conn.commit()
         conn.close()
+
+#-----------------------COVID19 TRACKING------------------------------
+
+    @commands.check(in_private_server)
+    @commands.command(pass_context=True)
+    async def corona(self, ctx, country=None):
+        if country is None:
+            await ctx.send('```-corona <country>```')
+            return
+        
+        async with ctx.typing():
+            data = self.get_corona_data(country)
+            embed = Embed(title="COVID19 Update", color=ctx.author.color)
+            embed.add_field(name="Total Cases", value=data['total'])
+            embed.add_field(name="Deaths", value=data['deaths'])
+            embed.set_footer(text="Data received from https://www.worldometers.info/coronavirus")
+        await ctx.send(embed=embed)
         
 
 

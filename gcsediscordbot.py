@@ -66,7 +66,10 @@ async def host(ctx):
 #-----------------------------------------------------------------
 
 for cog in COGS:
+    #if cog == "trivia":
+    #    continue
     bot.load_extension(f'cogs.{cog}')
+    print(f"Loaded: {cog}")
 
 async def execute_todos():
     await bot.wait_until_ready()
