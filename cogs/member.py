@@ -35,6 +35,9 @@ class Member(commands.Cog):
         else:
             return False
 
+    def in_private_server(ctx):
+        return ctx.guild.id == 593788906646929439
+
 #-----------------------REVISE------------------------------        
 
     @commands.command(pass_context=True)
