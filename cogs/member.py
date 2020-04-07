@@ -40,7 +40,7 @@ class Member(commands.Cog):
         return (ctx.guild.id == 593788906646929439) or (ctx.author.id == 394978551985602571) #in priv server or is adam
     
     def get_corona_data(self, country):
-        '''Get COVID19 tracking data from worldometers HTML'''
+        '''DEPRECATED, use get_corona_data_updated()'''
         data = {}
         URL = "https://www.worldometers.info/coronavirus/country/{}/"
         r = requests.get(URL.format(country))
@@ -65,6 +65,40 @@ class Member(commands.Cog):
         data['closed'] = closed
 
         return data
+
+    def get_corona_data_updated(country):
+        '''Get COVID19 tracking data from worldometers HTML, use this instead of get_corona_data()'''
+        to_return = {}
+        URL = "https://www.worldometers.info/coronavirus/"
+        r = requests.get(URL)
+        soup = BeautifulSoup(r.text, features="html.parser")
+
+        data = []
+        for a in soup.find_all('a', href=True):
+            if a['href'] == 'country/{}/'.format(country):
+
+                i = 0
+                for x in a.next_elements:
+                    if x != "\n" and isinstance(x, str):
+                        i += 1
+                        data.append(x)
+                        if i == 12:
+                            break
+                break
+
+        to_return['country'] = data[0]
+        to_return['total'] = data[1]
+        to_return['new_cases'] = data[2]
+        to_return['deaths'] = data[3]
+        to_return['new_deaths'] = data[4]
+        to_return['recovered'] = data[5]
+        to_return['active'] = data[6]
+        to_return['critical'] = data[7]
+        to_return['cases_to_1mil'] = data[8]
+        to_return['deaths_to_1mil'] = data[9]
+        to_return['tests'] = data[10]
+        to_return['tests_to_1mil'] = data[11]
+        return to_return
 
 #-----------------------REVISE------------------------------        
 
@@ -590,7 +624,7 @@ class Member(commands.Cog):
             return
         
         async with ctx.typing():
-            data = self.get_corona_data(country)
+            data = self.get_corona_data_updated(country)
             embed = Embed(title="COVID19 Update", color=ctx.author.color)
             embed.add_field(name="Total Cases", value=data['total'])
             embed.add_field(name="Deaths", value=data['deaths'])
