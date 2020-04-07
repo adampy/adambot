@@ -66,7 +66,7 @@ class Member(commands.Cog):
 
         return data
 
-    def get_corona_data_updated(country):
+    def get_corona_data_updated(self, country):
         '''Get COVID19 tracking data from worldometers HTML, use this instead of get_corona_data()'''
         to_return = {}
         URL = "https://www.worldometers.info/coronavirus/"
