@@ -66,7 +66,7 @@ class Member(commands.Cog):
 
         return data
 
-    def get_corona_data_updated(country):
+    def get_corona_data_updated(self, country):
         '''Get COVID19 tracking data from worldometers HTML, use this instead of get_corona_data()'''
         to_return = {}
         URL = "https://www.worldometers.info/coronavirus/"
@@ -613,26 +613,6 @@ class Member(commands.Cog):
             await ctx.send(":ok_hand: You will no longer recieve notifications for 1738. :sob:")
         conn.commit()
         conn.close()
-
-#-----------------------COVID19 TRACKING------------------------------
-
-    @commands.check(in_private_server)
-    @commands.command(pass_context=True)
-    async def corona(self, ctx, country=None):
-        if country is None:
-            await ctx.send('```-corona <country>```')
-            return
-        
-        async with ctx.typing():
-            data = self.get_corona_data_updated(country)
-            embed = Embed(title="COVID19 Update", color=ctx.author.color)
-            embed.add_field(name="Total Cases", value=data['total'])
-            embed.add_field(name="Deaths", value=data['deaths'])
-            embed.set_footer(text="Data received from https://www.worldometers.info/coronavirus")
-        await ctx.send(embed=embed)
-        
-
-
 
 def setup(bot):
     bot.add_cog(Member(bot))
