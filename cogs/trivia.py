@@ -33,7 +33,6 @@ class Trivia(commands.Cog):
                        'GCSESpanish',
                        'general',
                        'harrypotter',
-                       'jdmcarquiz',
                        'lordt-history',
                        'nato',
                        'SpecIonTests',
