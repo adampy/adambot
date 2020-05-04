@@ -52,9 +52,9 @@ class WaitingRoom(commands.Cog):
             embed.add_field(name='Invite created', value=invite_data.created_at.strftime('%H:%M on %d/%m/%y'))
             embed.add_field(name='Account created', value=member.created_at.strftime('%H:%M on %d/%m/%y'))
             embed.set_thumbnail(url=member.avatar_url)
-            await get(guild.text_channels, name='brainlets-being-brainlets').send(f'{member.mention}\'s account is **less than 7 days old.**' if day_warning else '', embed=embed)
+            await get(guild.text_channels, name='staff-chat').send(f'{member.mention}\'s account is **less than 7 days old.**' if day_warning else '', embed=embed)
         else:
-            await get(guild.text_channels, name='brainlets-being-brainlets').send('No invite data avaliable.' if not day_warning else f'No invite data avaliable. {member.mention}\'s account is **less than 7 days old.**')
+            await get(guild.text_channels, name='staff-chat').send('No invite data avaliable.' if not day_warning else f'No invite data avaliable. {member.mention}\'s account is **less than 7 days old.**')
 
 
 
