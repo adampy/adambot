@@ -64,7 +64,7 @@ class Private(commands.Cog):
         if not section or not id or not name:
             await ctx.send("'```-csnotesadd <section_number> <GDriveID> <name>```'")
             return
-        self.cur.execute("INSERT INTO classroom (section, gid, name) VALUES (%s, %s, %s)", (section, id, name))
+        self.cur.execute("INSERT INTO classroom (section, gid, name) VALUES (%s, %s, %s)", (section, id, ' '.join(name)))
         self.conn.commit()
         await ctx.send(":ok_hand: Done!")
 
