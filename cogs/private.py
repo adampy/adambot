@@ -47,7 +47,8 @@ class Private(commands.Cog):
 
         if section == "all":
             self.cur.execute("SELECT * FROM classroom")
-            notes_ids = self.cur.fetchall()
+            temp = self.cur.fetchall()
+            notes_ids = sorted(temp, key = lambda x:x[0])
             for item in notes_ids:
                 embed.add_field(name=f"**Section {item[0]} ({item[2]}) notes**", value=f"    [Click here!](https://docs.google.com/document/d/{item[1]})")
 
