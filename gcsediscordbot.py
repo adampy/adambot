@@ -28,7 +28,8 @@ COGS = ['member',
         'waitingroom',
         'support',
         'reputation',
-        'trivia',]
+        'trivia',
+        'private',]
 PREFIX = '-'
 
 #purge mental health, purge serious command

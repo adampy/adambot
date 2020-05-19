@@ -35,9 +35,6 @@ class Member(commands.Cog):
                 return True
         else:
             return False
-
-    def in_private_server(ctx):
-        return (ctx.guild.id == 593788906646929439) or (ctx.author.id == 394978551985602571) #in priv server or is adam
     
     def get_corona_data(self, country):
         '''DEPRECATED, use get_corona_data_updated()'''
@@ -387,25 +384,6 @@ class Member(commands.Cog):
     @commands.command(aliases=['yikes'])
     async def yike(self, ctx):
         await ctx.send('https://cdn.discordapp.com/attachments/445199175244709898/616755258890387486/29e02f54-4741-40e5-b77d-788bf78b33ba.png')
-
-    @commands.command()
-    @commands.check(in_private_server)
-    async def spamping(self, ctx, amount, user: discord.Member, *message):
-        '''For annoying certain people'''
-        await ctx.message.delete()
-        
-        try:
-            iterations = int(amount)
-        except Exception as e:
-            await ctx.send(f"Please use a number for the amount, not {amount}")
-            return
-        
-        if ctx.guild.id == 593788906646929439:
-            msg = ' '.join(message) + " " + user.mention
-            for i in range(iterations):
-                await ctx.send(msg)
-        else:
-            await ctx.send("Insufficient permission to use this command in this server.")
 
 #-----------------------USER AND SERVER INFO------------------------------
 
