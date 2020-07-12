@@ -121,7 +121,7 @@ Moderator role needed'''
         else:
             reason = None
 
-        await member.ban(reason=reason)
+        await member.ban(reason=reason, delete_message_days=0)
         emoji = get(ctx.message.guild.emojis, name="banned")
         await ctx.send(f'{member.mention} has been banned. {emoji}')
         

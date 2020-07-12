@@ -19,8 +19,9 @@ class QuestionOTD(commands.Cog):
     def in_gcse(ctx):
         return ctx.guild.id == 445194262947037185
 
-    def staff(self, member):
-        return 'Staff' in [y.name for y in member.roles]
+    def qotd_perms(ctx):
+        r = [y.name for y in ctx.author.roles]
+        return 'Staff' in r or 'QOTD' in r
 
     @commands.group()
     @commands.check(in_gcse)
@@ -31,7 +32,7 @@ class QuestionOTD(commands.Cog):
     @qotd.error
     async def qotd_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
-            await ctx.send("You cannot submit QOTDs in this server!")
+            await ctx.send("The QOTD module is not avaliable in this server!")
 
     @qotd.command(pass_context=True)
     @commands.has_role('Members')
@@ -65,7 +66,7 @@ class QuestionOTD(commands.Cog):
             await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @qotd.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.check(qotd_perms)
     async def list(self, ctx, page_num = None):
         self.cur.execute('SELECT * FROM qotd ORDER BY id')
         qotds = self.cur.fetchall()
@@ -109,7 +110,7 @@ class QuestionOTD(commands.Cog):
 
 
     @qotd.command(pass_context=True, aliases=['remove'])
-    @commands.has_role('Staff')
+    @commands.check(qotd_perms)
     async def delete(self, ctx, *question_ids):
         deleted = []
         for question_id in question_ids:
@@ -128,7 +129,7 @@ class QuestionOTD(commands.Cog):
                         
 
     @qotd.command(pass_context=True, aliases=['choose'])
-    @commands.has_role('Staff')
+    @commands.check(qotd_perms)
     async def pick(self, ctx, question_id):
         if question_id.lower() == 'random':
             self.cur.execute('SELECT * FROM qotd')
@@ -142,14 +143,14 @@ class QuestionOTD(commands.Cog):
             question_data = choice(questions)
 
         question = question_data[1]
-        member = get(self.bot.get_all_members(), id=int(question_data[2]))
+        member = await self.bot.fetch_user(question_data[2])
         message = f"**QOTD**\n{question} - Credit to {member.mention}"
 
         self.cur.execute('DELETE FROM qotd WHERE id = %s', (question_id,))
         self.conn.commit()
 
         await ctx.send(':ok_hand:')
-        await get(member.guild.text_channels, name='question-of-the-day').send(message)
+        await get(ctx.author.guild.text_channels, name='question-of-the-day').send(message)
         
         embed = Embed(title='QOTD Picked', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='ID', value=question_data[0])
@@ -158,12 +159,7 @@ class QuestionOTD(commands.Cog):
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
         
-        await get(member.guild.text_channels, name='adambot-logs').send(embed=embed)
-
-    @commands.command()
-    async def emoji(self, ctx, emoji):
-        await ctx.send(emoji)
-
+        await get(ctx.author.guild.text_channels, name='adambot-logs').send(embed=embed)
 
 def setup(bot):
     bot.add_cog(QuestionOTD(bot))

@@ -372,6 +372,7 @@ class Member(commands.Cog):
         text = ' '.join(message)
         if text.lower() in DISALLOWED_COOL_WORDS:
             await ctx.send("You can't make that message cool!")
+            return
         new = ''
         for index, letter in enumerate(text):
             try:

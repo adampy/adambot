@@ -11,7 +11,7 @@ class Reputation(commands.Cog):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
 
-    def get_leaderboard(self, ctx):
+    async def get_leaderboard(self, ctx):
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
         cur.execute('SELECT * FROM rep ORDER BY reps DESC LIMIT 10')
@@ -21,7 +21,8 @@ class Reputation(commands.Cog):
         for item in leaderboard:
             member = ctx.guild.get_member(item[0])
             if member is None:
-                member = str(self.bot.get_user(item[0])) + " (this person is currently not in the server)"
+                user = await self.bot.fetch_user(item[0])
+                member = f"{str(user)} - this person is currently not in the server - ID: {user.id}"
             embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
 
         return embed
@@ -94,7 +95,8 @@ class Reputation(commands.Cog):
     @rep.command(aliases=['lb'])
     @commands.guild_only()
     async def leaderboard(self, ctx):
-        await ctx.send(embed=self.get_leaderboard(ctx))
+        lb = await self.get_leaderboard(ctx)
+        await ctx.send(embed=lb)
 
     @rep.group()
     @commands.guild_only()
