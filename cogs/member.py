@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import psycopg2
 from random import choice as randchoice
 import asyncio
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 
 class Member(commands.Cog):
     def __init__(self, bot):
@@ -105,6 +105,8 @@ class Member(commands.Cog):
     async def revise(self, ctx):
         '''Puts you in revising mode.'''
         member = ctx.author
+        if member.bot: # Stops bots from putting theirselves into revising mode
+            return
         role = get(member.guild.roles, name='Members')
         await member.remove_roles(role)
         role = get(member.guild.roles, name='Revising')

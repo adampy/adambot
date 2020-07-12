@@ -33,12 +33,9 @@ class Private(commands.Cog):
             await ctx.send(f"Please use a number for the amount, not {amount}")
             return
         
-        if ctx.guild.id == 593788906646929439:
-            msg = ' '.join(message) + " " + user.mention
-            for i in range(iterations):
-                await ctx.send(msg)
-        else:
-            await ctx.send("Insufficient permission to use this command in this server.")
+        msg = ' '.join(message) + " " + user.mention
+        for i in range(iterations):
+            await ctx.send(msg)
 
     @commands.command()
     @commands.check(in_private_server)

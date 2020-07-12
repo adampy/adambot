@@ -31,7 +31,7 @@ class QuestionOTD(commands.Cog):
     @qotd.error
     async def qotd_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
-            await ctx.send("You cannot submit QOTDs in this server ***yet***!")
+            await ctx.send("You cannot submit QOTDs in this server!")
 
     @qotd.command(pass_context=True)
     @commands.has_role('Members')

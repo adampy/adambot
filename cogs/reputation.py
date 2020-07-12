@@ -19,7 +19,10 @@ class Reputation(commands.Cog):
         conn.close()
         embed = Embed(title='**__Reputation Leaderboard__**', color=Colour.from_rgb(177,252,129))
         for item in leaderboard:
-            embed.add_field(name=f"{ctx.guild.get_member(item[0])}", value=f"{item[1]}", inline=False)
+            member = ctx.guild.get_member(item[0])
+            if member is None:
+                member = client.get_user(item[0]) + " (this person is currently not in the server)"
+            embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
 
         return embed
 
@@ -62,7 +65,7 @@ class Reputation(commands.Cog):
     @rep.error
     async def rep_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
-            await ctx.send("You cannot award rep in this server ***yet***!")
+            await ctx.send("You cannot award rep in this server!")
 
     @rep.command()
     @commands.guild_only()
