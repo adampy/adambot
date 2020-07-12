@@ -32,6 +32,8 @@ COGS = ['member',
         'private',]
 PREFIX = '-'
 
+# Move logging into a seperate cog for readability
+
 #purge mental health, purge serious command
 #support connections command
 #warnlist pages
@@ -62,7 +64,7 @@ async def on_message(message):
 @bot.command()
 async def host(ctx):
     '''Check if the bot is currently hosted locally or remotely'''
-    await ctx.send(f"Adam-bot is {'locally' if LOCAL_HOST else 'remotely'} hosted right now.")
+    await ctx.send(f"Adam-bot is {'**locally**' if LOCAL_HOST else '**remotely**'} hosted right now.")
 
 #-----------------------------------------------------------------
 

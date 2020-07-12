@@ -22,6 +22,7 @@ TIMES = {'w':7*24*60*60,
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
 GCSE_SERVER_ID = 445194262947037185
+NEWLINE = '\n'
 
 def separate_args(args):
     '''Given the args tuple (from *args) and returns seconds in index position 0 and reason in index position 1'''

@@ -5,16 +5,18 @@ from discord.utils import get
 import os
 import psycopg2
 import asyncio
+from .utils import NEWLINE
+from datetime import timedelta, datetime
 
 class Support(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.key = os.environ.get('DATABASE_URL')
         self.connections = self.get_connections()
 
     def get_connections(self):
         '''Returns currently active connections'''
-        key = os.environ.get('DATABASE_URL')
-        conn = psycopg2.connect(key, sslmode='require')
+        conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
 
         cur.execute('SELECT * FROM support')
@@ -34,8 +36,7 @@ class Support(commands.Cog):
 
     def create_connection(self, member: discord.Member):
         '''Makes a connection by adding it to the DB table support'''
-        key = os.environ.get('DATABASE_URL')
-        conn = psycopg2.connect(key, sslmode='require')
+        conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
 
         cur.execute('INSERT INTO support (member_id, staff_id) values (%s, %s)',(member.id, 0))
@@ -56,8 +57,7 @@ class Support(commands.Cog):
                 print(e)
 
     def remove_connection(self, connection_id):
-        key = os.environ.get('DATABASE_URL')
-        conn = psycopg2.connect(key, sslmode='require')
+        conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
         cur.execute('DELETE FROM support WHERE id = (%s)', (connection_id,))
         conn.commit()
@@ -148,9 +148,7 @@ Staff role needed.'''
             ctx.send('Ticket must be an integer.')
             return
 
-        key = os.environ.get('DATABASE_URL')
-
-        conn = psycopg2.connect(key, sslmode='require')
+        conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
         cur.execute('SELECT * FROM support WHERE id = (%s)', (ticket,))
         connection = cur.fetchall()[0]
@@ -165,12 +163,42 @@ Staff role needed.'''
                 await member.send('You are now connected anonymously with a staff member. DM me to get started!')
                 embed = Embed(color=Colour.from_rgb(0,0,255))
                 embed.add_field(name='New Ticket DM', value=f"ID: {connection[0]}", inline=False)
-                await self.bot.get_guild(445194262947037185).get_channel(597068935829127168).send(embed=embed)
+                await ctx.author.guild.get_channel(597068935829127168).send(embed=embed)
             else:
                 await ctx.send('You cannot open a support ticket with yourself.')
                 cur.execute('DELETE FROM support WHERE id = (%s)', (ticket,))
 
         conn.close()
+
+    @support.command(pass_context=True)
+    @commands.has_role('Staff')
+    async def connections(self, ctx):
+        conn = psycopg2.connect(self.key, sslmode='require')
+        cur = conn.cursor()
+
+        cur.execute('SELECT * FROM support')
+        tickets = cur.fetchall()
+        current = []
+        waiting = []
+
+        #support
+	    #id SERIAL PRIMARY KEY,
+	    #member_id bigint,
+	    #staff_id bigint,
+	    #started_at timestamptz
+
+        for ticket in tickets:
+            if ticket[3] != None:
+                staff = await self.bot.fetch_user(ticket[2])
+                date = (ticket[3] + timedelta(hours=1)).strftime('%H:%M on %d/%m/%y')
+                current.append(f"ID: {ticket[0]}{NEWLINE}Member ID: ***REDACTED***{NEWLINE}Staff: {staff}{NEWLINE}Started at: {date}{NEWLINE}")
+            else:
+                waiting.append(f"ID: {ticket[0]}{NEWLINE}Member ID: ***REDACTED***{NEWLINE}")
+
+        x = '\n'.join(current)
+        y = '\n'.join(waiting)
+        string = f"__**Current connections**__{NEWLINE}{x}{NEWLINE}__**Waiting connections**__{NEWLINE}{y}"
+        await ctx.send(string)
 
 def setup(bot):
     bot.add_cog(Support(bot))
