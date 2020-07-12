@@ -21,7 +21,7 @@ class Reputation(commands.Cog):
         for item in leaderboard:
             member = ctx.guild.get_member(item[0])
             if member is None:
-                member = client.get_user(item[0]) + " (this person is currently not in the server)"
+                member = str(self.bot.get_user(item[0])) + " (this person is currently not in the server)"
             embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
 
         return embed

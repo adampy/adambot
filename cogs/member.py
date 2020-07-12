@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import separate_args
+from .utils import separate_args, DISALLOWED_COOL_WORDS
 import requests
 import re
 import os
@@ -369,8 +369,11 @@ class Member(commands.Cog):
     @commands.command()
     async def cool(self, ctx, *message):
         '''MaKe YoUr MeSsAgE cOoL'''
+        text = ' '.join(message)
+        if text.lower() in DISALLOWED_COOL_WORDS:
+            await ctx.send("You can't make that message cool!")
         new = ''
-        for index, letter in enumerate(' '.join(message)):
+        for index, letter in enumerate(text):
             try:
                 if letter == ' ':
                     new += letter

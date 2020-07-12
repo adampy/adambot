@@ -20,6 +20,8 @@ TIMES = {'w':7*24*60*60,
          'sec':1,
          'secs':1}
 
+DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
+
 def separate_args(args):
     '''Given the args tuple (from *args) and returns seconds in index position 0 and reason in index position 1'''
     arg_list = [arg for arg in ' '.join(args).split('-') if arg]
