@@ -1,6 +1,7 @@
 discord.py==1.2.5
-mtranslate==1.6
-emoji==0.5.0
 psycopg2
 requests
 beautifulsoup4
+gunicorn
+Flask
+Flask-RESTful
