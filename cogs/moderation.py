@@ -58,7 +58,7 @@ class Moderation(commands.Cog):
 #-----------------------PURGE------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role('Moderator', 'Abdulministrators')
+    @commands.has_any_role('Moderator', 'Administrator')
     async def purge(self, ctx, limit='5', member: discord.Member = None):
         '''Purges the channel.
 Moderator role needed.
@@ -108,7 +108,7 @@ Staff role needed'''
 #-----------------------BAN------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role('Moderator', 'Abdulministrators')
+    @commands.has_any_role('Moderator', 'Administrator')
     async def ban(self, ctx, member: discord.Member, *args):
         '''Bans a given user.
 Moderator role needed'''
@@ -134,7 +134,7 @@ Moderator role needed'''
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @commands.command(pass_context=True)
-    @commands.has_any_role('Moderator', 'Abdulministrators')
+    @commands.has_any_role('Moderator', 'Administrator')
     async def unban(self, ctx, user_id, *args):
         '''Unbans a given user with the ID.
 Moderator role needed.'''
@@ -222,7 +222,7 @@ Staff role needed.'''
         '''Adds slowmode in a specific channel. Time is given in seconds.
 Moderator role needed.
 Assistants have permission in #general only.'''
-        if ('Assistant' in [str(y) for y in ctx.author.roles] and 'general' == ctx.channel.name) or 'Moderator' in [str(y) for y in ctx.author.roles] or (ctx.guild.id == 593134700122472450 and 'Abdulministrators' in [y.name for y in ctx.author.roles]):
+        if ('Assistant' in [str(y) for y in ctx.author.roles] and 'general' == ctx.channel.name) or 'Moderator' in [str(y) for y in ctx.author.roles] or (ctx.guild.id == 593134700122472450 and 'Administrators' in [y.name for y in ctx.author.roles]):
             try:
                 if int(time) <= 60:
                     await ctx.channel.edit(slowmode_delay=int(time))
