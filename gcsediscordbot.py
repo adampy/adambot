@@ -42,6 +42,12 @@ PREFIX = '-'
 #order trivia leaderboard by score
 #add score to trivia leaderboard
 
+#userinfo for people who are not in server
+#fix list command
+#fix remind command
+#create poll command
+#helper command w/ cooldown
+
 #-----------------------------------------------------------------
 
 bot = commands.Bot(command_prefix=PREFIX)
