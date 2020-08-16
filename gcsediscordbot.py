@@ -22,7 +22,6 @@ except FileNotFoundError:
 DB = os.environ.get('DATABASE_URL')
 TOKEN = os.environ.get('TOKEN')
 RESULTS_DAY = datetime(year=2020, month=8, day=20, hour=7, minute=0, second=0) # Stored in UTC (-1h compared to UK)
-i = 0
 
 COGS = ['member',
         'moderation',
@@ -125,10 +124,9 @@ async def execute_todos():
 
         now = datetime.utcnow()
         msg = await bot.get_channel(743235561015476236).fetch_message(744611462244466689)
-        if i == 0 and now >= RESULTS_DAY:
+        if now >= RESULTS_DAY:
             #after results day
             await msg.edit(content="RESULTS DAY IS HERE! GOOD LUCK! Please put your grades here!")
-            i += 1
         elif now < RESULTS_DAY:
             time_left = RESULTS_DAY - datetime.utcnow()
         
