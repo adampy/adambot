@@ -21,6 +21,8 @@ except FileNotFoundError:
 
 DB = os.environ.get('DATABASE_URL')
 TOKEN = os.environ.get('TOKEN')
+RESULTS_DAY = datetime(year=2020, month=8, day=20, hour=7, minute=0, second=0) # Stored in UTC (-1h compared to UK)
+i = 0
 
 COGS = ['member',
         'moderation',
@@ -35,15 +37,10 @@ PREFIX = '-'
 # Move logging into a seperate cog for readability
 
 #purge mental health, purge serious command
-#support connections command
-#warnlist pages
-#qotd member not found error
 #purge for specific member
 #order trivia leaderboard by score
-#add score to trivia leaderboard
+#add score to trivia
 
-#userinfo for people who are not in server
-#fix list command
 #fix remind command
 #create poll command
 #helper command w/ cooldown
@@ -75,8 +72,8 @@ async def host(ctx):
 #-----------------------------------------------------------------
 
 for cog in COGS:
-    #if cog == "trivia":
-    #    continue
+    if cog == "trivia" and LOCAL_HOST: # Don't load trivia if running locally
+        continue
     bot.load_extension(f'cogs.{cog}')
     print(f"Loaded: {cog}")
 
@@ -124,6 +121,27 @@ async def execute_todos():
         #   members = ' '.join([f'<@{x[0]}>' for x in cur.fetchall()])
         #   await bot.get_channel(445199175244709898).send(f'**17:38** {members} https://cdn.discordapp.com/attachments/418467941294538772/577594985369829386/1738.compressed.mp4')
         
+        #Results day countdown stuffs
+
+        now = datetime.utcnow()
+        msg = await bot.get_channel(743235561015476236).fetch_message(744611462244466689)
+        if i == 0 and now >= RESULTS_DAY:
+            #after results day
+            await msg.edit(content="RESULTS DAY IS HERE! GOOD LUCK! Please put your grades here!")
+            i += 1
+        elif now < RESULTS_DAY:
+            time_left = RESULTS_DAY - datetime.utcnow()
+        
+            m, s = divmod(time_left.seconds, 60)
+            h, m = divmod(m, 60)
+
+            await msg.edit(content=f'''**LIVE** GCSE Results day countdown!
+**{time_left.days}** days
+**{h}** hours
+**{m}** minutes
+**{s}** seconds
+left until 8AM on results day. GOOD LUCK!!! :ok_hand:''')
+
         #invite stuffs
         guild = bot.get_guild(445194262947037185)
         invites = await guild.invites()

@@ -138,12 +138,14 @@ class Member(commands.Cog):
         if len(args) <= 0:
             await ctx.send(':x: Please **specify** a **role**')
             return
+        
         #gets the roles that it could be
         role_name = ' '.join(args)
         role_id = ctx.message.guild.roles[0]
         possible_roles = []
         for role in ctx.message.guild.roles:
             if role_name.lower() == role.name.lower():
+                possible_roles.clear() # Removes bug
                 possible_roles.append(role)
                 break
             elif role_name.lower() in role.name.lower():
@@ -189,7 +191,7 @@ class Member(commands.Cog):
                     await ctx.send('Longer than 2000 characters - member ID\'s have been cut from the message.')
                     await ctx.send(new_message)
 
-#-----------------------MC & LC & WEEABOO------------------------------
+#-----------------------MC & WEEABOO------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_role('Members')
@@ -205,19 +207,19 @@ class Member(commands.Cog):
             await author.add_roles(role)
             await ctx.send(':ok_hand: You have been given `Maths Challenge` role!')
 
-    @commands.command(pass_context=True)
-    @commands.has_role('Members')
-    @commands.guild_only()
-    async def lc(self, ctx):
-        '''Gives you the Languages Challenge role.'''
-        author = ctx.author
-        role = get(author.guild.roles, name='Languages Challenge')
-        if 'Languages Challenge' in [y.name for y in author.roles]:
-            await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your `Languages Challenge` role has vanished!')
-        else:
-            await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given `Languages Challenge` role!')
+#    @commands.command(pass_context=True)
+#    @commands.has_role('Members')
+#    @commands.guild_only()
+#    async def lc(self, ctx):
+#        '''Gives you the Languages Challenge role.'''
+#        author = ctx.author
+#       role = get(author.guild.roles, name='Languages Challenge')
+#       if 'Languages Challenge' in [y.name for y in author.roles]:
+#            await author.remove_roles(role)
+#            await ctx.send(':ok_hand: Your `Languages Challenge` role has vanished!')
+#        else:
+#            await author.add_roles(role)
+#            await ctx.send(':ok_hand: You have been given `Languages Challenge` role!')
 
     @commands.command(pass_context=True)
     @commands.has_role('Members')
@@ -523,7 +525,7 @@ class Member(commands.Cog):
 #-----------------------AVATAR------------------------------
 
     @commands.command(pass_context=True)
-    async def avatar(self, ctx, member: discord.Member = None):
+    async def avatar(self, ctx, member: discord.User = None):
         if not member:
             member = ctx.author
 
@@ -576,6 +578,7 @@ class Member(commands.Cog):
 **{h}** hours
 **{m}** minutes
 **{s}** seconds''')
+
 
 #-----------------------1738------------------------------
 

@@ -8,6 +8,7 @@ from .utils import separate_args
 from datetime import datetime, timedelta
 import os
 import psycopg2
+from math import ceil
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
@@ -54,6 +55,15 @@ class Moderation(commands.Cog):
 
     def is_bot_owner(ctx):
         return ctx.message.author.id == 394978551985602571
+
+    def bot_owner_or_permissions(**perms):
+        '''Checks if bot owner or has perms'''
+        original = commands.has_permissions(**perms).predicate
+        async def extended_check(ctx):
+            if ctx.guild is None:
+                return False
+            return 394978551985602571 == ctx.author.id or await original(ctx)
+        return commands.check(extended_check)
 
 #-----------------------PURGE------------------------------
 
@@ -321,9 +331,12 @@ Administrator role needed.'''
     @commands.has_role('Staff')
     @commands.guild_only()
     async def warn(self, ctx, member: discord.Member, *reason):
+        '''Gives a member a warning, a reason is optional but recommended.
+Staff role needed.'''
         key = os.environ.get('DATABASE_URL')
 
         reason = ' '.join(reason)
+        reason = reason.replace('-r', '') # Removes -r if a staff member includes it
         conn = psycopg2.connect(key, sslmode='require')
         cur = conn.cursor()
         if len(reason) > 255:
@@ -337,60 +350,151 @@ Administrator role needed.'''
         await member.send(f'You have been warned by a member of the staff team. The reason for your warn is: {reason}. You now have {warns} warns.')
         await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
 
-    @commands.command(pass_context=True)
+    @commands.group()
     @commands.has_role('Staff')
     @commands.guild_only()
-    async def warnlist(self, ctx, member: discord.User = None, *reason: str):
+    async def warnlist(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('```-warnlist member @Member <page_number>``` or ```warnlist all <page_number>```')
+            return
+
+
+    @warnlist.command(pass_context=True)
+    @commands.has_role('Staff')
+    @commands.guild_only()
+    async def member(self, ctx, member: discord.Member = None, page_num = None):
+        '''Shows warnings for a given member.
+Staff role needed.'''
+        if member == None:
+            await ctx.send("```-warnlist member @Member <page_number>```")
+
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'), sslmode='require')
         cur = conn.cursor()
 
-        if member is None:
-            #show all
-            cur.execute('SELECT * FROM warn')
-            warns = cur.fetchall()
-            if len(warns) > 25: #need multiple embeds
-                await ctx.send('More than 25 fields; contact Adam.')
-            elif len(warns) == 0:
-                await ctx.send('No warnings!')
-            else:
-                embed = Embed(title='All warnings', color=Colour.from_rgb(133,0,255))
-                for warn in warns:
-                    staff = self.bot.get_user(warn[2])
-                    member = self.bot.get_user(warn[1])
-                    embed.add_field(name=f"**{warn[0]}** : {str(member)} ({member.id}) Reason: {warn[4]}",
-                                    value=f"On {warn[3].strftime('%B %d at %I:%M %p')} by {str(staff)} ({staff.id})")
-            try:
-                await ctx.send(embed=embed)
-            except Exception as e:
-                pass
-            conn.close()
+        cur.execute('SELECT * FROM warn WHERE member_id = (%s) ORDER BY id', (member.id,))
+        warns = cur.fetchall()
+        aprox = ceil(len(warns)/5)
+        if len(warns) == 0:
+            await ctx.send("No warnings recorded!")
 
-        else:
-            #specific to one member
-            cur.execute('SELECT * FROM warn WHERE member_id = (%s) ORDER BY id', (member.id,))
-            warns = cur.fetchall()
-            if len(warns) > 25: #need multiple embeds
-                for warn in warns:
-                    await ctx.send(f'{warn[0]} - {warn[1]} - {warn[4]}')
-            elif len(warns) == 0:
-                await ctx.send(f'{member.mention} has no warnings!')
-            else:
-                embed = Embed(title=f"{member.name if member else '*MEMBER NOT FOUND*'}'s warnings", color=Colour.from_rgb(133,0,255))
-                for warn in warns:
-                    staff = self.bot.get_user(warn[2])
-                    member = self.bot.get_user(warn[1])
-                    embed.add_field(name=f"**{warn[0]}** : {str(member)} ({member.id}) Reason: {warn[4]}",
-                                    value=f"On {warn[3].strftime('%B %d at %I:%M %p')} by {str(staff)} ({staff.id})")
+        if len(warns) > 5:
             try:
-                await ctx.send(embed=embed)
-            except Exception as e:
-                pass
-            conn.close()
+                if page_num == None:
+                    raise ValueError
+                page_num = int(page_num)
+                if not (0 < page_num <= aprox): # Ensures that page_num is in the range 0 < page_num <= aprox
+                    raise ValueError
+                embed = Embed(title=f'Warnings Page {page_num}/{aprox}', color=Colour.from_rgb(133,0,255))
+                page_num -= 1 # This is because index starts at 0 so here turn the page number from cardinal to index
+                for i in range(5*page_num, min((5*page_num + 5, len(warns)))): # 5 here denotes how many items are on the embed, this makes sure that if there are not 5 on the last page then there is just enough
+                    staff = await self.bot.fetch_user(warns[i][2])
+                    member = await self.bot.fetch_user(warns[i][1])
+
+                    if member:
+                        member_string = f"{str(member)} ({warns[i][1]}) Reason: {warns[i][4]}"
+                    else:
+                        member_string = f"DELETED USER ({warns[i][1]}) Reason: {warns[i][4]}"
+
+                    if staff:
+                        staff_string = f"{str(staff)} ({warns[i][2]})"
+                    else:
+                        staff_string = f"DELETED USER ({warns[i][2]})"
+                            
+                    embed.add_field(name=f"**{warns[i][0]}** : {member_string}",
+                                    value=f"{warns[i][3].strftime('On %x at %I:%M %p')} by {staff_string}",
+                                    inline=False)
+
+            except ValueError:
+                await ctx.send(f'Please enter the command again followed by a number from `1` to `{aprox}`')
+                conn.close()
+                return
+        
+        #len(warns) <= 5
+        else:
+            embed = Embed(title='All warnings', color=Colour.from_rgb(133,0,255))
+            for warn in warns:
+                staff = await self.bot.fetch_user(warn[2])
+                member = await self.bot.fetch_user(warn[1])
+                embed.add_field(name=f"**{warn[0]}** : {str(member)} ({member.id}) Reason: {warn[4]}",
+                                value=f"{warn[3].strftime('On %x at %I:%M %p')} by {str(staff)} ({staff.id})",
+                                inline=False)
+        try:
+            await ctx.send(embed=embed)
+        except Exception as e:
+            pass
+        conn.close()
+
+
+    @warnlist.command(pass_context=True)
+    @commands.has_role('Staff')
+    @commands.guild_only()
+    async def all(self, ctx, page_num = None):
+        '''Shows all the warnings in the server.
+Staff role needed.'''
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'), sslmode='require')
+        cur = conn.cursor()
+
+        cur.execute('SELECT * FROM warn ORDER BY id')
+        warns = cur.fetchall()
+        aprox = ceil(len(warns)/5)
+        if len(warns) == 0:
+            await ctx.send("No warnings recorded!")
+            return
+
+        if len(warns) > 5: #need multiple embeds
+            try:
+                if page_num == None:
+                    raise ValueError
+                page_num = int(page_num)
+                if not (0 < page_num <= aprox): # Ensures that page_num is in the range 0 < page_num <= aprox
+                    raise ValueError
+                embed = Embed(title=f'Warnings Page {page_num}/{aprox}', color=Colour.from_rgb(133,0,255))
+                page_num -= 1 # This is because index starts at 0 so here turn the page number from cardinal to index
+                for i in range(5*page_num, min((5*page_num + 5, len(warns)))): # 5 here denotes how many items are on the embed, this makes sure that if there are not 5 on the last page then there is just enough
+                    staff = await self.bot.fetch_user(warns[i][2])
+                    member = await self.bot.fetch_user(warns[i][1])
+
+                    if member:
+                        member_string = f"{str(member)} ({warns[i][1]}) Reason: {warns[i][4]}"
+                    else:
+                        member_string = f"DELETED USER ({warns[i][1]}) Reason: {warns[i][4]}"
+
+                    if staff:
+                        staff_string = f"{str(staff)} ({warns[i][2]})"
+                    else:
+                        staff_string = f"DELETED USER ({warns[i][2]})"
+                        
+                    embed.add_field(name=f"**{warns[i][0]}** : {member_string}",
+                                    value=f"{warns[i][3].strftime('On %x at %I:%M %p')} by {staff_string}",
+                                    inline=False)
+
+            except ValueError:
+                await ctx.send(f'Please enter the command again followed by a number from `1` to `{aprox}`')
+                return
+
+        #len(warns) <= 5
+        else:
+            embed = Embed(title='All warnings', color=Colour.from_rgb(133,0,255))
+            for warn in warns:
+                staff = await self.bot.fetch_user(warn[2])
+                member = await self.bot.fetch_user(warn[1])
+                embed.add_field(name=f"**{warn[0]}** : {str(member)} ({member.id}) Reason: {warn[4]}",
+                                value=f"{warn[3].strftime('On %x at %I:%M %p')} by {str(staff)} ({staff.id})",
+                                inline=False)
+            
+        try:
+            await ctx.send(embed=embed)
+        except Exception as e:
+            pass
+        conn.close()
+            
 
     @commands.command(pass_context=True, aliases=['warndelete'])
     @commands.has_role('Moderator')
     @commands.guild_only()
     async def warnremove(self, ctx, *warnings):
+        '''Remove warnings with this command, can do -warnremove <warnID> or -warnremove <warnID1> <warnID2>.
+Moderator role needed'''
         key = os.environ.get('DATABASE_URL')
 
         conn = psycopg2.connect(key, sslmode='require')
@@ -415,8 +519,10 @@ Administrator role needed.'''
             await ctx.send(f"The warning's have been deleted.")
 
     @commands.command(aliases=['announce'])
-    @has_permissions(ban_members=True)
+    @commands.check(bot_owner_or_permissions(ban_members=True))
     async def say(self, ctx, channel: discord.TextChannel, *text):
+        '''Say a given string in a given channel
+Ban members perm needed.'''
         await channel.send(' '.join(text))
         
     @commands.command()
