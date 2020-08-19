@@ -307,10 +307,7 @@ Moderator role needed.'''
         '''Advances everybody in the server.
 Administrator role needed.'''
         msg = await ctx.send('Doing all, please wait...')
-        members = [ctx.guild.get_member(394978551985602571), # Adam
-                   ctx.guild.get_member(374144745829826572), # Bxnan_a
-                   ctx.guild.get_member(193004508127821824), # Serp
-                   ] #ctx.guild.members #everyone
+        members = ctx.guild.members #everyone
         errors = []
 
         n = len(members)
