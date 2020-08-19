@@ -279,7 +279,8 @@ Staff role needed.'''
 
 #-----------------------ADVANCEMENT------------------------------
 
-    @commands.group()
+    @commands.group(pass_context=True)
+    @commands.guild_only()
     async def advance(self, ctx):
         '''Results day command.
 Y11 -> Post-GCSE
@@ -302,7 +303,7 @@ Moderator role needed.'''
 
     @advance.command(pass_context=True)
     @commands.has_any_role('Adam-Bot Developer', 'Administrator')
-    async def all(self, ctx):
+    async def allx(self, ctx):
         '''Advances everybody in the server.
 Administrator role needed.'''
         await ctx.send('Doing all, please wait...')
