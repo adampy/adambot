@@ -320,7 +320,7 @@ Administrator role needed.'''
             except Exception as e:
                 errors.append([member, f'unexpected: {e}'])
         
-        await ctx.send('Advanced everyone\'s year! Errors are as follows...')
+        await ctx.send('Advanced everyone\'s year!')
         for error in errors:
             log_channel = get(ctx.guild.text_channels, name='adambot-logs')
             await log_channel.send(f'{error[0].mention} = {error[1]}')
