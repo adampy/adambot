@@ -306,17 +306,20 @@ Moderator role needed.'''
     async def allx(self, ctx):
         '''Advances everybody in the server.
 Administrator role needed.'''
-        await ctx.send('Doing all, please wait...')
+        msg = await ctx.send('Doing all, please wait...')
         members = [ctx.guild.get_member(394978551985602571), # Adam
                    ctx.guild.get_member(374144745829826572), # Bxnan_a
                    ctx.guild.get_member(193004508127821824), # Serp
                    ] #ctx.guild.members #everyone
         errors = []
-        for member in members:
+
+        n = len(members)
+        for i, member in enumerate(members):
             try:
                 advance = await self.advance_user(ctx, member)
                 if advance != 'success' or advance != 'postgcse error':
                     errors.append([member, advance])
+                await msg.edit(content=f"Doing all, please wait... currently on {i}/{n}")
             except Exception as e:
                 errors.append([member, f'unexpected: {e}'])
         
