@@ -319,7 +319,7 @@ Administrator role needed.'''
                 advance = await self.advance_user(ctx, member)
                 if advance != 'success' or advance != 'postgcse error':
                     errors.append([member, advance])
-                await msg.edit(content=f"Doing all, please wait... currently on {i}/{n}")
+                await msg.edit(content=f"Doing all, please wait... currently on {i+1}/{n}")
             except Exception as e:
                 errors.append([member, f'unexpected: {e}'])
         
