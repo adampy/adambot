@@ -289,7 +289,7 @@ Y9 -> Y10'''
             await ctx.send('```-advance member @Member``` or ```-advance all```')
 
     @advance.command(pass_context=True)
-    @commands.has_role('Moderator')
+    @commands.has_any_role('Adam-Bot Developer', 'Moderator')
     async def member(self, ctx, member: discord.Member):
         '''Advances one user.
 Moderator role needed.'''
@@ -301,7 +301,7 @@ Moderator role needed.'''
 ```{}```'''.format(e))
 
     @advance.command(pass_context=True)
-    @commands.has_role('Adam-Bot Developer')
+    @commands.has_any_role('Adam-Bot Developer', 'Administrator')
     async def all(self, ctx):
         '''Advances everybody in the server.
 Administrator role needed.'''
