@@ -301,12 +301,15 @@ Moderator role needed.'''
 ```{}```'''.format(e))
 
     @advance.command(pass_context=True)
-    @commands.has_role('Administrator')
+    @commands.check(bot_owner_or_permissions(administrator=True))
     async def all(self, ctx):
         '''Advances everybody in the server.
 Administrator role needed.'''
         await ctx.send('Doing all, please wait...')
-        members = ctx.guild.members #everyone
+        members = [ctx.guild.get_member(394978551985602571), # Adam
+                   ctx.guild.get_member(374144745829826572), # Bxnan_a
+                   ctx.guild.get_member(193004508127821824), # Serp
+                   ] #ctx.guild.members #everyone
         errors = []
         for member in members:
             try:
@@ -314,11 +317,12 @@ Administrator role needed.'''
                 if advance != 'success' or advance != 'postgcse error':
                     errors.append([member, advance])
             except Exception as e:
-                errors.append([member, 'unexpected'])
+                errors.append([member, f'unexpected: {e}'])
         
         await ctx.send('Advanced everyone\'s year! Errors are as follows...')
         for error in errors:
-            await ctx.send(f'{error[0].mention} = {error[1]}')
+            log_channel = get(ctx.guild.text_channels, name='adambot-logs')
+            await log_channel.send(f'{error[0].mention} = {error[1]}')
 
     @all.error
     async def all_handler(self, ctx, error):
