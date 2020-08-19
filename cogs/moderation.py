@@ -325,7 +325,7 @@ Administrator role needed.'''
             await log_channel.send(f'{error[0].mention} = {error[1]}')
 
     @all.error
-    async def all_handler(self, ctx, error):
+    async def all_handler(self, ctx, error=None):
         if isinstance(error, commands.CheckFailure):
             await ctx.send('`Administrator` role needed.')
 
