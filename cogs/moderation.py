@@ -524,10 +524,10 @@ Moderator role needed'''
             await ctx.send(f"The warning's have been deleted.")
 
     @commands.command(aliases=['announce'])
-    @commands.check(bot_owner_or_permissions(ban_members=True))
+    @commands.has_role('Staff')
     async def say(self, ctx, channel: discord.TextChannel, *text):
         '''Say a given string in a given channel
-Ban members perm needed.'''
+Staff role needed.'''
         await channel.send(' '.join(text))
         
     @commands.command()
