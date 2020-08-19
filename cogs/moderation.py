@@ -291,7 +291,7 @@ Y9 -> Y10'''
 
     @advance.command(pass_context=True)
     @commands.has_any_role('Adam-Bot Developer', 'Moderator')
-    async def member(self, ctx, member: discord.Member):
+    async def memberx(self, ctx, member: discord.Member):
         '''Advances one user.
 Moderator role needed.'''
         try:
