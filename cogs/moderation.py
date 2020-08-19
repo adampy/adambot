@@ -301,8 +301,7 @@ Moderator role needed.'''
 ```{}```'''.format(e))
 
     @advance.command(pass_context=True)
-    #@commands.has_role('Administrator')
-    @commands.check(is_bot_owner)
+    @commands.has_role('Adam-Bot Developer')
     async def all(self, ctx):
         '''Advances everybody in the server.
 Administrator role needed.'''
