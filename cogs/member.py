@@ -556,7 +556,7 @@ class Member(commands.Cog):
             string = f'{hour-12}PM'
         else:
             string = f'{hour}AM'
-        time = datetime(year=2020, month=8, day=20, hour=hour, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
+        time = datetime(year=2021, month=8, day=26, hour=hour, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
 
@@ -568,7 +568,7 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     async def gcses(self, ctx):
-        time = datetime(year=2020, month=5, day=11, hour=9, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
+        time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
         
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
