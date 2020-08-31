@@ -21,6 +21,10 @@ TIMES = {'w':7*24*60*60,
          'secs':1}
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
+SPAMPING_PERMS = [
+394978551985602571,
+374144745829826572, #Bxnana
+]
 GCSE_SERVER_ID = 445194262947037185
 NEWLINE = '\n'
 
@@ -68,7 +72,7 @@ def separate_args(args):
                     pass
 
             print(seconds)
-            
+
         if item[0] == 'r':
             reason = item[1:].strip()
             print(reason)

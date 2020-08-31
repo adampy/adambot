@@ -4,19 +4,20 @@ from discord.ext import commands
 from discord.utils import get
 import os
 import psycopg2
+from .utils import SPAMPING_PERMS
 
 class Private(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.gdrive_link = os.environ['GDRIVE']
         self.classroom_link = os.environ['CLASSROOM']
-        
+
         key = os.environ.get('DATABASE_URL')
         self.conn = psycopg2.connect(key, sslmode='require')
         self.cur = self.conn.cursor()
 
     def in_private_server(ctx):
-        return (ctx.guild.id == 593788906646929439) or (ctx.author.id == 394978551985602571) #in priv server or is adam
+        return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)#in priv server or is adam
 
     def is_adam(ctx):
         return (ctx.author.id == 394978551985602571)
@@ -26,13 +27,13 @@ class Private(commands.Cog):
     async def spamping(self, ctx, amount, user: discord.Member, *message):
         '''For annoying certain people'''
         await ctx.message.delete()
-        
+
         try:
             iterations = int(amount)
         except Exception as e:
             await ctx.send(f"Please use a number for the amount, not {amount}")
             return
-        
+
         msg = ' '.join(message) + " " + user.mention
         for i in range(iterations):
             await ctx.send(msg)
