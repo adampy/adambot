@@ -68,7 +68,7 @@ class Moderation(commands.Cog):
 #-----------------------PURGE------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role('Moderator', 'Administrator')
+    @commands.has_any_role('Adam-Bot Developer', 'Moderator', 'Administrator')
     async def purge(self, ctx, limit='5', member: discord.Member = None):
         '''Purges the channel.
 Moderator role needed.
@@ -78,16 +78,29 @@ Usage: `-purge 50`'''
 
         if limit.isdigit():
             await ctx.message.delete()
-            deleted = await channel.purge(limit=int(limit))
-            message = await ctx.send(f"Purged **{len(deleted)}** messages!")
-            
+            if not member:
+                deleted = await channel.purge(limit=int(limit))
+            else:
+                try:
+                    deleted = []
+                    async for message in channel.history():
+                        if len(deleted) == int(limit):
+                            break
+                        if message.author == member:
+                            deleted.append(message)
+                    await ctx.channel.delete_messages(deleted)
+                except discord.ClientException:
+                    await ctx.send("The amount of messages cannot be more than 100 when deleting a single users messages. Messages older than 14 days also cannot be deleted this way.")
+
+            message = await ctx.send(f"Purged **{len(deleted)}** messages!", delete_after=3)
+
             embed = Embed(title='Purge', color=Colour.from_rgb(175, 29, 29))
             embed.add_field(name='Count', value=len(deleted))
             embed.add_field(name='Channel', value=channel.mention)
             embed.set_footer(text=(datetime.utcnow()-timedelta(hours=1)).strftime('%x'))
             await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
-            await asyncio.sleep(5)
-            await message.delete()
+        else:
+            await ctx.send(f'Please use an integer for the amount of messages to delete, not `{limit}` :ok_hand:')
 
 #-----------------------KICK------------------------------
 
@@ -107,7 +120,7 @@ Staff role needed'''
 
         await member.kick(reason=reason)
         await ctx.send(f'{member.mention} has been kicked :boot:')
-        
+
         embed = Embed(title='Kick', color=Colour.from_rgb(220, 123, 28))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Reason', value=reason)
@@ -134,7 +147,7 @@ Moderator role needed'''
         await member.ban(reason=reason, delete_message_days=0)
         emoji = get(ctx.message.guild.emojis, name="banned")
         await ctx.send(f'{member.mention} has been banned. {emoji}')
-        
+
         embed = Embed(title='Ban', color=Colour.from_rgb(255, 255, 255))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Moderator', value=str(ctx.author))
@@ -162,13 +175,13 @@ Moderator role needed.'''
         except discord.errors.NotFound:
             await ctx.send('No user found with that ID.')
             return
-        
+
         bans = await ctx.guild.bans()
         bans = [be.user for be in bans]
         if user not in bans:
             await ctx.send('That user is not already banned.')
             return
-            
+
         await ctx.guild.unban(user, reason=reason)
         await ctx.send('The ban has been revoked.')
 
@@ -208,7 +221,7 @@ Staff role needed.'''
             reasonstring = 'an unknown reason (the staff member did not give a reason)'
         else:
             reasonstring = reason
-        
+
         await member.send(f'You have been muted {timestring} for {reasonstring}.')
 
     @commands.command(pass_context=True)
@@ -319,7 +332,7 @@ Administrator role needed.'''
                 await msg.edit(content=f"Doing all, please wait... currently on {i+1}/{n}")
             except Exception as e:
                 errors.append([member, f'unexpected: {e}'])
-        
+
         await ctx.send('Advanced everyone\'s year!')
         for error in errors:
             log_channel = get(ctx.guild.text_channels, name='adambot-logs')
@@ -351,7 +364,7 @@ Staff role needed.'''
         conn.commit()
         warns = cur.fetchall()[0][0]
         conn.close()
-        
+
         await member.send(f'You have been warned by a member of the staff team. The reason for your warn is: {reason}. You now have {warns} warns.')
         await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
 
@@ -404,7 +417,7 @@ Staff role needed.'''
                         staff_string = f"{str(staff)} ({warns[i][2]})"
                     else:
                         staff_string = f"DELETED USER ({warns[i][2]})"
-                            
+
                     embed.add_field(name=f"**{warns[i][0]}** : {member_string}",
                                     value=f"{warns[i][3].strftime('On %x at %I:%M %p')} by {staff_string}",
                                     inline=False)
@@ -413,7 +426,7 @@ Staff role needed.'''
                 await ctx.send(f'Please enter the command again followed by a number from `1` to `{aprox}`')
                 conn.close()
                 return
-        
+
         #len(warns) <= 5
         else:
             embed = Embed(title='All warnings', color=Colour.from_rgb(133,0,255))
@@ -468,7 +481,7 @@ Staff role needed.'''
                         staff_string = f"{str(staff)} ({warns[i][2]})"
                     else:
                         staff_string = f"DELETED USER ({warns[i][2]})"
-                        
+
                     embed.add_field(name=f"**{warns[i][0]}** : {member_string}",
                                     value=f"{warns[i][3].strftime('On %x at %I:%M %p')} by {staff_string}",
                                     inline=False)
@@ -486,13 +499,13 @@ Staff role needed.'''
                 embed.add_field(name=f"**{warn[0]}** : {str(member)} ({member.id}) Reason: {warn[4]}",
                                 value=f"{warn[3].strftime('On %x at %I:%M %p')} by {str(staff)} ({staff.id})",
                                 inline=False)
-            
+
         try:
             await ctx.send(embed=embed)
         except Exception as e:
             pass
         conn.close()
-            
+
 
     @commands.command(pass_context=True, aliases=['warndelete'])
     @commands.has_role('Moderator')
@@ -529,7 +542,7 @@ Moderator role needed'''
         '''Say a given string in a given channel
 Staff role needed.'''
         await channel.send(' '.join(text))
-        
+
     @commands.command()
     @commands.check(is_bot_owner)
     async def reset_invites(self, ctx):
@@ -549,7 +562,7 @@ Staff role needed.'''
             except:
                 pass
         self.conn.commit()
-        
+
 
 
 
