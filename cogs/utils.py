@@ -20,6 +20,17 @@ TIMES = {'w':7*24*60*60,
          'sec':1,
          'secs':1}
 
+ROLE_ID = {"Administrator":445195157151809536,
+            "Head Mod":445195341310984203,
+            "Moderator":445195365625364490,
+            "Assistant":445195413343961092,
+            "Trial-Assistant":667872197091786793,
+            "Adam-Bot-Developer":740681121863303279,}
+ADMIN = [ROLE_ID['Administrator']]
+MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
+ASSISTANT = MOD + [ROLE_ID['Assistant']]
+TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
+
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
 SPAMPING_PERMS = [
 394978551985602571, #Adam C

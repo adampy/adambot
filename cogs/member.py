@@ -18,23 +18,6 @@ class Member(commands.Cog):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
         self.pastebin = os.environ.get('PASTEBIN_KEY')
-
-    def is_subject_head(ctx):
-        reference = {'Head History Helper':['history'],
-                     'Head Biology Helper':['biology'],
-                     'Head Chemistry Helper':['chemistry'],
-                     'Head Geog Helper':['geography','geog-notes'],
-                     'Head Physics Helper':['physics'],
-                     'Head CompSci Helper':['computer-science'],
-                     'Head English Helper':['english'],
-                     'Head Maths Helper':['maths','further-maths'],
-                     'Head Business Helper':['business-economics']}
-
-        for key in reference:
-            if key in [y.name for y in ctx.author.roles] and ctx.channel.name in reference[key]:
-                return True
-        else:
-            return False
     
     def get_corona_data(self, country):
         '''DEPRECATED, use get_corona_data_updated()'''
@@ -248,27 +231,6 @@ class Member(commands.Cog):
         else:
             await author.add_roles(role)
             await ctx.send(':ok_hand: You have been given `Announcements` role!')
-
-#-----------------------PIN------------------------------
-
-    @commands.command(pass_context=True)
-    @commands.has_role('Members')
-    @commands.check(is_subject_head)
-    @commands.guild_only()
-    async def pin(self, ctx, message_id):
-        '''Lets head subject helpers pin messages in their respective channels.'''
-        try:
-            message = await ctx.channel.fetch_message(message_id)
-        except NotFound:
-            await ctx.send('I couldn\'t find that message in this channel!')
-            return
-
-        if message.pinned:
-            await message.unpin()
-            await ctx.send(':ok_hand: Message has been unpinned!')
-        else:
-            await message.pin()
-            await ctx.send(':ok_hand: Message has been pinned!')
 
 #-----------------------QUOTE------------------------------
 

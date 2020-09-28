@@ -76,9 +76,12 @@ class WaitingRoom(commands.Cog):
 
 
         #formatting stuffs
-        message = f'''Welcome to the server, {member.mention}! Before you can access the rest of the server, please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention} , and state what year you're currently in.
+        message = f'''Welcome to the server, {member.mention}!
+P
+lease read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention}. Once you've done that, state your school year to be let in.
 
-If an {get(member.guild.roles, name='Assistant').mention} does not come to assist you with entering the server, please ping one (if none are present ping a mod).'''
+If no staff member assists you, feel free to ping a staff member.'''
+
         channel = member.guild.system_channel
         await channel.send(message)
 
