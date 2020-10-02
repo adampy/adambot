@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands import MemberConverter, UserConverter, MemberNotFound
 from discord.utils import get
 from discord import Embed, Colour
 import os
@@ -159,7 +160,12 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    async def check(self, ctx, user: discord.User = None):
+    async def check(self, ctx, user = None):
+        try:
+            user = MemberConverter.convert(ctx, user)
+        except MemberNotFound:
+            user = await self.bot.fetch_user(item[0])
+        
         if user is None:
             user = ctx.author
         conn = psycopg2.connect(self.key, sslmode='require')
