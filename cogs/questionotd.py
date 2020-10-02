@@ -7,6 +7,7 @@ import datetime
 import os
 from random import choice
 from math import ceil
+from .utils import SPAMPING_PERMS
 
 class QuestionOTD(commands.Cog):
     def __init__(self, bot):
@@ -50,7 +51,7 @@ class QuestionOTD(commands.Cog):
         today = datetime.datetime.utcnow().date()
         today_date = datetime.datetime(today.year, today.month, today.day)
         self.cur.execute('SELECT * FROM qotd WHERE submitted_by = %s AND submitted_at > %s', (str(member), today_date))
-        if len(self.cur.fetchall()) >= 2 and member != 394978551985602571 and not self.staff(member): #adam bypass
+        if len(self.cur.fetchall()) >= 2 and member not in SPAMPING_PERMS and not self.staff(member): #adam bypass
             await ctx.send('You can only submit 2 QOTD per day - this is to stop bot abuse.')
         else:
             self.cur.execute('INSERT INTO qotd (question, submitted_by) VALUES (%s, %s); SELECT MAX(id) FROM qotd', (qotd, member))
