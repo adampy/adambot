@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands import MemberConverter, UserConverter, MemberNotFound
+from discord.ext.commands import MemberConverter, UserConverter
 from discord.utils import get
 from discord import Embed, Colour
 import os
@@ -163,7 +163,7 @@ class Reputation(commands.Cog):
     async def check(self, ctx, user = None):
         try:
             user = MemberConverter.convert(ctx, user)
-        except MemberNotFound:
+        except Exception as e:
             user = await self.bot.fetch_user(item[0])
         
         if user is None:
