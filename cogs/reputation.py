@@ -71,21 +71,21 @@ class Reputation(commands.Cog):
     @rep.command()
     @commands.guild_only()
     async def award(self, ctx, member: discord.Member, change = 1):
-        if ctx.author != member: #check to not rep yourself
+        if ctx.author != user: #check to not rep yourself
             try:
                 change = int(change)
             except ValueError:
                 await ctx.send('Please choose a valid number!')
                 return
             if 'Moderator' in [y.name for y in ctx.author.roles]:
-                reps = self.modify_rep(member, change)
+                reps = self.modify_rep(user, change)
             else:
-                reps = self.modify_rep(member, 1)
-            await ctx.send(f'{member.mention} now has {reps} reputation points!')
+                reps = self.modify_rep(user, 1)
+            await ctx.send(f'{user.mention} now has {reps} reputation points!')
             
             embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
             embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
-            embed.add_field(name='To', value=f'{str(member)} ({member.id})')
+            embed.add_field(name='To', value=f'{str(user)} ({user.id})')
             embed.add_field(name='New Rep', value=reps)
             embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
             await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
@@ -108,11 +108,11 @@ class Reputation(commands.Cog):
     @reset.command()
     @commands.has_role('Moderator')
     @commands.guild_only()
-    async def member(self, ctx, member: discord.Member):
-        self.clear_rep(member)
-        await ctx.send(f'{member.mention} now has 0 points.')
+    async def member(self, ctx, user: discord.User):
+        self.clear_rep(user)
+        await ctx.send(f'{user.mention} now has 0 points.')
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
-        embed.add_field(name='Member', value=str(member))
+        embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
@@ -136,7 +136,7 @@ class Reputation(commands.Cog):
     @rep.command()
     @commands.guild_only()
     @commands.has_role('Moderator')
-    async def set(self, ctx, member: discord.Member, rep):
+    async def set(self, ctx, user: discord.User, rep):
         try:
             rep = int(rep)
         except ValueError:
@@ -145,13 +145,13 @@ class Reputation(commands.Cog):
 
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
-        cur.execute('UPDATE rep SET reps = (%s) WHERE member_id = (%s); SELECT reps FROM rep WHERE member_id = (%s)', (rep, member.id, member.id))
+        cur.execute('UPDATE rep SET reps = (%s) WHERE member_id = (%s); SELECT reps FROM rep WHERE member_id = (%s)', (rep, user.id, user.id))
         reps = cur.fetchall()[0][0]
         conn.commit()
         conn.close()
-        await ctx.send(f'{member.mention} now has {rep} reputation points.')
+        await ctx.send(f'{user.mention} now has {rep} reputation points.')
         embed = Embed(title='Reputation Points Set', color=Colour.from_rgb(177,252,129))
-        embed.add_field(name='Member', value=str(member))
+        embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=reps)
         embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
@@ -159,12 +159,12 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    async def check(self, ctx, member: discord.Member = None):
-        if member is None:
-            member = ctx.author
+    async def check(self, ctx, user: discord.User = None):
+        if user is None:
+            user = ctx.author
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
-        cur.execute('SELECT reps FROM rep WHERE member_id = (%s)', (member.id,))
+        cur.execute('SELECT reps FROM rep WHERE member_id = (%s)', (user.id,))
         rep = cur.fetchall()
         if not rep:
             rep = 0
@@ -172,7 +172,7 @@ class Reputation(commands.Cog):
             rep = rep[0][0]
 
         conn.close()
-        await ctx.send(f'{member.mention} has {rep} reputation points.')
+        await ctx.send(f'{user.mention} has {rep} reputation points.')
 
             
 
