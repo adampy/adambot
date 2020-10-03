@@ -164,10 +164,7 @@ class Reputation(commands.Cog):
         if user is None:
             user = ctx.author
         else:
-            try:
-                user = MemberConverter.convert(ctx=ctx, argument=user)
-            except Exception as e:
-                user = await self.bot.fetch_user(user)
+            user = await self.bot.fetch_user(user)
 
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
