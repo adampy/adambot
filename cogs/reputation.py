@@ -162,9 +162,9 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def check(self, ctx, user = None):
         try:
-            user = MemberConverter.convert(ctx, user)
+            user = MemberConverter.convert(ctx=ctx, argument=user)
         except Exception as e:
-            user = await self.bot.fetch_user(item[0])
+            user = await self.bot.fetch_user(user)
         
         if user is None:
             user = ctx.author
