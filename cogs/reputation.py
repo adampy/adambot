@@ -164,7 +164,10 @@ class Reputation(commands.Cog):
         if user is None:
             user = ctx.author
         else:
-            user = await self.bot.fetch_user(user)
+            try:
+                user = await self.bot.fetch_user(user)
+            except:
+                pass
 
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
