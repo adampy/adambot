@@ -77,8 +77,7 @@ class WaitingRoom(commands.Cog):
 
         #formatting stuffs
         message = f'''Welcome to the server, {member.mention}!
-P
-lease read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention}. Once you've done that, state your school year to be let in.
+Please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention}. Once you've done that, state your school year to be let in.
 
 If no staff member assists you, feel free to ping a staff member.'''
 

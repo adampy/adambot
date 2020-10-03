@@ -161,13 +161,14 @@ class Reputation(commands.Cog):
     @rep.command()
     @commands.guild_only()
     async def check(self, ctx, user = None):
-        try:
-            user = MemberConverter.convert(ctx=ctx, argument=user)
-        except Exception as e:
-            user = await self.bot.fetch_user(user)
-        
         if user is None:
             user = ctx.author
+        else:
+            try:
+                user = MemberConverter.convert(ctx=ctx, argument=user)
+            except Exception as e:
+                user = await self.bot.fetch_user(user)
+
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
         cur.execute('SELECT reps FROM rep WHERE member_id = (%s)', (user.id,))
