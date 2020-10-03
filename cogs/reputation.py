@@ -71,7 +71,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    async def award(self, ctx, member: discord.Member, change = 1):
+    async def award(self, ctx, user: discord.Member, change = 1):
         '''Gives the member a rep, mods can do `-rep award @Member <change>` where change is the number of reps to be awarded'''
         if ctx.author != user: #check to not rep yourself
             try:
@@ -112,8 +112,7 @@ class Reputation(commands.Cog):
     @commands.has_role('Moderator')
     @commands.guild_only()
     async def member(self, ctx, user_id):
-        '''Resets a single users reps.
-Usage: `-rep reset member <user_id>`'''
+        '''Resets a single users reps.'''
         user = await self.bot.fetch_user(user_id)
         self.clear_rep(user)
         await ctx.send(f'{user.mention} now has 0 points.')
@@ -127,8 +126,7 @@ Usage: `-rep reset member <user_id>`'''
     @commands.guild_only()
     @commands.has_role('Moderator')
     async def all(self, ctx):
-        '''Resets everyones reps.
-Usage: `-rep reset all`'''
+        '''Resets everyones reps.'''
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
         cur.execute('DELETE FROM rep')
@@ -145,8 +143,7 @@ Usage: `-rep reset all`'''
     @commands.guild_only()
     @commands.has_role('Moderator')
     async def set(self, ctx, user_id, rep):
-        '''Sets a specific members reps to a given value.
-Usage: `-rep set <user_id> <rep>` where rep is the number of reps retained'''
+        '''Sets a specific members reps to a given value.'''
         try:
             rep = int(rep)
         except ValueError:
@@ -172,8 +169,7 @@ Usage: `-rep set <user_id> <rep>` where rep is the number of reps retained'''
     @rep.command()
     @commands.guild_only()
     async def check(self, ctx, user: discord.Member = None):
-        '''Checks a specific person reps, or your own if user is left blank
-Usage: `-rep check [@Member]`'''
+        '''Checks a specific person reps, or your own if user is left blank'''
         if user is None:
             user = ctx.author
         
