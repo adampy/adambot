@@ -105,7 +105,7 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=['lb'])
     @commands.guild_only()
-    async def leaderboard(self, ctx, modifier=None):
+    async def leaderboard(self, ctx, modifier=''):
         '''Displays the leaderboard of reputation points, if [modifier] is 'members' then it only shows current server members'''
         if modifier.lower() in ['members', 'member']:
             lb = await self.get_leaderboard(ctx, True)
