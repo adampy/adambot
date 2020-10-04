@@ -12,20 +12,28 @@ class Reputation(commands.Cog):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
 
-    async def get_leaderboard(self, ctx):
+    async def get_leaderboard(self, ctx, only_members = False):
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
-        cur.execute('SELECT * FROM rep ORDER BY reps DESC LIMIT 10')
+        cur.execute('SELECT * FROM rep ORDER BY reps DESC')
         leaderboard = cur.fetchall()
         conn.close()
         embed = Embed(title='**__Reputation Leaderboard__**', color=Colour.from_rgb(177,252,129))
+        
+        i = 0
         for item in leaderboard:
             member = ctx.guild.get_member(item[0])
             if member is None:
-                user = await self.bot.fetch_user(item[0])
-                member = f"{str(user)} - this person is currently not in the server - ID: {user.id}"
-            embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
+                if not only_members: # Okay to include on list
+                    member = f"{str(user)} - this person is currently not in the server - ID: {user.id}"
+                    embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
+                    i += 1
+            else:
+                embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
+                i += 1
 
+            if i == 10:
+                break
         return embed
 
     def modify_rep(self, member, change):
@@ -96,9 +104,13 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=['lb'])
     @commands.guild_only()
-    async def leaderboard(self, ctx):
-        '''Displays the leaderboard of reputation points'''
-        lb = await self.get_leaderboard(ctx)
+    async def leaderboard(self, ctx, modifier):
+        '''Displays the leaderboard of reputation points, if [modifier] is 'members' then it only shows current server members'''
+        if modifier.lower() in ['members', 'member']:
+            lb = await self.get_leaderboard(ctx, True)
+        else:
+            lb = await self.get_leaderboard(ctx, False)
+
         await ctx.send(embed=lb)
 
     @rep.group()
