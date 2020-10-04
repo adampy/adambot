@@ -25,6 +25,7 @@ class Reputation(commands.Cog):
             member = ctx.guild.get_member(item[0])
             if member is None:
                 if not only_members: # Okay to include on list
+                    user = await self.bot.fetch_user(item[0])
                     member = f"{str(user)} - this person is currently not in the server - ID: {user.id}"
                     embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
                     i += 1
@@ -104,7 +105,7 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=['lb'])
     @commands.guild_only()
-    async def leaderboard(self, ctx, modifier):
+    async def leaderboard(self, ctx, modifier=None):
         '''Displays the leaderboard of reputation points, if [modifier] is 'members' then it only shows current server members'''
         if modifier.lower() in ['members', 'member']:
             lb = await self.get_leaderboard(ctx, True)
