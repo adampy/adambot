@@ -198,14 +198,14 @@ class Member(commands.Cog):
     @commands.guild_only()
     async def mc(self, ctx):
         '''Gives you the Maths Challenge role.'''
-        await assignRole(ctx, "mc")
+        await self.assignRole(ctx, "mc")
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def cc(self, ctx):
         '''Gives you the CompSci Challenge role.'''
-        await assignRole(ctx, "cc")
+        await self.assignRole(ctx, "cc")
 
 #    @commands.command(pass_context=True)
 #    @commands.has_role('Members')
@@ -226,14 +226,14 @@ class Member(commands.Cog):
     @commands.guild_only()
     async def weeaboo(self, ctx):
         '''Gives you the Weeaboo role.'''
-        await assignRole(ctx, "weeaboo")
+        await self.assignRole(ctx, "weeaboo")
 
     @commands.command(pass_context=True, aliases=['announcements', 'notifications'])
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def announcement(self, ctx):
         '''Gives you the Announcements role.'''
-        await assignRole(ctx, "announcement")
+        await self.assignRole(ctx, "announcement")
 
 #-----------------------QUOTE------------------------------
 
