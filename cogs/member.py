@@ -318,7 +318,7 @@ class Member(commands.Cog):
             conn = psycopg2.connect(self.key, sslmode='require')
             cur = conn.cursor()
 
-            cur.execute('UPDATE bruh SET amount = amount + 1')
+            cur.execute("UPDATE variables SET value = value + 1 WHERE variable = 'bruh'")
             conn.commit()
             conn.close() 
         return
@@ -328,7 +328,7 @@ class Member(commands.Cog):
         '''See how many bruh moments we've had'''
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
-        cur.execute('SELECT amount FROM bruh')
+        cur.execute("SELECT value FROM variables WHERE variable = 'bruh'")
         bruhs = cur.fetchall()[0][0]
         conn.close()
         await ctx.send(f'Bruh moments: **{bruhs}**')
