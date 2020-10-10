@@ -183,7 +183,7 @@ class Member(commands.Cog):
         }
 
     async def assignRole(self, ctx, roleID):
-        roleName = addableRoles[roleID]
+        roleName = self.addableRoles[roleID]
         author = ctx.author
         role = get(author.guild.roles, name=roleName)
         if roleName in [y.name for y in author.roles]:
