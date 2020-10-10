@@ -180,7 +180,7 @@ class Member(commands.Cog):
         "mc": "Maths Challenge",
         "cc": "CompSci Challenge",
         "weeaboo": "Weeaboo",
-        "announcement", "Announcements"
+        "announcement": "Announcements"
     }
 
     async def assignRole(ctx, roleID):
