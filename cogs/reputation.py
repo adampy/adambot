@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands import MemberConverter, UserConverter
+#from discord.ext.commands import MemberConverter, UserConverter
 from discord.utils import get
 from discord import Embed, Colour
 import os
@@ -155,7 +155,7 @@ class Reputation(commands.Cog):
     @rep.command()
     @commands.guild_only()
     @commands.has_any_role('Moderator', 'Adam-Bot Developer')
-    async def set(self, ctx, user_id, rep):
+    async def set(self, ctx, user: discord.User, rep):
         '''Sets a specific members reps to a given value.'''
         try:
             rep = int(rep)
@@ -163,7 +163,7 @@ class Reputation(commands.Cog):
             await ctx.send('The rep must be a number!')
             return
 
-        user = await self.bot.fetch_user(user_id)
+        #user = await self.bot.fetch_user(user_id)
 
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()
