@@ -154,7 +154,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_roles('Moderator', 'Adam-Bot Developer')
+    @commands.has_any_role('Moderator', 'Adam-Bot Developer')
     async def set(self, ctx, user_id, rep):
         '''Sets a specific members reps to a given value.'''
         try:
