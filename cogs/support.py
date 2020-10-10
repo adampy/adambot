@@ -5,7 +5,7 @@ from discord.utils import get
 import os
 import psycopg2
 import asyncio
-from .utils import NEWLINE
+from .utils import NEWLINE, Permissions
 from datetime import timedelta, datetime
 
 class Support(commands.Cog):
@@ -130,7 +130,7 @@ class Support(commands.Cog):
                         await self.log(f'log-Staff: {message.author.name} ', connection[0], message)
 
     @commands.group()
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def support(self, ctx):
         '''Support module'''
@@ -138,7 +138,7 @@ class Support(commands.Cog):
             await ctx.send('```-support accept <ticket_id>```')
 
     @support.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def accept(self, ctx, ticket):
         '''Accept a support ticket.
 Staff role needed.'''
@@ -171,7 +171,7 @@ Staff role needed.'''
         conn.close()
 
     @support.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def connections(self, ctx):
         conn = psycopg2.connect(self.key, sslmode='require')
         cur = conn.cursor()

@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import separate_args, DISALLOWED_COOL_WORDS
+from .utils import separate_args, DISALLOWED_COOL_WORDS, Permissions
 import requests
 import re
 import os
@@ -83,7 +83,7 @@ class Member(commands.Cog):
 #-----------------------REVISE------------------------------        
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def revise(self, ctx):
         '''Puts you in revising mode.'''
@@ -177,7 +177,7 @@ class Member(commands.Cog):
 #-----------------------MC & CC & WEEABOO------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def mc(self, ctx):
         '''Gives you the Maths Challenge role.'''
@@ -191,7 +191,7 @@ class Member(commands.Cog):
             await ctx.send(':ok_hand: You have been given `Maths Challenge` role!')
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def cc(self, ctx):
         '''Gives you the CompSci Challenge role.'''
@@ -219,7 +219,7 @@ class Member(commands.Cog):
 #            await ctx.send(':ok_hand: You have been given `Languages Challenge` role!')
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def weeaboo(self, ctx):
         '''Gives you the Weeaboo role.'''
@@ -233,7 +233,7 @@ class Member(commands.Cog):
             await ctx.send(':ok_hand: You have been given `Weeaboo` role!')
 
     @commands.command(pass_context=True, aliases=['announcements', 'notifications'])
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def announcement(self, ctx):
         '''Gives you the Announcements role.'''
@@ -249,7 +249,7 @@ class Member(commands.Cog):
 #-----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     async def quote(self, ctx, messageid, channelid=None):
         '''Quote a message to remember it.'''
         if channelid is not None:
@@ -294,7 +294,7 @@ class Member(commands.Cog):
 
 #-----------------------DEMOGRAPHICS------------------------------
     @commands.command()
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def demographics(self, ctx):
         '''View server demographics.'''

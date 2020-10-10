@@ -4,6 +4,7 @@ class Permissions:
             "Moderator":445195365625364490,
             "Assistant":445195413343961092,
             "Trial-Assistant":667872197091786793,
+            "Staff":445195535901655041,
             "Adam-Bot-Developer":740681121863303279,
             "Member":445196497777197056,}
 
@@ -11,6 +12,7 @@ class Permissions:
     MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
     ASSISTANT = MOD + [ROLE_ID['Assistant']]
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
+    STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
     MEMBERS = TRIALASSISTANT + [ROLE_ID['Member']]
 
 
