@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands import MemberConverter, UserConverter
+#from discord.ext.commands import MemberConverter, UserConverter
 from discord.utils import get
 from discord import Embed, Colour
 import os
 import psycopg2
 import datetime
+from .utils import Permissions
 
 class Reputation(commands.Cog):
     def __init__(self, bot):
@@ -61,6 +62,15 @@ class Reputation(commands.Cog):
         conn.commit()
         conn.close()
 
+    def set_rep(self, user_id, reps):
+        conn = psycopg2.connect(self.key, sslmode='require')
+        cur = conn.cursor()
+        cur.execute('UPDATE rep SET reps = (%s) WHERE member_id = (%s); SELECT reps FROM rep WHERE member_id = (%s)', (reps, user_id, user_id))
+        new_reps = cur.fetchall()[0][0]
+        conn.commit()
+        conn.close()
+        return new_reps
+
     def in_gcse(ctx):
         return ctx.guild.id == 445194262947037185
 
@@ -108,21 +118,21 @@ class Reputation(commands.Cog):
     async def leaderboard(self, ctx, modifier=''):
         '''Displays the leaderboard of reputation points, if [modifier] is 'members' then it only shows current server members'''
         if modifier.lower() in ['members', 'member']:
-            lb = await self.get_leaderboard(ctx, True)
+            lb = await self.get_leaderboard(ctx, only_members=True)
         else:
-            lb = await self.get_leaderboard(ctx, False)
+            lb = await self.get_leaderboard(ctx, only_members=False)
 
         await ctx.send(embed=lb)
 
     @rep.group()
     @commands.guild_only()
-    @commands.has_role('Moderator')
+    @commands.has_any_role(*Permissions.MOD)
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('```-rep reset member @Member``` or ```-rep reset all```')
 
     @reset.command()
-    @commands.has_role('Moderator')
+    @commands.has_any_role(*Permissions.MOD)
     @commands.guild_only()
     async def member(self, ctx, user_id):
         '''Resets a single users reps.'''
@@ -137,7 +147,7 @@ class Reputation(commands.Cog):
 
     @reset.command(pass_context=True)
     @commands.guild_only()
-    @commands.has_role('Moderator')
+    @commands.has_any_role(*Permissions.MOD)
     async def all(self, ctx):
         '''Resets everyones reps.'''
         conn = psycopg2.connect(self.key, sslmode='require')
@@ -154,8 +164,8 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_role('Moderator')
-    async def set(self, ctx, user_id, rep):
+    @commands.has_any_role(*Permissions.MOD, 'Adam-Bot Developer')
+    async def set(self, ctx, user: discord.User, rep):
         '''Sets a specific members reps to a given value.'''
         try:
             rep = int(rep)
@@ -163,25 +173,41 @@ class Reputation(commands.Cog):
             await ctx.send('The rep must be a number!')
             return
 
-        user = await self.bot.fetch_user(user_id)
+        #user = await self.bot.fetch_user(user_id)
 
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
-        cur.execute('UPDATE rep SET reps = (%s) WHERE member_id = (%s); SELECT reps FROM rep WHERE member_id = (%s)', (rep, user.id, user.id))
-        reps = cur.fetchall()[0][0]
-        conn.commit()
-        conn.close()
-        await ctx.send(f'{user.mention} now has {rep} reputation points.')
+        new_reps = self.set_rep(user.id, rep)
+        await ctx.send(f'{user.mention} now has {new_reps} reputation points.')
         embed = Embed(title='Reputation Points Set', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
-        embed.add_field(name='New Rep', value=reps)
+        embed.add_field(name='New Rep', value=new_reps)
         embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @rep.command()
     @commands.guild_only()
-    async def check(self, ctx, user: discord.Member = None):
+    @commands.has_any_role(*Permissions.MOD, 'Adam-Bot Developer')
+    async def hardset(self, ctx, user_id, rep):
+        '''Sets a specific member's reps to a given value via their ID.'''
+        try:
+            rep = int(rep)
+        except ValueError:
+            await ctx.send('The rep must be a number!')
+            return
+
+        new_reps = self.set_rep(user_id, rep)
+
+        await ctx.send(f'{user_id} now has {new_reps} reputation points.')
+        embed = Embed(title='Reputation Points Set (Hard set)', color=Colour.from_rgb(177,252,129))
+        embed.add_field(name='Member', value=user_id)
+        embed.add_field(name='Staff', value=str(ctx.author))
+        embed.add_field(name='New Rep', value=new_reps)
+        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+
+    @rep.command()
+    @commands.guild_only()
+    async def check(self, ctx, user: discord.User):
         '''Checks a specific person reps, or your own if user is left blank'''
         if user is None:
             user = ctx.author

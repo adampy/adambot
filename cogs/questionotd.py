@@ -7,7 +7,7 @@ import datetime
 import os
 from random import choice
 from math import ceil
-from .utils import SPAMPING_PERMS
+from .utils import SPAMPING_PERMS, Permissions
 
 class QuestionOTD(commands.Cog):
     def __init__(self, bot):
@@ -36,7 +36,7 @@ class QuestionOTD(commands.Cog):
             await ctx.send("The QOTD module is not avaliable in this server!")
 
     @qotd.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     async def submit(self, ctx, *args):
         '''Submit a QOTD'''
         qotd = ' '.join(args)

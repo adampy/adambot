@@ -7,6 +7,7 @@ import csv
 from random import choice as randchoice
 import asyncio
 from datetime import datetime
+from .utils import Permissions
 
 class Trivia(commands.Cog):
     def __init__(self, bot):
@@ -201,11 +202,13 @@ class Trivia(commands.Cog):
             return
 
     @trivia.command()
+    @commands.has_any_role(*Permissions.MEMBERS)
     async def list(self, ctx):
         message = ', '.join(self.trivia_list)
         await ctx.send(f'```{message}```')
 
     @trivia.command(pass_context=True)
+    @commands.has_any_role(*Permissions.MEMBERS)
     async def start(self, ctx, trivia = None):
         if trivia is None:
             await ctx.send('You must choose a trivia from `-trivia list`.')
@@ -225,6 +228,7 @@ class Trivia(commands.Cog):
         await self.ask_question()
 
     @trivia.command(aliases=['finish', 'end'])
+    @commands.has_any_role(*Permissions.MEMBERS)
     async def stop(self, ctx):
         if self.running:
             await self.trivia_end_leaderboard(ctx.author)
@@ -232,7 +236,7 @@ class Trivia(commands.Cog):
             await ctx.send('No trivia session running!')
 
     @trivia.command(aliases=['answers','cheat'])
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def answer(self, ctx):
         if self.running:
             await ctx.send(f"The answers are `{'`,`'.join(self.answers)}`")
@@ -240,6 +244,7 @@ class Trivia(commands.Cog):
             await ctx.send('There are no trivia sessions going on at the moment.')
 
     @trivia.command()
+    @commands.has_any_role(*Permissions.MEMBERS)
     async def skip(self, ctx):
         if self.running:
             await self.increment_score(self.bot)
@@ -248,6 +253,7 @@ class Trivia(commands.Cog):
             await ctx.send('No trivia session running!')
 
     @trivia.command(aliases=['lb'])
+    @commands.has_any_role(*Permissions.MEMBERS)
     async def leaderboard(self, ctx):
         if self.running:
             await self.trivia_end_leaderboard(reset=False)
