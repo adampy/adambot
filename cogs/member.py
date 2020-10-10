@@ -318,7 +318,9 @@ class Member(commands.Cog):
             conn = psycopg2.connect(self.key, sslmode='require')
             cur = conn.cursor()
 
-            cur.execute("UPDATE variables SET value = value + 1 WHERE variable = 'bruh'")
+            cur.execute("SELECT value FROM variables WHERE variable = 'bruh'")
+            current_bruhs = int(cur.fetchall()[0][0])
+            cur.execute("UPDATE variables SET value = %s WHERE variable = 'bruh'", (str(ccurrent_bruhs + 1),))
             conn.commit()
             conn.close() 
         return
