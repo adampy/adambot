@@ -174,7 +174,7 @@ class Member(commands.Cog):
                     await ctx.send('Longer than 2000 characters - member ID\'s have been cut from the message.')
                     await ctx.send(new_message)
 
-#-----------------------MC & WEEABOO------------------------------
+#-----------------------MC & CC & WEEABOO------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_role('Members')
@@ -189,6 +189,20 @@ class Member(commands.Cog):
         else:
             await author.add_roles(role)
             await ctx.send(':ok_hand: You have been given `Maths Challenge` role!')
+
+    @commands.command(pass_context=True)
+    @commands.has_role('Members')
+    @commands.guild_only()
+    async def cc(self, ctx):
+        '''Gives you the CompSci Challenge role.'''
+        author = ctx.author
+        role = get(author.guild.roles, name='CompSci Challenge')
+        if 'CompSci Challenge' in [y.name for y in author.roles]:
+            await author.remove_roles(role)
+            await ctx.send(':ok_hand: Your `CompSci Challenge` role has vanished!')
+        else:
+            await author.add_roles(role)
+            await ctx.send(':ok_hand: You have been given `CompSci Challenge` role!')
 
 #    @commands.command(pass_context=True)
 #    @commands.has_role('Members')
