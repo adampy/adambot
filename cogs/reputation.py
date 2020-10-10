@@ -6,6 +6,7 @@ from discord import Embed, Colour
 import os
 import psycopg2
 import datetime
+from .utils import Permissions
 
 class Reputation(commands.Cog):
     def __init__(self, bot):
@@ -125,13 +126,13 @@ class Reputation(commands.Cog):
 
     @rep.group()
     @commands.guild_only()
-    @commands.has_role('Moderator')
+    @commands.has_role(*Permissions.MOD)
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('```-rep reset member @Member``` or ```-rep reset all```')
 
     @reset.command()
-    @commands.has_role('Moderator')
+    @commands.has_role(*Permissions.MOD)
     @commands.guild_only()
     async def member(self, ctx, user_id):
         '''Resets a single users reps.'''
@@ -146,7 +147,7 @@ class Reputation(commands.Cog):
 
     @reset.command(pass_context=True)
     @commands.guild_only()
-    @commands.has_role('Moderator')
+    @commands.has_role(*Permissions.MOD)
     async def all(self, ctx):
         '''Resets everyones reps.'''
         conn = psycopg2.connect(self.key, sslmode='require')
@@ -163,7 +164,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_any_role('Moderator', 'Adam-Bot Developer')
+    @commands.has_any_role(*Permissions.MOD, 'Adam-Bot Developer')
     async def set(self, ctx, user: discord.User, rep):
         '''Sets a specific members reps to a given value.'''
         try:
@@ -185,7 +186,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_any_role('Moderator', 'Adam-Bot Developer')
+    @commands.has_any_role(*Permissions.MOD, 'Adam-Bot Developer')
     async def hardset(self, ctx, user_id, rep):
         '''Sets a specific member's reps to a given value via their ID.'''
         try:

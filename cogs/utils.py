@@ -1,3 +1,19 @@
+class Permissions:
+    ROLE_ID = {"Administrator":445195157151809536,
+            "Head Mod":445195341310984203,
+            "Moderator":445195365625364490,
+            "Assistant":445195413343961092,
+            "Trial-Assistant":667872197091786793,
+            "Adam-Bot-Developer":740681121863303279,
+            "Member":445196497777197056,}
+
+    ADMIN = [ROLE_ID['Administrator']]
+    MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
+    ASSISTANT = MOD + [ROLE_ID['Assistant']]
+    TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
+    MEMBERS = TRIALASSISTANT + [ROLE_ID['Member']]
+
+
 TIMES = {'w':7*24*60*60,
          'week':7*24*60*60,
          'weeks':7*24*60*60,
@@ -19,17 +35,6 @@ TIMES = {'w':7*24*60*60,
          'seconds':1,
          'sec':1,
          'secs':1}
-
-ROLE_ID = {"Administrator":445195157151809536,
-            "Head Mod":445195341310984203,
-            "Moderator":445195365625364490,
-            "Assistant":445195413343961092,
-            "Trial-Assistant":667872197091786793,
-            "Adam-Bot-Developer":740681121863303279,}
-ADMIN = [ROLE_ID['Administrator']]
-MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
-ASSISTANT = MOD + [ROLE_ID['Assistant']]
-TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
 SPAMPING_PERMS = [
@@ -88,25 +93,6 @@ def separate_args(args):
             reason = item[1:].strip()
             print(reason)
     return seconds, reason
-
-def old_separate_args(args):
-    '''Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1'''
-    reason = ''
-    timeperiod =''
-    if args:
-        arg_list = [arg for arg in ' '.join(args).split('-') if arg]
-        for item in arg_list:
-            if item[0] == 't':
-                timeperiod = item[2:]
-                if timeperiod[len(timeperiod)-1] == ' ':
-                    timeperiod = timeperiod[:-1]
-            elif item[0] == 'r':
-                reason = item[2:]
-                if reason[len(reason)-1] == ' ':
-                    reason = reason[:-1]
-    if timeperiod:
-        return time_arg(timeperiod), reason
-    return timeperiod, reason
 
 def time_arg(arg):
     '''Given a time argument gets the time in seconds'''
