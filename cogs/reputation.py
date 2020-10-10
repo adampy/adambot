@@ -194,12 +194,11 @@ class Reputation(commands.Cog):
             await ctx.send('The rep must be a number!')
             return
 
-        #user = await self.bot.fetch_user(user_id)
-
         new_reps = self.set_rep(user_id, rep)
-        await ctx.send(f'{user.mention} now has {new_reps} reputation points.')
-        embed = Embed(title='Reputation Points Set', color=Colour.from_rgb(177,252,129))
-        embed.add_field(name='Member', value=str(user))
+
+        await ctx.send(f'{user_id} now has {new_reps} reputation points.')
+        embed = Embed(title='Reputation Points Set (Hard set)', color=Colour.from_rgb(177,252,129))
+        embed.add_field(name='Member', value=user_id)
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
         embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
