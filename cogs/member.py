@@ -175,15 +175,14 @@ class Member(commands.Cog):
                     await ctx.send(new_message)
 
 #-----------------------MC & CC & WEEABOO------------------------------
-
     addableRoles =	{
-        "mc": "Maths Challenge",
-        "cc": "CompSci Challenge",
-        "weeaboo": "Weeaboo",
-        "announcement": "Announcements"
-    }
+            "mc": "Maths Challenge",
+            "cc": "CompSci Challenge",
+            "weeaboo": "Weeaboo",
+            "announcement": "Announcements"
+        }
 
-    async def assignRole(ctx, roleID):
+    async def assignRole(self, ctx, roleID):
         roleName = addableRoles[roleID]
         author = ctx.author
         role = get(author.guild.roles, name=roleName)
@@ -193,8 +192,6 @@ class Member(commands.Cog):
         else:
             await author.add_roles(role)
             await ctx.send(':ok_hand: You have been given `{0}` role!'.format(roleName))
-
-
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
