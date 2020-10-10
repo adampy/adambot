@@ -320,7 +320,7 @@ class Member(commands.Cog):
 
             cur.execute("SELECT value FROM variables WHERE variable = 'bruh'")
             current_bruhs = int(cur.fetchall()[0][0])
-            cur.execute("UPDATE variables SET value = %s WHERE variable = 'bruh'", (str(ccurrent_bruhs + 1),))
+            cur.execute("UPDATE variables SET value = %s WHERE variable = 'bruh'", (str(current_bruhs + 1),))
             conn.commit()
             conn.close() 
         return
