@@ -126,13 +126,13 @@ class Reputation(commands.Cog):
 
     @rep.group()
     @commands.guild_only()
-    @commands.has_role(*Permissions.MOD)
+    @commands.has_any_role(*Permissions.MOD)
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('```-rep reset member @Member``` or ```-rep reset all```')
 
     @reset.command()
-    @commands.has_role(*Permissions.MOD)
+    @commands.has_any_role(*Permissions.MOD)
     @commands.guild_only()
     async def member(self, ctx, user_id):
         '''Resets a single users reps.'''
@@ -147,7 +147,7 @@ class Reputation(commands.Cog):
 
     @reset.command(pass_context=True)
     @commands.guild_only()
-    @commands.has_role(*Permissions.MOD)
+    @commands.has_any_role(*Permissions.MOD)
     async def all(self, ctx):
         '''Resets everyones reps.'''
         conn = psycopg2.connect(self.key, sslmode='require')
