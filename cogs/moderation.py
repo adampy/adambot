@@ -4,7 +4,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
 from discord.utils import get
 import asyncio
-from .utils import separate_args
+from .utils import separate_args, Permissions
 from datetime import datetime, timedelta
 import os
 import psycopg2
@@ -68,7 +68,7 @@ class Moderation(commands.Cog):
 #-----------------------PURGE------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role('Adam-Bot Developer', 'Moderator', 'Administrator')
+    @commands.has_any_role(*Permissions.MOD)
     async def purge(self, ctx, limit='5', member: discord.Member = None):
         '''Purges the channel.
 Moderator role needed.
@@ -131,7 +131,7 @@ Staff role needed'''
 #-----------------------BAN------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role('Moderator', 'Administrator')
+    @has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, *args):
         '''Bans a given user.
 Moderator role needed'''
@@ -157,7 +157,33 @@ Moderator role needed'''
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @commands.command(pass_context=True)
-    @commands.has_any_role('Moderator', 'Administrator')
+    @has_permissions(ban_members=True)
+    async def hackban(self, ctx, user_id, *args):
+        '''Bans a given user.
+Moderator role needed'''
+        if args:
+            timeperiod, reason = separate_args(args)
+            if not reason:
+                reason = f'No reason - banned by {str(ctx.author)}'
+            if timeperiod:
+                self.timer(1, timeperiod, member.id)
+        else:
+            reason = None
+
+        await member.ban(reason=reason, delete_message_days=0)
+        emoji = get(ctx.message.guild.emojis, name="banned")
+        await ctx.send(f'{member.mention} has been banned. {emoji}')
+
+        embed = Embed(title='Hackban', color=Colour.from_rgb(255, 255, 255))
+        embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
+        embed.add_field(name='Moderator', value=str(ctx.author))
+        embed.add_field(name='Reason', value=reason)
+        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_footer(text=(datetime.utcnow()-timedelta(hours=1)).strftime('%x'))
+        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+
+    @commands.command(pass_context=True)
+    @has_permissions(ban_members=True)
     async def unban(self, ctx, user_id, *args):
         '''Unbans a given user with the ID.
 Moderator role needed.'''
@@ -196,7 +222,7 @@ Moderator role needed.'''
 #-----------------------MUTES------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def mute(self, ctx, member: discord.Member, *args):
         '''Gives a given user the Muted role.
 Staff role needed.'''
@@ -225,7 +251,7 @@ Staff role needed.'''
         await member.send(f'You have been muted {timestring} for {reasonstring}.')
 
     @commands.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def unmute(self, ctx, member: discord.Member, *args):
         '''Removes Muted role from a given user.
 Staff role needed.'''
@@ -262,7 +288,7 @@ Assistants have permission in #general only.'''
 #-----------------------JAIL & BANISH------------------------------
 
     @commands.command(pass_context=True)
-    @has_permissions(kick_members=True)
+    @commands.has_any_role(*Permissions.STAFF)
     async def jail(self, ctx, member: discord.Member):
         '''Puts a member in #the-court.
 Staff role needed.'''
@@ -271,7 +297,7 @@ Staff role needed.'''
         await ctx.send(f':ok_hand: {member.mention} has been jailed.')
 
     @commands.command(pass_context=True)
-    @has_permissions(kick_members=True)
+    @commands.has_any_role(*Permissions.STAFF)
     async def unjail(self, ctx, member: discord.Member):
         '''Puts a member in #the-court.
 Staff role needed.'''
@@ -283,7 +309,7 @@ Staff role needed.'''
             await ctx.send(f'{member.mention} could not be unjailed. Please do it manually.')
 
     @commands.command(pass_context=True)
-    @has_permissions(manage_roles=True)
+    @commands.has_any_role(*Permissions.STAFF)
     async def banish(self, ctx, member: discord.Member):
         '''Removes all roles from a user, rendering them powerless.
 Staff role needed.'''
@@ -303,7 +329,7 @@ Y9 -> Y10'''
             await ctx.send('```-advance member @Member``` or ```-advance all```')
 
     @advance.command(pass_context=True)
-    @commands.has_any_role('Adam-Bot Developer', 'Moderator')
+    @commands.has_any_role(*Permissions.MOD)
     async def memberx(self, ctx, member: discord.Member):
         '''Advances one user.
 Moderator role needed.'''
@@ -315,7 +341,7 @@ Moderator role needed.'''
 ```{}```'''.format(e))
 
     @advance.command(pass_context=True)
-    @commands.has_any_role('Adam-Bot Developer', 'Administrator')
+    @commands.has_any_role(*Permissions.ADMIN)
     async def allx(self, ctx):
         '''Advances everybody in the server.
 Administrator role needed.'''
@@ -346,7 +372,7 @@ Administrator role needed.'''
 #-----------------------WARNS------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def warn(self, ctx, member: discord.Member, *reason):
         '''Gives a member a warning, a reason is optional but recommended.
@@ -369,7 +395,7 @@ Staff role needed.'''
         await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
 
     @commands.group()
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def warnlist(self, ctx):
         if ctx.invoked_subcommand is None:
@@ -378,7 +404,7 @@ Staff role needed.'''
 
 
     @warnlist.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def member(self, ctx, member: discord.Member = None, page_num = None):
         '''Shows warnings for a given member.
@@ -444,7 +470,7 @@ Staff role needed.'''
 
 
     @warnlist.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def all(self, ctx, page_num = None):
         '''Shows all the warnings in the server.
@@ -508,7 +534,7 @@ Staff role needed.'''
 
 
     @commands.command(pass_context=True, aliases=['warndelete'])
-    @commands.has_role('Moderator')
+    @commands.has_any_role(*Permissions.MOD)
     @commands.guild_only()
     async def warnremove(self, ctx, *warnings):
         '''Remove warnings with this command, can do -warnremove <warnID> or -warnremove <warnID1> <warnID2>.
@@ -537,7 +563,7 @@ Moderator role needed'''
             await ctx.send(f"The warning's have been deleted.")
 
     @commands.command(aliases=['announce'])
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def say(self, ctx, channel: discord.TextChannel, *text):
         '''Say a given string in a given channel
 Staff role needed.'''

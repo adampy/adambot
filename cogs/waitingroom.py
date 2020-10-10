@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord.utils import get
 import os
 import psycopg2
+from .utils import Permissions
 
 class WaitingRoom(commands.Cog):
     def __init__(self, bot):
@@ -85,7 +86,7 @@ If no staff member assists you, feel free to ping a staff member.'''
         await channel.send(message)
 
     @commands.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def y9(self, ctx, member: discord.Member):
         '''Verifies a Y9.
 Staff role needed.'''
@@ -98,7 +99,7 @@ Staff role needed.'''
 
 
     @commands.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def y10(self, ctx, member: discord.Member):
         '''Verifies a Y10.
 Staff role needed.'''
@@ -110,7 +111,7 @@ Staff role needed.'''
         await get(member.guild.text_channels, name='general').send(f'Welcome {member.mention} to the server :wave:')
 
     @commands.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def y11(self, ctx, member: discord.Member):
         '''Verifies a Y11.
 Staff role needed.'''
@@ -122,7 +123,7 @@ Staff role needed.'''
         await get(member.guild.text_channels, name='general').send(f'Welcome {member.mention} to the server :wave:')
 
     @commands.command(pass_context=True)
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def postgcse(self, ctx, member: discord.Member):
         '''Verifies a Post-GCSE.
 Staff role needed.'''
@@ -134,7 +135,7 @@ Staff role needed.'''
         await get(member.guild.text_channels, name='general').send(f'Welcome {member.mention} to the server :wave:')
 
     @commands.command(aliases=['lurker'])
-    @commands.has_role('Staff')
+    @commands.has_any_role(*Permissions.STAFF)
     async def lurkers(self, ctx):
         members = [x.mention for x in ctx.guild.members if len(x.roles) <= 1]
         message = ', '.join(members) + ' please tell us your year to be verified into the server!'

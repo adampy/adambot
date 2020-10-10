@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import separate_args, DISALLOWED_COOL_WORDS
+from .utils import separate_args, DISALLOWED_COOL_WORDS, Permissions
 import requests
 import re
 import os
@@ -83,7 +83,7 @@ class Member(commands.Cog):
 #-----------------------REVISE------------------------------        
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def revise(self, ctx):
         '''Puts you in revising mode.'''
@@ -176,33 +176,39 @@ class Member(commands.Cog):
 
 #-----------------------MC & CC & WEEABOO------------------------------
 
+    addableRoles =	{
+        "mc": "Maths Challenge",
+        "cc": "CompSci Challenge",
+        "weeaboo": "Weeaboo",
+        "announcement": "Announcements"
+    }
+
+    async def assignRole(ctx, roleID):
+        roleName = addableRoles[roleID]
+        author = ctx.author
+        role = get(author.guild.roles, name=roleName)
+        if roleName in [y.name for y in author.roles]:
+            await author.remove_roles(role)
+            await ctx.send(':ok_hand: Your `{0}` role has vanished!'.format(roleName))
+        else:
+            await author.add_roles(role)
+            await ctx.send(':ok_hand: You have been given `{0}` role!'.format(roleName))
+
+
+
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def mc(self, ctx):
         '''Gives you the Maths Challenge role.'''
-        author = ctx.author
-        role = get(author.guild.roles, name='Maths Challenge')
-        if 'Maths Challenge' in [y.name for y in author.roles]:
-            await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your `Maths Challenge` role has vanished!')
-        else:
-            await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given `Maths Challenge` role!')
+        await assignRole(ctx, "mc")
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def cc(self, ctx):
         '''Gives you the CompSci Challenge role.'''
-        author = ctx.author
-        role = get(author.guild.roles, name='CompSci Challenge')
-        if 'CompSci Challenge' in [y.name for y in author.roles]:
-            await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your `CompSci Challenge` role has vanished!')
-        else:
-            await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given `CompSci Challenge` role!')
+        await assignRole(ctx, "cc")
 
 #    @commands.command(pass_context=True)
 #    @commands.has_role('Members')
@@ -219,37 +225,23 @@ class Member(commands.Cog):
 #            await ctx.send(':ok_hand: You have been given `Languages Challenge` role!')
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def weeaboo(self, ctx):
         '''Gives you the Weeaboo role.'''
-        author = ctx.author
-        role = get(author.guild.roles, name='Weeaboo')
-        if 'Weeaboo' in [y.name for y in author.roles]:
-            await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your `Weeaboo` role has vanished!')
-        else:
-            await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given `Weeaboo` role!')
+        await assignRole(ctx, "weeaboo")
 
     @commands.command(pass_context=True, aliases=['announcements', 'notifications'])
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def announcement(self, ctx):
         '''Gives you the Announcements role.'''
-        author = ctx.author
-        role = get(author.guild.roles, name='Announcements')
-        if 'Announcements' in [y.name for y in author.roles]:
-            await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your `Announcements` role has vanished!')
-        else:
-            await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given `Announcements` role!')
+        await assignRole(ctx, "announcement")
 
 #-----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     async def quote(self, ctx, messageid, channelid=None):
         '''Quote a message to remember it.'''
         if channelid is not None:
@@ -294,7 +286,7 @@ class Member(commands.Cog):
 
 #-----------------------DEMOGRAPHICS------------------------------
     @commands.command()
-    @commands.has_role('Members')
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def demographics(self, ctx):
         '''View server demographics.'''
