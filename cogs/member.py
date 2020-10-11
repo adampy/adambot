@@ -80,7 +80,14 @@ class Member(commands.Cog):
         to_return['tests_to_1mil'] = data[11]
         return to_return
 
-#-----------------------REVISE------------------------------        
+#-----------------------MISC------------------------------
+
+    @commands.command(pass_context=True)
+    async def host(self, ctx):
+        '''Check if the bot is currently hosted locally or remotely'''
+        await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
+
+#-----------------------REVISE------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
@@ -325,7 +332,7 @@ class Member(commands.Cog):
             conn.close() 
         return
 
-    @commands.command()
+    @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
         '''See how many bruh moments we've had'''
         conn = psycopg2.connect(self.key, sslmode='require')
