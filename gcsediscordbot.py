@@ -44,8 +44,9 @@ PREFIX = '-'
 #helper command w/ cooldown
 
 #-----------------------------------------------------------------
-
-bot = commands.Bot(command_prefix=PREFIX)
+FULL_INTENTS = discord.Intents.default()
+FULL_INTENTS.members = true
+bot = commands.Bot(command_prefix=PREFIX, intents=FULL_INTENTS)
 #bot.remove_command("help")
 
 conn = psycopg2.connect(DB, sslmode='require')
