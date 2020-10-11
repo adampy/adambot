@@ -45,7 +45,7 @@ PREFIX = '-'
 
 #-----------------------------------------------------------------
 FULL_INTENTS = discord.Intents.default()
-FULL_INTENTS.members = true
+FULL_INTENTS.members = True
 bot = commands.Bot(command_prefix=PREFIX, intents=FULL_INTENTS)
 #bot.remove_command("help")
 
