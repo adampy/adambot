@@ -164,7 +164,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.MOD, 'Adam-Bot Developer')
+    @commands.has_any_role(*Permissions.MOD)
     async def set(self, ctx, user: discord.User, rep):
         '''Sets a specific members reps to a given value.'''
         try:
@@ -186,7 +186,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.MOD, 'Adam-Bot Developer')
+    @commands.has_any_role(*Permissions.MOD)
     async def hardset(self, ctx, user_id, rep):
         '''Sets a specific member's reps to a given value via their ID.'''
         try:

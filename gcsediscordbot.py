@@ -52,8 +52,8 @@ class AdamBot(Bot):
     def load_cogs(self):
         '''Loads all the cogs passed into AdamBot'''
         for cog in self.COGS:
-            #if cog == "trivia" and self.LOCAL_HOST: # Don't load trivia if running locally
-             #   continue
+            if cog == "trivia" and self.LOCAL_HOST: # Don't load trivia if running locally
+                continue
             self.load_extension(f'cogs.{cog}')
             print(f"Loaded: {cog}")
 
