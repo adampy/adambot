@@ -65,6 +65,21 @@ class Moderation(commands.Cog):
             return 394978551985602571 == ctx.author.id or await original(ctx)
         return commands.check(extended_check)
 
+#-----------------------ADAM-BOT DEV ROLE-----------------------
+    
+    @commands.command(pass_context=True)
+    @commands.check(is_bot_owner)
+    async def dev(self, ctx, member: discord.Member, *args):
+        '''Toggles Adam-Bot Developer role to the specified user.
+Requires bot owner.'''
+        role = get(member.guild.roles, name='Adam-Bot Developer')
+        if 'Adam-Bot Developer' in [x.name for x in member.roles]:
+            await member.remove_roles(role)
+            await ctx.send('Removed dev from `{0}`!'.format(member.mention))
+        else:
+            await member.add_roles(role)
+            await ctx.send('Added dev to `{0}`!'.format(member.mention))
+
 #-----------------------PURGE------------------------------
 
     @commands.command(pass_context=True)
