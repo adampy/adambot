@@ -7,23 +7,19 @@ import asyncio
 from .utils import separate_args, Permissions
 from datetime import datetime, timedelta
 import os
-import psycopg2
+import asyncpg
 from math import ceil
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        key = os.environ.get('DATABASE_URL')
 
-        self.conn = psycopg2.connect(key, sslmode='require')
-        self.cur = self.conn.cursor()
-
-    def timer(self, todo, seconds, member_id):
+    async def timer(self, todo, seconds, member_id):
         '''Writes to todo table with the time to perform the given todo (e.g. timer(4, 120) would mean 4 is carried out in 120 seconds)'''
         timestamp = datetime.utcnow()
         new_timestamp = timestamp + timedelta(seconds=seconds)
-        self.cur.execute('INSERT INTO todo (todo_id, todo_time, member_id) values (%s, %s, %s)', (todo, new_timestamp, member_id))
-        self.conn.commit()
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute('INSERT INTO todo (todo_id, todo_time, member_id) values ($1, $2, $3)', todo, new_timestamp, member_id)
 
     async def advance_user(self, ctx: commands.Context, member: discord.Member, print=False):
         roles = [y.name for y in member.roles]
@@ -128,8 +124,8 @@ Staff role needed'''
             timeperiod, reason = separate_args(args)
             if not reason:
                 reason = f'No reason - kicked by {str(ctx.author)}'
-            if timeperiod:
-                self.timer(1, timeperiod, member.id)
+            #if timeperiod:
+            #    await self.timer(1, timeperiod, member.id)
         else:
             reason = None
 
@@ -155,7 +151,7 @@ Moderator role needed'''
             if not reason:
                 reason = f'No reason - banned by {str(ctx.author)}'
             if timeperiod:
-                self.timer(1, timeperiod, member.id)
+                await self.timer(2, timeperiod, member.id)
         else:
             reason = None
 
@@ -181,7 +177,7 @@ Moderator role needed'''
             if not reason:
                 reason = f'No reason - banned by {str(ctx.author)}'
             if timeperiod:
-                self.timer(1, timeperiod, member.id)
+                await self.timer(2, timeperiod, member.id)
         else:
             reason = None
 
@@ -206,8 +202,8 @@ Moderator role needed.'''
             timeperiod, reason = separate_args(args)
             if not reason:
                 reason = f'No reason - unbanned by {ctx.author.name}'
-            if timeperiod:
-                self.timer(1, timeperiod, member.id)
+            #if timeperiod:
+            #    await self.timer(1, timeperiod, member.id)
         else:
             reason = None
 
@@ -244,7 +240,7 @@ Staff role needed.'''
         if args:
             timeperiod, reason = separate_args(args)
             if timeperiod:
-                self.timer(1, timeperiod, member.id)
+                await self.timer(1, timeperiod, member.id)
         else:
             reason, timeperiod = None, None
 
@@ -396,18 +392,20 @@ Staff role needed.'''
 
         reason = ' '.join(reason)
         reason = reason.replace('-r', '') # Removes -r if a staff member includes it
-        conn = psycopg2.connect(key, sslmode='require')
-        cur = conn.cursor()
         if len(reason) > 255:
             await ctx.send('The reason must be below 256 characters. Please shorten it before trying again.')
             return
-        cur.execute('INSERT INTO warn (member_id, staff_id, reason) values (%s, %s, %s); SELECT COUNT(*) FROM warn WHERE member_id = (%s)', (member.id, ctx.author.id, reason, member.id))
-        conn.commit()
-        warns = cur.fetchall()[0][0]
-        conn.close()
+        
+        warns = 0
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute('INSERT INTO warn (member_id, staff_id, reason) values ($1, $2, $3)', member.id, ctx.author.id, reason)
+            warns = await connection.fetchval('SELECT COUNT(*) FROM warn WHERE member_id = ($1)', member.id)
 
-        await member.send(f'You have been warned by a member of the staff team. The reason for your warn is: {reason}. You now have {warns} warns.')
         await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
+        try:
+            await member.send(f'You have been warned by a member of the staff team. The reason for your warn is: {reason}. You now have {warns} warns.')
+        except Exception as e:
+            print(e)
 
     @commands.group()
     @commands.has_any_role(*Permissions.STAFF)
@@ -427,11 +425,10 @@ Staff role needed.'''
         if member == None:
             await ctx.send("```-warnlist member @Member <page_number>```")
 
-        conn = psycopg2.connect(os.environ.get('DATABASE_URL'), sslmode='require')
-        cur = conn.cursor()
+        warns = []
+        async with self.bot.pool.acquire() as connection:
+            warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) ORDER BY id', member.id)
 
-        cur.execute('SELECT * FROM warn WHERE member_id = (%s) ORDER BY id', (member.id,))
-        warns = cur.fetchall()
         aprox = ceil(len(warns)/5)
         if len(warns) == 0:
             await ctx.send("No warnings recorded!")
@@ -465,7 +462,6 @@ Staff role needed.'''
 
             except ValueError:
                 await ctx.send(f'Please enter the command again followed by a number from `1` to `{aprox}`')
-                conn.close()
                 return
 
         #len(warns) <= 5
@@ -481,7 +477,6 @@ Staff role needed.'''
             await ctx.send(embed=embed)
         except Exception as e:
             pass
-        conn.close()
 
 
     @warnlist.command(pass_context=True)
@@ -490,11 +485,10 @@ Staff role needed.'''
     async def all(self, ctx, page_num = None):
         '''Shows all the warnings in the server.
 Staff role needed.'''
-        conn = psycopg2.connect(os.environ.get('DATABASE_URL'), sslmode='require')
-        cur = conn.cursor()
+        warns = []
+        async with self.bot.pool.acquire() as connection:
+            warns = await connection.fetch('SELECT * FROM warn ORDER BY id')
 
-        cur.execute('SELECT * FROM warn ORDER BY id')
-        warns = cur.fetchall()
         aprox = ceil(len(warns)/5)
         if len(warns) == 0:
             await ctx.send("No warnings recorded!")
@@ -545,7 +539,6 @@ Staff role needed.'''
             await ctx.send(embed=embed)
         except Exception as e:
             pass
-        conn.close()
 
 
     @commands.command(pass_context=True, aliases=['warndelete'])
@@ -554,26 +547,26 @@ Staff role needed.'''
     async def warnremove(self, ctx, *warnings):
         '''Remove warnings with this command, can do -warnremove <warnID> or -warnremove <warnID1> <warnID2>.
 Moderator role needed'''
-        key = os.environ.get('DATABASE_URL')
-
-        conn = psycopg2.connect(key, sslmode='require')
-        cur = conn.cursor()
 
         if warnings[0].lower() == 'all':
-            cur.execute('DELETE FROM warn')
-        else:
-            if len(warnings) > 1:
-                await ctx.send('One moment...')
+            async with self.bot.pool.acquire() as connection:
+                await connection.execute('DELETE FROM warn')
+            await ctx.send("All warnings have been removed.")
+
+
+        if len(warnings) > 1:
+            await ctx.send('One moment...')
+
+        async with self.bot.pool.acquire() as connection:
             for warning in warnings:
                 try:
                     warning = int(warning)
-                    cur.execute('DELETE FROM warn WHERE id = (%s)', (warning,))
+                    await connection.execute('DELETE FROM warn WHERE id = ($1)', warning)
                     if len(warnings) == 1:
                         await ctx.send(f'Warning with ID {warning} has been deleted.')
                 except ValueError:
                     await ctx.send(f'Error whilst deleting ID {warning}: give me a warning ID, not words!')
-        conn.commit()
-        conn.close()
+
         if len(warnings) > 1:
             await ctx.send(f"The warning's have been deleted.")
 
@@ -589,20 +582,20 @@ Staff role needed.'''
     async def reset_invites(self, ctx):
         '''A command for adam only which resets the invites'''
         invites = await ctx.guild.invites()
-        self.cur.execute('DELETE FROM invites')
-        for invite in invites:
-            try:
-                data = [invite.inviter.id,
-                        invite.code,
-                        invite.uses,
-                        invite.max_uses,
-                        invite.created_at,
-                        invite.max_age]
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute('DELETE FROM invites')
+            for invite in invites:
+                try:
+                    data = [invite.inviter.id,
+                            invite.code,
+                            invite.uses,
+                            invite.max_uses,
+                            invite.created_at,
+                            invite.max_age]
 
-                self.cur.execute('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values (%s, %s, %s, %s, %s, %s)', data)
-            except:
-                pass
-        self.conn.commit()
+                    await connection.execute('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)', **data)
+                except:
+                    pass
 
 
 

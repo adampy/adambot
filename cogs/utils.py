@@ -5,11 +5,11 @@ class Permissions:
             "Assistant":445195413343961092,
             "Trial-Assistant":667872197091786793,
             "Staff":445195535901655041,
-            "Adam-Bot-Developer":740681121863303279,
+            "Adam-Bot Developer":740681121863303279,
             "Member":445196497777197056,}
 
     ADMIN = [ROLE_ID['Administrator']]
-    MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
+    MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']] + [ROLE_ID['Adam-Bot Developer']]
     ASSISTANT = MOD + [ROLE_ID['Assistant']]
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
     STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
