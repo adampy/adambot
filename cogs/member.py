@@ -8,7 +8,7 @@ import requests
 import re
 import os
 from datetime import datetime, timedelta
-import psycopg2
+import asyncpg
 from random import choice as randchoice
 import asyncio
 #from bs4 import BeautifulSoup
@@ -16,8 +16,6 @@ import asyncio
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.key = os.environ.get('DATABASE_URL')
-        self.pastebin = os.environ.get('PASTEBIN_KEY')
     
     def get_corona_data(self, country):
         '''DEPRECATED, use get_corona_data_updated()'''
@@ -322,25 +320,18 @@ class Member(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if 'bruh' in message.content.lower() and not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898:
-            conn = psycopg2.connect(self.key, sslmode='require')
-            cur = conn.cursor()
-
-            cur.execute("SELECT value FROM variables WHERE variable = 'bruh'")
-            current_bruhs = int(cur.fetchall()[0][0])
-            cur.execute("UPDATE variables SET value = %s WHERE variable = 'bruh'", (str(current_bruhs + 1),))
-            conn.commit()
-            conn.close() 
+            async with self.bot.pool.acquire() as connection:
+                result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
+                await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
         return
 
     @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
         '''See how many bruh moments we've had'''
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
-        cur.execute("SELECT value FROM variables WHERE variable = 'bruh'")
-        bruhs = cur.fetchall()[0][0]
-        conn.close()
-        await ctx.send(f'Bruh moments: **{bruhs}**')
+        async with self.bot.pool.acquire() as connection:
+            bruhs = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh'")
+            await ctx.send(f'Bruh moments: **{bruhs}**')
+            return
 
     @commands.command()
     async def cool(self, ctx, *message):
@@ -469,15 +460,12 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def remind(self, ctx, *args):
-        def write(self, reminder, seconds, member_id):
+        async def write(self, reminder, seconds, member_id):
             '''Writes to remind table with the time to remind (e.g. remind('...', 120, <member_id>) would mean '...' is reminded out in 120 seconds for <member_id>)'''
-            conn = psycopg2.connect(self.key, sslmode='require')
-            cur = conn.cursor()
             timestamp = datetime.utcnow()
             new_timestamp = timestamp + timedelta(seconds=seconds)
-            cur.execute('INSERT INTO remind (member_id, reminder, reminder_time) values (%s, %s, %s)', (member_id, reminder, new_timestamp))
-            conn.commit()
-            conn.close()
+            async with self.bot.pool.acquire() as connection:
+                await connection.execute('INSERT INTO remind (member_id, reminder, reminder_time) values ($1, $2, $3)', member_id, reminder, new_timestamp)
 
         '''Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1'''
         timeperiod =''
@@ -493,7 +481,7 @@ class Member(commands.Cog):
             await ctx.send('Please shorten your reminder to under 256 characters.')
         #seconds = time_arg(timeperiod)
         seconds = separate_args(timeperiod)[0]
-        write(self, reminder, seconds, ctx.author.id)
+        await write(self, reminder, seconds, ctx.author.id)
         await ctx.send(':ok_hand: The reminder has been added!')
 
 #-----------------------AVATAR------------------------------
@@ -559,21 +547,17 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     async def toggle1738(self, ctx):
         #db connections
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
-        #check if already joined
-        cur.execute("SELECT * FROM ping WHERE member_id = (%s)", (ctx.author.id,))
-        member = cur.fetchall()
-        if not member:
-            #not on - turn it on
-            cur.execute('INSERT INTO ping (member_id) values (%s)', (ctx.author.id, ))
-            await ctx.send(":ok_hand: You will recieve notifications for 1738. :tada:")
-        else:
-            #on - turn it off
-            cur.execute('DELETE FROM ping WHERE member_id = (%s)', (ctx.author.id, ))
-            await ctx.send(":ok_hand: You will no longer recieve notifications for 1738. :sob:")
-        conn.commit()
-        conn.close()
+        async with self.bot.pool.acquire() as connection:
+            #check if already joined
+            member = await connection.fetch("SELECT * FROM ping WHERE member_id = ($1)", ctx.author.id)
+            if not member:
+                #not on - turn it on
+                await connection.execute('INSERT INTO ping (member_id) values ($1)', ctx.author.id)
+                await ctx.send(":ok_hand: You will recieve notifications for 1738. :tada:")
+            else:
+                #on - turn it off
+                await connection.execute('DELETE FROM ping WHERE member_id = ($1)', ctx.author.id)
+                await ctx.send(":ok_hand: You will no longer recieve notifications for 1738. :sob:")
 
 def setup(bot):
     bot.add_cog(Member(bot))

@@ -5,7 +5,7 @@ class Permissions:
             "Assistant":445195413343961092,
             "Trial-Assistant":667872197091786793,
             "Staff":445195535901655041,
-            "Adam-Bot-Developer":740681121863303279,
+            "Adam-Bot Developer":740681121863303279,
             "Member":445196497777197056,}
 
     ADMIN = [ROLE_ID['Administrator']]
@@ -14,7 +14,6 @@ class Permissions:
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
     STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
     MEMBERS = TRIALASSISTANT + [ROLE_ID['Member']]
-
 
 TIMES = {'w':7*24*60*60,
          'week':7*24*60*60,

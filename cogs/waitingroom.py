@@ -3,23 +3,20 @@ from discord import Embed, Colour
 from discord.ext import commands
 from discord.utils import get
 import os
-import psycopg2
+import asyncpg
 from .utils import Permissions
 
 class WaitingRoom(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        key = os.environ.get('DATABASE_URL')
-
-        self.conn = psycopg2.connect(key, sslmode='require')
-        self.cur = self.conn.cursor()
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
         #invite stuffs
         guild = self.bot.get_guild(445194262947037185)
-        self.cur.execute('SELECT * FROM invites')
-        old_invites = self.cur.fetchall()
+        old_invites = []
+        async with sself.bot.pool.acquire() as connection:
+            old_invites = await connection.execute('SELECT * FROM invites')
         invites = await guild.invites()
         invite_data = None
         
@@ -60,20 +57,20 @@ class WaitingRoom(commands.Cog):
 
 
         #reset invites
-        self.cur.execute('DELETE FROM invites')
+        to_insert = []
         for invite in invites:
-            try:
-                data = [invite.inviter.id,
-                        invite.code,
-                        invite.uses,
-                        invite.max_uses,
-                        invite.created_at,
-                        invite.max_age]
+            data = [invite.inviter.id,
+                    invite.code,
+                    invite.uses,
+                    invite.max_uses,
+                    invite.created_at,
+                    invite.max_age]
+            to_insert.append(data)
 
-                self.cur.execute('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values (%s, %s, %s, %s, %s, %s)', data)
-            except:
-                pass
-        self.conn.commit()
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute('DELETE FROM invites')
+            await connection.executemany('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, %6)', to_insert)
+
 
 
         #formatting stuffs

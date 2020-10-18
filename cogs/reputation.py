@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord import Embed, Colour
 import os
-import psycopg2
+import asyncpg
 import datetime
 from .utils import Permissions
 
@@ -14,11 +14,10 @@ class Reputation(commands.Cog):
         self.key = os.environ.get('DATABASE_URL')
 
     async def get_leaderboard(self, ctx, only_members = False):
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
-        cur.execute('SELECT * FROM rep ORDER BY reps DESC')
-        leaderboard = cur.fetchall()
-        conn.close()
+        leaderboard = []
+        async with self.bot.pool.acquire() as connection:
+            leaderboard = await connection.fetch('SELECT * FROM rep ORDER BY reps DESC')
+        
         embed = Embed(title='**__Reputation Leaderboard__**', color=Colour.from_rgb(177,252,129))
         
         i = 0
@@ -38,37 +37,27 @@ class Reputation(commands.Cog):
                 break
         return embed
 
-    def modify_rep(self, member, change):
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
+    async def modify_rep(self, member, change):
+        reps = change
+        async with self.bot.pool.acquire() as connection:
+            reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", member.id)
+            if not reps:
+                await connection.execute('INSERT INTO rep (reps, member_id) VALUES ($1, $2)', change, member.id)
+            else:
+                await connection.execute('UPDATE rep SET reps = ($1) WHERE member_id = ($2)', reps+change, member.id)
+                reps = reps + change
 
-        cur.execute('SELECT reps FROM rep WHERE member_id = (%s)', (member.id, ))
-        reps = cur.fetchall()
-        if not reps:
-            cur.execute('INSERT INTO rep (reps, member_id) VALUES (%s, %s)', (change, member.id))
-            reps = change
-        else:
-            cur.execute('UPDATE rep SET reps = (%s) WHERE member_id = (%s);SELECT reps FROM rep WHERE member_id = (%s)', (reps[0][0]+change, member.id, member.id))
-            reps = cur.fetchall()[0][0]
-
-        conn.commit()
-        conn.close()
-        return reps
+        return (reps if reps else change)
     
-    def clear_rep(self, member):
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
-        cur.execute('UPDATE rep SET reps = 0 WHERE member_id = (%s)', (member.id,))
-        conn.commit()
-        conn.close()
+    async def clear_rep(self, member):
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("UPDATE rep SET reps = 0 WHERE member_id = ($1)", member.id)
 
-    def set_rep(self, user_id, reps):
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
-        cur.execute('UPDATE rep SET reps = (%s) WHERE member_id = (%s); SELECT reps FROM rep WHERE member_id = (%s)', (reps, user_id, user_id))
-        new_reps = cur.fetchall()[0][0]
-        conn.commit()
-        conn.close()
+    async def set_rep(self, user_id, reps):
+        new_reps = 0
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("UPDATE rep SET reps = ($1) WHERE member_id = ($2)", reps, user_id)
+            new_reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user_id)
         return new_reps
 
     def in_gcse(ctx):
@@ -99,9 +88,9 @@ class Reputation(commands.Cog):
                 await ctx.send('Please choose a valid number!')
                 return
             if 'Moderator' in [y.name for y in ctx.author.roles]:
-                reps = self.modify_rep(user, change)
+                reps = await self.modify_rep(user, change)
             else:
-                reps = self.modify_rep(user, 1)
+                reps = await self.modify_rep(user, 1)
             await ctx.send(f'{user.mention} now has {reps} reputation points!')
             
             embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
@@ -137,7 +126,7 @@ class Reputation(commands.Cog):
     async def member(self, ctx, user_id):
         '''Resets a single users reps.'''
         user = await self.bot.fetch_user(user_id)
-        self.clear_rep(user)
+        await self.clear_rep(user)
         await ctx.send(f'{user.mention} now has 0 points.')
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
@@ -150,11 +139,9 @@ class Reputation(commands.Cog):
     @commands.has_any_role(*Permissions.MOD)
     async def all(self, ctx):
         '''Resets everyones reps.'''
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
-        cur.execute('DELETE FROM rep')
-        conn.commit()
-        conn.close()
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("DELETE from rep")
+
         await ctx.send('Done. Everyone now has 0 points.')
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value='**EVERYONE**')
@@ -175,7 +162,7 @@ class Reputation(commands.Cog):
 
         #user = await self.bot.fetch_user(user_id)
 
-        new_reps = self.set_rep(user.id, rep)
+        new_reps = await self.set_rep(user.id, rep)
         await ctx.send(f'{user.mention} now has {new_reps} reputation points.')
         embed = Embed(title='Reputation Points Set', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
@@ -195,7 +182,7 @@ class Reputation(commands.Cog):
             await ctx.send('The rep must be a number!')
             return
 
-        new_reps = self.set_rep(user_id, rep)
+        new_reps = await self.set_rep(user_id, rep)
 
         await ctx.send(f'{user_id} now has {new_reps} reputation points.')
         embed = Embed(title='Reputation Points Set (Hard set)', color=Colour.from_rgb(177,252,129))
@@ -207,21 +194,18 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    async def check(self, ctx, user: discord.User):
+    async def check(self, ctx, user: discord.User = None):
         '''Checks a specific person reps, or your own if user is left blank'''
         if user is None:
             user = ctx.author
-        
-        conn = psycopg2.connect(self.key, sslmode='require')
-        cur = conn.cursor()
-        cur.execute('SELECT reps FROM rep WHERE member_id = (%s)', (user.id,))
-        rep = cur.fetchall()
+       
+        rep = None
+        async with self.bot.pool.acquire() as connection:
+            rep = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user.id)
+
         if not rep:
             rep = 0
-        else:
-            rep = rep[0][0]
 
-        conn.close()
         await ctx.send(f'{user.mention} has {rep} reputation points.')
 
             
