@@ -136,7 +136,7 @@ class QuestionOTD(commands.Cog):
             if question_id.lower() == 'random':
                 questions = await connection.fetch('SELECT * FROM qotd')
             else:
-                questions = await connection.fetch('SELECT * FROM qotd WHERE id = %s', question_id)
+                questions = await connection.fetch('SELECT * FROM qotd WHERE id = $1', int(question_id))
             if not questions:
                 await ctx.send(f'Question with ID {question_id} not found. Please try again.')
                 return
@@ -147,7 +147,7 @@ class QuestionOTD(commands.Cog):
             member = await self.bot.fetch_user(question_data[2])
             message = f"**QOTD**\n{question} - Credit to {member.mention}"
 
-            await connection.execute('DELETE FROM qotd WHERE id = ($1)', question_id)
+            await connection.execute('DELETE FROM qotd WHERE id = ($1)', int(question_id))
 
         await ctx.send(':ok_hand:')
         await get(ctx.author.guild.text_channels, name='question-of-the-day').send(message)

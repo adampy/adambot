@@ -6,7 +6,7 @@ from discord import Embed, Colour
 import os
 import asyncpg
 import datetime
-from .utils import Permissions
+from .utils import Permissions, ordinal
 
 class Reputation(commands.Cog):
     def __init__(self, bot):
@@ -200,13 +200,20 @@ class Reputation(commands.Cog):
             user = ctx.author
        
         rep = None
+        lb_pos = None
         async with self.bot.pool.acquire() as connection:
             rep = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user.id)
+            lb_pos = await connection.fetchval("""
+WITH rankings as (SELECT member_id, DENSE_RANK() OVER (ORDER BY reps DESC) AS RowNum
+FROM rep
+ORDER BY reps DESC)
+
+SELECT Rownum FROM rankings WHERE member_id = ($1);""", user.id)
 
         if not rep:
             rep = 0
 
-        await ctx.send(f'{user.mention} has {rep} reputation points.')
+        await ctx.send(f'{user.mention} {f"is **{ordinal(lb_pos)}** on the reputation leaderboard with" if (lb_pos and rep > 0) else "has"} **{rep}** reputation points. {"They are not yet on the leaderboard because they have no reputation points." if (not lb_pos or rep == 0) else ""}')
 
             
 

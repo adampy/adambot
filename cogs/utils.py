@@ -45,6 +45,14 @@ SPAMPING_PERMS = [
 GCSE_SERVER_ID = 445194262947037185
 NEWLINE = '\n'
 
+def ordinal(n: int) -> str:
+    '''Returns the shortened ordinal for the cardinal number given. E.g. 1 -> "1st", 74 -> "74th"''' #https://stackoverflow.com/questions/9647202/ordinal-numbers-replacement
+    suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+    if 11 <= (n % 100) <= 13:
+        suffix = 'th'
+    return str(n) + suffix
+
+
 def separate_args(args):
     '''Given the args tuple (from *args) and returns seconds in index position 0 and reason in index position 1'''
     arg_list = [arg for arg in ' '.join(args).split('-') if arg]

@@ -49,7 +49,7 @@ class AdamBot(Bot):
         '''Command that starts AdamBot, is run in AdamBot.__init__'''
         self.load_cogs()
         self.loop.create_task(self.execute_todos())
-        self.pool : asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require"))
+        self.pool : asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20))
         self.run(os.environ.get('TOKEN'))
 
     def load_cogs(self):
