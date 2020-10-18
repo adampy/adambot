@@ -13,7 +13,6 @@ import asyncpg
 #-----------------------------------------------------------------
 
 # Move logging into a seperate cog for readability
-# People can view their warns
 # People can see their position on the rep lb
 # Rep lb pages
 # Warnlist/qotd pages buggy
@@ -42,7 +41,6 @@ class AdamBot(Bot):
         super().__init__(*args, **kwargs)
 
         self.COGS = cogs
-        
         self.LOCAL_HOST = local
         self.DB = os.environ.get('DATABASE_URL')
         self.start_up()
@@ -67,6 +65,7 @@ class AdamBot(Bot):
         await self.change_presence(activity=discord.Game(name='Type -help for help'))
 
     async def on_message(self, message):
+        '''Command that stops bots from executing commands'''
         if message.author.bot:
             return
         await self.process_commands(message)
@@ -162,6 +161,5 @@ if __name__ == "__main__":
         'private',]
 
     bot = AdamBot(local_host, cogs, command_prefix='-', intents=intents)
-    #bot = commands.Bot(command_prefix=PREFIX, intents=intents)
     #bot.remove_command("help")
 

@@ -45,9 +45,9 @@ class Reputation(commands.Cog):
                 await connection.execute('INSERT INTO rep (reps, member_id) VALUES ($1, $2)', change, member.id)
             else:
                 await connection.execute('UPDATE rep SET reps = ($1) WHERE member_id = ($2)', reps+change, member.id)
-                reps = await connection.fetchval('SELECT reps FROM rep WHERE member_id = ($1)', member.id)
+                reps = reps + change
 
-        return reps
+        return (reps if reps else change)
     
     async def clear_rep(self, member):
         async with self.bot.pool.acquire() as connection:

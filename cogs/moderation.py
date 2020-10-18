@@ -415,16 +415,8 @@ Staff role needed.'''
             await ctx.send('```-warnlist member @Member <page_number>``` or ```warnlist all <page_number>```')
             return
 
-
-    @warnlist.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
-    @commands.guild_only()
-    async def member(self, ctx, member: discord.Member = None, page_num = None):
-        '''Shows warnings for a given member.
-Staff role needed.'''
-        if member == None:
-            await ctx.send("```-warnlist member @Member <page_number>```")
-
+    async def warnlist_member(self, ctx, member, page_num=None):
+        '''Handle gettings the warns for a specific member'''
         warns = []
         async with self.bot.pool.acquire() as connection:
             warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) ORDER BY id', member.id)
@@ -478,6 +470,25 @@ Staff role needed.'''
         except Exception as e:
             pass
 
+
+    @warnlist.command(pass_context=True)
+    @commands.has_any_role(*Permissions.STAFF)
+    @commands.guild_only()
+    async def member(self, ctx, member: discord.Member = None, page_num = None):
+        '''Shows warnings for a given member.
+Staff role needed.'''
+        if member == None:
+            await ctx.send("```-warnlist member @Member <page_number>```")
+        else:
+            await self.warnlist_member(ctx, member, page_num)
+
+    @warnlist.command(pass_context=True)
+    @commands.has_any_role(*Permissions.MEMBERS)
+    @commands.guild_only()
+    async def me(self, ctx, page_num = None):
+        '''Shows warnings for yourself.
+Member role needed.'''
+        await self.warnlist_member(ctx, ctx.author, page_num)
 
     @warnlist.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)

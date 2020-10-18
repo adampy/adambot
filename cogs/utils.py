@@ -9,12 +9,11 @@ class Permissions:
             "Member":445196497777197056,}
 
     ADMIN = [ROLE_ID['Administrator']]
-    MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']] + [ROLE_ID['Adam-Bot Developer']]
+    MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
     ASSISTANT = MOD + [ROLE_ID['Assistant']]
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
     STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
     MEMBERS = TRIALASSISTANT + [ROLE_ID['Member']]
-
 
 TIMES = {'w':7*24*60*60,
          'week':7*24*60*60,
