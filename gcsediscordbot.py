@@ -150,6 +150,7 @@ if __name__ == "__main__":
 
     intents = discord.Intents.default()
     intents.members = True
+    intents.presences = True
 
     cogs = ['member',
         'moderation',
