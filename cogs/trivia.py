@@ -93,8 +93,9 @@ class Trivia(commands.Cog):
             color = member.color
             
         embed = Embed(title='Trivia results' if reset else 'Trivia scores', color=color)
+        total_score = sum([self.score[indv] for indv in self.score])
         for indv in self.score:
-            embed.add_field(name=indv, value=f'{round(self.score[indv]*100/self.question_number,4)}% ({self.score[indv]})', inline=True)
+            embed.add_field(name=indv, value=f'{round(self.score[indv]*100/total_score,4)}% ({self.score[indv]})', inline=True)
         if reset:
             embed.set_footer(text=f'This trivia took {(datetime.utcnow()-self.started_at).seconds} seconds to complete.')
             await self.trivia_channel.send('Trivia stopped.')
@@ -214,7 +215,7 @@ class Trivia(commands.Cog):
             await ctx.send('You must choose a trivia from `-trivia list`.')
             return
         if trivia not in self.trivia_list:
-            await ctx.send('This trivia doesn\'t exist. :sob:')
+            await ctx.send('This trivia doesn\'t exist :sob: (the trivia names are case sensitive).')
             return
         if self.running:
             await ctx.send('Trivia already happening, please wait until this one is finshed.')

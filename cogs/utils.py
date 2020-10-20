@@ -1,3 +1,119 @@
+from discord import Embed, Colour, Message, TextChannel, File
+from math import ceil
+from datetime import timedelta
+from io import BytesIO
+
+class EmbedPages:
+    def __init__(self, page_type, data, title, colour: Colour, bot, initiator, *args, **kwargs):
+        self.bot = bot
+        self.data = data
+        self.title = title
+        self.page_type = page_type
+        self.top_limit = 0
+        self.colour = colour
+        self.embed = Embed(title=title + ": Page 1", color = colour)
+        self.message: Message = None
+        self.page_num = 1
+        self.initiator = initiator # Here to stop others using the embed
+
+    async def set_page(self, page_num: int):
+        '''Changes the embed accordingly'''
+        if self.page_type == PageTypes.REP:
+            page_length = 10
+        else:
+            page_length = 5
+        self.top_limit = ceil(len(self.data)/page_length)
+
+        # Clear previous data
+        self.embed = Embed(title=f"{self.title}: Page {page_num}/{self.top_limit}", color = self.colour)
+
+        # Gettings the wanted data
+        self.page_num = page_num
+        page_num -= 1
+        for i in range(page_length*page_num, min(page_length*page_num + page_length, len(self.data))):
+            if self.page_type == PageTypes.QOTD:
+                question_id = self.data[i][0]
+                question = self.data[i][1]
+                member_id = int(self.data[i][2])
+                user = await self.bot.fetch_user(member_id)
+                date = (self.data[i][3]+timedelta(hours=1)).strftime('%H:%M on %d/%m/%y')
+            
+                self.embed.add_field(name=f"{question_id}. {question}", value=f"{date} by {user.name if user else '*MEMBER NOT FOUND*'} ({member_id})", inline=False)
+
+            elif self.page_type == PageTypes.WARN:
+                staff = await self.bot.fetch_user(self.data[i][2])
+                member = await self.bot.fetch_user(self.data[i][1])
+
+                if member:
+                    member_string = f"{str(member)} ({self.data[i][1]}) Reason: {self.data[i][4]}"
+                else:
+                    member_string = f"DELETED USER ({self.data[i][1]}) Reason: {self.data[i][4]}"
+
+                if staff:
+                    staff_string = f"{str(staff)} ({self.data[i][2]})"
+                else:
+                    staff_string = f"DELETED USER ({self.data[i][2]})"
+
+                self.embed.add_field(name=f"**{self.data[i][0]}** : {member_string}",
+                                value=f"{self.data[i][3].strftime('On %d/%m/%Y at %I:%M %p')} by {staff_string}",
+                                inline=False)
+
+            elif self.page_type == PageTypes.REP:
+                member = self.bot.get_guild(GCSE_SERVER_ID).get_member(self.data[i][0])
+                if member is None:
+                    user = await self.bot.fetch_user(self.data[i][0])
+                    member = f"{str(user)} - this person is currently not in the server - ID: {user.id}"
+                self.embed.add_field(name=f"{member}", value=f"{self.data[i][1]}", inline=False)
+
+    async def previous_page(self, *args):
+        '''Moves the embed to the previous page'''
+        if self.page_num != 1: # Cannot go to previous page if already on first page
+            await self.set_page(self.page_num - 1)
+            await self.edit()
+            
+    async def next_page(self, *args):
+        '''Moves the embed to the next page'''
+        if self.page_num != self.top_limit: # Can only move next if not on the limit
+            await self.set_page(self.page_num + 1)
+            await self.edit()
+
+    async def first_page(self, *args):
+        '''Moves the embed to the first page'''
+        await self.set_page(1)
+        await self.edit()
+
+    async def last_page(self, *args):
+        '''Moves the embed to the last page'''
+        await self.set_page(self.top_limit)
+        await self.edit()
+
+    async def send(self, channel: TextChannel, *args):
+        '''Sends the embed message. The message is deleted after 300 seconds (5 minutes).'''
+        self.message = await channel.send(embed = self.embed, delete_after = 300)
+        await self.message.add_reaction(EmojiEnum.MIN_BUTTON)
+        await self.message.add_reaction(EmojiEnum.LEFT_ARROW)
+        await self.message.add_reaction(EmojiEnum.RIGHT_ARROW)
+        await self.message.add_reaction(EmojiEnum.MAX_BUTTON)
+        await self.message.add_reaction(EmojiEnum.CLOSE)
+        self.bot.pages.append(self)
+
+    async def edit(self, *args):
+        '''Edits the message to the current self.embed and updates self.message'''
+        await self.message.edit(embed=self.embed)
+
+class PageTypes:
+    QOTD = 0
+    WARN = 1
+    REP = 2
+
+class EmojiEnum:
+    MIN_BUTTON = '\U000023ee'
+    MAX_BUTTON = '\U000023ed'
+    LEFT_ARROW = '\U000025c0'
+    RIGHT_ARROW = '\U000025b6'
+    BUTTON = '\U00002b55'
+    CLOSE = '\N{CROSS MARK}'
+
 class Permissions:
     ROLE_ID = {"Administrator":445195157151809536,
             "Head Mod":445195341310984203,
@@ -44,6 +160,20 @@ SPAMPING_PERMS = [
 ]
 GCSE_SERVER_ID = 445194262947037185
 NEWLINE = '\n'
+
+async def send_file(fig, channel, filename):
+    '''Send data to a channel with filename `filename`'''
+    buf = BytesIO()
+    fig.savefig(buf)
+    buf.seek(0)
+    await channel.send(file=File(buf, filename=f'{filename}.png'))
+
+def ordinal(n: int) -> str:
+    '''Returns the shortened ordinal for the cardinal number given. E.g. 1 -> "1st", 74 -> "74th"''' #https://stackoverflow.com/questions/9647202/ordinal-numbers-replacement
+    suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+    if 11 <= (n % 100) <= 13:
+        suffix = 'th'
+    return str(n) + suffix
 
 def separate_args(args):
     '''Given the args tuple (from *args) and returns seconds in index position 0 and reason in index position 1'''

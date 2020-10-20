@@ -9,16 +9,12 @@ import os
 from datetime import datetime
 from csv import reader
 import asyncpg
+from cogs.utils import EmojiEnum
 
 #-----------------------------------------------------------------
 
 # Move logging into a seperate cog for readability
-# People can see their position on the rep lb
 # Rep lb pages
-# Warnlist/qotd pages buggy
-
-#order trivia leaderboard by score
-#add score to trivia
 
 #fix remind command
 #create poll command
@@ -43,13 +39,15 @@ class AdamBot(Bot):
         self.COGS = cogs
         self.LOCAL_HOST = local
         self.DB = os.environ.get('DATABASE_URL')
+        self.pages = [] # List of active pages that can be used
+
         self.start_up()
 
     def start_up(self):
         '''Command that starts AdamBot, is run in AdamBot.__init__'''
         self.load_cogs()
         self.loop.create_task(self.execute_todos())
-        self.pool : asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require"))
+        self.pool : asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20))
         self.run(os.environ.get('TOKEN'))
 
     def load_cogs(self):
@@ -69,6 +67,33 @@ class AdamBot(Bot):
         if message.author.bot:
             return
         await self.process_commands(message)
+
+    async def on_reaction_add(self, reaction, user):
+        '''Subroutine used to control EmbedPages stored within self.pages'''
+        if not user.bot:
+            for page in self.pages:
+                if reaction.message == page.message and user == page.initiator:
+                    # Do stuff
+                    if reaction.emoji == EmojiEnum.LEFT_ARROW:
+                        await page.previous_page()
+                    elif reaction.emoji == EmojiEnum.RIGHT_ARROW:
+                        await page.next_page()
+                    elif reaction.emoji == EmojiEnum.CLOSE:
+                        await reaction.message.delete()
+                    elif reaction.emoji == EmojiEnum.MIN_BUTTON:
+                        await page.first_page()
+                    elif reaction.emoji == EmojiEnum.MAX_BUTTON:
+                        await page.last_page()
+
+                    await reaction.message.remove_reaction(reaction.emoji, user)
+                    break
+
+    async def on_message_delete(self, message):
+        '''Ensures that memory is freed up once a message containing an embed page is deleted.'''
+        for page in self.pages:
+            if message == page.message:
+                del page
+                break
 
     async def execute_todos(self):
         '''The loop that continually checks the DB for todos'''
@@ -150,6 +175,8 @@ if __name__ == "__main__":
 
     intents = discord.Intents.default()
     intents.members = True
+    intents.presences = True
+    intents.reactions = True
 
     cogs = ['member',
         'moderation',

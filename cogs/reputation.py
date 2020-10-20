@@ -6,7 +6,9 @@ from discord import Embed, Colour
 import os
 import asyncpg
 import datetime
-from .utils import Permissions
+from .utils import Permissions, ordinal, EmbedPages, PageTypes, send_file
+import matplotlib.pyplot as plt
+import matplotlib
 
 class Reputation(commands.Cog):
     def __init__(self, bot):
@@ -17,25 +19,10 @@ class Reputation(commands.Cog):
         leaderboard = []
         async with self.bot.pool.acquire() as connection:
             leaderboard = await connection.fetch('SELECT * FROM rep ORDER BY reps DESC')
-        
-        embed = Embed(title='**__Reputation Leaderboard__**', color=Colour.from_rgb(177,252,129))
-        
-        i = 0
-        for item in leaderboard:
-            member = ctx.guild.get_member(item[0])
-            if member is None:
-                if not only_members: # Okay to include on list
-                    user = await self.bot.fetch_user(item[0])
-                    member = f"{str(user)} - this person is currently not in the server - ID: {user.id}"
-                    embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
-                    i += 1
-            else:
-                embed.add_field(name=f"{member}", value=f"{item[1]}", inline=False)
-                i += 1
 
-            if i == 10:
-                break
-        return embed
+        embed = EmbedPages(PageTypes.REP, leaderboard, "Reputation Leaderboard", Colour.from_rgb(177,252,129), self.bot, ctx.author)
+        await embed.set_page(1) # Default first page
+        await embed.send(ctx.channel)
 
     async def modify_rep(self, member, change):
         reps = change
@@ -44,21 +31,27 @@ class Reputation(commands.Cog):
             if not reps:
                 await connection.execute('INSERT INTO rep (reps, member_id) VALUES ($1, $2)', change, member.id)
             else:
-                await connection.execute('UPDATE rep SET reps = ($1) WHERE member_id = ($2)', reps+change, member.id)
+                await self.set_rep(member.id, reps+change)
                 reps = reps + change
 
         return (reps if reps else change)
     
-    async def clear_rep(self, member):
+    async def clear_rep(self, user_id):
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("UPDATE rep SET reps = 0 WHERE member_id = ($1)", member.id)
+            await connection.execute("DELETE FROM rep WHERE member_id = ($1)", user_id)
 
     async def set_rep(self, user_id, reps):
-        new_reps = 0
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("UPDATE rep SET reps = ($1) WHERE member_id = ($2)", reps, user_id)
-            new_reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user_id)
-        return new_reps
+            if reps == 0:
+                await self.clear_rep(user_id)
+                return 0
+            else:
+                await connection.execute("UPDATE rep SET reps = ($1) WHERE member_id = ($2)", reps, user_id)
+                new_reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user_id)
+                if not new_reps: # User was not already on the rep table, it needs adding
+                    await connection.execute("INSERT INTO rep (reps, member_id) VALUES ($1, $2)", reps, user_id)
+                    new_reps = reps
+                return new_reps
 
     def in_gcse(ctx):
         return ctx.guild.id == 445194262947037185
@@ -111,7 +104,7 @@ class Reputation(commands.Cog):
         else:
             lb = await self.get_leaderboard(ctx, only_members=False)
 
-        await ctx.send(embed=lb)
+        #await ctx.send(embed=lb)
 
     @rep.group()
     @commands.guild_only()
@@ -126,7 +119,7 @@ class Reputation(commands.Cog):
     async def member(self, ctx, user_id):
         '''Resets a single users reps.'''
         user = await self.bot.fetch_user(user_id)
-        await self.clear_rep(user)
+        await self.clear_rep(user.id)
         await ctx.send(f'{user.mention} now has 0 points.')
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
@@ -182,7 +175,7 @@ class Reputation(commands.Cog):
             await ctx.send('The rep must be a number!')
             return
 
-        new_reps = await self.set_rep(user_id, rep)
+        new_reps = await self.set_rep(int(user_id), rep)
 
         await ctx.send(f'{user_id} now has {new_reps} reputation points.')
         embed = Embed(title='Reputation Points Set (Hard set)', color=Colour.from_rgb(177,252,129))
@@ -200,15 +193,35 @@ class Reputation(commands.Cog):
             user = ctx.author
        
         rep = None
+        lb_pos = None
         async with self.bot.pool.acquire() as connection:
             rep = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user.id)
+            lb_pos = await connection.fetchval("""
+WITH rankings as (SELECT member_id, DENSE_RANK() OVER (ORDER BY reps DESC) AS RowNum
+FROM rep
+ORDER BY reps DESC)
+
+SELECT Rownum FROM rankings WHERE member_id = ($1);""", user.id)
 
         if not rep:
             rep = 0
 
-        await ctx.send(f'{user.mention} has {rep} reputation points.')
+        await ctx.send(f'{user.mention} {f"is **{ordinal(lb_pos)}** on the reputation leaderboard with" if lb_pos else "has"} **{rep}** reputation points. {"They are not yet on the leaderboard because they have no reputation points." if (not lb_pos or rep == 0) else ""}')
 
-            
+    @rep.command()
+    @commands.guild_only()
+    async def data(self, ctx):
+        vals = []
+        async with self.bot.pool.acquire() as connection:
+            vals = await connection.fetch("SELECT DISTINCT reps, COUNT(member_id) FROM rep WHERE reps > 0 GROUP BY reps ORDER BY reps")
+
+        fig, ax = plt.subplots()
+        ax.plot([x[0] for x in vals], [x[1] for x in vals], 'b-o', linewidth=0.5, markersize=1)
+        ax.set(xlabel='Reputation points (rep)', ylabel='Frequency (reps)', title='Rep frequency graph')
+        ax.grid()
+        ax.set_ylim(bottom=0)
+
+        await send_file(fig, ctx.channel, "rep-data")
 
 
 

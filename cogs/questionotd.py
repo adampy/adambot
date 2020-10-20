@@ -7,7 +7,7 @@ import datetime
 import os
 from random import choice
 from math import ceil
-from .utils import SPAMPING_PERMS, Permissions
+from .utils import SPAMPING_PERMS, Permissions, EmbedPages, PageTypes
 
 class QuestionOTD(commands.Cog):
     def __init__(self, bot):
@@ -64,47 +64,17 @@ class QuestionOTD(commands.Cog):
 
     @qotd.command(pass_context=True)
     @commands.check(qotd_perms)
-    async def list(self, ctx, page_num = None):
+    async def list(self, ctx, page_num = 1):
         qotds = []
         async with self.bot.pool.acquire() as connection:
             qotds = await connection.fetch('SELECT * FROM qotd ORDER BY id')
-        aprox = ceil(len(qotds)/5)
         
-        if page_num is None:
-            await ctx.send(f'Please choose a number from `1` to `{aprox}`!')
-            return
+        if len(qotds) > 0:
+            embed = EmbedPages(PageTypes.QOTD, qotds, "QOTDs", Colour.from_rgb(177,252,129), self.bot, ctx.author)
+            await embed.set_page(int(page_num))
+            await embed.send(ctx.channel)
         else:
-            try:
-                page_num = int(page_num)
-            except ValueError:
-                await ctx.send(f'Please choose a number from `1` to `{aprox}`!')
-                return
-
-        pages = []
-        while len(qotds) != 0:
-            page = Embed(title=f'QOTDs Page {page_num}/{aprox}', color=Colour.from_rgb(177,252,129))
-            if len(qotds) > 5:
-                n = 5
-            else:
-                n = len(qotds)
-
-            for i in range(n):
-                question_id = qotds[0][0]
-                question = qotds[0][1]
-                member_id = int(qotds[0][2])
-                user = get(self.bot.get_all_members(), id=member_id)
-                date = (qotds[0][3]+datetime.timedelta(hours=1)).strftime('%H:%M on %d/%m/%y')
-            
-                page.add_field(name=f"{question_id}. {question}", value=f"{date} by {user.name if user else '*MEMBER NOT FOUND*'} ({member_id})", inline=False)
-                qotds.pop(0)
-            pages.append(page)
-
-        try:
-            message=await ctx.send(embed=pages[page_num - 1])
-        except IndexError:
-            await ctx.send(f'{page_num} is not a correct page number, please choose a number from `1` to `{aprox}`!')
-        except ValueError:
-            await ctx.send(f'{page_num} is not a correct page number, please choose a number from `1` to `{aprox}`!')
+            ctx.send("No warnings recorded!")
 
 
     @qotd.command(pass_context=True, aliases=['remove'])
@@ -136,7 +106,7 @@ class QuestionOTD(commands.Cog):
             if question_id.lower() == 'random':
                 questions = await connection.fetch('SELECT * FROM qotd')
             else:
-                questions = await connection.fetch('SELECT * FROM qotd WHERE id = %s', question_id)
+                questions = await connection.fetch('SELECT * FROM qotd WHERE id = $1', int(question_id))
             if not questions:
                 await ctx.send(f'Question with ID {question_id} not found. Please try again.')
                 return
@@ -147,7 +117,7 @@ class QuestionOTD(commands.Cog):
             member = await self.bot.fetch_user(question_data[2])
             message = f"**QOTD**\n{question} - Credit to {member.mention}"
 
-            await connection.execute('DELETE FROM qotd WHERE id = ($1)', question_id)
+            await connection.execute('DELETE FROM qotd WHERE id = ($1)', int(question_id))
 
         await ctx.send(':ok_hand:')
         await get(ctx.author.guild.text_channels, name='question-of-the-day').send(message)
