@@ -12,11 +12,21 @@ class WaitingRoom(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        #formatting stuffs
+        message = f'''Welcome to the server, {member.mention}!
+Please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention}. Once you've done that, state your school year to be let in.
+
+If no staff member assists you, feel free to ping a staff member.'''
+
+        channel = member.guild.system_channel
+        await channel.send(message)
+
+
         #invite stuffs
         guild = self.bot.get_guild(445194262947037185)
         old_invites = []
-        async with sself.bot.pool.acquire() as connection:
-            old_invites = await connection.execute('SELECT * FROM invites')
+        async with self.bot.pool.acquire() as connection:
+            old_invites = await connection.fetch('SELECT * FROM invites')
         invites = await guild.invites()
         invite_data = None
         
@@ -69,18 +79,8 @@ class WaitingRoom(commands.Cog):
 
         async with self.bot.pool.acquire() as connection:
             await connection.execute('DELETE FROM invites')
-            await connection.executemany('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, %6)', to_insert)
+            await connection.executemany('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)', to_insert)
 
-
-
-        #formatting stuffs
-        message = f'''Welcome to the server, {member.mention}!
-Please read through {get(member.guild.text_channels, name='rules').mention} and {get(member.guild.text_channels, name='faqs').mention}. Once you've done that, state your school year to be let in.
-
-If no staff member assists you, feel free to ping a staff member.'''
-
-        channel = member.guild.system_channel
-        await channel.send(message)
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)

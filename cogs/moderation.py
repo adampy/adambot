@@ -4,7 +4,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
 from discord.utils import get
 import asyncio
-from .utils import separate_args, Permissions
+from .utils import separate_args, Permissions, EmbedPages, PageTypes
 from datetime import datetime, timedelta
 import os
 import asyncpg
@@ -415,66 +415,23 @@ Staff role needed.'''
             await ctx.send('```-warnlist member @Member <page_number>``` or ```warnlist all <page_number>```')
             return
 
-    async def warnlist_member(self, ctx, member, page_num=None):
+    async def warnlist_member(self, ctx, member, page_num = 1):
         '''Handle gettings the warns for a specific member'''
         warns = []
         async with self.bot.pool.acquire() as connection:
             warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) ORDER BY id', member.id)
 
-        aprox = ceil(len(warns)/5)
-        if len(warns) == 0:
-            await ctx.send("No warnings recorded!")
-
-        if len(warns) > 5:
-            try:
-                if page_num == None:
-                    raise ValueError
-                page_num = int(page_num)
-                if not (0 < page_num <= aprox): # Ensures that page_num is in the range 0 < page_num <= aprox
-                    raise ValueError
-                embed = Embed(title=f'Warnings Page {page_num}/{aprox}', color=Colour.from_rgb(133,0,255))
-                page_num -= 1 # This is because index starts at 0 so here turn the page number from cardinal to index
-                for i in range(5*page_num, min((5*page_num + 5, len(warns)))): # 5 here denotes how many items are on the embed, this makes sure that if there are not 5 on the last page then there is just enough
-                    staff = await self.bot.fetch_user(warns[i][2])
-                    member = await self.bot.fetch_user(warns[i][1])
-
-                    if member:
-                        member_string = f"{str(member)} ({warns[i][1]}) Reason: {warns[i][4]}"
-                    else:
-                        member_string = f"DELETED USER ({warns[i][1]}) Reason: {warns[i][4]}"
-
-                    if staff:
-                        staff_string = f"{str(staff)} ({warns[i][2]})"
-                    else:
-                        staff_string = f"DELETED USER ({warns[i][2]})"
-
-                    embed.add_field(name=f"**{warns[i][0]}** : {member_string}",
-                                    value=f"{warns[i][3].strftime('On %x at %I:%M %p')} by {staff_string}",
-                                    inline=False)
-
-            except ValueError:
-                await ctx.send(f'Please enter the command again followed by a number from `1` to `{aprox}`')
-                return
-
-        #len(warns) <= 5
+        if len(warns) > 0:
+            embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author)
+            await embed.set_page(int(page_num))
+            await embed.send(ctx.channel)
         else:
-            embed = Embed(title='All warnings', color=Colour.from_rgb(133,0,255))
-            for warn in warns:
-                staff = await self.bot.fetch_user(warn[2])
-                member = await self.bot.fetch_user(warn[1])
-                embed.add_field(name=f"**{warn[0]}** : {str(member)} ({member.id}) Reason: {warn[4]}",
-                                value=f"{warn[3].strftime('On %x at %I:%M %p')} by {str(staff)} ({staff.id})",
-                                inline=False)
-        try:
-            await ctx.send(embed=embed)
-        except Exception as e:
-            pass
-
+            ctx.send("No warnings recorded!")
 
     @warnlist.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
-    async def member(self, ctx, member: discord.Member = None, page_num = None):
+    async def member(self, ctx, member: discord.Member = None, page_num = 1):
         '''Shows warnings for a given member.
 Staff role needed.'''
         if member == None:
@@ -485,7 +442,7 @@ Staff role needed.'''
     @warnlist.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
-    async def me(self, ctx, page_num = None):
+    async def me(self, ctx, page_num = 1):
         '''Shows warnings for yourself.
 Member role needed.'''
         await self.warnlist_member(ctx, ctx.author, page_num)
@@ -493,64 +450,19 @@ Member role needed.'''
     @warnlist.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
-    async def all(self, ctx, page_num = None):
+    async def all(self, ctx, page_num = 1):
         '''Shows all the warnings in the server.
 Staff role needed.'''
         warns = []
         async with self.bot.pool.acquire() as connection:
             warns = await connection.fetch('SELECT * FROM warn ORDER BY id')
 
-        aprox = ceil(len(warns)/5)
-        if len(warns) == 0:
-            await ctx.send("No warnings recorded!")
-            return
-
-        if len(warns) > 5: #need multiple embeds
-            try:
-                if page_num == None:
-                    raise ValueError
-                page_num = int(page_num)
-                if not (0 < page_num <= aprox): # Ensures that page_num is in the range 0 < page_num <= aprox
-                    raise ValueError
-                embed = Embed(title=f'Warnings Page {page_num}/{aprox}', color=Colour.from_rgb(133,0,255))
-                page_num -= 1 # This is because index starts at 0 so here turn the page number from cardinal to index
-                for i in range(5*page_num, min((5*page_num + 5, len(warns)))): # 5 here denotes how many items are on the embed, this makes sure that if there are not 5 on the last page then there is just enough
-                    staff = await self.bot.fetch_user(warns[i][2])
-                    member = await self.bot.fetch_user(warns[i][1])
-
-                    if member:
-                        member_string = f"{str(member)} ({warns[i][1]}) Reason: {warns[i][4]}"
-                    else:
-                        member_string = f"DELETED USER ({warns[i][1]}) Reason: {warns[i][4]}"
-
-                    if staff:
-                        staff_string = f"{str(staff)} ({warns[i][2]})"
-                    else:
-                        staff_string = f"DELETED USER ({warns[i][2]})"
-
-                    embed.add_field(name=f"**{warns[i][0]}** : {member_string}",
-                                    value=f"{warns[i][3].strftime('On %x at %I:%M %p')} by {staff_string}",
-                                    inline=False)
-
-            except ValueError:
-                await ctx.send(f'Please enter the command again followed by a number from `1` to `{aprox}`')
-                return
-
-        #len(warns) <= 5
+        if len(warns) > 0:
+            embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author)
+            await embed.set_page(int(page_num))
+            await embed.send(ctx.channel)
         else:
-            embed = Embed(title='All warnings', color=Colour.from_rgb(133,0,255))
-            for warn in warns:
-                staff = await self.bot.fetch_user(warn[2])
-                member = await self.bot.fetch_user(warn[1])
-                embed.add_field(name=f"**{warn[0]}** : {str(member)} ({member.id}) Reason: {warn[4]}",
-                                value=f"{warn[3].strftime('On %x at %I:%M %p')} by {str(staff)} ({staff.id})",
-                                inline=False)
-
-        try:
-            await ctx.send(embed=embed)
-        except Exception as e:
-            pass
-
+            await ctx.send("No warnings recorded!")
 
     @commands.command(pass_context=True, aliases=['warndelete'])
     @commands.has_any_role(*Permissions.MOD)
@@ -580,6 +492,8 @@ Moderator role needed'''
 
         if len(warnings) > 1:
             await ctx.send(f"The warning's have been deleted.")
+
+#-----------------------MISC------------------------------
 
     @commands.command(aliases=['announce'])
     @commands.has_any_role(*Permissions.STAFF)
