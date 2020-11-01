@@ -208,6 +208,7 @@ SELECT Rownum FROM rankings WHERE member_id = ($1);""", user.id)
 
         await ctx.send(f'{user.mention} {f"is **{ordinal(lb_pos)}** on the reputation leaderboard with" if lb_pos else "has"} **{rep}** reputation points. {"They are not yet on the leaderboard because they have no reputation points." if (not lb_pos or rep == 0) else ""}')
 
+
     @rep.command()
     @commands.guild_only()
     async def data(self, ctx):
