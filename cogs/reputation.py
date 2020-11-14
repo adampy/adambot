@@ -63,12 +63,17 @@ class Reputation(commands.Cog):
     async def rep(self, ctx):
         '''Reputation module'''
         if ctx.invoked_subcommand is None:
-            await ctx.send('```-rep award @Member``` or ```-rep leaderboard```')
+            await ctx.send('DefaultDan moment')
 
     @rep.error
     async def rep_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
             await ctx.send("You cannot award rep in this server!")
+
+##    @rep.command()
+##    @commands.guild_only()
+##    async def help(self, ctx):
+##        await ctx.send('```-rep award @Member``` or ```-rep leaderboard```')
 
     @rep.command()
     @commands.guild_only()
