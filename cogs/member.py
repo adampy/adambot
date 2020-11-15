@@ -319,13 +319,19 @@ class Member(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message):
-        if 'bruh' in message.content.lower() and not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898:
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898
+        msg = message.content.lower()
+        
+        if 'bruh' in msg and conditions:
             async with self.bot.pool.acquire() as connection:
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
-        elif '5 days' in message.content.lower() and not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898:
+        elif '5 days' in msg and conditions:
             await message.channel.send('Top Shagger :sunglasses:')
+        elif 'snorting rep' in msg and conditions or 'xp3dx' in msg and conditions:
+            await message.channel.send('very attractive man :heart_eyes:')
         return
+        
 
     @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
