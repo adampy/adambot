@@ -325,7 +325,10 @@ class Member(commands.Cog):
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
         elif '5 days' in message.content.lower() and not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898:
             await message.channel.send('Top Shagger :sunglasses:')
+        elif 'snorting rep' or 'xp3dx' in message.content.lower() and not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898:
+            await message.channel.send('very attractive man :heart_eyes:')
         return
+        
 
     @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
