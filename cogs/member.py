@@ -323,6 +323,8 @@ class Member(commands.Cog):
             async with self.bot.pool.acquire() as connection:
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
+        elif '5 days' in message.content.lower() and not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898:
+            await message.channel.send('Top Shagger :sunglasses:')
         return
 
     @commands.command(aliases=['bruh'])
