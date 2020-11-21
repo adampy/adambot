@@ -11,72 +11,10 @@ from datetime import datetime, timedelta
 import asyncpg
 from random import choice as randchoice
 import asyncio
-#from bs4 import BeautifulSoup
 
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
-    def get_corona_data(self, country):
-        '''DEPRECATED, use get_corona_data_updated()'''
-        data = {}
-        URL = "https://www.worldometers.info/coronavirus/country/{}/"
-        r = requests.get(URL.format(country))
-        soup = BeautifulSoup(r.text, features="html.parser")
-        numbers = soup.find_all(class_=re.compile("maincounter-number"))
-        number_tables = soup.find_all(class_=re.compile("number-table"))
-
-        data['total'] = numbers[0].text.strip()
-        data['deaths'] = numbers[1].text.strip()
-        data['recovered'] = numbers[2].text.strip()
-
-        active = {}
-        active['current'] = number_tables[0].text.strip()
-        active['mild'] = number_tables[1].text.strip()
-        active['critical'] = number_tables[2].text.strip()
-        data['active'] = active
-
-        closed = {}
-        closed['outcome'] = number_tables[3].text.strip()
-        closed['recovered'] = number_tables[4].text.strip()
-        closed['deaths'] = number_tables[5].text.strip()
-        data['closed'] = closed
-
-        return data
-
-    def get_corona_data_updated(self, country):
-        '''Get COVID19 tracking data from worldometers HTML, use this instead of get_corona_data()'''
-        to_return = {}
-        URL = "https://www.worldometers.info/coronavirus/"
-        r = requests.get(URL)
-        soup = BeautifulSoup(r.text, features="html.parser")
-
-        data = []
-        for a in soup.find_all('a', href=True):
-            if a['href'] == 'country/{}/'.format(country):
-
-                i = 0
-                for x in a.next_elements:
-                    if x != "\n" and isinstance(x, str):
-                        i += 1
-                        data.append(x)
-                        if i == 12:
-                            break
-                break
-
-        to_return['country'] = data[0]
-        to_return['total'] = data[1]
-        to_return['new_cases'] = data[2]
-        to_return['deaths'] = data[3]
-        to_return['new_deaths'] = data[4]
-        to_return['recovered'] = data[5]
-        to_return['active'] = data[6]
-        to_return['critical'] = data[7]
-        to_return['cases_to_1mil'] = data[8]
-        to_return['deaths_to_1mil'] = data[9]
-        to_return['tests'] = data[10]
-        to_return['tests_to_1mil'] = data[11]
-        return to_return
 
 #-----------------------MISC------------------------------
 

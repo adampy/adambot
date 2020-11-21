@@ -1,5 +1,4 @@
 discord.py
 requests
-beautifulsoup4
 asyncpg
 matplotlib
