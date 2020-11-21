@@ -134,8 +134,15 @@ Staff role needed.'''
     @commands.command(aliases=['lurker'])
     @commands.has_any_role(*Permissions.STAFF)
     async def lurkers(self, ctx):
-        members = [x.mention for x in ctx.guild.members if len(x.roles) <= 1]
-        message = ', '.join(members) + ' please tell us your year to be verified into the server!'
+        members = [x for x in ctx.guild.members if len(x.roles) <= 1] # Only the everyone role
+        message = ', '.join([x.mention for x in members]) + ' please tell us your year to be verified into the server!'
+
+        for member in members:
+            try:
+                await member.send("If you are wanting to join the GCSE 9-1 server then please tell us your year in the waiting room. Thanks!")
+            except discord.Forbidden: # Catches if DMs are closed
+                pass
+
         await ctx.send(message)
 
 def setup(bot):
