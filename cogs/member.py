@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import separate_args, DISALLOWED_COOL_WORDS, Permissions
+from .utils import separate_args, DISALLOWED_COOL_WORDS, Permissions, CODE_URL
 import requests
 import re
 import os
@@ -570,6 +570,10 @@ class Member(commands.Cog):
                 #on - turn it off
                 await connection.execute('DELETE FROM ping WHERE member_id = ($1)', ctx.author.id)
                 await ctx.send(":ok_hand: You will no longer recieve notifications for 1738. :sob:")
+
+    @commands.command(pass_context=True)
+    async def code(self, ctx):
+        await ctx.send(f"Adam-Bot code can be found here: {CODE_URL}")
 
 def setup(bot):
     bot.add_cog(Member(bot))

@@ -160,6 +160,7 @@ SPAMPING_PERMS = [
 ]
 GCSE_SERVER_ID = 445194262947037185
 NEWLINE = '\n'
+CODE_URL = "https://github.com/adampy/gcsediscordbot"
 
 async def send_file(fig, channel, filename):
     '''Send data to a channel with filename `filename`'''
