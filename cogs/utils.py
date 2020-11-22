@@ -158,7 +158,8 @@ CHANNELS = {
     "general":445199175244709898,
     "trivia":498617494693478402,
     "rules":445194263408672769,
-    "faq":583798388718567444
+    "faq":583798388718567444,
+    "qotd":496472968298496020
 }
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']

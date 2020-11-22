@@ -7,7 +7,7 @@ import datetime
 import os
 from random import choice
 from math import ceil
-from .utils import SPAMPING_PERMS, Permissions, EmbedPages, PageTypes
+from .utils import SPAMPING_PERMS, Permissions, EmbedPages, PageTypes, CHANNELS
 
 class QuestionOTD(commands.Cog):
     def __init__(self, bot):
@@ -120,7 +120,7 @@ class QuestionOTD(commands.Cog):
             await connection.execute('DELETE FROM qotd WHERE id = ($1)', int(question_id))
 
         await ctx.send(':ok_hand:')
-        await get(ctx.author.guild.text_channels, name='question-of-the-day').send(message)
+        await self.bot.get_channel(CHANNELS['qotd'].send(message))
         
         embed = Embed(title='QOTD Picked', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='ID', value=question_data[0])
