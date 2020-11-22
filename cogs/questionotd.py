@@ -18,7 +18,7 @@ class QuestionOTD(commands.Cog):
 
     def qotd_perms(ctx):
         r = [y.name for y in ctx.author.roles]
-        return 'Staff' in r or 'QOTD' in r
+        return 'Staff' in r or 'QOTD' in r or 'Adam-Bot Developer' in r
 
     @commands.group()
     @commands.check(in_gcse)
@@ -120,7 +120,7 @@ class QuestionOTD(commands.Cog):
             await connection.execute('DELETE FROM qotd WHERE id = ($1)', int(question_id))
 
         await ctx.send(':ok_hand:')
-        await self.bot.get_channel(CHANNELS['qotd'].send(message))
+        await self.bot.get_channel(CHANNELS['qotd']).send(message)
         
         embed = Embed(title='QOTD Picked', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='ID', value=question_data[0])

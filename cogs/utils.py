@@ -128,7 +128,7 @@ class Permissions:
     MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
     ASSISTANT = MOD + [ROLE_ID['Assistant']]
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
-    STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
+    STAFF = TRIALASSISTANT + [ROLE_ID['Staff']] + [ROLE_ID['Adam-Bot Developer']]
     MEMBERS = TRIALASSISTANT + [ROLE_ID['Member']]
 
 TIMES = {'w':7*24*60*60,
@@ -158,7 +158,7 @@ CHANNELS = {
     "general":445199175244709898,
     "trivia":498617494693478402,
     "rules":445194263408672769,
-    "faq":583798388718567444,
+    "faqs":583798388718567444,
     "qotd":496472968298496020
 }
 
