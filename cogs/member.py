@@ -268,6 +268,8 @@ class Member(commands.Cog):
             await message.channel.send('Top Shagger :sunglasses:')
         elif ('snorting rep' in msg or 'xp3dx' in msg) and conditions:
             await message.channel.send('very attractive man :heart_eyes:')
+        elif ('sarman' in msg or 'ramen' in msg) and conditions:
+            await message.channel.send('Sarman\'s Ramen, come get yo ramen from my store. It\'s amazing and you have a sekc host')
         elif msg == 'need to revise' and conditions:
             await revise(message)
         elif msg == 'stop revising' and conditions:
