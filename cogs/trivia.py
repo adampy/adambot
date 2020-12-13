@@ -15,7 +15,7 @@ class Trivia(commands.Cog):
 
         self.settings = {
             'timeout':[20, 0],
-            'overrides':['abdul'],
+            'overrides':[],
             'timeout_after':5, #after not getting 5 questions right
             'trivias':['cars',
                        'computers',
