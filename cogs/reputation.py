@@ -75,7 +75,7 @@ class Reputation(commands.Cog):
 ##    async def help(self, ctx):
 ##        await ctx.send('```-rep award @Member``` or ```-rep leaderboard```')
 
-    @rep.command()
+    @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
     async def award(self, ctx, user: discord.Member, change = 1):
         '''Gives the member a rep, mods can do `-rep award @Member <change>` where change is the number of reps to be awarded'''
