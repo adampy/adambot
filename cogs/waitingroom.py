@@ -305,15 +305,44 @@ Staff role needed.'''
     @commands.has_any_role(*Permissions.STAFF)
     async def lurkers(self, ctx):
         members = [x for x in ctx.guild.members if len(x.roles) <= 1] # Only the everyone role
-        message = ', '.join([x.mention for x in members]) + ' please tell us your year to be verified into the server!'
-
+        message = ""
         for member in members:
-            try:
-                await member.send("If you are wanting to join the GCSE 9-1 server then please tell us your year in the waiting room. Thanks!")
-            except discord.Forbidden: # Catches if DMs are closed
-                pass
+            if len(message) + len(member.mention) + len(' please tell us your year to be verified into the server!') >= 2000:
+                await ctx.send(message + ' please tell us your year to be verified into the server!')
+                message = ""
+            else:
+                message += member.mention
+        
+        if message != "": # There is still members to be mentioned
+            await ctx.send(message + ' please tell us your year to be verified into the server!')
 
-        await ctx.send(message)
+        question = await ctx.send("Do you want me to send DMs to all lurkers, to try and get them to join? (Type either 'yes' or 'no')")
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        try:
+            response = await self.bot.wait_for("message", check = check, timeout = 300)
+        except asyncio.TimeoutError:
+            await question.delete()
+        if response.content.lower() == "yes":
+            for i in range(len(members)):
+                member = members[i]
+
+                await question.edit(content = f"DMs have been sent to {i}/{len(members)} lurkers :ok_hand:")
+
+                try:
+                    await member.send("If you are wanting to join the GCSE 9-1 server then please tell us your year in the waiting room. Thanks!")
+                except discord.Forbidden: # Catches if DMs are closed
+                    pass
+
+            await question.edit(content = "DMs have been sent to all lurkers :ok_hand:")
+        
+        elif response.content.lower() == "no":
+            await question.edit(content = "No DMs have been sent to lurkers :ok_hand:")
+
+        else:
+            await question.edit(content = "Unkown response, therefore no DMs have been sent to lurkers :ok_hand:")
+
 
 def setup(bot):
     bot.add_cog(WaitingRoom(bot))
