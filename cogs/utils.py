@@ -128,7 +128,7 @@ class Permissions:
     MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
     ASSISTANT = MOD + [ROLE_ID['Assistant']]
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
-    STAFF = TRIALASSISTANT + [ROLE_ID['Staff']] + [ROLE_ID['Adam-Bot Developer']]
+    STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
     MEMBERS = TRIALASSISTANT + [ROLE_ID['Member']]
 
 TIMES = {'w':7*24*60*60,

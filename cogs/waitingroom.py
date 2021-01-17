@@ -5,24 +5,78 @@ from discord.utils import get
 import os
 import asyncpg
 from .utils import Permissions, CHANNELS
+import re
+import asyncio
 
 class WaitingRoom(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.welcome_message = ""
+        self.welcome_channel = None
     
+    async def _get_welcome_message(self):
+        """Internal method that retreives the welcome message from the DB."""
+        to_return = ""
+        async with self.bot.pool.acquire() as connection:
+            to_return = await connection.fetchval("SELECT value FROM variables WHERE variable = 'welcome_msg';")
+        return to_return
+
+    async def _set_welcome_message(self, new_welcome):
+        """Internal method that sets the welcome message in the DB."""
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'welcome_msg';", new_welcome)
+
+    async def _get_welcome_channel(self):
+        """Internal method that retreives the welcome channel from the DB."""
+        channel_id = 0
+        async with self.bot.pool.acquire() as connection:
+            channel_id = await connection.fetchval("SELECT value FROM variables WHERE variable = 'welcome_channel';")
+        return int(channel_id)
+
+    async def _set_welcome_channel(self, channel_id):
+        """Internal method that sets the welcome channel in the DB."""
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'welcome_channel';", str(channel_id))
+        
+    async def get_parsed_welcome_message(self, new_user: discord.User):
+        """Method that gets the parsed welcome message, with channel and role mentions."""
+        to_send = self.welcome_message
+        to_send = to_send.replace("<user>", new_user.mention)
+        
+        while True:
+            channel_regex = re.search(r'(?<=C\<).+?(?=\>)', to_send)
+            if not channel_regex:
+                break
+            match = channel_regex.group(0)
+            channel = await self.bot.fetch_channel(int(match))
+            to_send = to_send.replace(f"C<{match}>", channel.mention)
+        
+        while True:
+            role_regex = re.search(r'(?<=R\<).+?(?=\>)', to_send)
+            if not role_regex:
+                break
+            match = role_regex.group(0)
+            role = ctx.guild.get_role(int(match))
+            to_send = to_send.replace(f"R<{match}>", role.name)
+
+        await ctx.send(to_send)
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await asyncio.sleep(1)
+
+        # Get welcome message and parse it
+        self.welcome_message = await self._get_welcome_message()
+
+        # Get channel id and parse it
+        channel_id = await self._get_welcome_channel()
+        self.welcome_channel = await self.bot.fetch_channel(channel_id)
+
     @commands.Cog.listener()
     async def on_member_join(self, member):
         #formatting stuffs
-        rules = self.bot.get_channel(CHANNELS['rules'])
-        faqs = self.bot.get_channel(CHANNELS['faqs'])
-        channel = member.guild.system_channel
-        
-        message = f'''Welcome to the server, {member.mention}!
-Please read through {rules.mention} and {faqs.mention}. Once you've done that, state your school year to be let in.
-
-If no staff member assists you, feel free to ping a staff member.'''
-        await channel.send(message)
-
+        message = self.get_parsed_welcome_message(member)
+        await self.welcome_channel.send(message)
 
         #invite stuffs
         guild = self.bot.get_guild(445194262947037185)
@@ -83,6 +137,120 @@ If no staff member assists you, feel free to ping a staff member.'''
             await connection.execute('DELETE FROM invites')
             await connection.executemany('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)', to_insert)
 
+    #-----WELCOME MESSAGE-----
+
+    @commands.group()
+    @commands.has_any_role(*Permissions.MOD)
+    async def editwelcome(self, ctx):
+        """Edit the welcome message and/or channel"""
+        if ctx.invoked_subcommand is None:
+            await ctx.send('```-editwelcome message [message...]``` or ```-editwelcome channel <text_channel>```')
+            return
+
+    @editwelcome.command(pass_context=True)
+    @commands.has_any_role(*Permissions.MOD)
+    async def testmessage(self, ctx, to_ping: discord.User = None):
+        """Command that returns the welcome message, and pretends the command invoker is the new user."""
+        msg = self.get_parsed_welcome_message(to_ping or ctx.author) # to_ping or author means the author unless to_ping is provided.
+        await ctx.send(msg)
+
+    @editwelcome.command(pass_context=True)
+    @commands.has_any_role(*Permissions.MOD)
+    async def message(self, ctx, *message):
+        """Changes the welcome message. Moderator+ role needed.
+Do <user> to ping the new member.
+Do R<role_name> to ping a role.
+Do C<channel_name> to mention a channel."""
+        author = ctx.author
+        channel = ctx.channel
+        def check(m):
+            return m.channel == channel and m.author == author
+        
+        if not message:
+            await ctx.send(f"The current welcome message is:\n```{self.welcome_message}```\nPlease type you new welcome message. (Type 'no' to cancel)")
+        else:
+            message = ' '.join(message)
+            await ctx.send(f"The current welcome message is:\n```{self.welcome_message}```\n")
+            await ctx.send(f"Are you sure you want to change it to:\n```{message}```\n(Type 'yes' to change it, and 'no' to cancel)")
+
+        try:
+            response = await self.bot.wait_for('message', check=check, timeout=300)
+        except asyncio.TimeoutError:
+            await ctx.send("Editing timed-out, please try again.")
+            return
+
+        if response.content.lower() == "no":
+            await ctx.send("Editing cancelled :ok_hand:")
+            return
+        if message and response.content.lower() != "yes":
+            await ctx.send("Unkown response, please try again.")
+            return
+
+        # If the message was provided to begin with, move that to `response`
+        if not message:
+            message = response.content
+
+        if len(message) > 1000:
+            await ctx.send("Your welcome message is bigger than the limit (1000 chars). Please shorten it and try again.")
+            return
+        
+        await self._set_welcome_message(message)
+        self.welcome_message = message
+        await ctx.send("The welcome message has been updated :ok_hand:")
+
+    @editwelcome.command(pass_context=True)
+    @commands.has_any_role(*Permissions.MOD)
+    async def channel(self, ctx, channel: discord.TextChannel = None):
+        """Changes the welcome channel. Moderator+ role needed."""
+        command_channel = ctx.channel
+        author = ctx.author
+        def check(m):
+            return m.channel == command_channel and m.author == author
+
+        if channel:
+            await ctx.send(f"The current welcome channel is:\n{self.welcome_channel.mention}\nAre you sure you want to change it to {channel.mention}? (Type 'yes' to change, or 'no' to cancel this change)")
+        else:
+            await ctx.send(f"The current welcome channel is:\n{self.welcome_channel.mention}\nPlease type the channel ID of the new welcome channel. (Type 'no' to cancel)")
+
+        try:
+            response = await self.bot.wait_for('message', check=check, timeout=300)
+        except asyncio.TimeoutError:
+            await ctx.send("Editing timed-out, please try again.")
+            return
+
+        if response.content.lower() == "no":
+            await ctx.send("Editing cancelled :ok_hand:")
+            return
+
+        # Channel already given, and approved
+        if channel and response.content.lower() != "yes":
+            await ctx.send("Unkown response, please try again.")
+        
+        # Channel not given, parse it
+        if not channel:
+            try:
+                channel = await self.bot.fetch_channel(int(response.content))
+            except discord.NotFound:
+                await ctx.send("No channel with that ID found, please try again.")
+                return
+            except discord.Forbidden:
+                await ctx.send("Adam-Bot does not have permissions to access that channel, please try again.")
+                return
+            except Exception as e:
+                await ctx.send(f"Something went wrong: {e}, please try again.")
+                return
+
+        # Check adambot can write here
+        if not channel.permissions_for(ctx.guild.me).send_messages:
+            await ctx.send("Adam-Bot does not have permissions to access that channel, please try again.")
+            return
+
+        await self._set_welcome_channel(channel.id)
+        self.welcome_channel = channel
+        await ctx.send(f"The welcome channel has been updated to {channel.mention} :ok_hand:")
+
+
+    #-----YEAR COMMANDS-----
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
