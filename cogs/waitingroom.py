@@ -183,7 +183,7 @@ Do C<channel_name> to mention a channel."""
             await ctx.send("Editing cancelled :ok_hand:")
             return
         if message and response.content.lower() != "yes":
-            await ctx.send("Unkown response, please try again.")
+            await ctx.send("Unknown response, please try again.")
             return
 
         # If the message was provided to begin with, move that to `response`
@@ -224,7 +224,7 @@ Do C<channel_name> to mention a channel."""
 
         # Channel already given, and approved
         if channel and response.content.lower() != "yes":
-            await ctx.send("Unkown response, please try again.")
+            await ctx.send("Unknown response, please try again.")
         
         # Channel not given, parse it
         if not channel:
@@ -341,7 +341,7 @@ Staff role needed.'''
             await question.edit(content = "No DMs have been sent to lurkers :ok_hand:")
 
         else:
-            await question.edit(content = "Unkown response, therefore no DMs have been sent to lurkers :ok_hand:")
+            await question.edit(content = "Unknown response, therefore no DMs have been sent to lurkers :ok_hand:")
 
 
 def setup(bot):
