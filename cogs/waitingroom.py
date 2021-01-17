@@ -57,7 +57,7 @@ class WaitingRoom(commands.Cog):
                 break
             match = role_regex.group(0)
             role = ctx.guild.get_role(int(match))
-            to_send = to_send.replace(f"R<{match}>", role.name)
+            to_send = to_send.replace(f"R<{match}>", role.mention)
 
         await ctx.send(to_send)
 
@@ -75,7 +75,7 @@ class WaitingRoom(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         #formatting stuffs
-        message = self.get_parsed_welcome_message(member)
+        message = await self.get_parsed_welcome_message(member)
         await self.welcome_channel.send(message)
 
         #invite stuffs
@@ -151,7 +151,7 @@ class WaitingRoom(commands.Cog):
     @commands.has_any_role(*Permissions.MOD)
     async def testmessage(self, ctx, to_ping: discord.User = None):
         """Command that returns the welcome message, and pretends the command invoker is the new user."""
-        msg = self.get_parsed_welcome_message(to_ping or ctx.author) # to_ping or author means the author unless to_ping is provided.
+        msg = await self.get_parsed_welcome_message(to_ping or ctx.author) # to_ping or author means the author unless to_ping is provided.
         await ctx.send(msg)
 
     @editwelcome.command(pass_context=True)
