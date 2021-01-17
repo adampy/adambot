@@ -59,7 +59,7 @@ class WaitingRoom(commands.Cog):
             role = ctx.guild.get_role(int(match))
             to_send = to_send.replace(f"R<{match}>", role.mention)
 
-        await ctx.send(to_send)
+        return to_send
 
     @commands.Cog.listener()
     async def on_ready(self):
