@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import separate_args, DISALLOWED_COOL_WORDS, Permissions, CODE_URL
+from .utils import separate_args, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, GCSE_SERVER_ID
 import requests
 import re
 import os
@@ -257,7 +257,7 @@ class Member(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message):
-        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
         
         if 'bruh' in msg and conditions:
