@@ -426,7 +426,7 @@ Staff role needed.'''
             await embed.set_page(int(page_num))
             await embed.send(ctx.channel)
         else:
-            ctx.send("No warnings recorded!")
+            await ctx.send("No warnings recorded!")
 
     @warnlist.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
