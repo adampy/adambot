@@ -282,8 +282,6 @@ class Member(commands.Cog):
             await revise(message)
         elif msg == 'stop revising' and conditions:
             await stoprevising(message)
-        else:
-            print(msg)
         return
         
 
