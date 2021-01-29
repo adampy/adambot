@@ -63,7 +63,7 @@ class Reputation(commands.Cog):
     async def rep(self, ctx):
         '''Reputation module'''
         if ctx.invoked_subcommand is None:
-            await ctx.send('DefaultDan moment')
+            await ctx.send('If you want to award rep to someone, type `-rep award @Member`')
 
     @rep.error
     async def rep_error(self, ctx, error):
