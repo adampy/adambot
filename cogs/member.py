@@ -264,7 +264,7 @@ class Member(commands.Cog):
             async with self.bot.pool.acquire() as connection:
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
-        elif ('joe' in msg or 'marj' in msg) and conditions:
+        elif ('joe' in msg or 'marj' in msg or 'we_floss.gif' in msg) and conditions:
             if 'http' in msg:
                 await message.channel.send("STOP SENDING JOE MARJ GIF")
             else:
