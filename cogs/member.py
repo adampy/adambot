@@ -259,17 +259,19 @@ class Member(commands.Cog):
     async def on_message(self, message):
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
-        
+
+        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "we_floss.gif"]
+
         if 'bruh' in msg and conditions:
             async with self.bot.pool.acquire() as connection:
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
-        
-        elif ('joe' in msg or 'marj' in msg or 'we_floss.gif' in msg or "tenor.com/bwD9c" in msg) and conditions:
-            if 'http' in msg or ".gif" in msg: # Joe marj gif
+
+        elif max([x in msg.lower() for x in joe_marj_gifs]) and conditions:# Joe marj gif
                 await message.channel.send("STOP SENDING JOE MARJ GIF")
-            else:
-                await message.channel.send("STOP SAYING JOE MARJ")
+        
+        elif ('joe' in msg or 'marj' in msg) and conditions:
+            await message.channel.send("STOP SAYING JOE MARJ")
         ##elif '5 days' in msg and conditions:
         ##    await message.channel.send('Top Shagger :sunglasses:')
         ##elif ('snorting rep' in msg or 'xp3dx' in msg) and conditions:
@@ -280,6 +282,8 @@ class Member(commands.Cog):
             await revise(message)
         elif msg == 'stop revising' and conditions:
             await stoprevising(message)
+        else:
+            print(msg)
         return
         
 
