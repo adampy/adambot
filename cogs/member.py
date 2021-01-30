@@ -23,6 +23,8 @@ class Member(commands.Cog):
         '''Check if the bot is currently hosted locally or remotely'''
         await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
 
+
+
 #-----------------------REVISE------------------------------
 
     @commands.command(pass_context=True)
@@ -283,6 +285,7 @@ class Member(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, prev, curr):
         await self.joe_marj(curr)
+
 
     async def joe_marj(self, message):
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
