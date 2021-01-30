@@ -257,33 +257,41 @@ class Member(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message):
+        ctx = await self.bot.get_context(message)
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
 
-        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "we_floss.gif"]
 
         if 'bruh' in msg and conditions:
             async with self.bot.pool.acquire() as connection:
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
 
-        elif max([x in msg.lower() for x in joe_marj_gifs]) and conditions:# Joe marj gif
-                await message.channel.send("STOP SENDING JOE MARJ GIF")
-        
-        elif ('joe' in msg or 'marj' in msg) and conditions:
-            await message.channel.send("STOP SAYING JOE MARJ")
+        await joe_marj(message)
         ##elif '5 days' in msg and conditions:
         ##    await message.channel.send('Top Shagger :sunglasses:')
         ##elif ('snorting rep' in msg or 'xp3dx' in msg) and conditions:
         ##    await message.channel.send('very attractive man :heart_eyes:')
         ##elif ('sarman' in msg or 'ramen' in msg) and conditions:
         ##    await message.channel.send('Sarman\'s Ramen, come get yo ramen from my store. It\'s amazing and you have a sekc host')
-        elif msg == 'need to revise' and conditions:
-            await revise(message)
-        elif msg == 'stop revising' and conditions:
-            await stoprevising(message)
+        ##elif msg == 'need to revise' and conditions:
+        ##    await ctx.invoke(self.bot.get_command('revise'))
+        ##elif msg == 'stop revising' and conditions:
+        ##    await ctx.invoke(self.bot.get_command('stoprevising'))
         return
-        
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, prev, curr):
+        await joe_marj(curr)
+
+    async def joe_marj(self, message):
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
+        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "we_floss.gif"]
+        msg = message.content.lower()
+        if max([x in msg.lower() for x in joe_marj_gifs]) and conditions:  # Joe marj gif
+            await message.channel.send("STOP SENDING JOE MARJ GIF")
+        elif ('joe' in msg or 'marj' in msg) and conditions:
+            await message.channel.send("STOP SAYING JOE MARJ")
 
     @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
