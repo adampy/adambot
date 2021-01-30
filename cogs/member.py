@@ -23,14 +23,6 @@ class Member(commands.Cog):
         '''Check if the bot is currently hosted locally or remotely'''
         await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
 
-    async def joe_marj(self, message):
-        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
-        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "we_floss.gif"]
-        msg = message.content.lower()
-        if max([x in msg.lower() for x in joe_marj_gifs]) and conditions:  # Joe marj gif
-            await message.channel.send("STOP SENDING JOE MARJ GIF")
-        elif ('joe' in msg or 'marj' in msg) and conditions:
-            await message.channel.send("STOP SAYING JOE MARJ")
 
 
 #-----------------------REVISE------------------------------
@@ -277,7 +269,7 @@ class Member(commands.Cog):
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
 
-        await joe_marj(message)
+        await self.joe_marj(message)
         ##elif '5 days' in msg and conditions:
         ##    await message.channel.send('Top Shagger :sunglasses:')
         ##elif ('snorting rep' in msg or 'xp3dx' in msg) and conditions:
@@ -292,7 +284,17 @@ class Member(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, prev, curr):
-        await joe_marj(curr)
+        await self.joe_marj(curr)
+
+
+    async def joe_marj(self, message):
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
+        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "tenor.com/bwl5l", "tenor.com/bwlhw", "we_floss.gif"]
+        msg = message.content.lower()
+        if max([x in msg.lower() for x in joe_marj_gifs]) and conditions:  # Joe marj gif
+            await message.channel.send("STOP SENDING JOE MARJ GIF")
+        elif ('joe' in msg or 'marj' in msg) and conditions:
+            await message.channel.send("STOP SAYING JOE MARJ")
 
     @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
