@@ -7,7 +7,7 @@ import csv
 from random import choice as randchoice
 import asyncio
 from datetime import datetime
-from .utils import Permissions
+from .utils import Permissions, CHANNELS
 
 class Trivia(commands.Cog):
     def __init__(self, bot):
@@ -188,19 +188,25 @@ class Trivia(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         await asyncio.sleep(1)
-        self.trivia_channel = self.bot.get_channel(498617494693478402)
+        self.trivia_channel = self.bot.get_channel(CHANNELS['trivia'])
+
+    async def trivia_channel_check(ctx):
+        return ctx.channel.id == CHANNELS['trivia']
 
 #---------------------------------------------------------------------------------
 
     @commands.group()
     @commands.guild_only()
+    @commands.check(trivia_channel_check)
     async def trivia(self, ctx):
         '''Trivia module'''
         if ctx.invoked_subcommand is None:
             await ctx.send('```-trivia list```')
-        if ctx.channel.id != self.trivia_channel.id:
+
+    @trivia.error
+    async def trivia_error(self, ctx, error):
+        if type(error) == commands.CheckFailure:
             await ctx.send(f'You can only use this command in {self.trivia_channel.mention}')
-            return
 
     @trivia.command()
     @commands.has_any_role(*Permissions.MEMBERS)
