@@ -12,6 +12,12 @@ import asyncpg
 from random import choice as randchoice
 import asyncio
 
+class JoeMarjType:
+    """Enumeration that tells us what type of message needs to be given."""
+    NONE = 0
+    GIF = 1
+    MSG = 2
+
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -23,7 +29,27 @@ class Member(commands.Cog):
         '''Check if the bot is currently hosted locally or remotely'''
         await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
 
+#-----------------------JOE MARJ--------------------------
 
+    async def _joe_marj_check(self, message):
+        """Internal method that checks a discord.Message for potential 'Joe Marj' infiltration. Returns a JoeMarjType enum."""
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
+        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "tenor.com/bwl5l", "tenor.com/bwlhw", "we_floss.gif"]
+        msg = message.content.lower()
+        if not conditions: # Increase in performance to break early
+            return JoeMarjType.NONE
+        if max([x in msg.lower() for x in joe_marj_gifs]):  # Joe marj gif
+            return JoeMarjType.GIF
+        elif ('joe' in msg or 'marj' in msg):
+            return JoeMarjType.MSG
+
+    async def handle_joe_marj(self, message: discord.Message, delete_after = 10):
+        """Method that receives a message, and replies to it if a 'Joe Marj' infiltration has been detected. Can receive a `delete_after` integer, which deletes the replies after that many seconds""" 
+        result = await self._joe_marj_check(message)
+        if result == JoeMarjType.GIF:
+            msg = await message.channel.send("STOP SENDING JOE MARJ GIF", delete_after = delete_after)
+        elif result == JoeMarjType.MSG:
+            msg = await message.channel.send("STOP SAYING JOE MARJ", delete_after = delete_after)
 
 #-----------------------REVISE------------------------------
 
@@ -251,7 +277,6 @@ class Member(commands.Cog):
 #        zyclos = get(ctx.guild.members, id=202861110146236428)
 #        await ctx.send(f'{zyclos.mention} https://tenor.com/view/jusreign-punjabi-indian-gif-5441330')
 
-
     @commands.command()
     async def test(self, ctx):
         '''Secret Area 51 command.'''
@@ -263,13 +288,12 @@ class Member(commands.Cog):
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
 
-
         if 'bruh' in msg and conditions:
             async with self.bot.pool.acquire() as connection:
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
 
-        await self.joe_marj(message)
+        await self.handle_joe_marj(message)
         ##elif '5 days' in msg and conditions:
         ##    await message.channel.send('Top Shagger :sunglasses:')
         ##elif ('snorting rep' in msg or 'xp3dx' in msg) and conditions:
@@ -284,17 +308,9 @@ class Member(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, prev, curr):
-        await self.joe_marj(curr)
-
-
-    async def joe_marj(self, message):
-        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
-        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "tenor.com/bwl5l", "tenor.com/bwlhw", "we_floss.gif"]
-        msg = message.content.lower()
-        if max([x in msg.lower() for x in joe_marj_gifs]) and conditions:  # Joe marj gif
-            await message.channel.send("STOP SENDING JOE MARJ GIF")
-        elif ('joe' in msg or 'marj' in msg) and conditions:
-            await message.channel.send("STOP SAYING JOE MARJ")
+        already_warned = await self._joe_marj_check(prev)
+        if not already_warned:
+            await self.handle_joe_marj(curr)
 
     @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
