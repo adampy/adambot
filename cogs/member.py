@@ -35,7 +35,10 @@ class Member(commands.Cog):
         """Internal method that checks a discord.Message for potential 'Joe Marj' infiltration. Returns a JoeMarjType enum."""
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "tenor.com/bwl5l", "tenor.com/bwlhw", "we_floss.gif"]
+        disallowed_chars = ["~", "*", "|"]
         msg = message.content.lower()
+        for y in disallowed_chars:
+            msg = msg.replace(y, "")
         if not conditions: # Increase in performance to break early
             return JoeMarjType.NONE
         if max([x in msg.lower() for x in joe_marj_gifs]):  # Joe marj gif
