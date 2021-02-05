@@ -42,13 +42,20 @@ class QuestionOTD(commands.Cog):
         if not args:
             await ctx.send('```-qotd submit <question>```')
             return
+
         member = ctx.author.id
+        member_roles = [y.id for y in ctx.author.roles]
+        is_staff = False
+        for role in Permissions.STAFF:
+            if role in member_roles:
+                is_staff = True
+                break
 
         today = datetime.datetime.utcnow().date()
         today_date = datetime.datetime(today.year, today.month, today.day)
         async with self.bot.pool.acquire() as connection:
             submitted_today = await connection.fetch('SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2)', str(member), today_date)
-            if len(submitted_today) >= 2 and member not in SPAMPING_PERMS and not self.staff(member): #adam bypass
+            if len(submitted_today) >= 2 and not is_staff: # Staff bypass
                 await ctx.send('You can only submit 2 QOTD per day - this is to stop bot abuse.')
             else:
                 await connection.execute('INSERT INTO qotd (question, submitted_by) VALUES ($1, $2)', qotd, str(member))
