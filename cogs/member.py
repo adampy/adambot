@@ -181,19 +181,19 @@ class Member(commands.Cog):
         '''Gives you the CompSci Challenge role.'''
         await self.assignRole(ctx, "cc")
 
-#    @commands.command(pass_context=True)
-#    @commands.has_role('Members')
-#    @commands.guild_only()
-#    async def lc(self, ctx):
-#        '''Gives you the Languages Challenge role.'''
-#        author = ctx.author
-#       role = get(author.guild.roles, name='Languages Challenge')
-#       if 'Languages Challenge' in [y.name for y in author.roles]:
-#            await author.remove_roles(role)
-#            await ctx.send(':ok_hand: Your `Languages Challenge` role has vanished!')
-#        else:
-#            await author.add_roles(role)
-#            await ctx.send(':ok_hand: You have been given `Languages Challenge` role!')
+    @commands.command(pass_context=True)
+    @commands.has_role(*Permissions.MEMBERS)
+    @commands.guild_only()
+    async def ec(self, ctx):
+        '''Gives you the English Challenge role.'''
+        author = ctx.author
+        role = get(author.guild.roles, name='English Challenge')
+        if 'English Challenge' in [y.name for y in author.roles]:
+            await author.remove_roles(role)
+            await ctx.send(':ok_hand: Your `English Challenge` role has vanished!')
+        else:
+            await author.add_roles(role)
+            await ctx.send(':ok_hand: You have been given `English Challenge` role!')
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
