@@ -183,7 +183,7 @@ class Member(commands.Cog):
         await self.assign_role(ctx, "cc")
 
     @commands.command(pass_context=True)
-    @commands.has_role(*Permissions.MEMBERS)
+    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def ec(self, ctx):
         '''Gives you the English Challenge role.'''
