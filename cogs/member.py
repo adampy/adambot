@@ -35,7 +35,7 @@ class Member(commands.Cog):
         '''Gets a ping time by measuring time to send & edit a message'''
         start = time.time()
         out = await ctx.message.channel.send("Pong! (N/A)")
-        await out.edit(content="Pong! (" + str(round(1000 * (time.time() - start), 1)) + " milliseconds)")
+        await out.edit(content = "Pong! (" + str(round(1000 * (time.time() - start), 1)) + " milliseconds)")
 
 #-----------------------JOE MARJ--------------------------
 
