@@ -6,7 +6,7 @@ from discord import Embed, Colour
 import os
 import asyncpg
 import datetime
-from .utils import Permissions, ordinal, EmbedPages, PageTypes, send_file
+from .utils import Permissions, ordinal, Embed, EmbedPages, PageTypes, send_file
 import matplotlib.pyplot as plt
 import matplotlib
 
@@ -14,6 +14,7 @@ class Reputation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
+        self.fake_reps = 0
 
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
@@ -25,6 +26,7 @@ class Reputation(commands.Cog):
         await embed.send(ctx.channel)
 
     async def modify_rep(self, member, change):
+        self.fake_reps += change
         reps = change
         async with self.bot.pool.acquire() as connection:
             reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", member.id)
@@ -35,6 +37,7 @@ class Reputation(commands.Cog):
                 reps = reps + change
 
         return (reps if reps else change)
+        #return self.fake_reps
     
     async def clear_rep(self, user_id):
         async with self.bot.pool.acquire() as connection:
@@ -67,6 +70,7 @@ class Reputation(commands.Cog):
 
     @rep.error
     async def rep_error(self, ctx, error):
+        await ctx.send("omg an error!")
         if isinstance(error, commands.CheckFailure):
             await ctx.send("You cannot award rep in this server!")
 
@@ -77,28 +81,53 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
-    async def award(self, ctx, user: discord.Member, change = 1):
-        '''Gives the member a rep, mods can do `-rep award @Member <change>` where change is the number of reps to be awarded'''
-        if ctx.author != user: #check to not rep yourself
+    async def award(self, ctx, *args):
+        '''Gives the member a reputation point. Aliases are give and point'''
+        author_nick = ctx.author.nick
+        if author_nick is None:  # is None when author has no server nickname
+            author_nick = ctx.author.name
+        try:
+            user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
+        except commands.errors.MemberNotFound:
             try:
-                change = int(change)
-            except ValueError:
-                await ctx.send('Please choose a valid number!')
+                user = await commands.MemberConverter().convert(ctx, ' '.join(args))
+            except commands.errors.MemberNotFound:
+                # for the love of god
+                # todo: add some fuzzy search stuff (e.g. non-case-sensitivity)
+                # probably also move this to somewhere more generally accessible for reusability purposes
+                await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255,7,58)))
                 return
-            if 'Moderator' in [y.name for y in ctx.author.roles]:
-                reps = await self.modify_rep(user, change)
-            else:
-                reps = await self.modify_rep(user, 1)
-            await ctx.send(f'{user.mention} now has {reps} reputation points!')
+
+        nick = user.nick
+        if nick is None:  # if the user doesn't have a server nickname set user.nick is None
+            nick = user.name
+
+        if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
+            reps = await self.modify_rep(user, 1)
+
+            user_embed = Embed(title=f':white_check_mark:  {author_nick} gave {nick} a reputation point!', color=Colour.from_rgb(57,255,20))
+            user_embed.add_field(name='_ _', value=f'{user.mention} now has {reps} reputation points!')
+            user_embed.set_thumbnail(url=user.avatar_url)
+            user_embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+            await ctx.send(embed=user_embed)
             
             embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
             embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
             embed.add_field(name='To', value=f'{str(user)} ({user.id})')
             embed.add_field(name='New Rep', value=reps)
-            embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+            embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
             await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+
         else:
-            await ctx.send('You cannot rep yourself, cheating bugger.')
+            if user.bot:
+                fail_text = "The bot overlords do not accept puny humans' rewards"
+            else:
+                fail_text = "You cannot rep yourself, cheating bugger."
+            embed = Embed(title=f':x: Failed to award a reputation point to {nick}!', color=Colour.from_rgb(255,7,58))
+            embed.add_field(name='_ _', value=fail_text)
+            embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+            embed.set_thumbnail(url=user.avatar_url)
+            await ctx.send(embed=embed)
 
     @rep.command(aliases=['lb'])
     @commands.guild_only()
