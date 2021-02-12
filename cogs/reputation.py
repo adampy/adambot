@@ -86,17 +86,20 @@ class Reputation(commands.Cog):
         author_nick = ctx.author.nick
         if author_nick is None:  # is None when author has no server nickname
             author_nick = ctx.author.name
-        try:
-            user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
-        except commands.errors.MemberNotFound:
+        if len(args) == 0:  # check so -rep award doesn't silently fail when no string given
+            user = ctx.author
+        else:
             try:
-                user = await commands.MemberConverter().convert(ctx, ' '.join(args))
+                user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
             except commands.errors.MemberNotFound:
-                # for the love of god
-                # todo: add some fuzzy search stuff (e.g. non-case-sensitivity)
-                # probably also move this to somewhere more generally accessible for reusability purposes
-                await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255,7,58)))
-                return
+                try:
+                    user = await commands.MemberConverter().convert(ctx, ' '.join(args))
+                except commands.errors.MemberNotFound:
+                    # for the love of god
+                    # todo: add some fuzzy search stuff (e.g. non-case-sensitivity)
+                    # probably also move this to somewhere more generally accessible for reusability purposes
+                    await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255,7,58)))
+                    return
 
         nick = user.nick
         if nick is None:  # if the user doesn't have a server nickname set user.nick is None
