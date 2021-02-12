@@ -14,7 +14,9 @@ class Reputation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
-        self.fake_reps = 0
+
+    async def get_valid_name(self, member: discord.Member):
+        return member.name if member.nick is None else member.nick
 
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
@@ -26,7 +28,6 @@ class Reputation(commands.Cog):
         await embed.send(ctx.channel)
 
     async def modify_rep(self, member, change):
-        self.fake_reps += change
         reps = change
         async with self.bot.pool.acquire() as connection:
             reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", member.id)
@@ -37,7 +38,6 @@ class Reputation(commands.Cog):
                 reps = reps + change
 
         return (reps if reps else change)
-        #return self.fake_reps
     
     async def clear_rep(self, user_id):
         async with self.bot.pool.acquire() as connection:
@@ -70,9 +70,10 @@ class Reputation(commands.Cog):
 
     @rep.error
     async def rep_error(self, ctx, error):
-        await ctx.send("omg an error!")
         if isinstance(error, commands.CheckFailure):
             await ctx.send("You cannot award rep in this server!")
+        else:
+            await ctx.send("Oopsies something went wrong with that!")
 
 ##    @rep.command()
 ##    @commands.guild_only()
@@ -83,9 +84,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def award(self, ctx, *args):
         '''Gives the member a reputation point. Aliases are give and point'''
-        author_nick = ctx.author.nick
-        if author_nick is None:  # is None when author has no server nickname
-            author_nick = ctx.author.name
+        author_nick = await self.get_valid_name(ctx.author)
         if len(args) == 0:  # check so -rep award doesn't silently fail when no string given
             user = ctx.author
         else:
@@ -101,9 +100,7 @@ class Reputation(commands.Cog):
                     await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255,7,58)))
                     return
 
-        nick = user.nick
-        if nick is None:  # if the user doesn't have a server nickname set user.nick is None
-            nick = user.name
+        nick = await self.get_valid_name(user)
 
         if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
             reps = await self.modify_rep(user, 1)
