@@ -18,6 +18,18 @@ class Reputation(commands.Cog):
     async def get_valid_name(self, member: discord.Member):
         return member.name if member.nick is None else member.nick
 
+    async def get_spaced_member(self, ctx, args):
+        try:
+            user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
+        except commands.errors.MemberNotFound:
+            try:
+                user = await commands.MemberConverter().convert(ctx, ' '.join(args))
+            except commands.errors.MemberNotFound:
+                # for the love of god
+                # todo: add some fuzzy search stuff (e.g. non-case-sensitivity)
+                return None
+        return user
+
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
         async with self.bot.pool.acquire() as connection:
@@ -88,18 +100,10 @@ class Reputation(commands.Cog):
         if len(args) == 0:  # check so -rep award doesn't silently fail when no string given
             user = ctx.author
         else:
-            try:
-                user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
-            except commands.errors.MemberNotFound:
-                try:
-                    user = await commands.MemberConverter().convert(ctx, ' '.join(args))
-                except commands.errors.MemberNotFound:
-                    # for the love of god
-                    # todo: add some fuzzy search stuff (e.g. non-case-sensitivity)
-                    # probably also move this to somewhere more generally accessible for reusability purposes
-                    await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255,7,58)))
-                    return
-
+            user = await self.get_spaced_member(ctx, args)
+            if user is None:
+                await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
+                return
         nick = await self.get_valid_name(user)
 
         if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
@@ -116,7 +120,7 @@ class Reputation(commands.Cog):
             embed.add_field(name='To', value=f'{str(user)} ({user.id})')
             embed.add_field(name='New Rep', value=reps)
             embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
-            await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+            await get(ctx.guild.text_channels, name='adambot-dev-spam').send(embed=embed)
 
         else:
             if user.bot:
