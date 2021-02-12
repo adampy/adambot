@@ -225,10 +225,12 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    async def check(self, ctx, user: discord.User = None):
+    async def check(self, ctx, *args):
         '''Checks a specific person reps, or your own if user is left blank'''
-        if user is None:
+        if len(args) == 0:
             user = ctx.author
+        else:
+            user = await self.get_spaced_member(ctx, args)
        
         rep = None
         lb_pos = None
