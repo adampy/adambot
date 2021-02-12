@@ -14,10 +14,7 @@ class Reputation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
-    @commands.command()
-    async def la_names(self, ctx):
-        for name in self.bot.last_active:
-            await ctx.message.channel.send(name.name)
+
     async def get_valid_name(self, member: discord.Member):
         return member.name if member.nick is None else member.nick
 
@@ -30,9 +27,7 @@ class Reputation(commands.Cog):
                 user = await commands.MemberConverter().convert(ctx, ' '.join(args))
             except commands.errors.MemberNotFound:
                 # for the love of god
-                # todo: add some fuzzy search stuff (e.g. non-case-sensitivity)
-                print("got to the ugly part")
-                print("got to sub-hell")
+
                 lists = [self.bot.last_active, ctx.guild.members]
                 attribs = ["display_name", "name"]
                 print(self.bot.last_active)
@@ -53,7 +48,6 @@ class Reputation(commands.Cog):
                                     user = member
                                     break
                         if user is None:
-                            print("got to hell")
                             for member in list_:
                                 name = getattr(member, attrib)
                                 if args[0].lower() in name.lower() or ' '.join(args).lower() in name.lower():
@@ -152,7 +146,7 @@ class Reputation(commands.Cog):
             embed.add_field(name='To', value=f'{str(user)} ({user.id})')
             embed.add_field(name='New Rep', value=reps)
             embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
-            await get(ctx.guild.text_channels, name='adambot-dev-spam').send(embed=embed)
+            await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
         else:
             if user.bot:
