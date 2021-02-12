@@ -40,6 +40,7 @@ class AdamBot(Bot):
         self.LOCAL_HOST = local
         self.DB = os.environ.get('DATABASE_URL')
         self.pages = [] # List of active pages that can be used
+        self.prefix = kwargs.get("command_prefix", "-") # Defaults to "-" TODO: Can this be a required parameter instead of being in **kwargs?
 
         self.start_up()
 
@@ -60,7 +61,7 @@ class AdamBot(Bot):
 
     async def on_ready(self):
         print('Bot Loaded')
-        await self.change_presence(activity=discord.Game(name='Type -help for help'))
+        await self.change_presence(activity=discord.Game(name = f'Type {self.prefix}help for help'))
 
     async def on_message(self, message):
         '''Command that stops bots from executing commands'''
