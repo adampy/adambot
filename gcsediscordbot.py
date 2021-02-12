@@ -49,6 +49,7 @@ class AdamBot(Bot):
         self.load_cogs()
         self.loop.create_task(self.execute_todos())
         self.pool : asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20))
+        self.last_active = []  # easiest to put here for now, may move to a cog later
         self.run(os.environ.get('TOKEN'))
 
     def load_cogs(self):
@@ -67,6 +68,9 @@ class AdamBot(Bot):
         '''Command that stops bots from executing commands'''
         if message.author.bot:
             return
+        if message.author in self.last_active:
+            self.last_active.remove(message.author)
+        self.last_active.insert(0, message.author)
         await self.process_commands(message)
 
     async def on_reaction_add(self, reaction, user):

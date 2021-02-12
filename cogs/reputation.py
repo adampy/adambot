@@ -14,11 +14,15 @@ class Reputation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
-
+    @commands.command()
+    async def la_names(self, ctx):
+        for name in self.bot.last_active:
+            await ctx.message.channel.send(name.name)
     async def get_valid_name(self, member: discord.Member):
         return member.name if member.nick is None else member.nick
 
     async def get_spaced_member(self, ctx, args):
+        user = None
         try:
             user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
         except commands.errors.MemberNotFound:
@@ -27,7 +31,35 @@ class Reputation(commands.Cog):
             except commands.errors.MemberNotFound:
                 # for the love of god
                 # todo: add some fuzzy search stuff (e.g. non-case-sensitivity)
-                return None
+                print("got to the ugly part")
+                print("got to sub-hell")
+                lists = [self.bot.last_active, ctx.guild.members]
+                attribs = ["display_name", "name"]
+                print(self.bot.last_active)
+                for list_ in lists:
+                    for attrib in attribs:
+                        if user is not None:
+                            break
+                        for member in list_:
+                            name = getattr(member, attrib)
+                            if args[0] in name or ' '.join(args) in name:
+                                user = member
+                                break
+                        if user is None:
+                            for member in list_:
+                                name = getattr(member, attrib)
+                                if name.lower() == args[0].lower() or name.lower() == ' '.join(args).lower():
+                                    ## don't need normal checks for this as the converter would have got it already
+                                    user = member
+                                    break
+                        if user is None:
+                            print("got to hell")
+                            for member in list_:
+                                name = getattr(member, attrib)
+                                if args[0].lower() in name.lower() or ' '.join(args).lower() in name.lower():
+                                    user = member
+                                    break
+
         return user
 
     async def get_leaderboard(self, ctx, only_members = False):
@@ -109,7 +141,7 @@ class Reputation(commands.Cog):
         if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
             reps = await self.modify_rep(user, 1)
 
-            user_embed = Embed(title=f':white_check_mark:  {author_nick} gave {nick} a reputation point!', color=Colour.from_rgb(57,255,20))
+            user_embed = Embed(title=f':white_check_mark:  {nick} received a reputation point from {author_nick}!', color=Colour.from_rgb(57,255,20))
             user_embed.add_field(name='_ _', value=f'{user.mention} now has {reps} reputation points!')
             user_embed.set_thumbnail(url=user.avatar_url)
             user_embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
