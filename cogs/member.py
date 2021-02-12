@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import asyncpg
 from random import choice as randchoice
 import asyncio
+import time
 
 class JoeMarjType:
     """Enumeration that tells us what type of message needs to be given."""
@@ -28,6 +29,13 @@ class Member(commands.Cog):
     async def host(self, ctx):
         '''Check if the bot is currently hosted locally or remotely'''
         await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
+
+    @commands.command(pass_context=True)
+    async def ping(self, ctx):
+        '''Gets a ping time by measuring time to send & edit a message'''
+        start = time.time()
+        out = await ctx.message.channel.send("Pong! (N/A)")
+        await out.edit(content = "Pong! (" + str(round(1000 * (time.time() - start), 1)) + " milliseconds)")
 
 #-----------------------JOE MARJ--------------------------
 
