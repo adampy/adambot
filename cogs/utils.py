@@ -1,4 +1,6 @@
+import discord
 from discord import Embed, Colour, Message, TextChannel, File
+from discord.ext import commands
 from math import ceil
 from datetime import timedelta
 from io import BytesIO
@@ -177,6 +179,49 @@ async def send_file(fig, channel, filename):
     fig.savefig(buf)
     buf.seek(0)
     await channel.send(file=File(buf, filename=f'{filename}.png'))
+
+
+async def get_spaced_member(ctx, args, bot):
+    '''Moves hell on Earth to get a guild member object from a given string
+    Makes use of last_active, a priority temp list that stores member objects of
+    the most recently active members'''
+    user = None
+    try:
+        user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
+    except commands.errors.MemberNotFound:
+        try:
+            user = await commands.MemberConverter().convert(ctx, ' '.join(args))
+        except commands.errors.MemberNotFound:
+            # for the love of god
+
+            lists = [bot.last_active, ctx.guild.members]
+            attribs = ["display_name", "name"]
+            print(bot.last_active)
+            for list_ in lists:
+                for attrib in attribs:
+                    if user is not None:
+                        break
+                    for member in list_:
+                        name = getattr(member, attrib)
+                        if args[0] in name or ' '.join(args) in name:
+                            user = member
+                            break
+                    if user is None:
+                        for member in list_:
+                            name = getattr(member, attrib)
+                            if name.lower() == args[0].lower() or name.lower() == ' '.join(args).lower():
+                                ## don't need normal checks for this as the converter would have got it already
+                                user = member
+                                break
+                    if user is None:
+                        for member in list_:
+                            name = getattr(member, attrib)
+                            if args[0].lower() in name.lower() or ' '.join(args).lower() in name.lower():
+                                user = member
+                                break
+
+    return user
+
 
 def ordinal(n: int) -> str:
     '''Returns the shortened ordinal for the cardinal number given. E.g. 1 -> "1st", 74 -> "74th"''' #https://stackoverflow.com/questions/9647202/ordinal-numbers-replacement
