@@ -6,7 +6,7 @@ from discord import Embed, Colour
 import os
 import asyncpg
 import datetime
-from .utils import Permissions, ordinal, Embed, EmbedPages, PageTypes, send_file
+from .utils import Permissions, ordinal, Embed, EmbedPages, PageTypes, send_file, get_spaced_member
 import matplotlib.pyplot as plt
 import matplotlib
 
@@ -18,43 +18,6 @@ class Reputation(commands.Cog):
     async def get_valid_name(self, member: discord.Member):
         return member.name if member.nick is None else member.nick
 
-    async def get_spaced_member(self, ctx, args):
-        user = None
-        try:
-            user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
-        except commands.errors.MemberNotFound:
-            try:
-                user = await commands.MemberConverter().convert(ctx, ' '.join(args))
-            except commands.errors.MemberNotFound:
-                # for the love of god
-
-                lists = [self.bot.last_active, ctx.guild.members]
-                attribs = ["display_name", "name"]
-                print(self.bot.last_active)
-                for list_ in lists:
-                    for attrib in attribs:
-                        if user is not None:
-                            break
-                        for member in list_:
-                            name = getattr(member, attrib)
-                            if args[0] in name or ' '.join(args) in name:
-                                user = member
-                                break
-                        if user is None:
-                            for member in list_:
-                                name = getattr(member, attrib)
-                                if name.lower() == args[0].lower() or name.lower() == ' '.join(args).lower():
-                                    ## don't need normal checks for this as the converter would have got it already
-                                    user = member
-                                    break
-                        if user is None:
-                            for member in list_:
-                                name = getattr(member, attrib)
-                                if args[0].lower() in name.lower() or ' '.join(args).lower() in name.lower():
-                                    user = member
-                                    break
-
-        return user
 
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
@@ -126,7 +89,7 @@ class Reputation(commands.Cog):
         if len(args) == 0:  # check so -rep award doesn't silently fail when no string given
             user = ctx.author
         else:
-            user = await self.get_spaced_member(ctx, args)
+            user = await get_spaced_member(ctx, args, self.bot)
             if user is None:
                 await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
                 return
@@ -256,7 +219,7 @@ class Reputation(commands.Cog):
         if len(args) == 0:
             user = ctx.author
         else:
-            user = await self.get_spaced_member(ctx, args)
+            user = await get_spaced_member(ctx, args, self.bot)
        
         rep = None
         lb_pos = None
