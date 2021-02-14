@@ -234,7 +234,7 @@ class Member(commands.Cog):
         user = msg.author
         image = None
         repl = re.compile(r"/(\[.+?\])(\(.+?\))/")
-        edited = f" (edited at {msg.edited_timestamp.isoformat(' ', 'seconds')})" if msg.edited_at else ''
+        edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ''
         
         content = re.sub(repl, r"\1​\2", msg.content)
         
