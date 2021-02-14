@@ -6,7 +6,7 @@ from discord.utils import get
 import asyncio
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from csv import reader
 import asyncpg
 from cogs.utils import EmojiEnum, Todo
@@ -128,8 +128,18 @@ member_id may not always be a member ID, and can sometimes be a FK to demographi
                             await guild.unban(user, reason='Auto unbanned')
                             await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
 
-                        elif todo[1] == Todo.DEMOGRAPHIC_SAMPLE:
-                            print("SAMPLE REQUIRED")
+                        elif todo[1] == Todo.DEMOGRAPHIC_SAMPLE or todo[1] == Todo.ONE_OFF_DEMOGRAPHIC_SAMPLE:
+                            demographic_role_id = todo[3]
+                            results = await connection.fetch("SELECT role_id, guild_id, sample_rate FROM demographic_roles WHERE id = $1", demographic_role_id)
+                            guild = self.get_guild(results[0][1])
+                            role_id = results[0][0]
+                            sample_rate = results[0][2]
+                            n = len([x for x in guild.members if role_id in [y.id for y in x.roles]])
+                            await connection.execute("INSERT INTO demographic_samples (n, role_reference) VALUES ($1, $2)", n, demographic_role_id)
+                            await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
+
+                            if todo[1] == Todo.DEMOGRAPHIC_SAMPLE: # IF NOT A ONE OFF SAMPLE, PERFORM IT AGAIN
+                                await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", Todo.DEMOGRAPHIC_SAMPLE, datetime.utcnow() + timedelta(days = sample_rate), demographic_role_id)
 
                     except Exception as e:
                         print(e)

@@ -131,6 +131,15 @@ class Demographics(commands.Cog): # Tracks the change in specific roles. This wo
         await self._require_sample(role)
         await ctx.send("A sample has been taken, it may take a few seconds to be registered in the database. :ok_hand:")
 
+    @demographics.command(pass_context = True)
+    @commands.has_any_role(*Permissions.STAFF)
+    @commands.guild_only()
+    async def removeallsamples(self, ctx, role: discord.Role):
+        """Removes all samples from the `demographic_samples` table."""
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("DELETE FROM demographic_samples;")
+        await ctx.send("All samples have been deleted. :sob:")
+
     # Error handlers
     @addrole.error
     async def addrole_error(self, ctx, error):
