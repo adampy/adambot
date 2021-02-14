@@ -68,9 +68,12 @@ class AdamBot(Bot):
         '''Command that stops bots from executing commands'''
         if message.author.bot:
             return
-        if message.author in self.last_active:
-            self.last_active.remove(message.author)
-        self.last_active.insert(0, message.author)
+        if message.guild not in self.last_active:
+            self.last_active[message.guild] = [] # create the dict key for that guild if it doesn't exist
+        last_active_list = self.last_active[message.guild]
+        if message.author in last_active_list:
+            last_active_list.remove(message.author)
+        last_active_list.insert(0, message.author)
         await self.process_commands(message)
 
     async def on_reaction_add(self, reaction, user):
