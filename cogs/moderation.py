@@ -4,7 +4,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
 from discord.utils import get
 import asyncio
-from .utils import separate_args, Permissions, EmbedPages, PageTypes
+from .utils import separate_args, Permissions, EmbedPages, PageTypes, Todo
 from datetime import datetime, timedelta
 import os
 import asyncpg
@@ -125,7 +125,7 @@ Staff role needed'''
             if not reason:
                 reason = f'No reason - kicked by {str(ctx.author)}'
             #if timeperiod:
-            #    await self.timer(1, timeperiod, member.id)
+            #    await self.timer(Todo.UNMUTE, timeperiod, member.id)
         else:
             reason = None
 
@@ -151,7 +151,7 @@ Moderator role needed'''
             if not reason:
                 reason = f'No reason - banned by {str(ctx.author)}'
             if timeperiod:
-                await self.timer(2, timeperiod, member.id)
+                await self.timer(Todo.UNBAN, timeperiod, member.id)
         else:
             reason = None
 
@@ -177,7 +177,7 @@ Moderator role needed'''
             if not reason:
                 reason = f'No reason - banned by {str(ctx.author)}'
             if timeperiod:
-                await self.timer(2, timeperiod, member.id)
+                await self.timer(Todo.UNBAN, timeperiod, member.id)
         else:
             reason = None
 
@@ -203,7 +203,7 @@ Moderator role needed.'''
             if not reason:
                 reason = f'No reason - unbanned by {ctx.author.name}'
             #if timeperiod:
-            #    await self.timer(1, timeperiod, member.id)
+            #    await self.timer(Todo.UNMUTE, timeperiod, member.id)
         else:
             reason = None
 
@@ -240,7 +240,7 @@ Staff role needed.'''
         if args:
             timeperiod, reason = separate_args(args)
             if timeperiod:
-                await self.timer(1, timeperiod, member.id)
+                await self.timer(Todo.UNMUTE, timeperiod, member.id)
         else:
             reason, timeperiod = None, None
 

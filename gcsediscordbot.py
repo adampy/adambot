@@ -109,7 +109,8 @@ The todo table looks like:
 	id SERIAL PRIMARY KEY,
 	todo_id int,
 	todo_time timestamptz,
-	member_id bigint"""
+	member_id bigint
+member_id may not always be a member ID, and can sometimes be a FK to demographic_roles.id"""
         await self.wait_until_ready()
         while True:
             async with self.pool.acquire() as connection:
@@ -128,7 +129,7 @@ The todo table looks like:
                             await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
 
                         elif todo[1] == Todo.DEMOGRAPHIC_SAMPLE:
-                            pass
+                            print("SAMPLE REQUIRED")
 
                     except Exception as e:
                         print(e)
