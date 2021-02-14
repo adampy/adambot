@@ -221,7 +221,7 @@ class Reputation(commands.Cog):
         else:
             user = await get_spaced_member(ctx, args, self.bot)
             if user is None:
-                await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
+                await ctx.send(embed=Embed(title=f':x:  Sorry {ctx.author.display_name} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
                 return
         rep = None
         lb_pos = None
@@ -240,7 +240,7 @@ SELECT Rownum FROM rankings WHERE member_id = ($1);""", user.id)
         # could change to user.colour at some point, I prefer the purple for now though
         embed.add_field(name='Rep points', value=rep)
         embed.add_field(name='Leaderboard position', value=ordinal(lb_pos) if lb_pos else 'Nowhere :(')
-        embed.set_footer(text=f"Requested by {ctx.author}\n" + (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
         embed.set_thumbnail(url=user.avatar_url)
         await ctx.send(embed=embed)
         #await ctx.send(f'{user.mention} {f"is **{ordinal(lb_pos)}** on the reputation leaderboard with" if lb_pos else "has"} **{rep}** reputation points. {"They are not yet on the leaderboard because they have no reputation points." if (not lb_pos or rep == 0) else ""}')
