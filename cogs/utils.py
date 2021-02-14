@@ -194,7 +194,7 @@ async def get_spaced_member(ctx, args, bot):
         except commands.errors.MemberNotFound:
             # for the love of god
 
-            lists = [bot.last_active[ctx.guild], ctx.guild.members]
+            lists = [bot.last_active[ctx.guild.id], ctx.guild.members]
             attribs = ["display_name", "name"]
             print(bot.last_active)
             for list_ in lists:
