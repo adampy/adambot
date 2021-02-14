@@ -193,7 +193,7 @@ class Demographics(commands.Cog): # Tracks the change in specific roles. This wo
 **{}** Year 11s
 **{}** Year 10s
 **{}** Year 9s
-*The demographics system is currently undergoing maintenance, and there will soon be new features added.*""".format(*numbers)
+*Note: do `-demographics chart` to view change in demographics over time!*""".format(*numbers)
         await ctx.send(message)
 
     @demographics.command(pass_context = True)
