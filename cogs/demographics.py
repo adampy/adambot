@@ -1,8 +1,9 @@
 ﻿import discord
 from discord.ext import commands
-from .utils import Permissions
+from .utils import Permissions, Todo
 import asyncio
 import asyncpg
+from datetime import datetime
 
 class Demographics(commands.Cog): # Tracks the change in specific roles. This works over multiple guilds, but cannot function like that due to utils.Permissions.
     def __init__(self, bot):
@@ -11,18 +12,31 @@ class Demographics(commands.Cog): # Tracks the change in specific roles. This wo
     async def _get_roles(self, guild: discord.Guild):
         """Returns all the role IDs that are tracked for a given `guild`."""
         async with self.bot.pool.acquire() as connection:
-            roles = await connection.fetch("SELECT role_id FROM demographic_todos WHERE guild_id = $1;", (guild.id)) # Returns a list of Record type
+            roles = await connection.fetch("SELECT role_id FROM demographic_roles WHERE guild_id = $1;", (guild.id)) # Returns a list of Record type
         return [x["role_id"] for x in roles]
 
     async def _add_role(self, role: discord.Role, sample_rate):
         """Adds a role to the demographic todo table such that it gets sampled regularly."""
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("INSERT INTO demographic_todos (sample_rate, guild_id, role_id) VALUES ($1, $2, $3);", sample_rate, role.guild.id, role.id)
+            await connection.execute("INSERT INTO demographic_roles (sample_rate, guild_id, role_id) VALUES ($1, $2, $3);", sample_rate, role.guild.id, role.id)
+            demographic_role_id = await connection.fetchval("SELECT MAX(id) FROM demographic_roles;")
+
+            now = datetime.utcnow()
+            midnight = datetime(now.year, now.month, now.day, 23, 59, 59) # Midnight of the current day
+            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", Todo.DEMOGRAPHIC_SAMPLE, midnight, demographic_role_id) # Place the role reference in the member_id field.
+
+    async def _require_sample(self, role: discord.Role):
+        """Adds a TODO saying that a sample is required ASAP."""
+        async with self.bot.pool.acquire() as connection:
+            demographic_role_id = await connection.fetchval("SELECT id from demographic_roles WHERE role_id = $1", role.id)
+            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", Todo.DEMOGRAPHIC_SAMPLE, datetime.utcnow(), demographic_role_id) # Placing the role reference in the member_id field.
 
     async def _remove_role(self, role: discord.Role):
         """Removes a role from the demographic todo table - all samples are also removed upon this action."""
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE FROM demographic_todos WHERE role_id = $1;", role.id)
+            demographic_role_id = await connection.fetchval("SELECT id FROM demographic_roles WHERE role_id = $1;", role.id)
+            await connection.execute("DELETE FROM demographic_roles WHERE role_id = $1;", role.id)
+            await connection.execute("DELETE FROM todo WHERE member_id = $1", demographic_role_id)
 
     async def _role_error(self, ctx, error):
         """Executes on addrole.erorr and removerole.error."""
@@ -105,12 +119,27 @@ class Demographics(commands.Cog): # Tracks the change in specific roles. This wo
         else:
             await question.edit(content = "No action taken.")
 
+    @demographics.command(pass_context = True)
+    @commands.has_any_role(*Permissions.STAFF)
+    @commands.guild_only()
+    async def takesample(self, ctx, role: discord.Role):
+        """Adds a TODO saying that a sample is required ASAP."""
+        if role.id not in await self._get_roles(ctx.guild):
+            await ctx.send("This role is not currently being tracked!")
+            return
+
+        await self._require_sample(role)
+        await ctx.send("A sample has been taken, it may take a few seconds to be registered in the database. :ok_hand:")
+
     # Error handlers
     @addrole.error
     async def addrole_error(self, ctx, error):
         await self._role_error(ctx, error)
     @removerole.error
     async def removerole_error(self, ctx, error):
+        await self._role_error(ctx, error)
+    @takesample.error
+    async def takesample_error(self, ctx, error):
         await self._role_error(ctx, error)
 
     # Old command
