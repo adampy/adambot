@@ -108,6 +108,11 @@ class PageTypes:
     WARN = 1
     REP = 2
 
+class Todo:
+    UNMUTE = 1
+    UNBAN = 2
+    DEMOGRAPHIC_SAMPLE = 3
+
 class EmojiEnum:
     MIN_BUTTON = '\U000023ee'
     MAX_BUTTON = '\U000023ed'

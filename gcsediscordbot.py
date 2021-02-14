@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 from csv import reader
 import asyncpg
-from cogs.utils import EmojiEnum
+from cogs.utils import EmojiEnum, Todo
 
 #-----------------------------------------------------------------
 
@@ -104,22 +104,32 @@ class AdamBot(Bot):
                 break
 
     async def execute_todos(self):
-        '''The loop that continually checks the DB for todos'''
+        """The loop that continually checks the DB for todos.
+The todo table looks like:
+	id SERIAL PRIMARY KEY,
+	todo_id int,
+	todo_time timestamptz,
+	member_id bigint"""
         await self.wait_until_ready()
         while True:
             async with self.pool.acquire() as connection:
                 todos = await connection.fetch('SELECT * FROM todo WHERE todo_time <= now()')
                 for todo in todos:
                     try:
-                        if todo[1] == 1: #unmute
+                        if todo[1] == Todo.UNMUTE:
                             member = get(self.get_all_members(), id=todo[3])
                             await member.remove_roles(get(member.guild.roles, name='Muted'), reason='Auto unmuted')
                             await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
-                        elif todo[1] == 2: #unban
+                        
+                        elif todo[1] == Todo.UNBAN:
                             user = await self.fetch_user(todo[3])
                             guild = self.get_guild(445194262947037185)
                             await guild.unban(user, reason='Auto unbanned')
                             await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
+
+                        elif todo[1] == Todo.DEMOGRAPHIC_SAMPLE:
+                            pass
+
                     except Exception as e:
                         print(e)
                         await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
@@ -186,15 +196,16 @@ if __name__ == "__main__":
     intents.presences = True
     intents.reactions = True
 
-    cogs = ['member',
+    cog_names = ['member',
         'moderation',
         'questionotd',
         'waitingroom',
         'support',
         'reputation',
         'trivia',
-        'private',]
+        'private',
+        'demographics']
 
-    bot = AdamBot(local_host, cogs, command_prefix='-', intents=intents)
+    bot = AdamBot(local_host, cog_names, command_prefix='-', intents=intents)
     #bot.remove_command("help")
 

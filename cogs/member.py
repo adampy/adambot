@@ -257,24 +257,6 @@ class Member(commands.Cog):
         except Exception as e:
             print(e)
 
-#-----------------------DEMOGRAPHICS------------------------------
-    @commands.command()
-    @commands.has_any_role(*Permissions.MEMBERS)
-    @commands.guild_only()
-    async def demographics(self, ctx):
-        '''View server demographics.'''
-        numbers = []
-        numbers.append(len(ctx.guild.members))
-        for role in ['Post-GCSE', 'Y11', 'Y10', 'Y9']:
-            numbers.append(len([x for x in ctx.guild.members if role in [y.name for y in x.roles]]))
-        message = """We have {} members.
-        
-{} Post-GCSE
-{} Year 11s
-{} Year 10s
-{} Year 9s""".format(*numbers)
-        await ctx.send(message)
-
 #-----------------------FUN------------------------------
 #    @commands.command()
 #    @commands.guild_only()

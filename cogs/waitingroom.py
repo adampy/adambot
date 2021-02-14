@@ -324,6 +324,7 @@ Staff role needed.'''
             response = await self.bot.wait_for("message", check = check, timeout = 300)
         except asyncio.TimeoutError:
             await question.delete()
+            return
         if response.content.lower() == "yes":
             for i in range(len(members)):
                 member = members[i]
