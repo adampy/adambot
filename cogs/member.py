@@ -58,9 +58,9 @@ class Member(commands.Cog):
         """Method that receives a message, and replies to it if a 'Joe Marj' infiltration has been detected. Can receive a `delete_after` integer, which deletes the replies after that many seconds""" 
         result = await self._joe_marj_check(message)
         if result == JoeMarjType.GIF:
-            msg = await message.channel.send("STOP SENDING JOE MARJ GIF", delete_after = delete_after)
+            await message.channel.send("STOP SENDING JOE MARJ GIF", delete_after = delete_after)
         elif result == JoeMarjType.MSG:
-            msg = await message.channel.send("STOP SAYING JOE MARJ", delete_after = delete_after)
+            await message.channel.send("STOP SAYING JOE MARJ", delete_after = delete_after)
 
 #-----------------------REVISE------------------------------
 
@@ -106,7 +106,6 @@ class Member(commands.Cog):
         
         #gets the roles that it could be
         role_name = ' '.join(args)
-        role_id = ctx.message.guild.roles[0]
         possible_roles = []
         for role in ctx.message.guild.roles:
             if role_name.lower() == role.name.lower():
@@ -271,7 +270,6 @@ class Member(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message):
-        ctx = await self.bot.get_context(message)
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
 
@@ -281,6 +279,7 @@ class Member(commands.Cog):
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
 
         await self.handle_joe_marj(message)
+        ##ctx = await self.bot.get_context(message)
         ##elif '5 days' in msg and conditions:
         ##    await message.channel.send('Top Shagger :sunglasses:')
         ##elif ('snorting rep' in msg or 'xp3dx' in msg) and conditions:

@@ -6,7 +6,7 @@ from discord import Embed, Colour
 import os
 import asyncpg
 import datetime
-from .utils import Permissions, ordinal, Embed, EmbedPages, PageTypes, send_file, get_spaced_member
+from .utils import Permissions, ordinal, Embed, EmbedPages, PageTypes, send_file, get_spaced_member, GCSE_SERVER_ID
 import matplotlib.pyplot as plt
 import matplotlib
 
@@ -58,7 +58,7 @@ class Reputation(commands.Cog):
                 return new_reps
 
     def in_gcse(ctx):
-        return ctx.guild.id == 445194262947037185
+        return ctx.guild.id == GCSE_SERVER_ID
 
 #-----------------------REP COMMANDS------------------------------
 
@@ -128,9 +128,9 @@ class Reputation(commands.Cog):
     async def leaderboard(self, ctx, modifier=''):
         '''Displays the leaderboard of reputation points, if [modifier] is 'members' then it only shows current server members'''
         if modifier.lower() in ['members', 'member']:
-            lb = await self.get_leaderboard(ctx, only_members=True)
+            await self.get_leaderboard(ctx, only_members=True)
         else:
-            lb = await self.get_leaderboard(ctx, only_members=False)
+            await self.get_leaderboard(ctx, only_members=False)
 
         #await ctx.send(embed=lb)
 

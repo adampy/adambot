@@ -7,14 +7,14 @@ import datetime
 import os
 from random import choice
 from math import ceil
-from .utils import SPAMPING_PERMS, Permissions, EmbedPages, PageTypes, CHANNELS
+from .utils import SPAMPING_PERMS, Permissions, EmbedPages, PageTypes, CHANNELS, GCSE_SERVER_ID
 
 class QuestionOTD(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     def in_gcse(ctx):
-        return ctx.guild.id == 445194262947037185
+        return ctx.guild.id == GCSE_SERVER_ID
 
     def qotd_perms(ctx):
         r = [y.name for y in ctx.author.roles]

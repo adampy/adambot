@@ -202,9 +202,6 @@ class Demographics(commands.Cog): # Tracks the change in specific roles. This wo
     async def chart(self, ctx):
         """View a guild's demographics over time"""
         fig, ax = plt.subplots()
-        vals = [[0,0]]
-        #ax.plot([x[0] for x in vals], [x[1] for x in vals], 'b-o', linewidth=0.5, markersize=1)
-
         async with self.bot.pool.acquire() as connection:
             role_data = await connection.fetch("SELECT role_id, id FROM demographic_roles WHERE guild_id = $1", ctx.guild.id)
             

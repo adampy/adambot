@@ -85,7 +85,6 @@ Requires bot owner.'''
 Moderator role needed.
 Usage: `-purge 50`'''
         channel = ctx.channel
-        author = ctx.author
 
         if limit.isdigit():
             await ctx.message.delete()
