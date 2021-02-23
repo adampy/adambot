@@ -142,7 +142,7 @@ class Member(commands.Cog):
                 new_message = '\n'.join([f'**{member.nick if member.nick else member.name}**' for member in people])
                 new_message += f'\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** users with this role.'
                 if len(new_message) >= 2000:
-                    params = {'api_dev_key':self.pastebin,
+                    params = {'api_dev_key':os.environ.get("PASTEBIN_KEY"),
                               'api_option':'paste',
                               'api_paste_code':new_message,
                               'api_paste_private':'1',
