@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord.utils import get
 import os
 import asyncpg
-from .utils import Permissions, CHANNELS
+from .utils import Permissions, CHANNELS, GCSE_SERVER_ID
 import re
 import asyncio
 
@@ -38,7 +38,7 @@ class WaitingRoom(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'welcome_channel';", str(channel_id))
         
-    async def get_parsed_welcome_message(self, new_user: discord.User):
+    async def get_parsed_welcome_message(self, new_user: discord.User, guild: discord.Guild):
         """Method that gets the parsed welcome message, with channel and role mentions."""
         to_send = self.welcome_message
         to_send = to_send.replace("<user>", new_user.mention)
@@ -56,7 +56,7 @@ class WaitingRoom(commands.Cog):
             if not role_regex:
                 break
             match = role_regex.group(0)
-            role = ctx.guild.get_role(int(match))
+            role = guild.get_role(int(match))
             to_send = to_send.replace(f"R<{match}>", role.mention)
 
         return to_send
@@ -75,11 +75,11 @@ class WaitingRoom(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         #formatting stuffs
-        message = await self.get_parsed_welcome_message(member)
+        guild = self.bot.get_guild(GCSE_SERVER_ID)
+        message = await self.get_parsed_welcome_message(member, guild)
         await self.welcome_channel.send(message)
 
         #invite stuffs
-        guild = self.bot.get_guild(445194262947037185)
         old_invites = []
         async with self.bot.pool.acquire() as connection:
             old_invites = await connection.fetch('SELECT * FROM invites')
@@ -151,7 +151,7 @@ class WaitingRoom(commands.Cog):
     @commands.has_any_role(*Permissions.MOD)
     async def testmessage(self, ctx, to_ping: discord.User = None):
         """Command that returns the welcome message, and pretends the command invoker is the new user."""
-        msg = await self.get_parsed_welcome_message(to_ping or ctx.author) # to_ping or author means the author unless to_ping is provided.
+        msg = await self.get_parsed_welcome_message(to_ping or ctx.author, ctx.guild) # to_ping or author means the author unless to_ping is provided.
         await ctx.send(msg)
 
     @editwelcome.command(pass_context=True)
