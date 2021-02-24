@@ -84,7 +84,7 @@ class WaitingRoom(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             old_invites = await connection.fetch('SELECT * FROM invites')
         invites = await guild.invites()
-        invite_data = None
+        invite_data = None # Holds the invite used
         
         #for each new invite find the old one - if not avaliable then that invite is the one
         seen_invites = []
@@ -118,9 +118,29 @@ class WaitingRoom(commands.Cog):
             embed.set_thumbnail(url=member.avatar_url)
             await get(guild.text_channels, name='invite-logs').send(f'{member.mention}\'s account is **less than 7 days old.**' if day_warning else '', embed=embed)
         else:
-            await get(guild.text_channels, name='invite-logs').send('No invite data avaliable.' if not day_warning else f'No invite data avaliable. {member.mention}\'s account is **less than 7 days old.**')
+            new_invite_codes = [inv.code for inv in invites]
+            for old_invite in old_invites:
+                if old_invite[1] not in new_invite_codes: # If the an old invite code is not in the new invites, then it must have been used
+                    invite_data = old_invite
+                    break
 
-
+            if invite_data:
+                # Get inviter
+                inviter = self.bot.get_user(invite_data[0])
+                if not inviter:
+                    inviter = await self.bot.fetch_user(invite_data[0])
+                
+                embed = Embed(title='Invite data', color=Colour.from_rgb(76, 176, 80))
+                embed.add_field(name='Member', value=member.mention)
+                embed.add_field(name='Inviter', value=inviter.mention)
+                embed.add_field(name='Code', value=invite_data[1])
+                embed.add_field(name='Uses', value="This was a single-use invite (1/1 uses)")
+                embed.add_field(name='Invite created', value=invite_data[4].strftime('%H:%M on %d/%m/%y'))
+                embed.add_field(name='Account created', value=member.created_at.strftime('%H:%M on %d/%m/%y'))
+                embed.set_thumbnail(url=member.avatar_url)
+                await get(guild.text_channels, name='invite-logs').send(f'**Single-use-invite used.**{member.mention}\'s account is **less than 7 days old.**' if day_warning else '**Single-use-invite used.**', embed=embed)
+            else:
+                await get(guild.text_channels, name='invite-logs').send("No invite data available even after checking the single-use invites.")
 
         #reset invites
         to_insert = []
