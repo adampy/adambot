@@ -100,7 +100,7 @@ class Member(commands.Cog):
             role = get(member.guild.roles, name='Members')
             await member.add_roles(role)
             await self.bot.get_channel(445199175244709898).send(f'{member.mention} welcome back from revising mode!')
-        else:
+        elif 'Revising' in [y.name for y in member.roles]:
             channel = self.bot.get_channel(518901847981948938) # Revision escape
             await ctx.send(f'Go to {channel.mention} to stop revising')
 
