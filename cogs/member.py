@@ -64,6 +64,17 @@ class Member(commands.Cog):
 
 #-----------------------REVISE------------------------------
 
+    async def handle_revise_keyword(self, message):
+        """Internal procedure that handles potential key phrase attempts to get into revision mode"""
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
+        ctx = await self.bot.get_context(message)
+        stoprevising_combos = ["stop revising", "end", "stop", "exit", "finished", "finish", "finished revising", "done revising", "leave"]
+        msg = message.content.lower()
+        if msg == 'need to revise' and conditions:
+           await ctx.invoke(self.bot.get_command('revise'))
+        elif msg in stoprevising_combos and conditions:
+            await ctx.invoke(self.bot.get_command('stoprevising'))
+
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
@@ -76,7 +87,7 @@ class Member(commands.Cog):
         await member.remove_roles(role)
         role = get(member.guild.roles, name='Revising')
         await member.add_roles(role)
-        await self.bot.get_channel(518901847981948938).send(f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `-stoprevising` in this channel!')
+        await self.bot.get_channel(518901847981948938).send(f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `-stoprevising`, `end`, `stop`, `exit` or `finished revising` in this channel!')
 
     @commands.command(pass_context=True)
     @commands.guild_only()
@@ -272,6 +283,8 @@ class Member(commands.Cog):
     async def on_message(self, message):
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
+        ctx = await self.bot.get_context(message)
+        stoprevising_combos = ["stop revising", "end", "stop", "exit", "finished", "finish", "finished revising", "done revising"]
 
         if 'bruh' in msg and conditions:
             async with self.bot.pool.acquire() as connection:
@@ -279,6 +292,7 @@ class Member(commands.Cog):
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
 
         await self.handle_joe_marj(message)
+        await self.handle_revise_keyword(message)
         ##ctx = await self.bot.get_context(message)
         ##elif '5 days' in msg and conditions:
         ##    await message.channel.send('Top Shagger :sunglasses:')
@@ -286,10 +300,6 @@ class Member(commands.Cog):
         ##    await message.channel.send('very attractive man :heart_eyes:')
         ##elif ('sarman' in msg or 'ramen' in msg) and conditions:
         ##    await message.channel.send('Sarman\'s Ramen, come get yo ramen from my store. It\'s amazing and you have a sekc host')
-        ##elif msg == 'need to revise' and conditions:
-        ##    await ctx.invoke(self.bot.get_command('revise'))
-        ##elif msg == 'stop revising' and conditions:
-        ##    await ctx.invoke(self.bot.get_command('stoprevising'))
         return
 
     @commands.Cog.listener()
