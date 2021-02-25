@@ -281,7 +281,7 @@ Staff role needed.'''
         '''Adds slowmode in a specific channel. Time is given in seconds.
 Moderator role needed.
 Assistants have permission in #general only.'''
-        if ('Assistant' in [str(y) for y in ctx.author.roles] and 'general' == ctx.channel.name) or 'Moderator' in [str(y) for y in ctx.author.roles] or (ctx.guild.id == 593134700122472450 and 'Administrators' in [y.name for y in ctx.author.roles]):
+        if ('Assistant' in [str(y) for y in ctx.author.roles] and ctx.channel.id == 445199175244709898) or 'Moderator' in [str(y) for y in ctx.author.roles] or (ctx.guild.id == 593134700122472450 and 'Administrators' in [y.name for y in ctx.author.roles]):
             try:
                 if int(time) <= 60:
                     await ctx.channel.edit(slowmode_delay=int(time))
