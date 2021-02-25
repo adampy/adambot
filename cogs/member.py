@@ -283,8 +283,6 @@ class Member(commands.Cog):
     async def on_message(self, message):
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
-        ctx = await self.bot.get_context(message)
-        stoprevising_combos = ["stop revising", "end", "stop", "exit", "finished", "finish", "finished revising", "done revising"]
 
         if 'bruh' in msg and conditions:
             async with self.bot.pool.acquire() as connection:
