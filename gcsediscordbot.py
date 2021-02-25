@@ -23,7 +23,7 @@ from cogs.utils import EmojiEnum, Todo
 #-----------------------------------------------------------------
 
 def get_credentials():
-    '''Command that checks if a credentials file is available. If it is it puts the vars into environ and returns True, else returns False'''
+    """Command that checks if a credentials file is available. If it is it puts the vars into environ and returns True, else returns False"""
     try:
         with open('credentials.csv') as f:
             for credential in reader(f):
@@ -45,7 +45,7 @@ class AdamBot(Bot):
         self.start_up()
 
     def start_up(self):
-        '''Command that starts AdamBot, is run in AdamBot.__init__'''
+        """Command that starts AdamBot, is run in AdamBot.__init__"""
         self.load_cogs()
         self.loop.create_task(self.execute_todos())
         self.pool : asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20))
@@ -53,7 +53,7 @@ class AdamBot(Bot):
         self.run(os.environ.get('TOKEN'))
 
     def load_cogs(self):
-        '''Loads all the cogs passed into AdamBot'''
+        """Loads all the cogs passed into AdamBot"""
         for cog in self.COGS:
             if cog == "trivia" and self.LOCAL_HOST: # Don't load trivia if running locally
                 continue
@@ -65,7 +65,7 @@ class AdamBot(Bot):
         await self.change_presence(activity=discord.Game(name = f'Type {self.prefix}help for help'))
 
     async def on_message(self, message):
-        '''Command that stops bots from executing commands'''
+        """Event that has checks that stop bots from executing commands"""
         if message.author.bot:
             return
         if message.guild.id not in self.last_active:
@@ -77,7 +77,7 @@ class AdamBot(Bot):
         await self.process_commands(message)
 
     async def on_reaction_add(self, reaction, user):
-        '''Subroutine used to control EmbedPages stored within self.pages'''
+        """Subroutine used to control EmbedPages stored within self.pages"""
         if not user.bot:
             for page in self.pages:
                 if reaction.message == page.message and user == page.initiator:
@@ -97,7 +97,7 @@ class AdamBot(Bot):
                     break
 
     async def on_message_delete(self, message):
-        '''Ensures that memory is freed up once a message containing an embed page is deleted.'''
+        """Event that ensures that memory is freed up once a message containing an embed page is deleted."""
         for page in self.pages:
             if message == page.message:
                 del page
