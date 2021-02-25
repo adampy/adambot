@@ -9,8 +9,11 @@ from .utils import SPAMPING_PERMS
 class Private(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.gdrive_link = os.environ['GDRIVE']
-        self.classroom_link = os.environ['CLASSROOM']
+        try:
+            self.gdrive_link = os.environ['GDRIVE']
+            self.classroom_link = os.environ['CLASSROOM']
+        except KeyError as e:
+            print(f"KeyError in cogs.private: {e}")
 
     def in_private_server(ctx):
         return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)#in priv server or is adam
