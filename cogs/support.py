@@ -13,14 +13,14 @@ class Support(commands.Cog):
         self.connections = []
 
     async def get_connections(self):
-        '''Returns currently active connections'''
+        """Returns currently active connections"""
         connections = []
         async with self.bot.pool.acquire() as connection:
             connections = await connection.fetch("SELECT * FROM support")
         return connections
 
     async def in_connections(self, member: discord.Member):
-        '''Checks if a connection already exists with the user, if it does returns connection data or returns False if not'''
+        """Checks if a connection already exists with the user, if it does returns connection data or returns False if not"""
         conns = await self.get_connections()
         for con in conns:
             if con[1] == member.id or con[2] == member.id:
@@ -29,7 +29,7 @@ class Support(commands.Cog):
             return False
 
     async def create_connection(self, member: discord.Member):
-        '''Makes a connection by adding it to the DB table support'''
+        """Makes a connection by adding it to the DB table support"""
         connection_id = 0
         async with self.bot.pool.acquire() as connection:
             await connection.execute('INSERT INTO support (member_id, staff_id) values ($1, $2)', member.id, 0)
@@ -51,7 +51,7 @@ class Support(commands.Cog):
             await connection.execute("DELETE FROM support WHERE id = ($1)", connection_id)
 
     async def log(self, mode, connection_id, message: discord.Message = None):
-        '''Logs the message in support-logs'''
+        """Logs the message in support-logs"""
         channel = self.bot.get_guild(445194262947037185).get_channel(597068935829127168)
         if mode.startswith('log'):
             log_type = mode.split('-')[1]
@@ -120,15 +120,15 @@ class Support(commands.Cog):
     @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def support(self, ctx):
-        '''Support module'''
+        """Support module"""
         if ctx.invoked_subcommand is None:
             await ctx.send('```-support accept <ticket_id>```')
 
     @support.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def accept(self, ctx, ticket):
-        '''Accept a support ticket.
-Staff role needed.'''
+        """Accept a support ticket.
+Staff role needed."""
         try:
             ticket = int(ticket)
         except ValueError:

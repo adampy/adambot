@@ -24,7 +24,7 @@ class Private(commands.Cog):
     @commands.command()
     @commands.check(in_private_server)
     async def spamping(self, ctx, amount, user: discord.Member, *message):
-        '''For annoying certain people'''
+        """For annoying certain people"""
         await ctx.message.delete()
 
         try:

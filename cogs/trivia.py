@@ -199,7 +199,7 @@ class Trivia(commands.Cog):
     @commands.guild_only()
     @commands.check(trivia_channel_check)
     async def trivia(self, ctx):
-        '''Trivia module'''
+        """Trivia module"""
         if ctx.invoked_subcommand is None:
             await ctx.send('```-trivia list```')
 

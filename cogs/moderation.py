@@ -15,7 +15,7 @@ class Moderation(commands.Cog):
         self.bot = bot
 
     async def timer(self, todo, seconds, member_id):
-        '''Writes to todo table with the time to perform the given todo (e.g. timer(4, 120) would mean 4 is carried out in 120 seconds)'''
+        """Writes to todo table with the time to perform the given todo (e.g. timer(4, 120) would mean 4 is carried out in 120 seconds)"""
         timestamp = datetime.utcnow()
         new_timestamp = timestamp + timedelta(seconds=seconds)
         async with self.bot.pool.acquire() as connection:
@@ -53,7 +53,7 @@ class Moderation(commands.Cog):
         return ctx.message.author.id == 394978551985602571
 
     def bot_owner_or_permissions(**perms):
-        '''Checks if bot owner or has perms'''
+        """Checks if bot owner or has perms"""
         original = commands.has_permissions(**perms).predicate
         async def extended_check(ctx):
             if ctx.guild is None:
@@ -66,8 +66,8 @@ class Moderation(commands.Cog):
     @commands.command(pass_context=True)
     @commands.check(is_bot_owner)
     async def dev(self, ctx, member: discord.Member, *args):
-        '''Toggles Adam-Bot Developer role to the specified user.
-Requires bot owner.'''
+        """Toggles Adam-Bot Developer role to the specified user.
+Requires bot owner."""
         role = get(member.guild.roles, name='Adam-Bot Developer')
         if 'Adam-Bot Developer' in [x.name for x in member.roles]:
             await member.remove_roles(role)
@@ -81,9 +81,9 @@ Requires bot owner.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MOD)
     async def purge(self, ctx, limit='5', member: discord.Member = None):
-        '''Purges the channel.
+        """Purges the channel.
 Moderator role needed.
-Usage: `-purge 50`'''
+Usage: `-purge 50`"""
         channel = ctx.channel
 
         if limit.isdigit():
@@ -117,8 +117,8 @@ Usage: `-purge 50`'''
     @commands.command(pass_context=True)
     @has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *args):
-        '''Kicks a given user.
-Staff role needed'''
+        """Kicks a given user.
+Staff role needed"""
         if args:
             timeperiod, reason = separate_args(args)
             if not reason:
@@ -143,8 +143,8 @@ Staff role needed'''
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, *args):
-        '''Bans a given user.
-Moderator role needed'''
+        """Bans a given user.
+Moderator role needed"""
         if args:
             timeperiod, reason = separate_args(args)
             if not reason:
@@ -169,8 +169,8 @@ Moderator role needed'''
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
     async def hackban(self, ctx, user_id, *args):
-        '''Bans a given user.
-Moderator role needed'''
+        """Bans a given user.
+Moderator role needed"""
         if args:
             timeperiod, reason = separate_args(args)
             if not reason:
@@ -195,8 +195,8 @@ Moderator role needed'''
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
     async def unban(self, ctx, user_id, *args):
-        '''Unbans a given user with the ID.
-Moderator role needed.'''
+        """Unbans a given user with the ID.
+Moderator role needed."""
         if args:
             timeperiod, reason = separate_args(args)
             if not reason:
@@ -234,8 +234,8 @@ Moderator role needed.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def mute(self, ctx, member: discord.Member, *args):
-        '''Gives a given user the Muted role.
-Staff role needed.'''
+        """Gives a given user the Muted role.
+Staff role needed."""
         if args:
             timeperiod, reason = separate_args(args)
             if timeperiod:
@@ -263,8 +263,8 @@ Staff role needed.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def unmute(self, ctx, member: discord.Member, *args):
-        '''Removes Muted role from a given user.
-Staff role needed.'''
+        """Removes Muted role from a given user.
+Staff role needed."""
         if args:
             timeperiod, reason = separate_args(args)
         else:
@@ -278,9 +278,9 @@ Staff role needed.'''
 
     @commands.command(pass_context=True)
     async def slowmode(self, ctx, time, *args):
-        '''Adds slowmode in a specific channel. Time is given in seconds.
+        """Adds slowmode in a specific channel. Time is given in seconds.
 Moderator role needed.
-Assistants have permission in #general only.'''
+Assistants have permission in #general only."""
         if ('Assistant' in [str(y) for y in ctx.author.roles] and ctx.channel.id == 445199175244709898) or 'Moderator' in [str(y) for y in ctx.author.roles] or (ctx.guild.id == 593134700122472450 and 'Administrators' in [y.name for y in ctx.author.roles]):
             try:
                 if int(time) <= 60:
@@ -300,8 +300,8 @@ Assistants have permission in #general only.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def jail(self, ctx, member: discord.Member):
-        '''Puts a member in #the-court.
-Staff role needed.'''
+        """Puts a member in #the-court.
+Staff role needed."""
         role = get(member.guild.roles, name='Jail')
         await member.add_roles(role)
         await ctx.send(f':ok_hand: {member.mention} has been jailed.')
@@ -309,8 +309,8 @@ Staff role needed.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def unjail(self, ctx, member: discord.Member):
-        '''Puts a member in #the-court.
-Staff role needed.'''
+        """Puts a member in #the-court.
+Staff role needed."""
         try:
             role = get(member.guild.roles, name='Jail')
             await member.remove_roles(role)
@@ -321,8 +321,8 @@ Staff role needed.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def banish(self, ctx, member: discord.Member):
-        '''Removes all roles from a user, rendering them powerless.
-Staff role needed.'''
+        """Removes all roles from a user, rendering them powerless.
+Staff role needed."""
         await member.edit(roles=[])
         await ctx.send(f':ok_hand: {member.mention} has been banished.')
 
@@ -331,18 +331,18 @@ Staff role needed.'''
     @commands.group(pass_context=True)
     @commands.guild_only()
     async def advance(self, ctx):
-        '''Results day command.
+        """Results day command.
 Y11 -> Post-GCSE
 Y10 -> Y11
-Y9 -> Y10'''
+Y9 -> Y10"""
         if ctx.invoked_subcommand is None:
             await ctx.send('```-advance member @Member``` or ```-advance all```')
 
     @advance.command(pass_context=True)
     @commands.has_any_role(*Permissions.MOD)
     async def memberx(self, ctx, member: discord.Member):
-        '''Advances one user.
-Moderator role needed.'''
+        """Advances one user.
+Moderator role needed."""
         try:
             await self.advance_user(ctx, member)
             await ctx.send(':ok_hand: the year has been advanced.')
@@ -353,8 +353,8 @@ Moderator role needed.'''
     @advance.command(pass_context=True)
     @commands.has_any_role(*Permissions.ADMIN)
     async def allx(self, ctx):
-        '''Advances everybody in the server.
-Administrator role needed.'''
+        """Advances everybody in the server.
+Administrator role needed."""
         msg = await ctx.send('Doing all, please wait...')
         members = ctx.guild.members #everyone
         errors = []
@@ -385,8 +385,8 @@ Administrator role needed.'''
     @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def warn(self, ctx, member: discord.Member, *reason):
-        '''Gives a member a warning, a reason is optional but recommended.
-Staff role needed.'''
+        """Gives a member a warning, a reason is optional but recommended.
+Staff role needed."""
         key = os.environ.get('DATABASE_URL')
 
         reason = ' '.join(reason)
@@ -415,7 +415,7 @@ Staff role needed.'''
             return
 
     async def warnlist_member(self, ctx, member, page_num = 1):
-        '''Handle gettings the warns for a specific member'''
+        """Handle gettings the warns for a specific member"""
         warns = []
         async with self.bot.pool.acquire() as connection:
             warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) ORDER BY id', member.id)
@@ -431,8 +431,8 @@ Staff role needed.'''
     @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def member(self, ctx, member: discord.Member = None, page_num = 1):
-        '''Shows warnings for a given member.
-Staff role needed.'''
+        """Shows warnings for a given member.
+Staff role needed."""
         if member == None:
             await ctx.send("```-warnlist member @Member <page_number>```")
         else:
@@ -442,16 +442,16 @@ Staff role needed.'''
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def me(self, ctx, page_num = 1):
-        '''Shows warnings for yourself.
-Member role needed.'''
+        """Shows warnings for yourself.
+Member role needed."""
         await self.warnlist_member(ctx, ctx.author, page_num)
 
     @warnlist.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def all(self, ctx, page_num = 1):
-        '''Shows all the warnings in the server.
-Staff role needed.'''
+        """Shows all the warnings in the server.
+Staff role needed."""
         warns = []
         async with self.bot.pool.acquire() as connection:
             warns = await connection.fetch('SELECT * FROM warn ORDER BY id')
@@ -467,8 +467,8 @@ Staff role needed.'''
     @commands.has_any_role(*Permissions.MOD)
     @commands.guild_only()
     async def warnremove(self, ctx, *warnings):
-        '''Remove warnings with this command, can do -warnremove <warnID> or -warnremove <warnID1> <warnID2>.
-Moderator role needed'''
+        """Remove warnings with this command, can do -warnremove <warnID> or -warnremove <warnID1> <warnID2>.
+Moderator role needed"""
 
         if warnings[0].lower() == 'all':
             async with self.bot.pool.acquire() as connection:
@@ -497,14 +497,14 @@ Moderator role needed'''
     @commands.command(aliases=['announce'])
     @commands.has_any_role(*Permissions.STAFF)
     async def say(self, ctx, channel: discord.TextChannel, *text):
-        '''Say a given string in a given channel
-Staff role needed.'''
+        """Say a given string in a given channel
+Staff role needed."""
         await channel.send(' '.join(text))
 
     @commands.command()
     @commands.check(is_bot_owner)
     async def reset_invites(self, ctx):
-        '''A command for adam only which resets the invites'''
+        """A command for adam only which resets the invites"""
         invites = await ctx.guild.invites()
         async with self.bot.pool.acquire() as connection:
             await connection.execute('DELETE FROM invites')

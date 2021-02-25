@@ -19,7 +19,7 @@ class EmbedPages:
         self.initiator = initiator # Here to stop others using the embed
 
     async def set_page(self, page_num: int):
-        '''Changes the embed accordingly'''
+        """Changes the embed accordingly"""
         if self.page_type == PageTypes.REP:
             page_length = 10
         else:
@@ -68,29 +68,29 @@ class EmbedPages:
                 self.embed.add_field(name=f"{member}", value=f"{self.data[i][1]}", inline=False)
 
     async def previous_page(self, *args):
-        '''Moves the embed to the previous page'''
+        """Moves the embed to the previous page"""
         if self.page_num != 1: # Cannot go to previous page if already on first page
             await self.set_page(self.page_num - 1)
             await self.edit()
             
     async def next_page(self, *args):
-        '''Moves the embed to the next page'''
+        """Moves the embed to the next page"""
         if self.page_num != self.top_limit: # Can only move next if not on the limit
             await self.set_page(self.page_num + 1)
             await self.edit()
 
     async def first_page(self, *args):
-        '''Moves the embed to the first page'''
+        """Moves the embed to the first page"""
         await self.set_page(1)
         await self.edit()
 
     async def last_page(self, *args):
-        '''Moves the embed to the last page'''
+        """Moves the embed to the last page"""
         await self.set_page(self.top_limit)
         await self.edit()
 
     async def send(self, channel: TextChannel, *args):
-        '''Sends the embed message. The message is deleted after 300 seconds (5 minutes).'''
+        """Sends the embed message. The message is deleted after 300 seconds (5 minutes)."""
         self.message = await channel.send(embed = self.embed, delete_after = 300)
         await self.message.add_reaction(EmojiEnum.MIN_BUTTON)
         await self.message.add_reaction(EmojiEnum.LEFT_ARROW)
@@ -100,7 +100,7 @@ class EmbedPages:
         self.bot.pages.append(self)
 
     async def edit(self, *args):
-        '''Edits the message to the current self.embed and updates self.message'''
+        """Edits the message to the current self.embed and updates self.message"""
         await self.message.edit(embed=self.embed)
 
 class PageTypes:
@@ -179,7 +179,7 @@ NEWLINE = '\n'
 CODE_URL = "https://github.com/adampy/gcsediscordbot"
 
 async def send_file(fig, channel, filename):
-    '''Send data to a channel with filename `filename`'''
+    """Send data to a channel with filename `filename`"""
     buf = BytesIO()
     fig.savefig(buf)
     buf.seek(0)
@@ -187,9 +187,9 @@ async def send_file(fig, channel, filename):
 
 
 async def get_spaced_member(ctx, args, bot):
-    '''Moves hell on Earth to get a guild member object from a given string
+    """Moves hell on Earth to get a guild member object from a given string
     Makes use of last_active, a priority temp list that stores member objects of
-    the most recently active members'''
+    the most recently active members"""
     user = None
     try:
         user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
@@ -229,14 +229,14 @@ async def get_spaced_member(ctx, args, bot):
 
 
 def ordinal(n: int) -> str:
-    '''Returns the shortened ordinal for the cardinal number given. E.g. 1 -> "1st", 74 -> "74th"''' #https://stackoverflow.com/questions/9647202/ordinal-numbers-replacement
+    """Returns the shortened ordinal for the cardinal number given. E.g. 1 -> "1st", 74 -> "74th" """ #https://stackoverflow.com/questions/9647202/ordinal-numbers-replacement
     suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
     if 11 <= (n % 100) <= 13:
         suffix = 'th'
     return str(n) + suffix
 
 def separate_args(args):
-    '''Given the args tuple (from *args) and returns seconds in index position 0 and reason in index position 1'''
+    """Given the args tuple (from *args) and returns seconds in index position 0 and reason in index position 1"""
     arg_list = [arg for arg in ' '.join(args).split('-') if arg]
     seconds = 0
     reason = ''
@@ -286,7 +286,7 @@ def separate_args(args):
     return seconds, reason
 
 def time_arg(arg):
-    '''Given a time argument gets the time in seconds'''
+    """Given a time argument gets the time in seconds"""
     total = 0
     times = arg.split(' ')
     if len(times) == 0:

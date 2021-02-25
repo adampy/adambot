@@ -34,7 +34,7 @@ class QuestionOTD(commands.Cog):
     @qotd.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
     async def submit(self, ctx, *args):
-        '''Submit a QOTD'''
+        """Submit a QOTD"""
         qotd = ' '.join(args)
         if len(qotd) > 255:
             await ctx.send('Question over **255** characters, please **shorten** before trying the command again.')

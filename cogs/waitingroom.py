@@ -275,8 +275,8 @@ Do C<channel_name> to mention a channel."""
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def y9(self, ctx, member: discord.Member):
-        '''Verifies a Y9.
-Staff role needed.'''
+        """Verifies a Y9.
+Staff role needed."""
         role = get(member.guild.roles, name='Y9')
         await member.add_roles(role)
         role = get(member.guild.roles, name='Members')
@@ -288,8 +288,8 @@ Staff role needed.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def y10(self, ctx, member: discord.Member):
-        '''Verifies a Y10.
-Staff role needed.'''
+        """Verifies a Y10.
+Staff role needed."""
         role = get(member.guild.roles, name='Y10')
         await member.add_roles(role)
         role = get(member.guild.roles, name='Members')
@@ -300,8 +300,8 @@ Staff role needed.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def y11(self, ctx, member: discord.Member):
-        '''Verifies a Y11.
-Staff role needed.'''
+        """Verifies a Y11.
+Staff role needed."""
         role = get(member.guild.roles, name='Y11')
         await member.add_roles(role)
         role = get(member.guild.roles, name='Members')
@@ -312,8 +312,8 @@ Staff role needed.'''
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     async def postgcse(self, ctx, member: discord.Member):
-        '''Verifies a Post-GCSE.
-Staff role needed.'''
+        """Verifies a Post-GCSE.
+Staff role needed."""
         role = get(member.guild.roles, name='Post-GCSE')
         await member.add_roles(role)
         role = get(member.guild.roles, name='Members')

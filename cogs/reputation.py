@@ -65,7 +65,7 @@ class Reputation(commands.Cog):
     @commands.group()
     @commands.guild_only()
     async def rep(self, ctx):
-        '''Reputation module'''
+        """Reputation module"""
         if ctx.invoked_subcommand is None:
             await ctx.send('To award rep to someone, type \n`-rep award Member_Name`\nor\n`-rep award @Member`\n'
                            'Pro tip: If e.g. fred roberto was recently active you can type `-rep award fred`')
@@ -85,7 +85,7 @@ class Reputation(commands.Cog):
     @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
     async def award(self, ctx, *args):
-        '''Gives the member a reputation point. Aliases are give and point'''
+        """Gives the member a reputation point. Aliases are give and point"""
         author_nick = await self.get_valid_name(ctx.author)
         if len(args) == 0:  # check so -rep award doesn't silently fail when no string given
             user = ctx.author
@@ -126,7 +126,7 @@ class Reputation(commands.Cog):
     @rep.command(aliases=['lb'])
     @commands.guild_only()
     async def leaderboard(self, ctx, modifier=''):
-        '''Displays the leaderboard of reputation points, if [modifier] is 'members' then it only shows current server members'''
+        """Displays the leaderboard of reputation points, if [modifier] is 'members' then it only shows current server members"""
         if modifier.lower() in ['members', 'member']:
             await self.get_leaderboard(ctx, only_members=True)
         else:
@@ -145,7 +145,7 @@ class Reputation(commands.Cog):
     @commands.has_any_role(*Permissions.MOD)
     @commands.guild_only()
     async def member(self, ctx, user_id):
-        '''Resets a single users reps.'''
+        """Resets a single users reps."""
         user = await self.bot.fetch_user(user_id)
         await self.clear_rep(user.id)
         await ctx.send(f'{user.mention} now has 0 points.')
@@ -159,7 +159,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     @commands.has_any_role(*Permissions.MOD)
     async def all(self, ctx):
-        '''Resets everyones reps.'''
+        """Resets everyones reps."""
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE from rep")
 
@@ -174,7 +174,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     @commands.has_any_role(*Permissions.ASSISTANT)
     async def set(self, ctx, user: discord.User, rep):
-        '''Sets a specific members reps to a given value.'''
+        """Sets a specific members reps to a given value."""
         try:
             rep = int(rep)
         except ValueError:
@@ -196,7 +196,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     @commands.has_any_role(*Permissions.ASSISTANT)
     async def hardset(self, ctx, user_id, rep):
-        '''Sets a specific member's reps to a given value via their ID.'''
+        """Sets a specific member's reps to a given value via their ID."""
         try:
             rep = int(rep)
         except ValueError:
@@ -216,7 +216,7 @@ class Reputation(commands.Cog):
     @rep.command()
     @commands.guild_only()
     async def check(self, ctx, *args):
-        '''Checks a specific person reps, or your own if user is left blank'''
+        """Checks a specific person reps, or your own if user is left blank"""
         if len(args) == 0:
             user = ctx.author
         else:

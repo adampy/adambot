@@ -27,12 +27,12 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     async def host(self, ctx):
-        '''Check if the bot is currently hosted locally or remotely'''
+        """Check if the bot is currently hosted locally or remotely"""
         await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
 
     @commands.command(pass_context=True)
     async def ping(self, ctx):
-        '''Gets a ping time by measuring time to send & edit a message'''
+        """Gets a ping time by measuring time to send & edit a message"""
         start = time.time()
         out = await ctx.message.channel.send("Pong! (N/A)")
         await out.edit(content = "Pong! (" + str(round(1000 * (time.time() - start), 1)) + " milliseconds)")
@@ -79,7 +79,7 @@ class Member(commands.Cog):
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def revise(self, ctx):
-        '''Puts you in revising mode.'''
+        """Puts you in revising mode."""
         member = ctx.author
         if member.bot: # Stops bots from putting theirselves into revising mode
             return
@@ -92,7 +92,7 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def stoprevising(self, ctx):
-        '''Exits revising mode.'''
+        """Exits revising mode."""
         member = ctx.author
         if ctx.channel.id == 518901847981948938:
             role = get(member.guild.roles, name='Revising')
@@ -109,7 +109,7 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def list(self, ctx, *args):
-        '''Gives you a list of all the people with a certain role.'''
+        """Gives you a list of all the people with a certain role."""
         #if role not entered
         if len(args) <= 0:
             await ctx.send(':x: Please **specify** a **role**')
@@ -190,35 +190,35 @@ class Member(commands.Cog):
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def mc(self, ctx):
-        '''Gives you the Maths Challenge role.'''
+        """Gives you the Maths Challenge role."""
         await self.assign_role(ctx, "mc")
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def cc(self, ctx):
-        '''Gives you the CompSci Challenge role.'''
+        """Gives you the CompSci Challenge role."""
         await self.assign_role(ctx, "cc")
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def ec(self, ctx):
-        '''Gives you the English Challenge role.'''
+        """Gives you the English Challenge role."""
         await self.assign_role(ctx, "ec")
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def weeaboo(self, ctx):
-        '''Gives you the Weeaboo role.'''
+        """Gives you the Weeaboo role."""
         await self.assign_role(ctx, "weeaboo")
 
     @commands.command(pass_context=True, aliases=['announcements', 'notifications'])
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def announcement(self, ctx):
-        '''Gives you the Announcements role.'''
+        """Gives you the Announcements role."""
         await self.assign_role(ctx, "announcement")
 
 #-----------------------QUOTE------------------------------
@@ -226,7 +226,7 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
     async def quote(self, ctx, messageid, channelid=None):
-        '''Quote a message to remember it.'''
+        """Quote a message to remember it."""
         if channelid is not None:
             try:
                 channel = self.bot.get_channel(int(channelid))
@@ -276,7 +276,7 @@ class Member(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        '''Secret Area 51 command.'''
+        """Secret Area 51 command."""
         await ctx.send('Testes')
         
     @commands.Cog.listener()
@@ -308,7 +308,7 @@ class Member(commands.Cog):
 
     @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
-        '''See how many bruh moments we've had'''
+        """See how many bruh moments we've had"""
         async with self.bot.pool.acquire() as connection:
             bruhs = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh'")
             await ctx.send(f'Bruh moments: **{bruhs}**')
@@ -316,7 +316,7 @@ class Member(commands.Cog):
 
     @commands.command()
     async def cool(self, ctx, *message):
-        '''MaKe YoUr MeSsAgE cOoL'''
+        """MaKe YoUr MeSsAgE cOoL"""
         text = ' '.join(message)
         if text.lower() in DISALLOWED_COOL_WORDS:
             await ctx.send("You can't make that message cool!")
@@ -344,7 +344,7 @@ class Member(commands.Cog):
     @commands.command(pass_context = True)
     @commands.guild_only()
     async def serverinfo(self, ctx):
-        '''Information about the server.'''
+        """Information about the server."""
         guild = ctx.message.guild
         time = guild.created_at
         time_since = datetime.utcnow() - time
@@ -366,7 +366,7 @@ class Member(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def userinfo(self, ctx, *, user: discord.Member = None):
-        '''Information about you or a user'''
+        """Information about you or a user"""
         author = ctx.author
         guild = ctx.guild
 
@@ -442,13 +442,13 @@ class Member(commands.Cog):
     @commands.guild_only()
     async def remind(self, ctx, *args):
         async def write(self, reminder, seconds, member_id):
-            '''Writes to remind table with the time to remind (e.g. remind('...', 120, <member_id>) would mean '...' is reminded out in 120 seconds for <member_id>)'''
+            """Writes to remind table with the time to remind (e.g. remind('...', 120, <member_id>) would mean '...' is reminded out in 120 seconds for <member_id>)"""
             timestamp = datetime.utcnow()
             new_timestamp = timestamp + timedelta(seconds=seconds)
             async with self.bot.pool.acquire() as connection:
                 await connection.execute('INSERT INTO remind (member_id, reminder, reminder_time) values ($1, $2, $3)', member_id, reminder, new_timestamp)
 
-        '''Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1'''
+        """Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1"""
         timeperiod =''
         index = 0
         if args:
