@@ -56,7 +56,7 @@ class Demographics(commands.Cog): # Tracks the change in specific roles. This wo
     @commands.guild_only()
     async def demographics(self, ctx):
         if ctx.invoked_subcommand == None:
-            await ctx.send("To see the commands availiable, type `-help demographics`")
+            await ctx.invoke(self.bot.get_command("demographics show")) # Runs
             return
 
     @demographics.command(pass_context = True)
@@ -182,7 +182,7 @@ class Demographics(commands.Cog): # Tracks the change in specific roles. This wo
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def show(self, ctx):
-        """View server demographics."""
+        """View server demographics.""" # DO NOT REMOVE THIS METHOD (if you plan on removing, remove dependency in demographics command group declaration)
         numbers = []
         numbers.append(len(ctx.guild.members))
         for role in ['Post-GCSE', 'Y11', 'Y10', 'Y9']:
