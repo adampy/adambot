@@ -140,7 +140,7 @@ class WaitingRoom(commands.Cog):
                 embed.set_thumbnail(url=member.avatar_url)
                 await get(guild.text_channels, name='invite-logs').send(f'**Single-use-invite used.**{member.mention}\'s account is **less than 7 days old.**' if day_warning else '**Single-use-invite used.**', embed=embed)
             else:
-                await get(guild.text_channels, name='invite-logs').send("No invite data available even after checking the single-use invites.")
+                await get(guild.text_channels, name='invite-logs').send(f"No invite data available for {member.mention} even after checking the single-use invites.")
 
         #reset invites
         to_insert = []
