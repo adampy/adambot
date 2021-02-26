@@ -64,31 +64,26 @@ class Reputation(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    async def rep(self, ctx, *args):
+    async def rep(self, ctx):
         """Reputation module"""
-        if not args:
+        if ctx.invoked_subcommand is None:
             await ctx.send('To award rep to someone, type \n`-rep Member_Name`\nor\n`-rep @Member`\n'
                            'Pro tip: If e.g. fred roberto was recently active you can type `-rep fred`')
-
-        wanted_command = [*filter(lambda cmd: cmd.name == args[0], self.rep.commands)][0] # Get all commands with the same name as that requested, and retreive first index
-        if not wanted_command:
-            await ctx.invoke(self.bot.get_command("rep award"), *(args[1:])) # Send all args, apart from the first one
-        else:
-            await ctx.invoke(wanted_command, *(args[1:])) # Send all args, apart from the first one
+            
 
     @rep.error
     async def rep_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
             await ctx.send("You cannot award rep in this server!")
         else:
-            await ctx.send("Oopsies something went wrong with that!")
+            await ctx.send(error)#"Oopsies something went wrong with that!")
 
 ##    @rep.command()
 ##    @commands.guild_only()
 ##    async def help(self, ctx):
 ##        await ctx.send('```-rep award @Member``` or ```-rep leaderboard```')
 
-    @rep.command(aliases=['give', 'point'])
+    @rep.command(aliases=['give', 'point')
     @commands.guild_only()
     async def award(self, ctx, *args):
         """Gives the member a reputation point. Aliases are give and point"""
