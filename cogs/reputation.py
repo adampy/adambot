@@ -83,7 +83,7 @@ class Reputation(commands.Cog):
 ##    async def help(self, ctx):
 ##        await ctx.send('```-rep award @Member``` or ```-rep leaderboard```')
 
-    @rep.command(aliases=['give', 'point')
+    @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
     async def award(self, ctx, *args):
         """Gives the member a reputation point. Aliases are give and point"""
