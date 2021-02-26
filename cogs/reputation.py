@@ -66,10 +66,11 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def rep(self, ctx, *args):
         """Reputation module"""
-        if not args: # then ctx.invoked_subcommand must be None:
-            await ctx.send('To award rep to someone, type \n`-rep award Member_Name`\nor\n`-rep award @Member`\n'
-                           'Pro tip: If e.g. fred roberto was recently active you can type `-rep award fred`')
-        await ctx.invoke(self.bot.get_command("rep award"), *args)
+        if ctx.invoked_subcommand is None:
+            if not args: 
+                await ctx.send('To award rep to someone, type \n`-rep award Member_Name`\nor\n`-rep award @Member`\n'
+                            'Pro tip: If e.g. fred roberto was recently active you can type `-rep award fred`')
+            await ctx.invoke(self.bot.get_command("rep award"), *args)
 
     @rep.error
     async def rep_error(self, ctx, error):
