@@ -70,7 +70,7 @@ class Reputation(commands.Cog):
             await ctx.send('To award rep to someone, type \n`-rep Member_Name`\nor\n`-rep @Member`\n'
                            'Pro tip: If e.g. fred roberto was recently active you can type `-rep fred`')
 
-        wanted_command = filter(lambda cmd: cmd.name == args[0], self.rep.commands)[0] # Get all commands with the same name as that requested, and retreive first index
+        wanted_command = [*filter(lambda cmd: cmd.name == args[0], self.rep.commands)][0] # Get all commands with the same name as that requested, and retreive first index
         if not wanted_command:
             await ctx.invoke(self.bot.get_command("rep award"), *args)
         else:
