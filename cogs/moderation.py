@@ -288,7 +288,7 @@ Assistants have permission in #general only."""
                     if int(time) == 0:
                         await ctx.send(':ok_hand: slowmode removed from this channel.')
                     else:
-                        await ctx.send(f':ok_hand: Slowmode of {time}seconds added.')
+                        await ctx.send(f':ok_hand: Slowmode of {time} seconds added.')
                 else:
                     await ctx.send('You cannot add a slowmode greater than 60.')
             except Exception as e:
