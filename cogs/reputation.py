@@ -67,8 +67,8 @@ class Reputation(commands.Cog):
     async def rep(self, ctx):
         """Reputation module"""
         if ctx.invoked_subcommand is None:
-            await ctx.send('To award rep to someone, type \n`-rep Member_Name`\nor\n`-rep @Member`\n'
-                           'Pro tip: If e.g. fred roberto was recently active you can type `-rep fred`')
+            await ctx.send('To award rep to someone, type \n`-rep award Member_Name`\nor\n`-rep award @Member`\n'
+                           'Pro tip: If e.g. fred roberto was recently active you can type `-rep award fred`')
             
 
     @rep.error
