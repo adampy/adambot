@@ -4,6 +4,7 @@ from discord.ext import commands
 from math import ceil
 from datetime import timedelta
 from io import BytesIO
+from os import environ
 
 class EmbedPages:
     def __init__(self, page_type, data, title, colour: Colour, bot, initiator, *args, **kwargs):
@@ -130,9 +131,10 @@ class Permissions:
             "Trial-Assistant":667872197091786793,
             "Staff":445195535901655041,
             "Adam-Bot Developer":740681121863303279,
-            "Member":445196497777197056,}
+            "Member":445196497777197056,
+            "Priv":593791836209020928,}
 
-    ADMIN = [ROLE_ID['Administrator']]
+    ADMIN = [ROLE_ID['Administrator'], ROLE_ID['Priv']]
     MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
     ASSISTANT = MOD + [ROLE_ID['Assistant']]
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
