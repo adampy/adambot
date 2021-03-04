@@ -321,19 +321,25 @@ class Member(commands.Cog):
         if text.lower() in DISALLOWED_COOL_WORDS:
             await ctx.send("You can't make that message cool!")
             return
-        new = ''
+        new = ""
+        uppercase = True
         for index, letter in enumerate(text):
+            ascii_num = ord(letter)
             try:
-                if letter == ' ':
+                if not (65 <= ascii_num <= 90 or 97 <= ascii_num <= 122):
                     new += letter
-                elif index % 2 == 0:
-                    new += letter.lower()
-                else:
+                    continue
+
+                if uppercase:
                     new += letter.upper()
+                else:
+                    new += letter.lower()
+                uppercase = not uppercase
             except Exception as e:
                 new += letter
 
         await ctx.send(new)
+        await ctx.message.delete()
 
     @commands.command(aliases=['yikes'])
     async def yike(self, ctx):
