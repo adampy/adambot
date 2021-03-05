@@ -379,119 +379,6 @@ Administrator role needed."""
     #    if isinstance(error, commands.CheckFailure):
     #        await ctx.send('`Administrator` role needed.')
 
-#-----------------------WARNS------------------------------
-
-    @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
-    @commands.guild_only()
-    async def warn(self, ctx, member: discord.Member, *reason):
-        """Gives a member a warning, a reason is optional but recommended.
-Staff role needed."""
-        key = os.environ.get('DATABASE_URL')
-
-        reason = ' '.join(reason)
-        reason = reason.replace('-r', '') # Removes -r if a staff member includes it
-        if len(reason) > 255:
-            await ctx.send('The reason must be below 256 characters. Please shorten it before trying again.')
-            return
-        
-        warns = 0
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute('INSERT INTO warn (member_id, staff_id, reason) values ($1, $2, $3)', member.id, ctx.author.id, reason)
-            warns = await connection.fetchval('SELECT COUNT(*) FROM warn WHERE member_id = ($1)', member.id)
-
-        await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
-        try:
-            await member.send(f'You have been warned by a member of the staff team. The reason for your warn is: {reason}. You now have {warns} warns.')
-        except Exception as e:
-            print(e)
-
-    @commands.group()
-    @commands.has_any_role(*Permissions.STAFF)
-    @commands.guild_only()
-    async def warnlist(self, ctx):
-        if ctx.invoked_subcommand is None:
-            await ctx.send('```-warnlist member @Member <page_number>``` or ```warnlist all <page_number>```')
-            return
-
-    async def warnlist_member(self, ctx, member, page_num = 1):
-        """Handle gettings the warns for a specific member"""
-        warns = []
-        async with self.bot.pool.acquire() as connection:
-            warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) ORDER BY id', member.id)
-
-        if len(warns) > 0:
-            embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author)
-            await embed.set_page(int(page_num))
-            await embed.send(ctx.channel)
-        else:
-            await ctx.send("No warnings recorded!")
-
-    @warnlist.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
-    @commands.guild_only()
-    async def member(self, ctx, member: discord.Member = None, page_num = 1):
-        """Shows warnings for a given member.
-Staff role needed."""
-        if member == None:
-            await ctx.send("```-warnlist member @Member <page_number>```")
-        else:
-            await self.warnlist_member(ctx, member, page_num)
-
-    @warnlist.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS)
-    @commands.guild_only()
-    async def me(self, ctx, page_num = 1):
-        """Shows warnings for yourself.
-Member role needed."""
-        await self.warnlist_member(ctx, ctx.author, page_num)
-
-    @warnlist.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
-    @commands.guild_only()
-    async def all(self, ctx, page_num = 1):
-        """Shows all the warnings in the server.
-Staff role needed."""
-        warns = []
-        async with self.bot.pool.acquire() as connection:
-            warns = await connection.fetch('SELECT * FROM warn ORDER BY id')
-
-        if len(warns) > 0:
-            embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author)
-            await embed.set_page(int(page_num))
-            await embed.send(ctx.channel)
-        else:
-            await ctx.send("No warnings recorded!")
-
-    @commands.command(pass_context=True, aliases=['warndelete'])
-    @commands.has_any_role(*Permissions.MOD)
-    @commands.guild_only()
-    async def warnremove(self, ctx, *warnings):
-        """Remove warnings with this command, can do -warnremove <warnID> or -warnremove <warnID1> <warnID2>.
-Moderator role needed"""
-
-        if warnings[0].lower() == 'all':
-            async with self.bot.pool.acquire() as connection:
-                await connection.execute('DELETE FROM warn')
-            await ctx.send("All warnings have been removed.")
-
-
-        if len(warnings) > 1:
-            await ctx.send('One moment...')
-
-        async with self.bot.pool.acquire() as connection:
-            for warning in warnings:
-                try:
-                    warning = int(warning)
-                    await connection.execute('DELETE FROM warn WHERE id = ($1)', warning)
-                    if len(warnings) == 1:
-                        await ctx.send(f'Warning with ID {warning} has been deleted.')
-                except ValueError:
-                    await ctx.send(f'Error whilst deleting ID {warning}: give me a warning ID, not words!')
-
-        if len(warnings) > 1:
-            await ctx.send(f"The warning's have been deleted.")
-
 #-----------------------MISC------------------------------
 
     @commands.command(aliases=['announce'])
@@ -520,9 +407,6 @@ Staff role needed."""
                     await connection.execute('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)', **data)
                 except:
                     pass
-
-
-
 
 def setup(bot):
     bot.add_cog(Moderation(bot))

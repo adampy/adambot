@@ -215,7 +215,8 @@ if __name__ == "__main__":
         'reputation',
         'trivia',
         'private',
-        'demographics']
+        'demographics',
+        'warnings',]
 
     bot = AdamBot(local_host, cog_names, command_prefix='-', intents=intents)
     #bot.remove_command("help")
