@@ -216,6 +216,7 @@ if __name__ == "__main__":
         'trivia',
         'private',
         'demographics',
+        'spotify',
         'warnings',]
 
     bot = AdamBot(local_host, cog_names, command_prefix='-', intents=intents)
