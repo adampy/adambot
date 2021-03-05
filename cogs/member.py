@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import separate_args, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, GCSE_SERVER_ID
+from .utils import separate_args, time_str, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, GCSE_SERVER_ID
 import requests
 import re
 import os
@@ -437,7 +437,7 @@ class Member(commands.Cog):
 
 #-----------------------REMIND------------------------------
     
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=['rm', 'remindme'])
     @commands.guild_only()
     async def remind(self, ctx, *args):
         async def write(self, reminder, seconds, member_id):
@@ -451,17 +451,28 @@ class Member(commands.Cog):
         timeperiod =''
         if args:
             timeperiod, reason = separate_args(args)
+            #print(f"timeperiod is {timeperiod}")
+            #print(f"reason is {reason}")
         if not args or not timeperiod:
             await ctx.send('```-remind <sentence...> -t <time>```')
             return
 
-        reminder = ' '.join(args).replace("-t ","") + " ago"
+        str_ = ' '.join(args)
+        str_tp = time_str(timeperiod) # runs it through a convertor because hodor's OCD cannot take seeing 100000s
+        str_reason = "*Reminder:* " + str_[:str_.index("-t")].replace("-r", "") #string manipulation go brrrr
+        reminder =  "*When:* " + str_tp + " ago\n" + str_reason
+        #reminder = ' '.join(args).replace("-t ","") + " ago"
+        if reminder.startswith(" -r"):
+            reminder = reminder[2:]
+
         if len(reminder) >= 256:
             await ctx.send('Please shorten your reminder to under 256 characters.')
         #seconds = time_arg(timeperiod)
         #seconds = separate_args(timeperiod)[0] # why is this here/needed
+
         await write(self, reminder, timeperiod, ctx.author.id)
-        await ctx.send(':ok_hand: The reminder has been added!')
+        await ctx.send(f":ok_hand: You'll be reminded in {str_tp} via a DM!") # todo: either/or/and when setting and displaying the reminder, check if member's DMs are open
+        # if their DMs aren't open, remind on guild in context
 
 #-----------------------AVATAR------------------------------
 

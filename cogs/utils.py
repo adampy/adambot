@@ -239,12 +239,13 @@ def ordinal(n: int) -> str:
 
 def separate_args(args):
     """Given the args tuple (from *args) and returns seconds in index position 0 and reason in index position 1"""
-    arg_list = [arg for arg in ' '.join(args).split('-') if arg]
+    arg_list = [arg for arg in ' '.join(args).split(' -') if arg]  # slightly less elegant but stops stuff like test-t 5s
     seconds = 0
     reason = ''
     for item in arg_list:
-        if ' -t ' in ' '.join(args): # slightly less elegant but stops stuff like test-t 5s
+        if item[0] == 't':
             time = item[1:].strip()
+            #print(f"TIME IS {time}")
             times = []
             #split after the last character before whitespace after int
             temp1 = '' #time
@@ -269,7 +270,7 @@ def separate_args(args):
                         #print('add letter')
             times.append([temp1, temp2])
 
-            print(times)
+            #print(f"TIMES ARE {times}")
             for sets in times:
 
                 try:
@@ -280,11 +281,11 @@ def separate_args(args):
                 except ValueError:
                     pass
 
-            print(seconds)
+            #print(seconds)
 
         if item[0] == 'r':
             reason = item[1:].strip()
-            print(reason)
+            #print(reason)
     return seconds, reason
 
 def time_arg(arg):
@@ -306,3 +307,24 @@ def time_arg(arg):
         elif item[-1] == 's':
             total += int(item[:-1])
     return total
+
+
+def time_str(seconds):
+    """Given a number of seconds returns the string version of the time
+    Is outputted in a format that can be fed into time_arg"""
+    weeks = seconds // (7 * 24 * 60 * 60)
+    seconds -= weeks * 7 * 24 * 60 * 60
+    days = seconds // (24 * 60 * 60)
+    seconds -= days * 24 * 60 * 60
+    hours = seconds // (60 * 60)
+    seconds -= hours * 60 * 60
+    minutes = seconds // 60
+    seconds -= minutes * 60
+
+    output = ""
+    if weeks: output += f"{weeks}w "
+    if days: output += f"{days}d "
+    if hours: output += f"{hours}h "
+    if minutes: output += f"{minutes}m "
+    if seconds: output += f"{seconds}s"
+    return output.strip()

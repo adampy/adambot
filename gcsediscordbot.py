@@ -149,7 +149,7 @@ member_id may not always be a member ID, and can sometimes be a FK to demographi
                 for remind in reminds:
                     try:
                         member = get(self.get_all_members(), id=remind[1])
-                        message = f'{member.mention} You told me to remind you about this:\n{remind[3]}'
+                        message = f'You told me to remind you about this:\n{remind[3]}'
                         await member.send(message)
                         await connection.execute('DELETE FROM remind WHERE id = ($1)', remind[0])
                     except Exception as e:
