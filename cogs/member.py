@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import separate_args, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, GCSE_SERVER_ID
+from .utils import separate_args, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, GCSE_SERVER_ID
 import requests
 import re
 import os
@@ -100,7 +100,7 @@ class Member(commands.Cog):
             role = get(member.guild.roles, name='Members')
             await member.add_roles(role)
             await self.bot.get_channel(445199175244709898).send(f'{member.mention} welcome back from revising mode!')
-        elif 'Revising' in [y.name for y in member.roles]:
+        elif "Revising" in [y.name for y in member.roles]:
             channel = self.bot.get_channel(518901847981948938) # Revision escape
             await ctx.send(f'Go to {channel.mention} to stop revising')
 
@@ -291,13 +291,6 @@ class Member(commands.Cog):
 
         #await self.handle_joe_marj(message)
         await self.handle_revise_keyword(message)
-        ##ctx = await self.bot.get_context(message)
-        ##elif '5 days' in msg and conditions:
-        ##    await message.channel.send('Top Shagger :sunglasses:')
-        ##elif ('snorting rep' in msg or 'xp3dx' in msg) and conditions:
-        ##    await message.channel.send('very attractive man :heart_eyes:')
-        ##elif ('sarman' in msg or 'ramen' in msg) and conditions:
-        ##    await message.channel.send('Sarman\'s Ramen, come get yo ramen from my store. It\'s amazing and you have a sekc host')
         return
 
     @commands.Cog.listener()
@@ -371,13 +364,18 @@ class Member(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
-    async def userinfo(self, ctx, *, user: discord.Member = None):
+    async def userinfo(self, ctx, *args):
         """Information about you or a user"""
         author = ctx.author
         guild = ctx.guild
 
-        if not user:
+        if len(args) == 0:
             user = author
+        else:
+            user = await get_spaced_member(ctx, args, self.bot)
+            if user is None:
+                await ctx.send(embed=Embed(title="Userinfo", description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**', color=Colour.from_rgb(255, 7, 58)))
+                return
 
         roles = user.roles[-1:0:-1]
 
@@ -397,41 +395,36 @@ class Member(commands.Cog):
             + 1
         )
 
-        created_on = "{}\n({} days ago)".format(user_created, since_created)
-        joined_on = "{}\n({} days ago)".format(user_joined, since_joined)
-
-        activity = "Chilling in {} status".format(user.status)
-        if user.activity is None:  # Default status
-            pass
-        elif user.activity.type == discord.ActivityType.playing:
-            activity = "Playing {}".format(user.activity.name)
-        elif user.activity.type == discord.ActivityType.streaming:
-            activity = "Streaming [{}]({})".format(user.activity.name, user.activity.url)
-        elif user.activity.type == discord.ActivityType.listening:
-            activity = "Listening to {}".format(user.activity.name)
-        elif user.activity.type == discord.ActivityType.watching:
-            activity = "Watching {}".format(user.activity.name)
-
-        if roles:
-            roles = ", ".join([str(x) for x in roles])
-        else:
-            roles = None
+        created_on = f"{user_created}\n({since_created} days ago)"
+        joined_on = f"{user_joined}\n({since_joined} days ago)"
+        activity = f"Chilling in {user.status} status"
 
         data = Embed(description=activity, colour=user.colour)
         data.add_field(name="Joined Discord on", value=created_on)
         data.add_field(name="Joined this server on", value=joined_on)
-        if roles is not None:
-            data.add_field(name="Roles", value=roles, inline=False)
+        for activity in user.activities:
+            if isinstance(activity, discord.Spotify):
+                data.add_field(name="Listening to Spotify", value=f"{activity.title} by {activity.artist} on {activity.album}", inline=False)
+            elif isinstance(activity, discord.CustomActivity):
+                data.add_field(name="Custom Status", value=f"{activity.name}", inline=False)
+            else:
+                data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name}", inline=False)
+        if roles:
+            disp_roles = ', '.join([role.name for role in roles[:10]])
+            if len(roles) > 10:
+                 disp_roles += f" (+{len(roles) - 10} roles)"
+            data.add_field(name="Roles", value=disp_roles, inline=False)
+        else:
+            data.add_field(name="Roles", value="No roles currently!")
         if voice_state and voice_state.channel:
             data.add_field(
                 name="Current voice channel",
-                value="{0.mention} ID: {0.id}".format(voice_state.channel),
+                value=f"{voice_state.channel.mention} ID: {voice_state.channel.id}",
                 inline=False,
             )
-        data.set_footer(text="Member #{} | User ID: {}".format(member_number, user.id))
+        data.set_footer(text=f"Member #{member_number} | User ID: {user.id}")
 
-        name = str(user)
-        name = " ~ ".join((name, user.nick)) if user.nick else name
+        name = f"{user} ~ {user.display_name}"
 
         if user.avatar:
             avatar = user.avatar_url_as(static_format="png")
@@ -456,19 +449,18 @@ class Member(commands.Cog):
 
         """Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1"""
         timeperiod =''
-        index = 0
         if args:
             timeperiod, reason = separate_args(args)
         if not args or not timeperiod:
             await ctx.send('```-remind <sentence...> -t <time>```')
             return
 
-        reminder = ' '.join(args[:index])
+        reminder = ' '.join(args).replace("-t ","") + " ago"
         if len(reminder) >= 256:
             await ctx.send('Please shorten your reminder to under 256 characters.')
         #seconds = time_arg(timeperiod)
-        seconds = separate_args(timeperiod)[0]
-        await write(self, reminder, seconds, ctx.author.id)
+        #seconds = separate_args(timeperiod)[0] # why is this here/needed
+        await write(self, reminder, timeperiod, ctx.author.id)
         await ctx.send(':ok_hand: The reminder has been added!')
 
 #-----------------------AVATAR------------------------------
