@@ -44,7 +44,7 @@ Staff role needed."""
 
         await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
         try:
-            await member.send(f'You have been warned by a member of the staff team. The reason for your warn is: {reason}. You now have {warns} warns.')
+            await member.send(f'You have been warned by a member of the staff team ({ctx.author.mention}). The reason for your warn is: {reason}. You now have {warns} warns.')
         except Exception as e:
             print(e)
 
