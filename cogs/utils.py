@@ -243,7 +243,7 @@ def separate_args(args):
     seconds = 0
     reason = ''
     for item in arg_list:
-        if item[0] == 't':
+        if ' -t ' in ' '.join(args): # slightly less elegant but stops stuff like test-t 5s
             time = item[1:].strip()
             times = []
             #split after the last character before whitespace after int
