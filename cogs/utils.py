@@ -168,7 +168,8 @@ CHANNELS = {
     "trivia":498617494693478402,
     "rules":445194263408672769,
     "faqs":583798388718567444,
-    "qotd":496472968298496020
+    "qotd":496472968298496020,
+    "adambot-dev-spam":809791208884142140
 }
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
