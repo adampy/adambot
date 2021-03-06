@@ -272,54 +272,23 @@ Do C<channel_name> to mention a channel."""
 
     #-----YEAR COMMANDS-----
 
-    @commands.command(pass_context=True)
+    YEARS = {"y9":"Y9", "y10":"Y10", "y11": "Y11", "postgcse":"Post-GCSE", "mature":"Mature Student"} # dict of command aliases:role names, perhaps move to cogs.utils?
+    @commands.command(pass_context=True, aliases=[*YEARS])
     @commands.has_any_role(*Permissions.STAFF)
-    async def y9(self, ctx, member: discord.Member):
-        """Verifies a Y9.
-Staff role needed."""
-        role = get(member.guild.roles, name='Y9')
-        await member.add_roles(role)
-        role = get(member.guild.roles, name='Members')
-        await member.add_roles(role)
-        await ctx.send('<@{}> has been verified!'.format(member.id))
-        await self.bot.get_channel(CHANNELS['general']).send(f'Welcome {member.mention} to the server :wave:')
-
-
-    @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
-    async def y10(self, ctx, member: discord.Member):
-        """Verifies a Y10.
-Staff role needed."""
-        role = get(member.guild.roles, name='Y10')
-        await member.add_roles(role)
-        role = get(member.guild.roles, name='Members')
-        await member.add_roles(role)
-        await ctx.send('<@{}> has been verified!'.format(member.id))
-        await self.bot.get_channel(CHANNELS['general']).send(f'Welcome {member.mention} to the server :wave:')
-
-    @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
-    async def y11(self, ctx, member: discord.Member):
-        """Verifies a Y11.
-Staff role needed."""
-        role = get(member.guild.roles, name='Y11')
-        await member.add_roles(role)
-        role = get(member.guild.roles, name='Members')
-        await member.add_roles(role)
-        await ctx.send('<@{}> has been verified!'.format(member.id))
-        await self.bot.get_channel(CHANNELS['general']).send(f'Welcome {member.mention} to the server :wave:')
-
-    @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
-    async def postgcse(self, ctx, member: discord.Member):
-        """Verifies a Post-GCSE.
-Staff role needed."""
-        role = get(member.guild.roles, name='Post-GCSE')
-        await member.add_roles(role)
-        role = get(member.guild.roles, name='Members')
-        await member.add_roles(role)
-        await ctx.send(f'{member.mention} has been verified!')
-        await self.bot.get_channel(CHANNELS['general']).send(f'Welcome {member.mention} to the server :wave:')
+    async def unverify(self, ctx, member: discord.Member):
+        """
+        The main command removes any roles in the YEARS dict and the Members role.
+        If an alias is used which is in the dictionary it verifies the user by giving them the Members roles and the relevant year role
+        """
+        content = ctx.message.content
+        await member.remove_roles(*[get(member.guild.roles, name=self.YEARS[role]) for role in self.YEARS])
+        if content[1:].startswith("unverify"): # assuming message is invoker. TODO: if external use case arises, tweak this
+            await member.remove_roles(get(member.guild.roles, name="Members"))
+            await ctx.send(f"{member.mention} has been successfully unverified!")
+            return
+        await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=self.YEARS[content[:content.index(" ")].replace("-", "")])])
+        await ctx.send(f"{member.mention} has been verified!")
+        await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:')
 
     @commands.command(aliases=['lurker'])
     @commands.has_any_role(*Permissions.STAFF)
