@@ -277,22 +277,21 @@ Staff role needed."""
 #-----------------------SLOWMODE------------------------------
 
     @commands.command(pass_context=True)
+    @commands.has_any_role(*Permissions.STAFF)
     async def slowmode(self, ctx, time, *args):
         """Adds slowmode in a specific channel. Time is given in seconds.
-Moderator role needed.
-Assistants have permission in #general only."""
-        if ('Assistant' in [str(y) for y in ctx.author.roles]) or 'Moderator' in [str(y) for y in ctx.author.roles] or (ctx.guild.id == 593134700122472450 and 'Administrators' in [y.name for y in ctx.author.roles]):
-            try:
-                if int(time) <= 60:
-                    await ctx.channel.edit(slowmode_delay=int(time))
-                    if int(time) == 0:
-                        await ctx.send(':ok_hand: slowmode removed from this channel.')
-                    else:
-                        await ctx.send(f':ok_hand: Slowmode of {time} seconds added.')
+        Staff role needed."""
+        try:
+            if int(time) <= 60:
+                await ctx.channel.edit(slowmode_delay=int(time))
+                if int(time) == 0:
+                    await ctx.send(':ok_hand: slowmode removed from this channel.')
                 else:
-                    await ctx.send('You cannot add a slowmode greater than 60.')
-            except Exception as e:
-                print(e)
+                    await ctx.send(f':ok_hand: Slowmode of {time} seconds added.')
+            else:
+                await ctx.send('You cannot add a slowmode greater than 60.')
+        except Exception as e:
+            print(e)
 
 
 #-----------------------JAIL & BANISH------------------------------
