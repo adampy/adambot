@@ -61,6 +61,13 @@ class Moderation(commands.Cog):
             return 394978551985602571 == ctx.author.id or await original(ctx)
         return commands.check(extended_check)
 
+#-----------------------CLOSE COMMAND-----------------------
+
+    @commands.command(pass_context = True, name = "close")
+    @commands.guild_only()
+    async def botclose(self, ctx):
+        await self.bot.close(ctx)
+
 #-----------------------ADAM-BOT DEV ROLE-----------------------
     
     @commands.command(pass_context=True)
@@ -155,8 +162,7 @@ Moderator role needed"""
             reason = None
 
         await member.ban(reason=reason, delete_message_days=0)
-        emoji = get(ctx.message.guild.emojis, name="banned")
-        await ctx.send(f'{member.mention} has been banned. {emoji}')
+        await ctx.send(f'{member.mention} has been banned')
 
         embed = Embed(title='Ban', color=Colour.from_rgb(255, 255, 255))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
