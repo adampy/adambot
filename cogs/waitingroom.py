@@ -273,19 +273,24 @@ Do C<channel_name> to mention a channel."""
     #-----YEAR COMMANDS-----
 
     YEARS = {"y9":"Y9", "y10":"Y10", "y11": "Y11", "postgcse":"Post-GCSE", "mature":"Mature Student"} # dict of command aliases:role names, perhaps move to cogs.utils?
-    @commands.command(pass_context=True, aliases=[*YEARS])
+    @commands.command(pass_context=True,
+                      aliases=[*YEARS],
+                      help="Verifies members into the server. Use e.g. -y9 to verify members")
     @commands.has_any_role(*Permissions.STAFF)
-    async def unverify(self, ctx, member: discord.Member):
+    async def verify(self, ctx, member: discord.Member = None):
         """
-        The main command removes any roles in the YEARS dict and the Members role.
-        If an alias is used which is in the dictionary it verifies the user by giving them the Members roles and the relevant year role
+        When a Year role is specified, the specified user is given that role.
+        This is done by looking up the alias used in the YEARS dictionary to get the corresponding role
+        Using -verify shows the specified help message, it's just a dummy to allow the aliases
         """
         content = ctx.message.content
-        await member.remove_roles(*[get(member.guild.roles, name=self.YEARS[role]) for role in self.YEARS])
-        if content[1:].startswith("unverify"): # assuming message is invoker. TODO: if external use case arises, tweak this
-            await member.remove_roles(get(member.guild.roles, name="Members"))
-            await ctx.send(f"{member.mention} has been successfully unverified!")
+        if content[1:].startswith("verify"): # assuming message is invoker. TODO: if external use case arises, tweak this
+            await ctx.send(f"```{self.verify.help}```")
             return
+        if member is None:
+            await ctx.send("Specify a user to verify!")
+            return
+        await member.remove_roles(*[get(member.guild.roles, name=self.YEARS[role]) for role in self.YEARS])
         await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=self.YEARS[content[:content.index(" ")].replace("-", "")])])
         await ctx.send(f"{member.mention} has been verified!")
         await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:')
