@@ -14,9 +14,6 @@ from cogs.utils import EmojiEnum, Todo
 #-----------------------------------------------------------------
 
 # Move logging into a seperate cog for readability
-# Rep lb pages
-
-#fix remind command
 #create poll command
 #helper command w/ cooldown
 
