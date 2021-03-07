@@ -65,6 +65,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context = True, name = "close")
     @commands.guild_only()
+    @commands.has_any_role(*Permissions.DEV)
     async def botclose(self, ctx):
         await self.bot.close(ctx)
 

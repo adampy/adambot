@@ -136,6 +136,7 @@ class Permissions:
 
     ADMIN = [ROLE_ID['Administrator'], ROLE_ID['Priv']]
     MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
+    DEV = MOD + [ROLE_ID['Adam-Bot Developer']] # put here specifically so non-dev assistants can't mess with stuff
     ASSISTANT = MOD + [ROLE_ID['Assistant']]
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
     STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
