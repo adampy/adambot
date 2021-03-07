@@ -39,7 +39,7 @@ class Support(commands.Cog):
         return connection_id
 
     async def refresh_connections(self):
-        while True:
+        while self.bot.online:
             try:
                 self.connections = await self.get_connections()
                 await asyncio.sleep(5)

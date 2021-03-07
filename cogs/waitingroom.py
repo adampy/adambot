@@ -7,6 +7,7 @@ import asyncpg
 from .utils import Permissions, CHANNELS, GCSE_SERVER_ID
 import re
 import asyncio
+import datetime # For handling lurker_kick
 
 class WaitingRoom(commands.Cog):
     def __init__(self, bot):
@@ -290,48 +291,89 @@ Do C<channel_name> to mention a channel."""
         await ctx.send(f"{member.mention} has been verified!")
         await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:')
 
-    @commands.command(aliases=['lurker'])
+    @commands.group(aliases=['lurker'])
     @commands.has_any_role(*Permissions.STAFF)
     async def lurkers(self, ctx):
-        members = [x for x in ctx.guild.members if len(x.roles) <= 1] # Only the everyone role
-        message = ""
-        for member in members:
-            if len(message) + len(member.mention) + len(' please tell us your year to be verified into the server!') >= 2000:
+        if ctx.invoked_subcommand is None:
+            members = [x for x in ctx.guild.members if len(x.roles) <= 1] # Only the everyone role
+            message = ""
+            for member in members:
+                if len(message) + len(member.mention) + len(' please tell us your year to be verified into the server!') >= 2000:
+                    await ctx.send(message + ' please tell us your year to be verified into the server!')
+                    message = ""
+                else:
+                    message += member.mention
+            
+            if message != "": # There is still members to be mentioned
                 await ctx.send(message + ' please tell us your year to be verified into the server!')
-                message = ""
+
+            question = await ctx.send("Do you want me to send DMs to all lurkers, to try and get them to join? (Type either 'yes' or 'no')")
+            def check(m):
+                return m.author == ctx.author and m.channel == ctx.channel
+
+            try:
+                response = await self.bot.wait_for("message", check = check, timeout = 300)
+            except asyncio.TimeoutError:
+                await question.delete()
+                return
+            if response.content.lower() == "yes":
+                for i in range(len(members)):
+                    member = members[i]
+
+                    await question.edit(content = f"DMs have been sent to {i}/{len(members)} lurkers :ok_hand:")
+
+                    try:
+                        await member.send("If you are wanting to join the GCSE 9-1 server then please tell us your year in the waiting room. Thanks!")
+                    except discord.Forbidden: # Catches if DMs are closed
+                        pass
+
+                await question.edit(content = "DMs have been sent to all lurkers :ok_hand:")
+            
+            elif response.content.lower() == "no":
+                await question.edit(content = "No DMs have been sent to lurkers :ok_hand:")
+
             else:
-                message += member.mention
-        
-        if message != "": # There is still members to be mentioned
-            await ctx.send(message + ' please tell us your year to be verified into the server!')
+                await question.edit(content = "Unknown response, therefore no DMs have been sent to lurkers :ok_hand:")
 
-        question = await ctx.send("Do you want me to send DMs to all lurkers, to try and get them to join? (Type either 'yes' or 'no')")
+    @lurkers.command(pass_context = True, name = "kick") # Name parameter defines the name of the command the user will use
+    @commands.guild_only()
+    async def lurker_kick(self, ctx):
+        """Command that kicks people without a role, and joined 7 or more days ago."""
         def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
+            return m.channel == ctx.channel and m.author == ctx.author
 
+        week_ago = datetime.datetime.utcnow() - datetime.timedelta(days = 7)
+        members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < week_ago] # Members with only the everyone role and more than 7 days ago
+        
+        question = await ctx.send("Do you want me to kick all lurkers that've been here 7 days or longer? (Type either 'yes' or 'no')")
         try:
             response = await self.bot.wait_for("message", check = check, timeout = 300)
         except asyncio.TimeoutError:
             await question.delete()
             return
+
         if response.content.lower() == "yes":
             for i in range(len(members)):
                 member = members[i]
 
-                await question.edit(content = f"DMs have been sent to {i}/{len(members)} lurkers :ok_hand:")
+                await question.edit(content = f"Kicked {i}/{len(members)} lurkers :ok_hand:")
+                await member.kick(reason = "Auto-kicked following lurker kick command.")
 
-                try:
-                    await member.send("If you are wanting to join the GCSE 9-1 server then please tell us your year in the waiting room. Thanks!")
-                except discord.Forbidden: # Catches if DMs are closed
-                    pass
-
-            await question.edit(content = "DMs have been sent to all lurkers :ok_hand:")
+            await question.edit(content = "All lurkers that've been here more than 7 days have been kicked :ok_hand:")
         
         elif response.content.lower() == "no":
-            await question.edit(content = "No DMs have been sent to lurkers :ok_hand:")
+            await question.edit(content = "No lurkers have been kicked :ok_hand:")
 
         else:
-            await question.edit(content = "Unknown response, therefore no DMs have been sent to lurkers :ok_hand:")
+            await question.edit(content = "Unknown response, therefore no lurkers have been kicked :ok_hand:")
+
+        embed = Embed(title='Lurker-kick', color=Colour.from_rgb(220, 123, 28))
+        embed.add_field(name='Members', value=str(len(members)))
+        embed.add_field(name='Reason', value='Auto-kicked from the -lurkers kick command')
+        embed.add_field(name='Initiator', value=ctx.author.mention)
+        embed.set_thumbnail(url=ctx.author.avatar_url)
+        embed.set_footer(text=datetime.datetime.utcnow().strftime('%x'))
+        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
 
 def setup(bot):

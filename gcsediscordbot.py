@@ -36,6 +36,7 @@ class AdamBot(Bot):
     def __init__(self, local, cogs, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.online = True
         self.COGS = cogs
         self.LOCAL_HOST = local
         self.DB = os.environ.get('DATABASE_URL')
@@ -43,6 +44,17 @@ class AdamBot(Bot):
         self.prefix = kwargs.get("command_prefix", "-") # Defaults to "-" TODO: Can this be a required parameter instead of being in **kwargs?
 
         self.start_up()
+        
+    async def close(self, ctx = None): # ctx = None because this is also called upon CTRL+C in command line
+        """Procedure that closes down AdamBot, using the standard client.close() command, as well as some database hadling methods."""
+        self.online = False # This is set to false to prevent DB things going on in the background once bot closed
+        if ctx: await ctx.send(f"Beginning process of shutting {self.user.mention} down. DB pool shutting down...")
+        self.pool.terminate() # TODO: Make this more graceful
+        if ctx: await ctx.send("Closing connection to Discord...")
+        await self.change_presence(status = discord.Status.offline)
+        await super().close()
+        self.loop.stop()
+        print("Bot closed.")
 
     def start_up(self):
         """Command that starts AdamBot, is run in AdamBot.__init__"""
@@ -62,7 +74,7 @@ class AdamBot(Bot):
 
     async def on_ready(self):
         print('Bot Loaded')
-        await self.change_presence(activity=discord.Game(name = f'Type {self.prefix}help for help'))
+        await self.change_presence(activity=discord.Game(name = f'Type {self.prefix}help for help'), status=discord.Status.online)
 
     async def on_message(self, message):
         """Event that has checks that stop bots from executing commands"""
@@ -112,7 +124,7 @@ The todo table looks like:
 	member_id bigint
 member_id may not always be a member ID, and can sometimes be a FK to demographic_roles.id"""
         await self.wait_until_ready()
-        while True:
+        while self.online:
             async with self.pool.acquire() as connection:
                 todos = await connection.fetch('SELECT * FROM todo WHERE todo_time <= now()')
                 for todo in todos:
