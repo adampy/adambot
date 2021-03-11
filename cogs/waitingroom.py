@@ -297,7 +297,6 @@ Do C<channel_name> to mention a channel."""
         await member.remove_roles(*year_roles)
         await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=self.YEARS[content[:content.index(" ")].replace("-", "")])])
         await ctx.send(f"{member.mention} has been verified!")
-        print(len(pre_existing_roles))
         if not pre_existing_roles: # If the user hadn't already been verified
             await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:')
 
