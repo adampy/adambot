@@ -132,7 +132,8 @@ class Permissions:
             "Staff":445195535901655041,
             "Adam-Bot Developer":740681121863303279,
             "Member":445196497777197056,
-            "Priv":593791836209020928,}
+            "Priv":593791836209020928,
+            "Announcements":619243003202109470,}
 
     ADMIN = [ROLE_ID['Administrator'], ROLE_ID['Priv']]
     MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
@@ -170,7 +171,8 @@ CHANNELS = {
     "rules":445194263408672769,
     "faqs":583798388718567444,
     "qotd":496472968298496020,
-    "adambot-dev-spam":809791208884142140
+    "adambot-dev-spam":809791208884142140,
+    "announcements":445198590332370944,
 }
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']

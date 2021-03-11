@@ -4,7 +4,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
 from discord.utils import get
 import asyncio
-from .utils import separate_args, Permissions, EmbedPages, PageTypes, Todo
+from .utils import separate_args, Permissions, EmbedPages, PageTypes, Todo, CHANNELS
 from datetime import datetime, timedelta
 import os
 import asyncpg
@@ -387,12 +387,26 @@ Administrator role needed."""
 
 #-----------------------MISC------------------------------
 
-    @commands.command(aliases=['announce'])
+    @commands.command()
     @commands.has_any_role(*Permissions.STAFF)
     async def say(self, ctx, channel: discord.TextChannel, *text):
         """Say a given string in a given channel
 Staff role needed."""
         await channel.send(' '.join(text))
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.has_any_role(*Permissions.STAFF)
+    async def announce(self, ctx, *text):
+        role = ctx.guild.get_role(Permissions.ROLE_ID['Announcements'])
+        msg = role.mention + " " + " ".join(text)
+        if len(msg) >= 2000:
+            await ctx.send("The message is over 2000 characters, you must shorten it or do the announcement in multiple messages.")
+
+        await role.edit(mentionable = True)
+        channel = ctx.guild.get_channel(CHANNELS["announcements"])
+        await channel.send(msg)
+        await role.edit(mentionable = False)
 
     @commands.command()
     @commands.check(is_bot_owner)

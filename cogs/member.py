@@ -281,6 +281,9 @@ class Member(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message):
+        if type(message.channel) == discord.DMChannel:
+            return
+
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
 

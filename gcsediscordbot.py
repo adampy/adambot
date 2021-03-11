@@ -75,7 +75,7 @@ class AdamBot(Bot):
 
     async def on_message(self, message):
         """Event that has checks that stop bots from executing commands"""
-        if message.author.bot:
+        if type(message.channel) == discord.DMChannel or message.author.bot:
             return
         if message.guild.id not in self.last_active:
             self.last_active[message.guild.id] = [] # create the dict key for that guild if it doesn't exist
