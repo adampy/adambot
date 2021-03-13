@@ -400,10 +400,10 @@ Administrator role needed."""
 
     @commands.command()
     @commands.has_any_role(*Permissions.STAFF)
-    async def say(self, ctx, channel: discord.TextChannel, *text):
+    async def say(self, ctx, channel: discord.TextChannel, *, text):
         """Say a given string in a given channel
 Staff role needed."""
-        await channel.send(' '.join(text))
+        await channel.send(text)
 
     @commands.command()
     @commands.guild_only()
