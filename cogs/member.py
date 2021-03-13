@@ -304,7 +304,7 @@ class Member(commands.Cog):
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
 
-        await self.handle_paper_check(message)
+        #await self.handle_paper_check(message)
         #await self.handle_joe_marj(message)
         await self.handle_revise_keyword(message)
         return
