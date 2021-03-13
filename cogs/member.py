@@ -62,6 +62,19 @@ class Member(commands.Cog):
         elif result == JoeMarjType.MSG:
             await message.channel.send("STOP SAYING JOE MARJ", delete_after = delete_after)
 
+# -----------------------PAST PAPERS--------------------------
+
+    async def handle_paper_check(self, message: discord.Message):
+        paper_kw = [["2019", "paper"], ["2020", "paper"], ["2021", "paper"], ["mini exam"], ["past", "paper"], ["mini assessment"]]  # singular form of all as the singular is in the plural anyway
+        if True in [False not in [x in message.content.replace("-", " ") for x in y] for y in paper_kw]:
+            # if a check has multiple conditions, False must not be in it
+            # but if any one of the checks comes back True, then the warning message should be sent
+            # todo: if this gets too spammy then add some kind of cooldown
+            # e.g. once per minute per guild, or per user etc
+            await message.channel.send(f"{message.author.mention} REMINDER: This server **does not** distribute unreleased papers such as the 2019, 2020 or 2021 papers."
+                           f"  **This includes 'mini-exams'**."
+                           f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__")
+
 #-----------------------REVISE------------------------------
 
     async def handle_revise_keyword(self, message):
@@ -71,7 +84,7 @@ class Member(commands.Cog):
         stoprevising_combos = ["stop revising", "end", "stop", "exit", "finished", "finish", "finished revising", "done revising", "leave"]
         msg = message.content.lower()
         if msg == 'need to revise' and conditions:
-           await ctx.invoke(self.bot.get_command('revise'))
+            await ctx.invoke(self.bot.get_command('revise'))
         elif msg in stoprevising_combos and conditions:
             await ctx.invoke(self.bot.get_command('stoprevising'))
 
@@ -281,9 +294,8 @@ class Member(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message):
-        if type(message.channel) == discord.DMChannel:
+        if type(message.channel) == discord.DMChannel or message.author.bot:
             return
-
         conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
 
@@ -292,6 +304,7 @@ class Member(commands.Cog):
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
 
+        await self.handle_paper_check(message)
         #await self.handle_joe_marj(message)
         await self.handle_revise_keyword(message)
         return
