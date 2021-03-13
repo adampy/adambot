@@ -15,6 +15,33 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    async def get_member_obj(self, member):
+        """
+        Attempts to get user/member object from mention/user ID.
+        Independent of whether the user is a member of a shared guild
+        Perhaps merge with utils function
+        """
+        in_guild = True
+        try:
+            print("Attempted member conversion")
+            member = await commands.MemberConverter().convert(member)  # converts mention to member object
+        except Exception:
+            try:  # assumes id
+                member = member.replace("<@!", "").replace(">", "")  # fix for funny issue with mentioning users that aren't guild members
+                member = await self.bot.fetch_user(member)  # gets object from id, seems to work for users not in the server
+                in_guild = False
+            except Exception as e:
+                print(e)
+                return None, None
+        return member, in_guild
+
+    async def is_user_banned(self, ctx, user):
+        try:
+            await ctx.guild.fetch_ban(user)
+        except discord.errors.NotFound:
+            return False
+        return True
+
     async def timer(self, todo, seconds, member_id):
         """Writes to todo table with the time to perform the given todo (e.g. timer(4, 120) would mean 4 is carried out in 120 seconds)"""
         timestamp = datetime.utcnow()
@@ -153,11 +180,13 @@ Staff role needed"""
 
     # -----------------------BAN------------------------------
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["hackban"])
     @has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *args):
+    async def ban(self, ctx, member, *args):
         """Bans a given user.
-Moderator role needed"""
+        Merged with previous command hackban
+        Works with user mention or user ID
+        Moderator role needed"""
         if args:
             timeperiod, reason = separate_args(args)
             if not reason:
@@ -166,11 +195,18 @@ Moderator role needed"""
                 await self.timer(Todo.UNBAN, timeperiod, member.id)
         else:
             reason = None
+        member, in_guild = await self.get_member_obj(member)
+        if not member:
+            await ctx.send("Couldn't find that user!")
+            return
+        if await self.is_user_banned(ctx, member):
+            await ctx.send(f"{member.mention} is already banned!")
+            return
 
-        await member.ban(reason=reason, delete_message_days=0)
-        await ctx.send(f'{member.mention} has been banned')
+        await ctx.guild.ban(member, reason=reason, delete_message_days=0)
+        await ctx.send(f'{member.mention} has been banned.')
 
-        embed = Embed(title='Ban', color=Colour.from_rgb(255, 255, 255))
+        embed = Embed(title='Ban' if in_guild else 'Hackban', color=Colour.from_rgb(255, 255, 255))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Moderator', value=str(ctx.author))
         embed.add_field(name='Reason', value=reason)
@@ -180,35 +216,9 @@ Moderator role needed"""
 
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
-    async def hackban(self, ctx, user_id, *args):
-        """Bans a given user.
-Moderator role needed"""
-        if args:
-            timeperiod, reason = separate_args(args)
-            if not reason:
-                reason = f'No reason - banned by {str(ctx.author)}'
-            if timeperiod:
-                await self.timer(Todo.UNBAN, timeperiod, member.id)
-        else:
-            reason = None
-
-        await member.ban(reason=reason, delete_message_days=0)
-        emoji = get(ctx.message.guild.emojis, name="banned")
-        await ctx.send(f'{member.mention} has been banned. {emoji}')
-
-        embed = Embed(title='Hackban', color=Colour.from_rgb(255, 255, 255))
-        embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
-        embed.add_field(name='Moderator', value=str(ctx.author))
-        embed.add_field(name='Reason', value=reason)
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=(datetime.utcnow() - timedelta(hours=1)).strftime('%x'))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
-
-    @commands.command(pass_context=True)
-    @has_permissions(ban_members=True)
-    async def unban(self, ctx, user_id, *args):
+    async def unban(self, ctx, member, *args):
         """Unbans a given user with the ID.
-Moderator role needed."""
+        Moderator role needed."""
         if args:
             timeperiod, reason = separate_args(args)
             if not reason:
@@ -217,21 +227,17 @@ Moderator role needed."""
             #    await self.timer(Todo.UNMUTE, timeperiod, member.id)
         else:
             reason = None
-
-        try:
-            user = await self.bot.fetch_user(user_id)
-        except discord.errors.NotFound:
-            await ctx.send('No user found with that ID.')
+        member, in_guild = await self.get_member_obj(member)
+        if not member:
+            await ctx.send("Couldn't find that user!")
             return
 
-        bans = await ctx.guild.bans()
-        bans = [be.user for be in bans]
-        if user not in bans:
-            await ctx.send('That user is not already banned.')
+        if not await self.is_user_banned(ctx, member):
+            await ctx.send(f'{member.mention} is not already banned.')
             return
 
-        await ctx.guild.unban(user, reason=reason)
-        await ctx.send('The ban has been revoked.')
+        await ctx.guild.unban(member, reason=reason)
+        await ctx.send(f'{member.mention} has been unbanned!')
 
         embed = Embed(title='Unban', color=Colour.from_rgb(76, 176, 80))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
