@@ -15,9 +15,6 @@ class Reputation(commands.Cog):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
 
-    async def get_valid_name(self, member: discord.Member):
-        return member.name if member.nick is None else member.nick
-
 
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
@@ -87,7 +84,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def award(self, ctx, *args):
         """Gives the member a reputation point. Aliases are give and point"""
-        author_nick = await self.get_valid_name(ctx.author)
+        author_nick = ctx.author.display_name
         if len(args) == 0:  # check so -rep award doesn't silently fail when no string given
             user = ctx.author
         else:
@@ -95,7 +92,7 @@ class Reputation(commands.Cog):
             if user is None:
                 await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
                 return
-        nick = await self.get_valid_name(user)
+        nick = user.display_name
 
         if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
             reps = await self.modify_rep(user, 1)
