@@ -130,7 +130,7 @@ class QuestionOTD(commands.Cog):
         embed.add_field(name='ID', value=question_data[0])
         embed.add_field(name='Author', value=str(member))
         embed.add_field(name='Question', value=question, inline=True)
-        embed.add_field(name='Staff', value=str(ctx.author))
+        embed.add_field(name='Picked by', value=str(ctx.author))
         embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%x'))
 
         await get(ctx.author.guild.text_channels, name='adambot-logs').send(embed=embed)
