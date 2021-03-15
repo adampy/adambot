@@ -68,7 +68,7 @@ class QuestionOTD(commands.Cog):
                 embed.add_field(name='ID', value=id)
                 embed.add_field(name='Author', value=ctx.author)
                 embed.add_field(name='Question', value=qotd, inline=True)
-                embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%x'))
+                embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
                 await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @qotd.command(pass_context=True)
@@ -94,7 +94,7 @@ class QuestionOTD(commands.Cog):
                     embed = Embed(title='QOTD Deleted', color=Colour.from_rgb(177, 252, 129))
                     embed.add_field(name='ID', value=question_id)
                     embed.add_field(name='Staff', value=str(ctx.author))
-                    embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%x'))
+                    embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
                     await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
                     await ctx.send(f'QOTD ID **{question_id}** has been deleted.')
@@ -131,7 +131,7 @@ class QuestionOTD(commands.Cog):
         embed.add_field(name='Author', value=str(member))
         embed.add_field(name='Question', value=question, inline=True)
         embed.add_field(name='Picked by', value=str(ctx.author))
-        embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
 
         await get(ctx.author.guild.text_channels, name='adambot-logs').send(embed=embed)
 
