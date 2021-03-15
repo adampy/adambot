@@ -150,7 +150,7 @@ class Reputation(commands.Cog):
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
-        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @reset.command(pass_context=True)
@@ -165,7 +165,7 @@ class Reputation(commands.Cog):
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value='**EVERYONE**')
         embed.add_field(name='Staff', value=str(ctx.author))
-        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @rep.command()
@@ -187,7 +187,7 @@ class Reputation(commands.Cog):
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
-        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @rep.command()
@@ -208,7 +208,7 @@ class Reputation(commands.Cog):
         embed.add_field(name='Member', value=user_id)
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
-        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @rep.command()

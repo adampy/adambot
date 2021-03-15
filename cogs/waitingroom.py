@@ -381,7 +381,7 @@ Do C<channel_name> to mention a channel."""
         embed.add_field(name='Reason', value='Auto-kicked from the -lurkers kick command')
         embed.add_field(name='Initiator', value=ctx.author.mention)
         embed.set_thumbnail(url=ctx.author.avatar_url)
-        embed.set_footer(text=datetime.datetime.utcnow().strftime('%x'))
+        embed.set_footer(text=datetime.datetime.utcnow().strftime('%A %d/%m/%Y %H:%M:%S'))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
 
