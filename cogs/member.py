@@ -15,7 +15,7 @@ import asyncio
 import time
 
 
-class JoeMarjType:
+class JoeMarjTypeTemplate:
     """Enumeration that tells us what type of message needs to be given."""
 
     def __init__(self):
@@ -24,9 +24,16 @@ class JoeMarjType:
         self.MSG = 2
 
 
+JoeMarjType = JoeMarjTypeTemplate()
+
+
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.paper_warn_cooldown = {}
+
+    def in_gcse(self, ctx):  # move to utils
+        return ctx.guild.id == GCSE_SERVER_ID
 
 # -----------------------MISC------------------------------
 
@@ -74,17 +81,30 @@ class Member(commands.Cog):
     async def handle_paper_check(self, message: discord.Message):
         paper_kw = [["2019", "paper"], ["2020", "paper"], ["2021", "paper"], ["mini exam"], ["past", "paper"],
                     ["mini assessment"]]  # singular form of all as the singular is in the plural anyway
+        ctx = await self.bot.get_context(message)
+        if not self.in_gcse(ctx):  # to ignore priv server
+            return
+        first_warn = False
         if True in [False not in [x in message.content.replace("-", " ") for x in y] for y in paper_kw]:
             # if a check has multiple conditions, False must not be in it
             # but if any one of the checks comes back True, then the warning message should be sent
             # todo: if this gets too spammy then add some kind of cooldown
             # e.g. once per minute per guild, or per user etc
-            await message.channel.send(
-                f"{message.author.mention} REMINDER: This server **does not** distribute unreleased papers such as the 2019, 2020 or 2021 papers."
-                f"  **This includes 'mini-exams'**."
-                f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__")
+            if ctx.guild.id not in self.paper_warn_cooldown.keys():
+                self.paper_warn_cooldown[ctx.guild.id] = {}
+            if message.author.id not in self.paper_warn_cooldown[ctx.guild.id].keys():
+                first_warn = True
+                self.paper_warn_cooldown[ctx.guild.id][message.author.id] = time.time()
+            if (time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]) > 60 or first_warn:
+                self.paper_warn_cooldown[ctx.guild.id][message.author.id] = time.time()
+                await message.channel.send(
+                    f"{message.author.mention} REMINDER: This server **does not** distribute unreleased papers such as the 2019, 2020 or 2021 papers."
+                    f"  **This includes 'mini-exams'**."
+                    f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__")
+            else:
+                await ctx.send(f"TEST: {time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]} into cooldown")
 
-    # -----------------------REVISE------------------------------
+# -----------------------REVISE------------------------------
 
     async def handle_revise_keyword(self, message):
         """Internal procedure that handles potential key phrase attempts to get into revision mode"""
@@ -292,7 +312,7 @@ class Member(commands.Cog):
         except Exception as e:
             print(e)
 
-    # -----------------------FUN------------------------------
+# -----------------------FUN------------------------------
     #    @commands.command()
     #    @commands.guild_only()
     #    async def zyclos(self, ctx):
@@ -547,7 +567,7 @@ class Member(commands.Cog):
         else:
             string = f'{hour}AM'
         time = datetime(year=2021, month=8, day=26, hour=hour, minute=0, second=0) - (
-                    datetime.utcnow() + timedelta(hours=1))
+                datetime.utcnow() + timedelta(hours=1))
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
 
@@ -560,7 +580,7 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     async def gcses(self, ctx):
         time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
-                    datetime.utcnow() + timedelta(hours=1))
+                datetime.utcnow() + timedelta(hours=1))
 
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
