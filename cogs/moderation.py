@@ -147,7 +147,7 @@ Usage: `-purge 50`"""
             embed = Embed(title='Purge', color=Colour.from_rgb(175, 29, 29))
             embed.add_field(name='Count', value=len(deleted))
             embed.add_field(name='Channel', value=channel.mention)
-            embed.set_footer(text=(datetime.utcnow() - timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
         else:
             await ctx.send(f'Please use an integer for the amount of messages to delete, not `{limit}` :ok_hand:')
@@ -175,7 +175,7 @@ Staff role needed"""
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Reason', value=reason)
         embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=(datetime.utcnow() - timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     # -----------------------BAN------------------------------
@@ -211,7 +211,7 @@ Staff role needed"""
         embed.add_field(name='Moderator', value=str(ctx.author))
         embed.add_field(name='Reason', value=reason)
         embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=(datetime.utcnow() - timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+        embed.set_footer(self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @commands.command(pass_context=True)
@@ -244,7 +244,7 @@ Staff role needed"""
         embed.add_field(name='Moderator', value=str(ctx.author))
         embed.add_field(name='Reason', value=reason)
         embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=(datetime.utcnow() - timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     # -----------------------MUTES------------------------------

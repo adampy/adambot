@@ -400,7 +400,7 @@ class Member(commands.Cog):
         time_since = datetime.utcnow() - time
 
         join = Embed(title=f'**__{str(guild)}__**',
-                     description=f"Since {time.strftime('%d %b %Y %H:%M')}. That's over {time_since.days} days ago!",
+                     description=f"Since {time.strftime(self.bot.ts_format)}. That's over {time_since.days} days ago!",
                      value='Server Name', color=Colour.from_rgb(21, 125, 224))
         join.set_thumbnail(url=guild.icon_url)
 
@@ -567,7 +567,7 @@ class Member(commands.Cog):
         else:
             string = f'{hour}AM'
         time = datetime(year=2021, month=8, day=26, hour=hour, minute=0, second=0) - (
-                datetime.utcnow() + timedelta(hours=1))
+                datetime.utcnow() + timedelta(hours=1))  # timezone edge case. also date needs updating
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
 
@@ -580,7 +580,7 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     async def gcses(self, ctx):
         time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
-                datetime.utcnow() + timedelta(hours=1))
+                datetime.utcnow() + timedelta(hours=1))  # as above
 
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)

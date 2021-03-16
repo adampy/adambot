@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from csv import reader
 import asyncpg
 from cogs.utils import EmojiEnum, Todo
+import pytz
 
 #-----------------------------------------------------------------
 
@@ -39,7 +40,6 @@ class AdamBot(Bot):
         self.DB = os.environ.get('DATABASE_URL')
         self.pages = [] # List of active pages that can be used
         self.prefix = kwargs.get("command_prefix", "-") # Defaults to "-" TODO: Can this be a required parameter instead of being in **kwargs?
-
         self.start_up()
         
     async def close(self, ctx = None): # ctx = None because this is also called upon CTRL+C in command line
@@ -59,6 +59,9 @@ class AdamBot(Bot):
         self.loop.create_task(self.execute_todos())
         self.pool : asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20))
         self.last_active = {} # easiest to put here for now, may move to a cog later
+        self.timezone = pytz.timezone('GB')  # change as required, perhaps have some config for it? also perhaps detect from sys
+        self.display_timezone = pytz.timezone('Europe/London')
+        self.ts_format = '%A %d/%m/%Y %H:%M:%S'
         self.run(os.environ.get('TOKEN'))
 
     def load_cogs(self):
@@ -68,6 +71,11 @@ class AdamBot(Bot):
                 continue
             self.load_extension(f'cogs.{cog}')
             print(f"Loaded: {cog}")
+
+    def correct_time(self, conv_time=None):
+        if not conv_time:
+            conv_time = datetime.now()
+        return self.timezone.localize(conv_time).astimezone(self.display_timezone)
 
     async def on_ready(self):
         print('Bot Loaded')
