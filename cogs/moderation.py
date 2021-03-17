@@ -78,10 +78,10 @@ class Moderation(commands.Cog):
                     await ctx.send(':ok_hand: The year has been advanced!')
                 return 'success'
 
-    def is_bot_owner(self, ctx):
+    def is_bot_owner(ctx):
         return ctx.message.author.id == 394978551985602571
 
-    def bot_owner_or_permissions(self, **perms):
+    def bot_owner_or_permissions(**perms):
         """Checks if bot owner or has perms"""
         original = commands.has_permissions(**perms).predicate
 
@@ -403,7 +403,7 @@ Administrator role needed."""
     async def say(self, ctx, channel: discord.TextChannel, *, text):
         """Say a given string in a given channel
 Staff role needed."""
-        await channel.send(text)
+        await channel.send(text[5:] if text.startswith("/tts") else text, tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
 
     @commands.command()
     @commands.guild_only()
