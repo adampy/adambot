@@ -3,7 +3,7 @@ from discord import Embed, Colour
 from discord.ext import commands
 from discord.utils import get
 import asyncio
-from .utils import NEWLINE, Permissions, GCSE_SERVER_ID, CHANNELS
+from .utils import NEWLINE, Permissions, GCSE_SERVER_ID, CHANNELS, starts_with_any
 from datetime import datetime
 
 #support
@@ -137,7 +137,7 @@ class Support(commands.Cog):
             # If support requested
             connection = await self.support_manager.in_connections(message.author)  # Holds connection data or False if a connection is not open
             
-            if message.content.lower().startswith('support start'):
+            if starts_with_any(message.content.lower(), ['support start', 'support begin']):
                 if not connection:
                     # Start connection
                     connection = await self.support_manager.create(message.author)
@@ -148,7 +148,7 @@ class Support(commands.Cog):
                     # In connection and trying to start another
                     await message.author.send('You cannot start another ticket. You must finish this one by typing `support end`.')
             
-            elif message.content.lower().startswith('support end') and connection:
+            elif starts_with_any(message.content.lower(), ['support end', 'support close', 'support finish']) and connection:
                 await message.author.send('The ticket has been closed!')
                 if connection.member_id == message.author.id: # Member sending
                     if connection.staff:  # If a staff member has accepted it yet
@@ -210,8 +210,8 @@ Staff role needed."""
         if connection.staff_id != ctx.author.id:
             await connection.accept(ctx.author)
             await ctx.send(f'{ctx.author.mention} is now connected with the member.')
-            await ctx.author.send('You are now connected anonymously with a member. DM me to get started!')
-            await connection.member.send('You are now connected anonymously with a staff member. DM me to get started!')
+            await ctx.author.send('You are now connected anonymously with a member. DM me to get started! (Type `support end` when you are finished to close the support ticket)')
+            await connection.member.send('You are now connected anonymously with a staff member. DM me to get started! (Type `support end` when you are finished to close the support ticket)')
             embed = Embed(color=Colour.from_rgb(0,0,255))
             embed.add_field(name='New Ticket DM', value=f"ID: {connection.id}", inline=False)
             await ctx.author.guild.get_channel(CHANNELS["support-logs"]).send(embed=embed)
