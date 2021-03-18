@@ -334,7 +334,7 @@ def time_str(seconds):
     if seconds: output += f"{seconds}s"
     return output.strip()
 
-def starts_with_any(string, *possible_starts):
+def starts_with_any(string, possible_starts):
     """Given a string and a list of possible_starts, the function returns
     True if string starts with any of the starts in the possible starts.
     Otherwise it returns False."""
