@@ -12,6 +12,10 @@ from datetime import datetime
 	    #staff_id bigint,
 	    #started_at timestamptz
 
+class MessageOrigin:
+    MEMBER = 0
+    STAFF = 1
+
 class SupportConnection:
     def __init__(self, id, member_id, staff_id, started_at):
         self.id = id
@@ -49,10 +53,6 @@ class SupportConnection:
         """Method that executes when a staff member has accepted the support ticket."""
         async with self.bot.pool.acquire() as connection:
             await connection.execute('UPDATE support SET staff_id = $1, started_at = now() WHERE id = $2', staff.id, self.id)
-
-class MessageOrigin:
-    MEMBER = 0
-    STAFF = 1
 
 class SupportConnectionManager:
     def __init__(self, bot: commands.Bot):
@@ -170,6 +170,22 @@ class Support(commands.Cog):
                     elif connection.staff_id == message.author.id and connection.member_id != 0:  # Staff sending
                         await connection.member.send(f'Staff: {message.content}')
                         await connection.log_message(MessageOrigin.STAFF, message)
+
+    @commands.Cog.listener()
+    async def on_typing(self, channel, user, when):
+        """A handle for typing events between DMs, so that the typing presence can go through the DMs via the bot."""
+        if not isinstance(channel, discord.DMChannel):
+            return
+
+        connections = await self.support_manager.get()
+        for conn in connections:
+            if conn.member_id == user.id and conn.staff_id != 0:
+                # Member typing and staff connected, send typing to staff
+                await conn.staff.trigger_typing()
+
+            elif conn.staff_id == user.id:
+                # Staff typing, send typing to member
+                await conn.member.trigger_typing()
 
     @commands.group()
     @commands.has_any_role(*Permissions.STAFF)
