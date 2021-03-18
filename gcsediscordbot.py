@@ -216,6 +216,7 @@ if __name__ == "__main__":
     intents.presences = True
     intents.reactions = True
     intents.typing = True
+    intents.dm_messages = True
 
     cog_names = ['member',
         'moderation',
