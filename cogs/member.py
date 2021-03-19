@@ -32,7 +32,7 @@ class Member(commands.Cog):
         self.bot = bot
         self.paper_warn_cooldown = {}
 
-    def in_gcse(self, ctx):  # move to utils
+    def in_gcse(ctx):  # move to utils
         return ctx.guild.id == GCSE_SERVER_ID
 
 # -----------------------MISC------------------------------
@@ -49,6 +49,9 @@ class Member(commands.Cog):
         out = await ctx.message.channel.send("Pong! (N/A)")
         await out.edit(content="Pong! (" + str(round(1000 * (time.time() - start), 1)) + " milliseconds)")
 
+    @commands.command(pass_context=True)
+    async def uptime(self, ctx):
+        await ctx.send(f"TOTAL UPTIME: {time.time() - self.bot.start_time} seconds")
 # -----------------------JOE MARJ--------------------------
 
     async def _joe_marj_check(self, message):
@@ -338,9 +341,8 @@ class Member(commands.Cog):
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';",
                                          str(int(result) + 1))
 
-
-        await self.handle_paper_check(message)
-
+        #await self.handle_paper_check(message)
+        # await self.handle_joe_marj(message)
         await self.handle_revise_keyword(message)
         return
 
@@ -591,6 +593,7 @@ class Member(commands.Cog):
 **{h}** hours
 **{m}** minutes
 **{s}** seconds''')
+
 
 # -----------------------1738------------------------------
 
