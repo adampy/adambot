@@ -218,59 +218,40 @@ class Member(commands.Cog):
                     await ctx.send(new_message)
 
 # -----------------------MC & CC & WEEABOO------------------------------
-    addable_roles = {
+    ADDABLE_ROLES = {
         "mc": "Maths Challenge",
         "cc": "CompSci Challenge",
         "ec": "English Challenge",
         "weeaboo": "Weeaboo",
-        "announcement": "Announcements"
+        "announcements": "Announcements",
+        "notifications": "Announcements"
     }
 
-    async def assign_role(self, ctx, role_tag):
-        role_name = self.addable_roles[role_tag]
-        author = ctx.author
-        role = get(author.guild.roles, name=role_name)
-        if role_name in [y.name for y in author.roles]:
-            await author.remove_roles(role)
-            await ctx.send(':ok_hand: Your `{0}` role has vanished!'.format(role_name))
+    async def manage_role(self, ctx, role_name, member: discord.Member = None):
+        """
+        Role assign handler. If the member has a role with the specified name, it's removed
+        Otherwise it is assigned to the member.
+        Returns True if the user was given the role, otherwise False
+        """
+        if not member:
+            member = ctx.author  # of the message context that gets passed
+        role = get(member.guild.roles, name=role_name)
+        if role_name in [y.name for y in member.roles]:
+            await member.remove_roles(role)
         else:
-            await author.add_roles(role)
-            await ctx.send(':ok_hand: You have been given `{0}` role!'.format(role_name))
+            await member.add_roles(role)
+            return True
+        return False
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, name=[*ADDABLE_ROLES][0] if ADDABLE_ROLES else None, aliases=[*ADDABLE_ROLES][1:] if ADDABLE_ROLES else [])
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
-    async def mc(self, ctx):
-        """Gives you the Maths Challenge role."""
-        await self.assign_role(ctx, "mc")
+    async def user_addable_role(self, ctx):
+        content = ctx.message.content + " " if " " not in ctx.message.content else ""
+        role_name = self.ADDABLE_ROLES[content[:content.index(" ")].replace(self.bot.prefix, "")]
+        now_has_role = await self.manage_role(ctx, role_name)
+        await ctx.send(f':ok_hand: You have been given `{role_name}` role!' if now_has_role else f':ok_hand: Your `{role_name}` role has vanished!')
 
-    @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS)
-    @commands.guild_only()
-    async def cc(self, ctx):
-        """Gives you the CompSci Challenge role."""
-        await self.assign_role(ctx, "cc")
-
-    @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS)
-    @commands.guild_only()
-    async def ec(self, ctx):
-        """Gives you the English Challenge role."""
-        await self.assign_role(ctx, "ec")
-
-    @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS)
-    @commands.guild_only()
-    async def weeaboo(self, ctx):
-        """Gives you the Weeaboo role."""
-        await self.assign_role(ctx, "weeaboo")
-
-    @commands.command(pass_context=True, aliases=['announcements', 'notifications'])
-    @commands.has_any_role(*Permissions.MEMBERS)
-    @commands.guild_only()
-    async def announcement(self, ctx):
-        """Gives you the Announcements role."""
-        await self.assign_role(ctx, "announcement")
 
 # -----------------------QUOTE------------------------------
 
