@@ -3,8 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
-from .utils import separate_args, time_str, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, \
-    GCSE_SERVER_ID
+from .utils import separate_args, time_str, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, GCSE_SERVER_ID
 import requests
 import re
 import os
@@ -14,28 +13,17 @@ from random import choice as randchoice
 import asyncio
 import time
 
-
-class JoeMarjTypeTemplate:
+class JoeMarjType:
     """Enumeration that tells us what type of message needs to be given."""
-
-    def __init__(self):
-        self.NONE = 0
-        self.GIF = 1
-        self.MSG = 2
-
-
-JoeMarjType = JoeMarjTypeTemplate()
-
+    NONE = 0
+    GIF = 1
+    MSG = 2
 
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.paper_warn_cooldown = {}
 
-    def in_gcse(self, ctx):  # move to utils
-        return ctx.guild.id == GCSE_SERVER_ID
-
-# -----------------------MISC------------------------------
+#-----------------------MISC------------------------------
 
     @commands.command(pass_context=True)
     async def host(self, ctx):
@@ -47,72 +35,53 @@ class Member(commands.Cog):
         """Gets a ping time by measuring time to send & edit a message"""
         start = time.time()
         out = await ctx.message.channel.send("Pong! (N/A)")
-        await out.edit(content="Pong! (" + str(round(1000 * (time.time() - start), 1)) + " milliseconds)")
+        await out.edit(content = "Pong! (" + str(round(1000 * (time.time() - start), 1)) + " milliseconds)")
 
-# -----------------------JOE MARJ--------------------------
+#-----------------------JOE MARJ--------------------------
 
     async def _joe_marj_check(self, message):
         """Internal method that checks a discord.Message for potential 'Joe Marj' infiltration. Returns a JoeMarjType enum."""
-        conditions = not message.author.bot and not message.content.startswith(
-            '-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
-        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "tenor.com/bwl5l", "tenor.com/bwlhw",
-                         "we_floss.gif"]
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
+        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "tenor.com/bwl5l", "tenor.com/bwlhw", "we_floss.gif"]
         disallowed_chars = ["~", "*", "|"]
         msg = message.content.lower()
         for y in disallowed_chars:
             msg = msg.replace(y, "")
-        if not conditions:  # Increase in performance to break early
+        if not conditions: # Increase in performance to break early
             return JoeMarjType.NONE
         if max([x in msg.lower() for x in joe_marj_gifs]):  # Joe marj gif
             return JoeMarjType.GIF
-        elif 'joe' in msg or 'marj' in msg:
+        elif ('joe' in msg or 'marj' in msg):
             return JoeMarjType.MSG
 
-    async def handle_joe_marj(self, message: discord.Message, delete_after=10):
-        """Method that receives a message, and replies to it if a 'Joe Marj' infiltration has been detected. Can receive a `delete_after` integer, which deletes the replies after that many seconds"""
+    async def handle_joe_marj(self, message: discord.Message, delete_after = 10):
+        """Method that receives a message, and replies to it if a 'Joe Marj' infiltration has been detected. Can receive a `delete_after` integer, which deletes the replies after that many seconds""" 
         result = await self._joe_marj_check(message)
         if result == JoeMarjType.GIF:
-            await message.channel.send("STOP SENDING JOE MARJ GIF", delete_after=delete_after)
+            await message.channel.send("STOP SENDING JOE MARJ GIF", delete_after = delete_after)
         elif result == JoeMarjType.MSG:
-            await message.channel.send("STOP SAYING JOE MARJ", delete_after=delete_after)
+            await message.channel.send("STOP SAYING JOE MARJ", delete_after = delete_after)
 
 # -----------------------PAST PAPERS--------------------------
 
     async def handle_paper_check(self, message: discord.Message):
-        paper_kw = [["2019", "paper"], ["2020", "paper"], ["2021", "paper"], ["mini exam"], ["past", "paper"],
-                    ["mini assessment"]]  # singular form of all as the singular is in the plural anyway
-        ctx = await self.bot.get_context(message)
-        if not self.in_gcse(ctx):  # to ignore priv server
-            return
-        first_warn = False
+        paper_kw = [["2019", "paper"], ["2020", "paper"], ["2021", "paper"], ["mini exam"], ["past", "paper"], ["mini assessment"]]  # singular form of all as the singular is in the plural anyway
         if True in [False not in [x in message.content.replace("-", " ") for x in y] for y in paper_kw]:
             # if a check has multiple conditions, False must not be in it
             # but if any one of the checks comes back True, then the warning message should be sent
             # todo: if this gets too spammy then add some kind of cooldown
             # e.g. once per minute per guild, or per user etc
-            if ctx.guild.id not in self.paper_warn_cooldown.keys():
-                self.paper_warn_cooldown[ctx.guild.id] = {}
-            if message.author.id not in self.paper_warn_cooldown[ctx.guild.id].keys():
-                first_warn = True
-                self.paper_warn_cooldown[ctx.guild.id][message.author.id] = time.time()
-            if (time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]) > 60 or first_warn:
-                self.paper_warn_cooldown[ctx.guild.id][message.author.id] = time.time()
-                await message.channel.send(
-                    f"{message.author.mention} REMINDER: This server **does not** distribute unreleased papers such as the 2019, 2020 or 2021 papers."
-                    f"  **This includes 'mini-exams'**."
-                    f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__")
-            else:
-                await ctx.send(f"TEST: {time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]} into cooldown")
+            await message.channel.send(f"{message.author.mention} REMINDER: This server **does not** distribute unreleased papers such as the 2019, 2020 or 2021 papers."
+                           f"  **This includes 'mini-exams'**."
+                           f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__")
 
-# -----------------------REVISE------------------------------
+#-----------------------REVISE------------------------------
 
     async def handle_revise_keyword(self, message):
         """Internal procedure that handles potential key phrase attempts to get into revision mode"""
-        conditions = not message.author.bot and not message.content.startswith(
-            '-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         ctx = await self.bot.get_context(message)
-        stoprevising_combos = ["stop revising", "end", "stop", "exit", "finished", "finish", "finished revising",
-                               "done revising", "leave"]
+        stoprevising_combos = ["stop revising", "end", "stop", "exit", "finished", "finish", "finished revising", "done revising", "leave"]
         msg = message.content.lower()
         if msg == 'need to revise' and conditions:
             await ctx.invoke(self.bot.get_command('revise'))
@@ -125,14 +94,13 @@ class Member(commands.Cog):
     async def revise(self, ctx):
         """Puts you in revising mode."""
         member = ctx.author
-        if member.bot:  # Stops bots from putting theirselves into revising mode
+        if member.bot: # Stops bots from putting theirselves into revising mode
             return
         role = get(member.guild.roles, name='Members')
         await member.remove_roles(role)
         role = get(member.guild.roles, name='Revising')
         await member.add_roles(role)
-        await self.bot.get_channel(518901847981948938).send(
-            f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `-stoprevising`, `end`, `stop`, `exit` or `finished revising` in this channel!')
+        await self.bot.get_channel(518901847981948938).send(f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `-stoprevising`, `end`, `stop`, `exit` or `finished revising` in this channel!')
 
     @commands.command(pass_context=True)
     @commands.guild_only()
@@ -146,32 +114,32 @@ class Member(commands.Cog):
             await member.add_roles(role)
             await self.bot.get_channel(445199175244709898).send(f'{member.mention} welcome back from revising mode!')
         elif "Revising" in [y.name for y in member.roles]:
-            channel = self.bot.get_channel(518901847981948938)  # Revision escape
+            channel = self.bot.get_channel(518901847981948938) # Revision escape
             await ctx.send(f'Go to {channel.mention} to stop revising')
 
-# -----------------------LIST------------------------------
+#-----------------------LIST------------------------------
 
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def list(self, ctx, *args):
         """Gives you a list of all the people with a certain role."""
-        # if role not entered
+        #if role not entered
         if len(args) <= 0:
             await ctx.send(':x: Please **specify** a **role**')
             return
-
-        # gets the roles that it could be
+        
+        #gets the roles that it could be
         role_name = ' '.join(args)
         possible_roles = []
         for role in ctx.message.guild.roles:
             if role_name.lower() == role.name.lower():
-                possible_roles.clear()  # Removes bug
+                possible_roles.clear() # Removes bug
                 possible_roles.append(role)
                 break
             elif role_name.lower() in role.name.lower():
                 possible_roles.append(role)
 
-        # narrows it down to 1 role and gets the role id
+        #narrows it down to 1 role and gets the role id
         if len(possible_roles) == 0:
             await ctx.send(':x: That role does not exist')
         elif len(possible_roles) > 1:
@@ -179,11 +147,11 @@ class Member(commands.Cog):
             new_message = new_message + '\n'.join([role.name for role in possible_roles]) + '```'
             await ctx.send(new_message)
             return
-        else:  # when successful
+        else: #when successful
             role = possible_roles[0]
             message = []
             people = []
-            # gets all members with that role
+            #gets all members with that role
             for member in ctx.message.guild.members:
                 for search_role in member.roles:
                     if search_role == role:
@@ -194,16 +162,16 @@ class Member(commands.Cog):
             new_message += f"\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** user{'' if len(message) == 0 else 's'} with this role."
             try:
                 await ctx.send(new_message)
-            except Exception:  # longer than 2000 letters causes this to be run
-                new_message = '\n'.join([f'**{member.display_name}**' for member in people])
+            except Exception as e: #longer than 2000 letters causes this to be run
+                new_message = '\n'.join([f'**{member.nick if member.nick else member.name}**' for member in people])
                 new_message += f'\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** users with this role.'
                 if len(new_message) >= 2000:
-                    params = {'api_dev_key': os.environ.get("PASTEBIN_KEY"),
-                              'api_option': 'paste',
-                              'api_paste_code': new_message,
-                              'api_paste_private': '1',
-                              'api_paste_expire_date': '1D',
-                              'api_paste_name': role.name}
+                    params = {'api_dev_key':os.environ.get("PASTEBIN_KEY"),
+                              'api_option':'paste',
+                              'api_paste_code':new_message,
+                              'api_paste_private':'1',
+                              'api_paste_expire_date':'1D',
+                              'api_paste_name':role.name}
 
                     req = requests.post('https://pastebin.com/api/api_post.php', params)
                     await ctx.send(f'Over 2000 characters. Go to {req.text} to see what I would have said')
@@ -211,14 +179,14 @@ class Member(commands.Cog):
                     await ctx.send('Longer than 2000 characters - member ID\'s have been cut from the message.')
                     await ctx.send(new_message)
 
-# -----------------------MC & CC & WEEABOO------------------------------
-    addable_roles = {
-        "mc": "Maths Challenge",
-        "cc": "CompSci Challenge",
-        "ec": "English Challenge",
-        "weeaboo": "Weeaboo",
-        "announcement": "Announcements"
-    }
+#-----------------------MC & CC & WEEABOO------------------------------
+    addable_roles =	{
+            "mc": "Maths Challenge",
+            "cc": "CompSci Challenge",
+            "ec": "English Challenge",
+            "weeaboo": "Weeaboo",
+            "announcement": "Announcements"
+        }
 
     async def assign_role(self, ctx, role_tag):
         role_name = self.addable_roles[role_tag]
@@ -266,7 +234,7 @@ class Member(commands.Cog):
         """Gives you the Announcements role."""
         await self.assign_role(ctx, "announcement")
 
-# -----------------------QUOTE------------------------------
+#-----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MEMBERS)
@@ -282,65 +250,62 @@ class Member(commands.Cog):
 
         try:
             msg = await channel.fetch_message(messageid)
-        except Exception:
+        except Exception as e:
             await ctx.send('```-quote <message_id> [channel-id]```')
             return
-
+        
         user = msg.author
         image = None
         repl = re.compile(r"/(\[.+?\])(\(.+?\))/")
         edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ''
-
+        
         content = re.sub(repl, r"\1​\2", msg.content)
-
+        
         if msg.attachments:
             image = msg.attachments[0]['url']
-
-        embed = Embed(title="Quote link",
-                      url=f"https://discordapp.com/channels/{channelid}/{messageid}",
-                      color=user.color,
-                      timestamp=msg.created_at)
-
+        
+        embed = Embed(title="Quote link", 
+                              url=f"https://discordapp.com/channels/{channelid}/{messageid}",
+                              color=user.color,
+                              timestamp=msg.created_at)
+        
         if image:
             embed.set_image(url=image)
         embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=user.avatar_url)
         embed.description = f"❝ {content} ❞" + edited
         await ctx.send(embed=embed)
-
+        
         try:
             await ctx.message.delete()
         except Exception as e:
             print(e)
 
-# -----------------------FUN------------------------------
-    #    @commands.command()
-    #    @commands.guild_only()
-    #    async def zyclos(self, ctx):
-    #        zyclos = get(ctx.guild.members, id=202861110146236428)
-    #        await ctx.send(f'{zyclos.mention} https://tenor.com/view/jusreign-punjabi-indian-gif-5441330')
+#-----------------------FUN------------------------------
+#    @commands.command()
+#    @commands.guild_only()
+#    async def zyclos(self, ctx):
+#        zyclos = get(ctx.guild.members, id=202861110146236428)
+#        await ctx.send(f'{zyclos.mention} https://tenor.com/view/jusreign-punjabi-indian-gif-5441330')
 
     @commands.command()
     async def test(self, ctx):
         """Secret Area 51 command."""
         await ctx.send('Testes')
-
+        
     @commands.Cog.listener()
     async def on_message(self, message):
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
-        conditions = not message.author.bot and not message.content.startswith(
-            '-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
+        conditions = not message.author.bot and not message.content.startswith('-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
 
         if 'bruh' in msg and conditions:
             async with self.bot.pool.acquire() as connection:
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
-                await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';",
-                                         str(int(result) + 1))
+                await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';", str(int(result)+1))
 
-
-        await self.handle_paper_check(message)
-
+        #await self.handle_paper_check(message)
+        #await self.handle_joe_marj(message)
         await self.handle_revise_keyword(message)
         return
 
@@ -379,7 +344,7 @@ class Member(commands.Cog):
                 else:
                     new += letter.lower()
                 uppercase = not uppercase
-            except Exception:
+            except Exception as e:
                 new += letter
 
         await ctx.send(new)
@@ -387,12 +352,11 @@ class Member(commands.Cog):
 
     @commands.command(aliases=['yikes'])
     async def yike(self, ctx):
-        await ctx.send(
-            'https://cdn.discordapp.com/attachments/445199175244709898/616755258890387486/29e02f54-4741-40e5-b77d-788bf78b33ba.png')
+        await ctx.send('https://cdn.discordapp.com/attachments/445199175244709898/616755258890387486/29e02f54-4741-40e5-b77d-788bf78b33ba.png')
 
-# -----------------------USER AND SERVER INFO------------------------------
+#-----------------------USER AND SERVER INFO------------------------------
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context = True)
     @commands.guild_only()
     async def serverinfo(self, ctx):
         """Information about the server."""
@@ -400,14 +364,11 @@ class Member(commands.Cog):
         time = guild.created_at
         time_since = datetime.utcnow() - time
 
-        join = Embed(title=f'**__{str(guild)}__**',
-                     description=f"Since {time.strftime(self.bot.ts_format)}. That's over {time_since.days} days ago!",
-                     value='Server Name', color=Colour.from_rgb(21, 125, 224))
+        join = Embed(title=f'**__{str(guild)}__**', description=f"Since {time.strftime('%d %b %Y %H:%M')}. That's over {time_since.days} days ago!", value='Server Name', color=Colour.from_rgb(21,125,224))
         join.set_thumbnail(url=guild.icon_url)
 
         join.add_field(name='Region', value=str(guild.region))
-        join.add_field(name='Users',
-                       value=f'{len([x for x in guild.members if x.status != Status.offline])}/{len(guild.members)}')
+        join.add_field(name='Users', value=f'{len([x for x in guild.members if x.status != Status.offline])}/{len(guild.members)}')
         join.add_field(name='Text Channels', value=f'{len(guild.text_channels)}')
         join.add_field(name='Voice Channels', value=f'{len(guild.voice_channels)}')
         join.add_field(name='Roles', value=f'{len(guild.roles)}')
@@ -415,7 +376,7 @@ class Member(commands.Cog):
         join.set_footer(text=f'Server ID: {guild.id}')
 
         await ctx.send(embed=join)
-
+            
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -429,16 +390,14 @@ class Member(commands.Cog):
         else:
             user = await get_spaced_member(ctx, args, self.bot)
             if user is None:
-                await ctx.send(embed=Embed(title="Userinfo",
-                                           description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**',
-                                           color=Colour.from_rgb(255, 7, 58)))
+                await ctx.send(embed=Embed(title="Userinfo", description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**', color=Colour.from_rgb(255, 7, 58)))
                 return
 
         roles = user.roles[-1:0:-1]
 
         joined_at = user.joined_at
         since_created = (ctx.message.created_at - user.created_at).days
-
+        
         if joined_at is not None:
             since_joined = (ctx.message.created_at - joined_at).days
             user_joined = joined_at.strftime("%d %b %Y %H:%M")
@@ -448,8 +407,8 @@ class Member(commands.Cog):
         user_created = user.created_at.strftime("%d %b %Y %H:%M")
         voice_state = user.voice
         member_number = (
-                sorted(guild.members, key=lambda m: m.joined_at or ctx.message.created_at).index(user)
-                + 1
+            sorted(guild.members, key=lambda m: m.joined_at or ctx.message.created_at).index(user)
+            + 1
         )
 
         created_on = f"{user_created}\n({since_created} days ago)"
@@ -461,8 +420,7 @@ class Member(commands.Cog):
         data.add_field(name="Joined this server on", value=joined_on)
         for activity in user.activities:
             if isinstance(activity, discord.Spotify):
-                data.add_field(name="Listening to Spotify",
-                               value=f"{activity.title} by {activity.artist} on {activity.album}", inline=False)
+                data.add_field(name="Listening to Spotify", value=f"{activity.title} by {activity.artist} on {activity.album}", inline=False)
             elif isinstance(activity, discord.CustomActivity):
                 data.add_field(name="Custom Status", value=f"{activity.name}", inline=False)
             else:
@@ -470,7 +428,7 @@ class Member(commands.Cog):
         if roles:
             disp_roles = ', '.join([role.name for role in roles[:10]])
             if len(roles) > 10:
-                disp_roles += f" (+{len(roles) - 10} roles)"
+                 disp_roles += f" (+{len(roles) - 10} roles)"
             data.add_field(name="Roles", value=disp_roles, inline=False)
         else:
             data.add_field(name="Roles", value="No roles currently!")
@@ -493,48 +451,46 @@ class Member(commands.Cog):
 
         await ctx.send(embed=data)
 
-# -----------------------REMIND------------------------------
-
+#-----------------------REMIND------------------------------
+    
     @commands.command(pass_context=True, aliases=['rm', 'remindme'])
     @commands.guild_only()
     async def remind(self, ctx, *args):
-        async def write(self_write, reminder_write, seconds, member_id):
+        async def write(self, reminder, seconds, member_id):
             """Writes to remind table with the time to remind (e.g. remind('...', 120, <member_id>) would mean '...' is reminded out in 120 seconds for <member_id>)"""
             timestamp = datetime.utcnow()
             new_timestamp = timestamp + timedelta(seconds=seconds)
-            async with self_write.bot.pool.acquire() as connection:
-                await connection.execute('INSERT INTO remind (member_id, reminder, reminder_time) values ($1, $2, $3)',
-                                         member_id, reminder_write, new_timestamp)
+            async with self.bot.pool.acquire() as connection:
+                await connection.execute('INSERT INTO remind (member_id, reminder, reminder_time) values ($1, $2, $3)', member_id, reminder, new_timestamp)
 
         """Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1"""
-        timeperiod = ''
+        timeperiod =''
         if args:
             timeperiod, reason = separate_args(args)
-            # print(f"timeperiod is {timeperiod}")
-            # print(f"reason is {reason}")
+            #print(f"timeperiod is {timeperiod}")
+            #print(f"reason is {reason}")
         if not args or not timeperiod:
             await ctx.send('```-remind <sentence...> -t <time>```')
             return
 
         str_ = ' '.join(args)
-        str_tp = time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
-        str_reason = "*Reminder:* " + str_[:str_.index("-t")].replace("-r", "")  # string manipulation go brrrr
-        reminder = "*When:* " + str_tp + " ago\n" + str_reason
-        # reminder = ' '.join(args).replace("-t ","") + " ago"
+        str_tp = time_str(timeperiod) # runs it through a convertor because hodor's OCD cannot take seeing 100000s
+        str_reason = "*Reminder:* " + str_[:str_.index("-t")].replace("-r", "") #string manipulation go brrrr
+        reminder =  "*When:* " + str_tp + " ago\n" + str_reason
+        #reminder = ' '.join(args).replace("-t ","") + " ago"
         if reminder.startswith(" -r"):
             reminder = reminder[2:]
 
         if len(reminder) >= 256:
             await ctx.send('Please shorten your reminder to under 256 characters.')
-        # seconds = time_arg(timeperiod)
-        # seconds = separate_args(timeperiod)[0] # why is this here/needed
+        #seconds = time_arg(timeperiod)
+        #seconds = separate_args(timeperiod)[0] # why is this here/needed
 
         await write(self, reminder, timeperiod, ctx.author.id)
-        await ctx.send(
-            f":ok_hand: You'll be reminded in {str_tp} via a DM!")  # todo: either/or/and when setting and displaying the reminder, check if member's DMs are open
+        await ctx.send(f":ok_hand: You'll be reminded in {str_tp} via a DM!") # todo: either/or/and when setting and displaying the reminder, check if member's DMs are open
         # if their DMs aren't open, remind on guild in context
 
-# -----------------------AVATAR------------------------------
+#-----------------------AVATAR------------------------------
 
     @commands.command(pass_context=True)
     async def avatar(self, ctx, member: discord.User = None):
@@ -543,10 +499,10 @@ class Member(commands.Cog):
 
         await ctx.send(member.avatar_url)
 
-# -----------------------COUNTDOWNS------------------------------
+#-----------------------COUNTDOWNS------------------------------
 
     @commands.command(pass_context=True, aliases=['results'])
-    async def resultsday(self, ctx, hour=None):
+    async def resultsday(self, ctx, hour = None):
         if hour is None:
             hour = 10
         else:
@@ -559,16 +515,16 @@ class Member(commands.Cog):
             await ctx.send('The hour must be between 0 and 23!')
             return
 
+        string = ''
         if hour == 12:
             string = 'noon'
         elif hour == 0:
             string = '0:00AM'
         elif hour >= 12:
-            string = f'{hour - 12}PM'
+            string = f'{hour-12}PM'
         else:
             string = f'{hour}AM'
-        time = datetime(year=2021, month=8, day=26, hour=hour, minute=0, second=0) - (
-                datetime.utcnow() + timedelta(hours=1))  # timezone edge case. also date needs updating
+        time = datetime(year=2021, month=8, day=26, hour=hour, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
 
@@ -576,13 +532,12 @@ class Member(commands.Cog):
 **{time.days}** days
 **{h}** hours
 **{m}** minutes
-**{s}** seconds''')  # **{(time.days*24)+h}** hours
+**{s}** seconds''') #**{(time.days*24)+h}** hours
 
     @commands.command(pass_context=True)
     async def gcses(self, ctx):
-        time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
-                datetime.utcnow() + timedelta(hours=1))  # as above
-
+        time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (datetime.utcnow() + timedelta(hours=1))
+        
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
 
@@ -592,27 +547,27 @@ class Member(commands.Cog):
 **{m}** minutes
 **{s}** seconds''')
 
-# -----------------------1738------------------------------
+
+#-----------------------1738------------------------------
 
     @commands.command(pass_context=True)
     async def toggle1738(self, ctx):
-        # db connections
+        #db connections
         async with self.bot.pool.acquire() as connection:
-            # check if already joined
+            #check if already joined
             member = await connection.fetch("SELECT * FROM ping WHERE member_id = ($1)", ctx.author.id)
             if not member:
-                # not on - turn it on
+                #not on - turn it on
                 await connection.execute('INSERT INTO ping (member_id) values ($1)', ctx.author.id)
-                await ctx.send(":ok_hand: You will receive notifications for 1738. :tada:")
+                await ctx.send(":ok_hand: You will recieve notifications for 1738. :tada:")
             else:
-                # on - turn it off
+                #on - turn it off
                 await connection.execute('DELETE FROM ping WHERE member_id = ($1)', ctx.author.id)
-                await ctx.send(":ok_hand: You will no longer receive notifications for 1738. :sob:")
+                await ctx.send(":ok_hand: You will no longer recieve notifications for 1738. :sob:")
 
     @commands.command(pass_context=True)
     async def code(self, ctx):
         await ctx.send(f"Adam-Bot code can be found here: {CODE_URL}")
-
 
 def setup(bot):
     bot.add_cog(Member(bot))

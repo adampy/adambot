@@ -21,7 +21,7 @@ class spotify(commands.Cog):
             if user is None:
                 fail_embed = Embed(title="Spotify info", description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**', color=Colour.from_rgb(255, 7, 58))
                 fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                        self.bot.correct_time()).strftime(self.bot.ts_format))
+                        datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
                 await ctx.send(embed=fail_embed)
                 return
         #if isinstance(ctx.message.channel, discord.DMChannel): # dm code
@@ -43,7 +43,7 @@ class spotify(commands.Cog):
         if spotify_activity is None:
             fail_embed = Embed(title=f"Spotify info for {user}", description="The user isn't currently listening to Spotify\n*(note that this can't be detected unless Spotify is visible on the status)*", colour=user.colour)
             fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format))
+                    datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
             await ctx.message.channel.send(embed=fail_embed)
             return
         duration = spotify_activity.duration.seconds
@@ -64,7 +64,7 @@ class spotify(commands.Cog):
         embed.add_field(name="Song's Spotify Link", value=f"https://open.spotify.com/track/{spotify_activity.track_id}", inline=False)
         embed.set_thumbnail(url=spotify_activity.album_cover_url)
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format))
+                    datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
         await ctx.message.channel.send(embed=embed)
 
 
