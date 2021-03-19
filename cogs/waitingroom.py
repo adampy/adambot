@@ -33,7 +33,7 @@ class WaitingRoom(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             channel_id = await connection.fetchval("SELECT value FROM variables WHERE variable = 'welcome_channel';")
         return int(channel_id)
-
+        #return 445198121618767872
     async def _set_welcome_channel(self, channel_id):
         """Internal method that sets the welcome channel in the DB."""
         async with self.bot.pool.acquire() as connection:
@@ -295,7 +295,7 @@ Do C<channel_name> to mention a channel."""
         year_roles = [get(member.guild.roles, name=self.YEARS[role]) for role in self.YEARS]
         pre_existing_roles = [r for r in year_roles if r in member.roles]
         await member.remove_roles(*year_roles)
-        await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=self.YEARS[content[:content.index(" ")].replace("-", "")])])
+        await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=self.YEARS[content[:content.index(" ")].replace(self.bot.prefix, "")])])
         await ctx.send(f"{member.mention} has been verified!")
         if not pre_existing_roles: # If the user hadn't already been verified
             await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:')
@@ -381,7 +381,7 @@ Do C<channel_name> to mention a channel."""
         embed.add_field(name='Reason', value='Auto-kicked from the -lurkers kick command')
         embed.add_field(name='Initiator', value=ctx.author.mention)
         embed.set_thumbnail(url=ctx.author.avatar_url)
-        embed.set_footer(text=datetime.datetime.utcnow().strftime(self.bot.ts_format))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
 
