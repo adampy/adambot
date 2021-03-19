@@ -54,11 +54,15 @@ class AdamBot(Bot):
         self.start_time = start_time
         self.prefix = kwargs.get("command_prefix",
                                  "-")  # Defaults to "-" TODO: Can this be a required parameter instead of being in **kwargs?
+        self._init_time = time.time()
+        print(f"BOT INITIALISED {self._init_time - start_time} seconds")
+        self.start_up()
 
     async def close(self, ctx=None):  # ctx = None because this is also called upon CTRL+C in command line
         """Procedure that closes down AdamBot, using the standard client.close() command, as well as some database hadling methods."""
         self.online = False  # This is set to false to prevent DB things going on in the background once bot closed
-        p_s = f"Beginning process of shutting {self.user.mention} down. DB pool shutting down..."
+        user = f"{self.user.mention} " if self.user else "" 
+        p_s = f"Beginning process of shutting {user}down. DB pool shutting down..."
         (await ctx.send(p_s), print(p_s)) if ctx else print(p_s)
         if hasattr(self, "pool"):
             self.pool.terminate()  # TODO: Make this more graceful
@@ -70,12 +74,21 @@ class AdamBot(Bot):
             pass  # hasattr returns true but then you get yelled at if you use it
         await super().close()
         time.sleep(1)  # stops bs RuntimeError spam at the end
-        print("Bot closed.")
+        print(f"Bot closed after {time.time() - self.start_time} seconds")
 
     def start_up(self):
         """Command that starts AdamBot, is run in AdamBot.__init__"""
-        print("Logging into Discord...")
+        print("Loading cogs...")
+        self.load_cogs()
+        self.cog_load = time.time()
+        print(f"Loaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
+        print("Creating DB pool...")
+        self.loop.create_task(self.execute_todos())
+        self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20))
+        # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
+        print(f'Bot fully setup!\nDB took {time.time() - self.cog_load} seconds to connect to ({time.time() - self.start_time} seconds total)')
         token = os.environ.get('TOKEN') if not self.token else self.token
+        print("Logging into Discord...")
         try:
             self.run(token)
         except Exception as e:
@@ -101,13 +114,7 @@ class AdamBot(Bot):
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
         await self.change_presence(activity=discord.Game(name=f'Type {self.prefix}help for help'),
                                    status=discord.Status.online)
-        print("Loading cogs...")
-        self.load_cogs()
-        print("Creating DB pool...")
-        self.pool: asyncpg.pool.Pool = await asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20)
-        # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
-        print(f'Bot fully loaded! ({time.time() - self.start_time} seconds total)')
-        self.loop.run_until_complete(await self.execute_todos())
+   
 
     async def on_message(self, message):
         """Event that has checks that stop bots from executing commands"""
@@ -270,14 +277,13 @@ if __name__ == "__main__":
     intents.reactions = True
     intents.typing = True
     intents.dm_messages = True
-
+    
     parser = argparse.ArgumentParser()
     args = sys.argv[1:]
     # todo: make this more customisable
     parser.add_argument("-p", "--prefix", nargs="?", default="-")
     parser.add_argument("-t", "--token", nargs="?", default=None)  # can change token on the fly/keep env clean
     args = parser.parse_args()
-
     cog_names = ['member',
                  'moderation',
                  'questionotd',
@@ -290,7 +296,4 @@ if __name__ == "__main__":
                  'spotify',
                  'warnings', ]
     bot = AdamBot(local_host, cog_names, start_time, token=args.token, command_prefix=args.prefix, intents=intents)
-    bot.bot_init_time = time.time()
-    print(f"BOT INITIALISED {bot.bot_init_time - start_time} seconds")
-    bot.start_up()  # better practise strictly speaking, so Adam-Bot objects can be defined, have their methods etc but not necessarily be started immediately/at all
     # bot.remove_command("help")
