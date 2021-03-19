@@ -17,7 +17,6 @@ import time
 
 class JoeMarjTypeTemplate:
     """Enumeration that tells us what type of message needs to be given."""
-
     def __init__(self):
         self.NONE = 0
         self.GIF = 1
@@ -51,7 +50,10 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     async def uptime(self, ctx):
-        await ctx.send(f"TOTAL UPTIME: {time.time() - self.bot.start_time} seconds")
+        seconds = round(time.time() - self.bot.start_time) # Rounds to the nearest integer
+        time_string = time_str(seconds)
+
+        await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
 # -----------------------JOE MARJ--------------------------
 
     async def _joe_marj_check(self, message):
