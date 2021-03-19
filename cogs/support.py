@@ -53,6 +53,8 @@ class SupportConnection:
         """Method that executes when a staff member has accepted the support ticket."""
         async with self.bot.pool.acquire() as connection:
             await connection.execute('UPDATE support SET staff_id = $1, started_at = now() WHERE id = $2', staff.id, self.id)
+        self.staff_id = staff.id
+        self.staff = staff
 
 class SupportConnectionManager:
     def __init__(self, bot: commands.Bot):
@@ -151,7 +153,7 @@ class Support(commands.Cog):
             elif starts_with_any(message.content.lower(), ['support end', 'support close', 'support finish']) and connection:
                 await message.author.send('The ticket has been closed!')
                 if connection.member_id == message.author.id: # Member sending
-                    if connection.staff:  # If a staff member has accepted it yet
+                    if connection.staff_id != 0:  # If a staff member has accepted it yet
                         await connection.staff.send('The ticket was closed by the member.')
                         await self.support_manager.remove(connection)
                 elif connection.staff_id == message.author.id:  # Staff sending
@@ -207,7 +209,7 @@ Staff role needed."""
             return
 
         connection = await self.support_manager.get(id = ticket)
-        if connection.staff_id != ctx.author.id:
+        if connection.member_id != ctx.author.id:
             await connection.accept(ctx.author)
             await ctx.send(f'{ctx.author.mention} is now connected with the member.')
             await ctx.author.send('You are now connected anonymously with a member. DM me to get started! (Type `support end` when you are finished to close the support ticket)')
