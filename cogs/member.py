@@ -17,6 +17,7 @@ import time
 
 class JoeMarjTypeTemplate:
     """Enumeration that tells us what type of message needs to be given."""
+
     def __init__(self):
         self.NONE = 0
         self.GIF = 1
@@ -31,7 +32,7 @@ class Member(commands.Cog):
         self.bot = bot
         self.paper_warn_cooldown = {}
 
-    def in_gcse(ctx):  # move to utils
+    def in_gcse(self, ctx):  # move to utils
         return ctx.guild.id == GCSE_SERVER_ID
 
 # -----------------------MISC------------------------------
@@ -50,10 +51,10 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     async def uptime(self, ctx):
-        seconds = round(time.time() - self.bot.start_time) # Rounds to the nearest integer
+        seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = time_str(seconds)
-
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
+
 # -----------------------JOE MARJ--------------------------
 
     async def _joe_marj_check(self, message):
@@ -105,9 +106,9 @@ class Member(commands.Cog):
                 await message.channel.send(
                     f"{message.author.mention} REMINDER: This server **does not** distribute unreleased papers such as the 2019, 2020 or 2021 papers."
                     f"  **This includes 'mini-exams'**."
-                    f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__")
-            else:
-                await ctx.send(f"TEST: {time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]} into cooldown")
+                    f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__", delete_after=20)
+            #else:
+            #    await ctx.send(f"TEST: {time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]} into cooldown")
 
 # -----------------------REVISE------------------------------
 
@@ -343,7 +344,7 @@ class Member(commands.Cog):
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';",
                                          str(int(result) + 1))
 
-        #await self.handle_paper_check(message)
+        await self.handle_paper_check(message)
         # await self.handle_joe_marj(message)
         await self.handle_revise_keyword(message)
         return
