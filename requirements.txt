@@ -2,3 +2,4 @@ discord.py
 requests
 asyncpg
 matplotlib
+pytz

@@ -10,16 +10,45 @@ import os
 import asyncpg
 from math import ceil
 
+
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    async def get_member_obj(self, member):
+        """
+        Attempts to get user/member object from mention/user ID.
+        Independent of whether the user is a member of a shared guild
+        Perhaps merge with utils function
+        """
+        in_guild = True
+        try:
+            print("Attempted member conversion")
+            member = await commands.MemberConverter().convert(member)  # converts mention to member object
+        except Exception:
+            try:  # assumes id
+                member = member.replace("<@!", "").replace(">", "")  # fix for funny issue with mentioning users that aren't guild members
+                member = await self.bot.fetch_user(member)  # gets object from id, seems to work for users not in the server
+                in_guild = False
+            except Exception as e:
+                print(e)
+                return None, None
+        return member, in_guild
+
+    async def is_user_banned(self, ctx, user):
+        try:
+            await ctx.guild.fetch_ban(user)
+        except discord.errors.NotFound:
+            return False
+        return True
 
     async def timer(self, todo, seconds, member_id):
         """Writes to todo table with the time to perform the given todo (e.g. timer(4, 120) would mean 4 is carried out in 120 seconds)"""
         timestamp = datetime.utcnow()
         new_timestamp = timestamp + timedelta(seconds=seconds)
         async with self.bot.pool.acquire() as connection:
-            await connection.execute('INSERT INTO todo (todo_id, todo_time, member_id) values ($1, $2, $3)', todo, new_timestamp, member_id)
+            await connection.execute('INSERT INTO todo (todo_id, todo_time, member_id) values ($1, $2, $3)', todo,
+                                     new_timestamp, member_id)
 
     async def advance_user(self, ctx: commands.Context, member: discord.Member, print=False):
         roles = [y.name for y in member.roles]
@@ -36,7 +65,7 @@ class Moderation(commands.Cog):
             if print:
                 await ctx.send('Cannot advance this user: they have no year role.')
             return 'no year'
-        for i in range(len(years)-1):
+        for i in range(len(years) - 1):
             year = years[i]
             if 'Post-GCSE' in roles:
                 if print:
@@ -44,7 +73,7 @@ class Moderation(commands.Cog):
                 return 'postgcse error'
             elif year in roles:
                 await member.remove_roles(get(member.guild.roles, name=year))
-                await member.add_roles(get(member.guild.roles, name=years[i+1]))
+                await member.add_roles(get(member.guild.roles, name=years[i + 1]))
                 if print:
                     await ctx.send(':ok_hand: The year has been advanced!')
                 return 'success'
@@ -55,25 +84,27 @@ class Moderation(commands.Cog):
     def bot_owner_or_permissions(**perms):
         """Checks if bot owner or has perms"""
         original = commands.has_permissions(**perms).predicate
+
         async def extended_check(ctx):
             if ctx.guild is None:
                 return False
             return 394978551985602571 == ctx.author.id or await original(ctx)
+
         return commands.check(extended_check)
 
-#-----------------------CLOSE COMMAND-----------------------
+    # -----------------------CLOSE COMMAND-----------------------
 
-    @commands.command(pass_context = True, name = "close")
+    @commands.command(pass_context=True, name="close")
     @commands.guild_only()
     @commands.has_any_role(*Permissions.DEV)
     async def botclose(self, ctx):
         await self.bot.close(ctx)
 
-#-----------------------ADAM-BOT DEV ROLE-----------------------
-    
+    # -----------------------ADAM-BOT DEV ROLE-----------------------
+
     @commands.command(pass_context=True)
     @commands.check(is_bot_owner)
-    async def dev(self, ctx, member: discord.Member, *args):
+    async def dev(self, ctx, member: discord.Member):
         """Toggles Adam-Bot Developer role to the specified user.
 Requires bot owner."""
         role = get(member.guild.roles, name='Adam-Bot Developer')
@@ -84,7 +115,7 @@ Requires bot owner."""
             await member.add_roles(role)
             await ctx.send('Added dev to `{0}`!'.format(member.mention))
 
-#-----------------------PURGE------------------------------
+    # -----------------------PURGE------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MOD)
@@ -108,19 +139,20 @@ Usage: `-purge 50`"""
                             deleted.append(message)
                     await ctx.channel.delete_messages(deleted)
                 except discord.ClientException:
-                    await ctx.send("The amount of messages cannot be more than 100 when deleting a single users messages. Messages older than 14 days also cannot be deleted this way.")
+                    await ctx.send(
+                        "The amount of messages cannot be more than 100 when deleting a single users messages. Messages older than 14 days also cannot be deleted this way.")
 
-            message = await ctx.send(f"Purged **{len(deleted)}** messages!", delete_after=3)
+            await ctx.send(f"Purged **{len(deleted)}** messages!", delete_after=3)
 
             embed = Embed(title='Purge', color=Colour.from_rgb(175, 29, 29))
             embed.add_field(name='Count', value=len(deleted))
             embed.add_field(name='Channel', value=channel.mention)
-            embed.set_footer(text=(datetime.utcnow()-timedelta(hours=1)).strftime('%x'))
+            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
         else:
             await ctx.send(f'Please use an integer for the amount of messages to delete, not `{limit}` :ok_hand:')
 
-#-----------------------KICK------------------------------
+    # -----------------------KICK------------------------------
 
     @commands.command(pass_context=True)
     @has_permissions(kick_members=True)
@@ -131,7 +163,7 @@ Staff role needed"""
             timeperiod, reason = separate_args(args)
             if not reason:
                 reason = f'No reason - kicked by {str(ctx.author)}'
-            #if timeperiod:
+            # if timeperiod:
             #    await self.timer(Todo.UNMUTE, timeperiod, member.id)
         else:
             reason = None
@@ -143,16 +175,18 @@ Staff role needed"""
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Reason', value=reason)
         embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=(datetime.utcnow()-timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
-#-----------------------BAN------------------------------
+    # -----------------------BAN------------------------------
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["hackban"])
     @has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *args):
+    async def ban(self, ctx, member, *args):
         """Bans a given user.
-Moderator role needed"""
+        Merged with previous command hackban
+        Works with user mention or user ID
+        Moderator role needed"""
         if args:
             timeperiod, reason = separate_args(args)
             if not reason:
@@ -161,82 +195,59 @@ Moderator role needed"""
                 await self.timer(Todo.UNBAN, timeperiod, member.id)
         else:
             reason = None
+        member, in_guild = await self.get_member_obj(member)
+        if not member:
+            await ctx.send("Couldn't find that user!")
+            return
+        if await self.is_user_banned(ctx, member):
+            await ctx.send(f"{member.mention} is already banned!")
+            return
 
-        await member.ban(reason=reason, delete_message_days=0)
-        await ctx.send(f'{member.mention} has been banned')
+        await ctx.guild.ban(member, reason=reason, delete_message_days=0)
+        await ctx.send(f'{member.mention} has been banned.')
 
-        embed = Embed(title='Ban', color=Colour.from_rgb(255, 255, 255))
+        embed = Embed(title='Ban' if in_guild else 'Hackban', color=Colour.from_rgb(255, 255, 255))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Moderator', value=str(ctx.author))
         embed.add_field(name='Reason', value=reason)
         embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=(datetime.utcnow()-timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
-    async def hackban(self, ctx, user_id, *args):
-        """Bans a given user.
-Moderator role needed"""
-        if args:
-            timeperiod, reason = separate_args(args)
-            if not reason:
-                reason = f'No reason - banned by {str(ctx.author)}'
-            if timeperiod:
-                await self.timer(Todo.UNBAN, timeperiod, member.id)
-        else:
-            reason = None
-
-        await member.ban(reason=reason, delete_message_days=0)
-        emoji = get(ctx.message.guild.emojis, name="banned")
-        await ctx.send(f'{member.mention} has been banned. {emoji}')
-
-        embed = Embed(title='Hackban', color=Colour.from_rgb(255, 255, 255))
-        embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
-        embed.add_field(name='Moderator', value=str(ctx.author))
-        embed.add_field(name='Reason', value=reason)
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=(datetime.utcnow()-timedelta(hours=1)).strftime('%x'))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
-
-    @commands.command(pass_context=True)
-    @has_permissions(ban_members=True)
-    async def unban(self, ctx, user_id, *args):
+    async def unban(self, ctx, member, *args):
         """Unbans a given user with the ID.
-Moderator role needed."""
+        Moderator role needed."""
         if args:
             timeperiod, reason = separate_args(args)
             if not reason:
                 reason = f'No reason - unbanned by {ctx.author.name}'
-            #if timeperiod:
+            # if timeperiod:
             #    await self.timer(Todo.UNMUTE, timeperiod, member.id)
         else:
             reason = None
-
-        try:
-            user = await self.bot.fetch_user(user_id)
-        except discord.errors.NotFound:
-            await ctx.send('No user found with that ID.')
+        member, in_guild = await self.get_member_obj(member)
+        if not member:
+            await ctx.send("Couldn't find that user!")
             return
 
-        bans = await ctx.guild.bans()
-        bans = [be.user for be in bans]
-        if user not in bans:
-            await ctx.send('That user is not already banned.')
+        if not await self.is_user_banned(ctx, member):
+            await ctx.send(f'{member.mention} is not already banned.')
             return
 
-        await ctx.guild.unban(user, reason=reason)
-        await ctx.send('The ban has been revoked.')
+        await ctx.guild.unban(member, reason=reason)
+        await ctx.send(f'{member.mention} has been unbanned!')
 
         embed = Embed(title='Unban', color=Colour.from_rgb(76, 176, 80))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Moderator', value=str(ctx.author))
         embed.add_field(name='Reason', value=reason)
         embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=(datetime.utcnow()-timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
-#-----------------------MUTES------------------------------
+    # -----------------------MUTES------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
@@ -253,11 +264,11 @@ Staff role needed."""
         role = get(member.guild.roles, name='Muted')
         await member.add_roles(role, reason=reason if reason else 'No reason - muted by {}'.format(ctx.author.name))
         await ctx.send(':ok_hand:')
-        #'you are muted ' + timestring
+        # 'you are muted ' + timestring
         if not timeperiod:
             timestring = 'indefinitely'
         else:
-            time = (datetime.utcnow() + timedelta(seconds = timeperiod))# + timedelta(hours = 1)
+            time = (datetime.utcnow() + timedelta(seconds=timeperiod))  # + timedelta(hours = 1)
             timestring = 'until ' + time.strftime('%H:%M on %d/%m/%y')
 
         if not reason or reason is None:
@@ -278,14 +289,15 @@ Staff role needed."""
             reason = None
 
         role = get(member.guild.roles, name='Muted')
-        await member.remove_roles(role, reason=reason if reason else 'No reason - unmuted by {}'.format(ctx.author.name))
+        await member.remove_roles(role,
+                                  reason=reason if reason else 'No reason - unmuted by {}'.format(ctx.author.name))
         await ctx.send(':ok_hand:')
 
-#-----------------------SLOWMODE------------------------------
+    # -----------------------SLOWMODE------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
-    async def slowmode(self, ctx, time, *args):
+    async def slowmode(self, ctx, time):
         """Adds slowmode in a specific channel. Time is given in seconds.
         Staff role needed."""
         try:
@@ -300,8 +312,7 @@ Staff role needed."""
         except Exception as e:
             print(e)
 
-
-#-----------------------JAIL & BANISH------------------------------
+    # -----------------------JAIL & BANISH------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
@@ -321,7 +332,7 @@ Staff role needed."""
             role = get(member.guild.roles, name='Jail')
             await member.remove_roles(role)
             await ctx.send(f':ok_hand: {member.mention} has been unjailed.')
-        except Exception as e:
+        except Exception:
             await ctx.send(f'{member.mention} could not be unjailed. Please do it manually.')
 
     @commands.command(pass_context=True)
@@ -332,7 +343,7 @@ Staff role needed."""
         await member.edit(roles=[])
         await ctx.send(f':ok_hand: {member.mention} has been banished.')
 
-#-----------------------ADVANCEMENT------------------------------
+    # -----------------------ADVANCEMENT------------------------------
 
     @commands.group(pass_context=True)
     @commands.guild_only()
@@ -362,7 +373,7 @@ Moderator role needed."""
         """Advances everybody in the server.
 Administrator role needed."""
         msg = await ctx.send('Doing all, please wait...')
-        members = ctx.guild.members #everyone
+        members = ctx.guild.members  # everyone
         errors = []
 
         n = len(members)
@@ -371,7 +382,7 @@ Administrator role needed."""
                 advance = await self.advance_user(ctx, member)
                 if advance != 'success' or advance != 'postgcse error':
                     errors.append([member, advance])
-                await msg.edit(content=f"Doing all, please wait... currently on {i+1}/{n}")
+                await msg.edit(content=f"Doing all, please wait... currently on {i + 1}/{n}")
             except Exception as e:
                 errors.append([member, f'unexpected: {e}'])
 
@@ -380,19 +391,19 @@ Administrator role needed."""
             log_channel = get(ctx.guild.text_channels, name='adambot-logs')
             await log_channel.send(f'{error[0].mention} = {error[1]}')
 
-    #@all.error
-    #async def all_handler(self, ctx, error):
+    # @all.error
+    # async def all_handler(self, ctx, error):
     #    if isinstance(error, commands.CheckFailure):
     #        await ctx.send('`Administrator` role needed.')
 
-#-----------------------MISC------------------------------
+    # -----------------------MISC------------------------------
 
     @commands.command()
     @commands.has_any_role(*Permissions.STAFF)
-    async def say(self, ctx, channel: discord.TextChannel, *text):
+    async def say(self, ctx, channel: discord.TextChannel, *, text):
         """Say a given string in a given channel
 Staff role needed."""
-        await channel.send(' '.join(text))
+        await channel.send(text[5:] if text.startswith("/tts") else text, tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
 
     @commands.command()
     @commands.guild_only()
@@ -401,12 +412,13 @@ Staff role needed."""
         role = ctx.guild.get_role(Permissions.ROLE_ID['Announcements'])
         msg = role.mention + " " + " ".join(text)
         if len(msg) >= 2000:
-            await ctx.send("The message is over 2000 characters, you must shorten it or do the announcement in multiple messages.")
+            await ctx.send(
+                "The message is over 2000 characters, you must shorten it or do the announcement in multiple messages.")
 
-        await role.edit(mentionable = True)
+        await role.edit(mentionable=True)
         channel = ctx.guild.get_channel(CHANNELS["announcements"])
         await channel.send(msg)
-        await role.edit(mentionable = False)
+        await role.edit(mentionable=False)
 
     @commands.command()
     @commands.check(is_bot_owner)
@@ -424,9 +436,12 @@ Staff role needed."""
                             invite.created_at,
                             invite.max_age]
 
-                    await connection.execute('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)', **data)
-                except:
+                    await connection.execute(
+                        'INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)',
+                        **data)
+                except Exception:
                     pass
+
 
 def setup(bot):
     bot.add_cog(Moderation(bot))

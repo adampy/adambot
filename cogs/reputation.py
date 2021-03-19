@@ -15,9 +15,6 @@ class Reputation(commands.Cog):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
 
-    async def get_valid_name(self, member: discord.Member):
-        return member.name if member.nick is None else member.nick
-
 
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
@@ -87,7 +84,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def award(self, ctx, *args):
         """Gives the member a reputation point. Aliases are give and point"""
-        author_nick = await self.get_valid_name(ctx.author)
+        author_nick = ctx.author.display_name
         if len(args) == 0:  # check so -rep award doesn't silently fail when no string given
             user = ctx.author
         else:
@@ -95,7 +92,7 @@ class Reputation(commands.Cog):
             if user is None:
                 await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
                 return
-        nick = await self.get_valid_name(user)
+        nick = user.display_name
 
         if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
             reps = await self.modify_rep(user, 1)
@@ -103,14 +100,14 @@ class Reputation(commands.Cog):
             user_embed = Embed(title=f':white_check_mark:  {nick} received a reputation point!', color=Colour.from_rgb(57,255,20))
             user_embed.add_field(name='_ _', value=f'{user.mention} now has {reps} reputation points!')
             user_embed.set_thumbnail(url=user.avatar_url)
-            user_embed.set_footer(text=f"Awarded by: {author_nick} ({ctx.author})\n" + (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+            user_embed.set_footer(text=f"Awarded by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
             await ctx.send(embed=user_embed)
             
             embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
             embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
             embed.add_field(name='To', value=f'{str(user)} ({user.id})')
             embed.add_field(name='New Rep', value=reps)
-            embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
         else:
@@ -120,7 +117,7 @@ class Reputation(commands.Cog):
                 fail_text = "You cannot rep yourself, cheating bugger."
             embed = Embed(title=f':x: Failed to award a reputation point to {nick}!', color=Colour.from_rgb(255,7,58))
             embed.add_field(name='_ _', value=fail_text)
-            embed.set_footer(text=(datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             embed.set_thumbnail(url=user.avatar_url)
             await ctx.send(embed=embed)
 
@@ -153,7 +150,7 @@ class Reputation(commands.Cog):
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
-        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @reset.command(pass_context=True)
@@ -168,7 +165,7 @@ class Reputation(commands.Cog):
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value='**EVERYONE**')
         embed.add_field(name='Staff', value=str(ctx.author))
-        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @rep.command()
@@ -190,7 +187,7 @@ class Reputation(commands.Cog):
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
-        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @rep.command()
@@ -211,7 +208,7 @@ class Reputation(commands.Cog):
         embed.add_field(name='Member', value=user_id)
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
-        embed.set_footer(text=(datetime.datetime.utcnow()-datetime.timedelta(hours=1)).strftime('%x'))
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
     @rep.command()
@@ -242,7 +239,7 @@ SELECT Rownum FROM rankings WHERE member_id = ($1);""", user.id)
         # could change to user.colour at some point, I prefer the purple for now though
         embed.add_field(name='Rep points', value=rep)
         embed.add_field(name='Leaderboard position', value=ordinal(lb_pos) if lb_pos else 'Nowhere :(')
-        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime('%A %d/%m/%Y %H:%M:%S'))
+        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
         embed.set_thumbnail(url=user.avatar_url)
         await ctx.send(embed=embed)
         #await ctx.send(f'{user.mention} {f"is **{ordinal(lb_pos)}** on the reputation leaderboard with" if lb_pos else "has"} **{rep}** reputation points. {"They are not yet on the leaderboard because they have no reputation points." if (not lb_pos or rep == 0) else ""}')
