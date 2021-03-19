@@ -6,4 +6,5 @@
 /credentials.csv
 /database.txt
 /.vs
+/.vscode
 /cogs/__pycache__

@@ -173,6 +173,7 @@ CHANNELS = {
     "qotd":496472968298496020,
     "adambot-dev-spam":809791208884142140,
     "announcements":445198590332370944,
+    "support-logs":597068935829127168,
 }
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
@@ -332,3 +333,12 @@ def time_str(seconds):
     if minutes: output += f"{minutes}m "
     if seconds: output += f"{seconds}s"
     return output.strip()
+
+def starts_with_any(string, possible_starts):
+    """Given a string and a list of possible_starts, the function returns
+    True if string starts with any of the starts in the possible starts.
+    Otherwise it returns False."""
+    for start in possible_starts:
+        if string.startswith(start):
+            return True
+    return False

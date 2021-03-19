@@ -268,12 +268,16 @@ if __name__ == "__main__":
     intents.members = True
     intents.presences = True
     intents.reactions = True
+    intents.typing = True
+    intents.dm_messages = True
+
     parser = argparse.ArgumentParser()
     args = sys.argv[1:]
     # todo: make this more customisable
     parser.add_argument("-p", "--prefix", nargs="?", default="-")
     parser.add_argument("-t", "--token", nargs="?", default=None)  # can change token on the fly/keep env clean
     args = parser.parse_args()
+
     cog_names = ['member',
                  'moderation',
                  'questionotd',
