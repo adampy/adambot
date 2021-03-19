@@ -14,10 +14,10 @@ class QuestionOTD(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def in_gcse(self, ctx):
+    def in_gcse(ctx):
         return ctx.guild.id == GCSE_SERVER_ID
 
-    def qotd_perms(self, ctx):
+    def qotd_perms(ctx):
         r = [y.name for y in ctx.author.roles]
         return 'Staff' in r or 'QOTD' in r or 'Adam-Bot Developer' in r
 
