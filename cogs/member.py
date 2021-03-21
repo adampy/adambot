@@ -91,7 +91,7 @@ class Member(commands.Cog):
         if not self.in_gcse(ctx):  # to ignore priv server
             return
         first_warn = False
-        if True in [False not in [x in message.content.replace("-", " ") for x in y] for y in paper_kw]:
+        if True in [False not in [x in message.content.lower().replace("-", " ") for x in y] for y in paper_kw]:
             # if a check has multiple conditions, False must not be in it
             # but if any one of the checks comes back True, then the warning message should be sent
             # todo: if this gets too spammy then add some kind of cooldown
