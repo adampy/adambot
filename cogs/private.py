@@ -16,10 +16,10 @@ class Private(commands.Cog):
         except KeyError as e:
             print(f"KeyError in cogs.private: {e}")
 
-    def in_private_server(self, ctx):
+    def in_private_server(ctx):
         return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)  # in priv server or is adam
 
-    def is_adam(self, ctx):
+    def is_adam(ctx):
         return ctx.author.id == 394978551985602571
 
     @commands.command()
