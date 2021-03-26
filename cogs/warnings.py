@@ -19,9 +19,9 @@ class Warnings(commands.Cog):
             warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) ORDER BY id', member.id)
 
         if len(warns) > 0:
-            embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author)
+            embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
             await embed.set_page(int(page_num))
-            await embed.send(ctx.channel)
+            await embed.send()
         else:
             await ctx.send("No warnings recorded!")
 
@@ -65,9 +65,9 @@ Staff role needed."""
                     warns = await connection.fetch('SELECT * FROM warn ORDER BY id')
 
                 if len(warns) > 0:
-                    embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author)
+                    embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
                     await embed.set_page(1)
-                    await embed.send(ctx.channel)
+                    await embed.send()
                 else:
                     await ctx.send("No warnings recorded!")
             else:

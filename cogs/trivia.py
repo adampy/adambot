@@ -86,7 +86,7 @@ class Trivia(commands.Cog):
     async def trivia_end_leaderboard(self, member:discord.Member = None, reset=True):
         result = self.reload_trivias()
         if not result:
-            await ctx.send("Issue when reloading trivias - ping Adam for a fix.")
+            await self.trivia_channel.send("Issue when reloading trivias - ping Adam for a fix.")
         if not member:
             color = Colour.from_rgb(177,252,129)
         else:

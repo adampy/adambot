@@ -40,6 +40,16 @@ class Private(commands.Cog):
 
     @commands.command()
     @commands.check(in_private_server)
+    async def ghostping(self, ctx, amount, user: discord.Member):
+        """For sending a ghostping to annoy certain people"""
+        await ctx.message.delete()
+        for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
+            for i in range(int(amount)):
+                msg = await channel.send(user.mention)
+                await msg.delete()
+
+    @commands.command()
+    @commands.check(in_private_server)
     async def csnotes(self, ctx, section=None):
         embed = Embed(title="**MV16 Computer Science 2019-2021**", description="Class code: 7vhujps",
                       color=Colour.blue())
