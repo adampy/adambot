@@ -368,7 +368,7 @@ Do C<channel_name> to mention a channel."""
                 await question.edit(content = f"Kicked {i}/{len(members)} lurkers :ok_hand:")
                 await member.kick(reason = "Auto-kicked following lurker kick command.")
 
-            await question.edit(content = "All lurkers that've been here more than 7 days have been kicked :ok_hand:")
+            await question.edit(content = f"All {len(members)} lurkers that've been here more than 7 days have been kicked :ok_hand:")
         
         elif response.content.lower() == "no":
             await question.edit(content = "No lurkers have been kicked :ok_hand:")

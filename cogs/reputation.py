@@ -15,15 +15,14 @@ class Reputation(commands.Cog):
         self.bot = bot
         self.key = os.environ.get('DATABASE_URL')
 
-
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
         async with self.bot.pool.acquire() as connection:
             leaderboard = await connection.fetch('SELECT * FROM rep ORDER BY reps DESC')
 
-        embed = EmbedPages(PageTypes.REP, leaderboard, "Reputation Leaderboard", Colour.from_rgb(177,252,129), self.bot, ctx.author)
+        embed = EmbedPages(PageTypes.REP, leaderboard, "Reputation Leaderboard", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
         await embed.set_page(1) # Default first page
-        await embed.send(ctx.channel)
+        await embed.send()
 
     async def modify_rep(self, member, change):
         reps = change
@@ -67,18 +66,12 @@ class Reputation(commands.Cog):
             await ctx.send('To award rep to someone, type \n`-rep award Member_Name`\nor\n`-rep award @Member`\n'
                            'Pro tip: If e.g. fred roberto was recently active you can type `-rep award fred`')
             
-
     @rep.error
     async def rep_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
             await ctx.send("You cannot award rep in this server!")
         else:
             await ctx.send(error)#"Oopsies something went wrong with that!")
-
-##    @rep.command()
-##    @commands.guild_only()
-##    async def help(self, ctx):
-##        await ctx.send('```-rep award @Member``` or ```-rep leaderboard```')
 
     @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
@@ -222,16 +215,23 @@ class Reputation(commands.Cog):
             if user is None:
                 await ctx.send(embed=Embed(title=f':x:  Sorry {ctx.author.display_name} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
                 return
+
         rep = None
         lb_pos = None
         async with self.bot.pool.acquire() as connection:
-            rep = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user.id)
-            lb_pos = await connection.fetchval("""
-WITH rankings as (SELECT member_id, DENSE_RANK() OVER (ORDER BY reps DESC) AS RowNum
-FROM rep
-ORDER BY reps DESC)
-
-SELECT Rownum FROM rankings WHERE member_id = ($1);""", user.id)
+            all_rep = await connection.fetch("SELECT * FROM rep ORDER by reps DESC;")
+            all_rep = [x for x in all_rep if ctx.channel.guild.get_member(x[0]) is not None]
+            member_record = next((x for x in all_rep if x[0] == user.id), None)
+            if member_record: # If the user actually has reps
+                rep = member_record[1] # Check member ID and then get reps
+                prev = 0
+                lb_pos = 0
+                for record in all_rep:
+                    if record[1] != prev:
+                        lb_pos += 1
+                        prev = record[1] # Else, increase the rank
+                    if record[0] == user.id:
+                        break # End loop if reached the user
 
         if not rep:
             rep = 0
@@ -259,8 +259,6 @@ SELECT Rownum FROM rankings WHERE member_id = ($1);""", user.id)
         ax.set_ylim(bottom=0)
 
         await send_file(fig, ctx.channel, "rep-data")
-
-
 
 def setup(bot):
     bot.add_cog(Reputation(bot))

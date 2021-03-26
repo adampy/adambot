@@ -7,7 +7,7 @@ from io import BytesIO
 from os import environ
 
 class EmbedPages:
-    def __init__(self, page_type, data, title, colour: Colour, bot, initiator, *args, **kwargs):
+    def __init__(self, page_type, data, title, colour: Colour, bot, initiator, channel, *args, **kwargs):
         self.bot = bot
         self.data = data
         self.title = title
@@ -18,10 +18,12 @@ class EmbedPages:
         self.message: Message = None
         self.page_num = 1
         self.initiator = initiator # Here to stop others using the embed
+        self.channel = channel
 
     async def set_page(self, page_num: int):
         """Changes the embed accordingly"""
         if self.page_type == PageTypes.REP:
+            self.data = [x for x in self.data if self.channel.guild.get_member(x[0]) is not None]
             page_length = 10
         else:
             page_length = 5
@@ -62,11 +64,12 @@ class EmbedPages:
                                 inline=False)
 
             elif self.page_type == PageTypes.REP:
-                member = self.bot.get_guild(GCSE_SERVER_ID).get_member(self.data[i][0])
-                if member is None:
-                    user = await self.bot.fetch_user(self.data[i][0])
-                    member = f"{str(user)} - this person is currently not in the server - ID: {user.id}"
-                self.embed.add_field(name=f"{member}", value=f"{self.data[i][1]}", inline=False)
+                member = self.channel.guild.get_member(self.data[i][0])
+                #if member is None:
+                #    user = await self.bot.fetch_user(self.data[i][0])
+                #    member = f"{str(user)} - this person is currently not in the server - ID: {user.id}"
+                #if member is not None:
+                self.embed.add_field(name=f"{member.display_name}", value=f"{self.data[i][1]}", inline=False)
 
     async def previous_page(self, *args):
         """Moves the embed to the previous page"""
@@ -90,9 +93,9 @@ class EmbedPages:
         await self.set_page(self.top_limit)
         await self.edit()
 
-    async def send(self, channel: TextChannel, *args):
+    async def send(self, *args):
         """Sends the embed message. The message is deleted after 300 seconds (5 minutes)."""
-        self.message = await channel.send(embed = self.embed, delete_after = 300)
+        self.message = await self.channel.send(embed = self.embed, delete_after = 300)
         await self.message.add_reaction(EmojiEnum.MIN_BUTTON)
         await self.message.add_reaction(EmojiEnum.LEFT_ARROW)
         await self.message.add_reaction(EmojiEnum.RIGHT_ARROW)

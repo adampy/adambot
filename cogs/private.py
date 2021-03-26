@@ -16,10 +16,10 @@ class Private(commands.Cog):
         except KeyError as e:
             print(f"KeyError in cogs.private: {e}")
 
-    def in_private_server(self, ctx):
+    def in_private_server(ctx):
         return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)  # in priv server or is adam
 
-    def is_adam(self, ctx):
+    def is_adam(ctx):
         return ctx.author.id == 394978551985602571
 
     @commands.command()
@@ -37,6 +37,16 @@ class Private(commands.Cog):
         msg = ' '.join(message) + " " + user.mention
         for i in range(iterations):
             await ctx.send(msg)
+
+    @commands.command()
+    @commands.check(in_private_server)
+    async def ghostping(self, ctx, amount, user: discord.Member):
+        """For sending a ghostping to annoy certain people"""
+        await ctx.message.delete()
+        for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
+            for i in range(int(amount)):
+                msg = await channel.send(user.mention)
+                await msg.delete()
 
     @commands.command()
     @commands.check(in_private_server)
