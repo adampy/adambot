@@ -7,10 +7,10 @@ Python code that runs "Adam-Bot", mainly for use in the GCSE 9-1 Discord server.
 The bot is hosted on [Heroku](https://www.heroku.com), and uses a [free-tier PostgreSQL database](https://elements.heroku.com/addons/heroku-postgresql) (maximum 10,000 total rows limit and 1GB maximum storage).
 
 This guide contains:
-* [Preliminary note](#:page_facing_up:-Preliminary-note)
-* [TODOs](#:calendar:-Todo)
-* [Information on every cog](#:wrench:-Cogs)
-* [The most recent database schema](#:open_file_folder:-Database-Schema)
+* [Preliminary note](#page_facing_up-Preliminary-note)
+* [TODOs](#calendar-Todo)
+* [Information on every cog](#wrench-Cogs)
+* [The most recent database schema](#open_file_folder-Database-Schema)
 
 # :page_facing_up: Preliminary note
 For future reference, maintainability, and the fact that database information/schemas are not included in the program, here are some notes that should be read before editing a particular file, so that you become accustomed to the workflow.
