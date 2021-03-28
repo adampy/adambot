@@ -7,12 +7,12 @@ Python code that runs "Adam-Bot", mainly for use in the GCSE 9-1 Discord server.
 The bot is hosted on [Heroku](https://www.heroku.com), and uses a [free-tier PostgreSQL database](https://elements.heroku.com/addons/heroku-postgresql) (maximum 10,000 total rows limit and 1GB maximum storage).
 
 This guide contains:
-* [Preliminary note](#Preliminary-note)
-* [TODOs](#Todo)
-* [Information on every cog](#Cogs)
-* [The most recent database schema](#Database-Schema)
+* [Preliminary note](#:page_facing_up:-Preliminary-note)
+* [TODOs](#:calendar:-Todo)
+* [Information on every cog](#:wrench:-Cogs)
+* [The most recent database schema](#:open_file_folder:-Database-Schema)
 
-# Preliminary note
+# :page_facing_up: Preliminary note
 For future reference, maintainability, and the fact that database information/schemas are not included in the program, here are some notes that should be read before editing a particular file, so that you become accustomed to the workflow.
 
 I'd like to give a special thanks to all who have contributed to the bot :wave: :clap: :
@@ -20,11 +20,12 @@ I'd like to give a special thanks to all who have contributed to the bot :wave: 
 * [@monkeyboy2805](https://github.com/monkeyboy2805)
 * [@xp3d1](https://github.com/xp3d1)
 * [@safwaan786](https://github.com/safwaan786)
+* @Nebulastix#3279 (for creating the Adam-Bot profile picture seen above :ok_hand:)
 
-# Todo
+# :calendar: Todo
 To see the current roadmap for the bot, please see [here](https://github.com/adampy/gcsediscordbot/projects/1).
 
-# Cogs
+# :wrench: Cogs
 ## Demographics
 Used for storing demographic data about a server showing trends in a role frequency-time graph. This works by having two database tables, one for storing the demographic sample information, e.g. what roles to sample from what guilds, and the actual demographic samples. Demographic samples are taken at midnight, every day. The demographic charts (`-demographics chart`) are shown using `matplotlib`.
 
@@ -66,7 +67,7 @@ The welcome message, and the welcome channel, are both stored in the `variables`
 ## Warnings
 This cog is for moderation, and was originally within the Moderation cog, but I had split it out making the code easier to read. Warnings are given by staff and then can be viewed using the `-warns` command. When a member does this, they can only see their own warnings, but when a staff member does this by default it views everyones warnings. For a staff member to view their own warnings, the must do `-warns @themself`. Warnings can be removed by a staff member using the `-warnremove` command.
 
-# Database schema
+# :open_file_folder: Database schema
 The following describes the database schema, as of 28/03/2021.
 
 ##  qotd
