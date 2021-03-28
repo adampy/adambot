@@ -48,7 +48,7 @@ class AdamBot(Bot):
         self.pages = []  # List of active pages that can be used
         self.last_active = {}  # easiest to put here for now, may move to a cog later
         self.timezone = pytz.timezone(
-            'GB')  # change as required, perhaps have some config for it? also perhaps detect from sys
+            'UTC')  # change as required, perhaps have some config for it? also perhaps detect from sys
         self.display_timezone = pytz.timezone('Europe/London')
         self.ts_format = '%A %d/%m/%Y %H:%M:%S'
         self.start_time = start_time
