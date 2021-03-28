@@ -58,7 +58,7 @@ class SupportConnection:
 
 class SupportConnectionManager:
     def __init__(self, bot: commands.Bot):
-        self.connections: SuportConnection = []
+        self.connections: SupportConnection = []
         self.bot = bot
 
     async def refresh_connections(self):
