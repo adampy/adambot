@@ -9,6 +9,7 @@ The bot is hosted on [Heroku](https://www.heroku.com), and uses a [free-tier Pos
 This guide contains:
 * [Preliminary note](#page_facing_up-Preliminary-note)
 * [TODOs](#calendar-Todo)
+* [Heroku](#office-Heroku)
 * [Information on every cog](#wrench-Cogs)
 * [The most recent database schema](#open_file_folder-Database-Schema)
 
@@ -24,6 +25,11 @@ I'd like to give a special thanks to all who have contributed to the bot :wave: 
 
 # :calendar: Todo
 To see the current roadmap for the bot, please see [here](https://github.com/adampy/gcsediscordbot/projects/1).
+
+# :office: Heroku
+Heroku is a PaaS (platform as a service) that allows developers to create and run applications on the cloud. An app can use an array of add-ons, one of which is a PostgreSQL database. Heroku sets up the provision of the database and the bot can connect to it using the `asyncpg` library (a asyncio version of `psycopg2`, see issue #1).
+
+To successfully connect to Heroku, there are multiple steps. The first is to have `Procfile` in the top-most level of the directory. This outlines the type of "dyno", and the command that is executed to start program execution. The second is a `runtime.txt` in the top-most level level which outlines what version of Python needs to be installed on the remote host. The third requirement is a `requirements.txt` which outlines the different external libraries that Python needs to have installed for the program to work. These are installed via `pip`, so its necessary to have the module name exactly as it would appear in `pip`.
 
 # :wrench: Cogs
 ## Demographics
