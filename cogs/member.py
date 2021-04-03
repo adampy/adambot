@@ -553,7 +553,7 @@ class Member(commands.Cog):
             string = f'{hour - 12}PM'
         else:
             string = f'{hour}AM'
-        time = datetime(year=2021, month=8, day=26, hour=hour, minute=0, second=0) - (
+        time = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0) - (
                 datetime.utcnow() + timedelta(hours=1))  # timezone edge case. also date needs updating
         m, s = divmod(time.seconds, 60)
         h, m = divmod(m, 60)
