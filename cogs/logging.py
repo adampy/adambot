@@ -16,13 +16,22 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
+        ctx = await self.bot.get_context(message)  # needed to fetch ref message
         embed = Embed(title=':information_source: Message Deleted', color=Colour.from_rgb(172, 32, 31))
-        embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})', inline=True)
+        embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
         embed.add_field(name='Message ID', value=message.id, inline=True)
         embed.add_field(name='Channel', value=message.channel.mention, inline=True)
-        embed.add_field(name='Message', value=message.content or "", inline=False)
+        embed.add_field(name='Message', value=message.content if (hasattr(message, "content") and message.content) else "None (probably a pin)", inline=False)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await self.mod_logs.send(embed=embed)
+        if message.reference:  # intended mainly for replies, can be used in other contexts (see docs)
+            ref = await ctx.fetch_message(message.reference.message_id)
+            reference = Embed(title=':arrow_upper_left: Reference of deleted message',  color=Colour.from_rgb(172, 32, 31))
+            reference.add_field(name='Author of reference', value=f'{str(ref.author)} ({ref.author.id})', inline=True)
+            reference.add_field(name='Message ID', value=ref.id, inline=True)
+            reference.add_field(name='Channel', value=ref.channel.mention, inline=True)
+            reference.add_field(name='Jump Link', value=ref.jump_url)
+            await self.mod_logs.send(embed=reference)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
