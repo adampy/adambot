@@ -294,6 +294,7 @@ if __name__ == "__main__":
                  'private',
                  'demographics',
                  'spotify',
-                 'warnings', ]
+                 'warnings',
+                 'logging'] # Make this dynamic?
     bot = AdamBot(local_host, cog_names, start_time, token=args.token, command_prefix=args.prefix, intents=intents)
     # bot.remove_command("help")

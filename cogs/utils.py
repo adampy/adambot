@@ -177,6 +177,7 @@ CHANNELS = {
     "adambot-dev-spam":809791208884142140,
     "announcements":445198590332370944,
     "support-logs":597068935829127168,
+    "mod-logs":491726394598883338,
 }
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
