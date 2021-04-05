@@ -56,6 +56,8 @@ class Logging(commands.Cog):
         based off its own caches
         Same issue with on_message_delete
         """
+        if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
+            return
         embed = Embed(title=':information_source: Message Updated', color=Colour.from_rgb(118, 37, 171))
         embed.add_field(name='User', value=f'{str(after.author)} ({after.author.id})', inline=True)
         embed.add_field(name='Message ID', value=after.id, inline=True)
