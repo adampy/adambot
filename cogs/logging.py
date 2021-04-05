@@ -26,6 +26,7 @@ class Logging(commands.Cog):
                     hasattr(message, "content") and message.content) else "None (probably a pin)", inline=False)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await self.mod_logs.send(embed=embed)
+        
         if message.reference:  # intended mainly for replies, can be used in other contexts (see docs)
             ref = await ctx.fetch_message(message.reference.message_id)
             reference = Embed(title=':arrow_upper_left: Reference of deleted message',
@@ -55,6 +56,7 @@ class Logging(commands.Cog):
     async def role_comparison(self, before, after):
         """
         Expects before and after as Member objects
+        Returns roles a user has had removed, and those that have been added
         """
         before_roles = [role for role in before.roles]
         after_roles = [role for role in after.roles]
@@ -92,7 +94,7 @@ class Logging(commands.Cog):
         """
         if type(before) is not discord.Member:  # ensures no on_user_update related triggers
             return
-        return {"fields": [{"name": "Old Display Name", "value": before.display_name}, {"name": "New Display Name", "value": after.display_name}]}
+        return {"fields": [{"name": "Old Nickname", "value": before.display_name}, {"name": "New Nickname", "value": after.display_name}]}
 
     # todo: see if there's some way of aggregating groups of changes
     # for example, multiple role changes shouldn't spam the log channel
@@ -107,33 +109,34 @@ class Logging(commands.Cog):
         """
         Property definitions
         """
+        user_updated_colour = Colour.from_rgb(214, 174, 50) # Storing as var quicker than initialising each time
         watched_props = [{"name": "display_name",
-                          "display_name": "User nickname",
-                          "colour": Colour.from_rgb(118, 37, 171),  # perhaps change some of these colours lol
+                          "display_name": "Nickname",
+                          "colour": user_updated_colour,
                           "custom_handler": self.disp_name_handler
                           },
 
                          {"name": "roles",
                           "display_name": "Roles",
-                          "colour": Colour.from_rgb(118, 37, 171),
+                          "colour": user_updated_colour,
                           "custom_handler": self.embed_role_comparison
                          },
 
                          {"name": "avatar_url",
                           "display_name": "Avatar",
-                          "colour": Colour.from_rgb(118, 37, 171),
+                          "colour": user_updated_colour,
                           "custom_handler": self.avatar_handler
                          },
 
                          {"name": "name",
                           "display_name": "Username",
-                          "colour": Colour.from_rgb(118, 37, 171),
+                          "colour": user_updated_colour,
                           "custom_handler": None
                          },
 
                          {"name": "discriminator",
                           "display_name": "Discriminator",
-                          "colour": Colour.from_rgb(118, 37, 171),
+                          "colour": user_updated_colour,
                           "custom_handler": None
                          }
 
@@ -143,8 +146,9 @@ class Logging(commands.Cog):
             thumbnail_set = False
             if hasattr(before, prop["name"]) and hasattr(after, prop["name"]):  # user objects don't have all the same properties as member objects
                 if getattr(before, prop["name"]) != getattr(after, prop["name"]):
-                    log = Embed(title=f':information_source: {prop["display_name"]} update for {after} ({after.id})',
+                    log = Embed(title=f':information_source: {prop["display_name"]} Updated',
                             color=prop["colour"])
+                    log.add_field(name='User', value=f'{after} ({after.id})', inline=True)
                     if not prop["custom_handler"]:
                         log.add_field(name=f'Old {prop["display_name"].lower()}', value=getattr(before, prop["name"]))
                         log.add_field(name=f'New {prop["display_name"].lower()}', value=getattr(after, prop["name"]))
@@ -182,7 +186,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, user):
-        user_left = Embed(title=":information_source: Member Left", color=Colour.from_rgb(118, 37, 171))
+        user_left = Embed(title=":information_source: User Left", color=Colour.from_rgb(218, 118, 39))
         user_left.add_field(name="User", value=f"{user} ({user.id})\n {user.mention}")
         user_left.set_thumbnail(url=user.avatar_url)
         user_left.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
@@ -190,8 +194,9 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, user):
-        user_join = Embed(title=":information_source: Member Joined", color=Colour.from_rgb(118, 37, 171))
-        user_join.add_field(name="User", value=f"{user} ({user.id})\n {user.mention}")
+        user_join = Embed(title=":information_source: User Joined", color=Colour.from_rgb(52, 215, 189))
+        user_join.add_field(name="User", value=f"{user} ({user.id})\n | {user.mention}")
+        user_join.add_field(name="Created", value=user.created_at.strftime(self.bot.ts_format))
         user_join.set_thumbnail(url=user.avatar_url)
         user_join.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await self.mod_logs.send(embed=user_join)
