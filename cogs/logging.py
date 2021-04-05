@@ -210,7 +210,7 @@ class Logging(commands.Cog):
     async def on_member_join(self, user):
         user_join = Embed(title=":information_source: User Joined", color=Colour.from_rgb(52, 215, 189))
         user_join.add_field(name="User", value=f"{user} ({user.id})\n | {user.mention}")
-        user_join.add_field(name="Created", value=user.created_at.strftime(self.bot.ts_format))
+        user_join.add_field(name="Created", value=self.bot.correct_time(user.created_at).strftime(self.bot.ts_format))
         user_join.set_thumbnail(url=user.avatar_url)
         user_join.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await self.mod_logs.send(embed=user_join)

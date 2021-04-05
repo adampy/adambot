@@ -324,7 +324,6 @@ class Member(commands.Cog):
                 result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
                 await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';",
                                          str(int(result) + 1))
-
         if conditions:
             await self.handle_paper_check(message)
             # await self.handle_joe_marj(message)
@@ -388,12 +387,12 @@ class Member(commands.Cog):
         time_since = datetime.utcnow() - time
 
         join = Embed(title=f'**__{str(guild)}__**',
-                     description=f"Since {time.strftime(self.bot.ts_format)}. That's over {time_since.days} days ago!",
+                     description=f"Created at {self.bot.correct_time(time).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
                      value='Server Name', color=Colour.from_rgb(21, 125, 224))
         join.set_thumbnail(url=guild.icon_url)
 
         join.add_field(name='Region', value=str(guild.region))
-        join.add_field(name='Users',
+        join.add_field(name='Users Online',
                        value=f'{len([x for x in guild.members if x.status != Status.offline])}/{len(guild.members)}')
         join.add_field(name='Text Channels', value=f'{len(guild.text_channels)}')
         join.add_field(name='Voice Channels', value=f'{len(guild.voice_channels)}')
@@ -428,11 +427,11 @@ class Member(commands.Cog):
 
         if joined_at is not None:
             since_joined = (ctx.message.created_at - joined_at).days
-            user_joined = joined_at.strftime("%d %b %Y %H:%M")
+            user_joined = self.bot.correct_time(joined_at).strftime(self.bot.ts_format)
         else:
             since_joined = "?"
             user_joined = "Unknown"
-        user_created = user.created_at.strftime("%d %b %Y %H:%M")
+        user_created = self.bot.correct_time(user.created_at).strftime(self.bot.ts_format)
         voice_state = user.voice
         member_number = (
                 sorted(guild.members, key=lambda m: m.joined_at or ctx.message.created_at).index(user)

@@ -71,14 +71,20 @@ class WaitingRoom(commands.Cog):
 
         # Get channel id and parse it
         channel_id = await self._get_welcome_channel()
-        self.welcome_channel = await self.bot.fetch_channel(channel_id)
+        try:
+            self.welcome_channel = await self.bot.fetch_channel(channel_id)
+        except discord.errors.Forbidden:
+            pass
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         #formatting stuffs
         guild = self.bot.get_guild(GCSE_SERVER_ID)
-        message = await self.get_parsed_welcome_message(member, guild)
-        await self.welcome_channel.send(message)
+        try:
+            message = await self.get_parsed_welcome_message(member, guild)
+            await self.welcome_channel.send(message)
+        except(discord.errors.Forbidden, AttributeError):  # missing perms
+            pass
 
         #invite stuffs
         old_invites = []
@@ -114,8 +120,8 @@ class WaitingRoom(commands.Cog):
             embed.add_field(name='Inviter', value=invite_data.inviter.mention)
             embed.add_field(name='Code', value=invite_data.code)
             embed.add_field(name='Uses', value=invite_data.uses)
-            embed.add_field(name='Invite created', value=invite_data.created_at.strftime('%H:%M on %d/%m/%y'))
-            embed.add_field(name='Account created', value=member.created_at.strftime('%H:%M on %d/%m/%y'))
+            embed.add_field(name='Invite created', value=self.bot.correct_time(invite_data.created_at).strftime(self.bot.ts_format))  # for some reason invite logging is an hour out
+            embed.add_field(name='Account created', value=self.bot.correct_time(member.created_at).strftime(self.bot.ts_format))
             embed.set_thumbnail(url=member.avatar_url)
             await get(guild.text_channels, name='invite-logs').send(f'{member.mention}\'s account is **less than 7 days old.**' if day_warning else '', embed=embed)
         else:
