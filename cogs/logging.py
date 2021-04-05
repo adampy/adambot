@@ -38,6 +38,18 @@ class Logging(commands.Cog):
             await self.mod_logs.send(embed=reference)
 
     @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload):
+        """
+        Logs bulk message deletes, such as those used in `-purge` command
+        """
+        channel = self.bot.get_channel(payload.channel_id)
+        embed = Embed(title=':information_source: Bulk Message Deleted', color=Colour.from_rgb(172, 32, 31))
+        embed.add_field(name='Count', value=len(payload.message_ids), inline=True)
+        embed.add_field(name='Channel', value=channel.mention, inline=True)
+        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+        await self.mod_logs.send(embed=embed)
+
+    @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         """
         Could perhaps switch to on_raw_message_edit in the future? bot will only log what it can detect
