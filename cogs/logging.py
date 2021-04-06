@@ -23,7 +23,7 @@ class Logging(commands.Cog):
         embed.add_field(name='Message ID', value=message.id, inline=True)
         embed.add_field(name='Channel', value=message.channel.mention, inline=True)
         embed.add_field(name='Message', value=message.content if (
-                    hasattr(message, "content") and message.content) else "None (probably a pin)", inline=False)
+                    hasattr(message, "content") and message.content) else "(No detected text content)", inline=False)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await self.mod_logs.send(embed=embed)
         
@@ -62,8 +62,8 @@ class Logging(commands.Cog):
         embed.add_field(name='User', value=f'{str(after.author)} ({after.author.id})', inline=True)
         embed.add_field(name='Message ID', value=after.id, inline=True)
         embed.add_field(name='Channel', value=after.channel.mention, inline=True)
-        embed.add_field(name='Old Message', value=before.content if before.content else "None (probably an embed)", inline=False)
-        embed.add_field(name='New Message', value=after.content if after.content else "None (probably an embed)", inline=False)
+        embed.add_field(name='Old Message', value=before.content if before.content else "(No detected text content)", inline=False)
+        embed.add_field(name='New Message', value=after.content if after.content else "(No detected text content)", inline=False)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await self.mod_logs.send(embed=embed)
 
