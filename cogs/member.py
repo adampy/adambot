@@ -373,8 +373,8 @@ class Member(commands.Cog):
 
     @commands.command()
     async def cringe(self, ctx):
-        await ctx.send(
-            'https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4')
+        await ctx.message.delete()
+        await ctx.send('https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4')
 
 # -----------------------USER AND SERVER INFO------------------------------
 
