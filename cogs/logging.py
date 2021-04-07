@@ -2,21 +2,30 @@ import discord
 from discord.utils import get
 from discord.ext import commands
 from discord import Embed, Colour
-from .utils import GCSE_SERVER_ID, CHANNELS
+from .utils import GCSE_SERVER_ID, CHANNELS, Permissions
 import asyncio
-
 
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.mod_logs = {}
 
     @commands.Cog.listener()
     async def on_ready(self):
         await asyncio.sleep(1)
-        self.mod_logs = self.bot.get_channel(CHANNELS['mod-logs'])
+        async with self.bot.pool.acquire() as connection: # Get all mod log channel IDs and make a converter (dict)
+            data = await connection.fetch("SELECT * FROM variables WHERE variable LIKE 'mod-log-%';")
+            for entry in data:
+                guild_id = int(entry[0].split('mod-log-')[1])
+                channel_id = int(entry[1])
+                self.mod_logs[guild_id] = self.bot.get_channel(channel_id)
+
+        #self.mod_logs = self.bot.get_channel(CHANNELS['mod-logs'])
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
+        if message.guild.id not in self.mod_logs: # Ensures guild has logging set up
+            return
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
         embed = Embed(title=':information_source: Message Deleted', color=Colour.from_rgb(172, 32, 31))
         embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
@@ -25,7 +34,7 @@ class Logging(commands.Cog):
         embed.add_field(name='Message', value=message.content if (
                     hasattr(message, "content") and message.content) else "(No detected text content)", inline=False)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await self.mod_logs.send(embed=embed)
+        await self.mod_logs[message.guild.id].send(embed=embed)
         
         if message.reference:  # intended mainly for replies, can be used in other contexts (see docs)
             ref = await ctx.fetch_message(message.reference.message_id)
@@ -35,19 +44,21 @@ class Logging(commands.Cog):
             reference.add_field(name='Message ID', value=ref.id, inline=True)
             reference.add_field(name='Channel', value=ref.channel.mention, inline=True)
             reference.add_field(name='Jump Link', value=ref.jump_url)
-            await self.mod_logs.send(embed=reference)
+            await self.mod_logs[message.guild.id].send(embed=reference)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
         """
         Logs bulk message deletes, such as those used in `-purge` command
         """
+        if payload.guild_id not in self.mod_logs: # Ensures guild has logging set up
+            return
         channel = self.bot.get_channel(payload.channel_id)
         embed = Embed(title=':information_source: Bulk Message Deleted', color=Colour.from_rgb(172, 32, 31))
         embed.add_field(name='Count', value=len(payload.message_ids), inline=True)
         embed.add_field(name='Channel', value=channel.mention, inline=True)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await self.mod_logs.send(embed=embed)
+        await self.mod_logs[payload.guild_id].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -56,6 +67,8 @@ class Logging(commands.Cog):
         based off its own caches
         Same issue with on_message_delete
         """
+        if before.guild.id not in self.mod_logs: # Ensures guild has logging set up
+            return
         if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
             return
         embed = Embed(title=':information_source: Message Updated', color=Colour.from_rgb(118, 37, 171))
@@ -65,7 +78,7 @@ class Logging(commands.Cog):
         embed.add_field(name='Old Message', value=before.content if before.content else "(No detected text content)", inline=False)
         embed.add_field(name='New Message', value=after.content if after.content else "(No detected text content)", inline=False)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await self.mod_logs.send(embed=embed)
+        await self.mod_logs[before.guild.id].send(embed=embed)
 
     async def role_comparison(self, before, after):
         """
@@ -188,7 +201,12 @@ class Logging(commands.Cog):
                     if not thumbnail_set:
                         log.set_thumbnail(url=after.avatar_url)
                     log.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-                    await self.mod_logs.send(embed=log)
+
+                    #Send `log` embed to all servers the user is part of
+                    for guild_id in self.mod_logs:
+                        contains_member = self.bot.get_guild(guild_id).get_member(after.id) # Either member object, or None
+                        if contains_member:
+                            await self.mod_logs[guild_id].send(embed=log)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -199,21 +217,93 @@ class Logging(commands.Cog):
         await self.prop_change_handler(before, after)
 
     @commands.Cog.listener()
-    async def on_member_remove(self, user):
-        user_left = Embed(title=":information_source: User Left", color=Colour.from_rgb(218, 118, 39))
-        user_left.add_field(name="User", value=f"{user} ({user.id})\n {user.mention}")
-        user_left.set_thumbnail(url=user.avatar_url)
-        user_left.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await self.mod_logs.send(embed=user_left)
+    async def on_member_remove(self, member):
+        if member.guild.id not in self.mod_logs: # Ensures guild has logging set up
+            return
+        member_left = Embed(title=":information_source: User Left", color=Colour.from_rgb(218, 118, 39))
+        member_left.add_field(name="User", value=f"{member} ({member.id})\n {member.mention}")
+        member_left.set_thumbnail(url=member.avatar_url)
+        member_left.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+        await self.mod_logs[member.guild.id].send(embed=member_left)
 
     @commands.Cog.listener()
-    async def on_member_join(self, user):
-        user_join = Embed(title=":information_source: User Joined", color=Colour.from_rgb(52, 215, 189))
-        user_join.add_field(name="User", value=f"{user} ({user.id})\n | {user.mention}")
-        user_join.add_field(name="Created", value=self.bot.correct_time(user.created_at).strftime(self.bot.ts_format))
-        user_join.set_thumbnail(url=user.avatar_url)
-        user_join.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await self.mod_logs.send(embed=user_join)
+    async def on_member_join(self, member):
+        if member.guild.id not in self.mod_logs: # Ensures guild has logging set up
+            return
+        member_join = Embed(title=":information_source: User Joined", color=Colour.from_rgb(52, 215, 189))
+        member_join.add_field(name="User", value=f"{member} ({member.id})\n | {member.mention}")
+        member_join.add_field(name="Created", value=self.bot.correct_time(member.created_at).strftime(self.bot.ts_format))
+        member_join.set_thumbnail(url=member.avatar_url)
+        member_join.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+        await self.mod_logs[member.guild.id].send(embed=member_join)
+
+    # ----- LOGGING SETUP -----
+
+    @commands.group()
+    @commands.guild_only()
+    async def logging(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('```-help logging```')
+
+    @logging.command(pass_context = True)
+    @commands.guild_only()
+    @commands.has_any_role(*Permissions.MOD)
+    async def channel(self, ctx, channel: discord.TextChannel = None):
+        """
+        Command that sets up a logging channel in a given guild
+        """
+        # Check if channel already exists
+        try:
+            before = self.mod_logs[ctx.guild.id]
+        except KeyError:
+            before = False
+
+        if not channel:
+            if before:
+                await ctx.send(f"The current log channel is: {before.mention}. If you'd like to change it, run this command again with the following syntax. ```-logging channel <TextChannel>```. If you want to remove logging, do ```-logging remove```")
+            else:
+                await ctx.send(f"You currently do not have a log channel. If you'd like to set it up, run this command again with the following syntax. ```-logging channel <TextChannel>```")
+            return
+        
+        # Update channel
+        if not channel.permissions_for(ctx.guild.me).send_messages:
+            await ctx.send("Adam-Bot does not have permissions to send messages in that channel :sob:")
+            return
+
+        async with self.bot.pool.acquire() as connection:
+            updated_record = "mod-log-" + str(ctx.guild.id), str(channel.id)
+            if before:
+                await connection.execute("UPDATE variables SET value = $2 WHERE variable = $1;", *updated_record)
+            else:
+                await connection.execute("INSERT INTO variables (variable, value) VALUES ($1, $2);", *updated_record)
+        self.mod_logs[ctx.guild.id] = channel
+        
+        if before:
+            await ctx.send(f"The log channel has been changed from {before.mention} to {channel.mention} :ok_hand:")
+        else:
+            await ctx.send(f"The log channel has been set to {channel.mention} :ok_hand:")
+
+    @logging.command(pass_context = True)
+    @commands.guild_only()
+    @commands.has_any_role(*Permissions.MOD)
+    async def remove(self, ctx):
+        """
+        Command that removes logging in a given guild
+        """
+        # Check if channel already exists
+        try:
+            before = self.mod_logs[ctx.guild.id]
+        except KeyError:
+            before = False
+
+        if not before:
+            await ctx.send(f"You currently do not have a log channel. If you'd like to set it up, run this command again with the following syntax. ```-logging channel <TextChannel>```")
+            return
+        
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("DELETE FROM variables WHERE variable = $1", "mod-log-" + str(ctx.guild.id))
+        del self.mod_logs[ctx.guild.id]
+        await ctx.send(f"The log channel ({before.mention}) has been removed, and Adam-Bot will no longer log updates from this server.")
 
 def setup(bot):
     bot.add_cog(Logging(bot))

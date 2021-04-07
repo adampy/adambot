@@ -73,8 +73,29 @@ The welcome message, and the welcome channel, are both stored in the `variables`
 ## Warnings
 This cog is for moderation, and was originally within the Moderation cog, but I had split it out making the code easier to read. Warnings are given by staff and then can be viewed using the `-warns` command. When a member does this, they can only see their own warnings, but when a staff member does this by default it views everyones warnings. For a staff member to view their own warnings, the must do `-warns @themself`. Warnings can be removed by a staff member using the `-warnremove` command.
 
+## Logging
+The logging cog is used for, as the name suggests, logging certain events. The events that are currently logged are:
+* `on_message_delete`
+* `on_raw_bulk_message_delete`
+* `on_message_edit`
+* `on_member_update`
+* `on_user_update`
+* `on_member_remove`
+* `on_member_join`
+
+Both `on_member_update` and `on_user_update` are called for [multiple reasons](https://discordpy.readthedocs.io/en/latest/api.html#discord.on_member_update) so the code filters out the correct reason by spotting differences in the member objects - the correct reason is then logged.
+
+The log channels work by storing the log channel's ID in the `variables` table. It stores it in the format
+
+variable|value
+--------|-----
+mod-log-<GUILD_ID> | <CHANNEL_ID>
+
+where <GUILD_ID> is the guild ID, <CHANNEL_ID> is the log channel ID, and `variable` and `value` are both strings.
+
+
 # :open_file_folder: Database schema
-The following describes the database schema, as of 28/03/2021.
+The following describes the database schema. (Last updated changed 28/03/2021)
 
 ##  qotd
 Field name | Type | Constraints
