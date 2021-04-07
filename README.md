@@ -41,9 +41,6 @@ Used for miscellaneous commands ranging from -userinfo, to -bruhs. There is no r
 ## Moderation
 Contains moderation commands, such as kicks, bans, and mutes. Slowmodes, and the jail command reside here too. The advance command, that advances everyones year (e.g. Y9 -> Y10) is here and has admin perms.
 
-## Private
-Used for functionaltiy and commands that feature in private servers.
-
 ## QuestionOTD
 The module that contains all of the commands relating to QOTDs (commonly known as question of the day). People with a "QOTD" role have permissions to view, delete, and pick OQTDs. People without these roles can only submit QOTDs (2 per 24h).
 
@@ -216,14 +213,3 @@ member_id | bigint
 This table is deprecated, and not currently used for anything. It was used for the `-toggle1738` command which has not been used for over a year.
 
 <br>
-
-## classroom
-Field name | Type | Constraints
------------|------|--------------
-section | int
-gid | varchar(255)
-name | varchare(255)
-
-<br>
-
-This table is deprecated, and not currently used for anything in the GCSE 9-1 server.

@@ -438,7 +438,7 @@ Staff role needed."""
 
                     await connection.execute(
                         'INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)',
-                        **data)
+                        *data)
                 except Exception:
                     pass
 
