@@ -371,10 +371,10 @@ class Member(commands.Cog):
         await ctx.send(new)
         await ctx.message.delete()
 
-    @commands.command(aliases=['yikes'])
-    async def yike(self, ctx):
+    @commands.command()
+    async def cringe(self, ctx):
         await ctx.send(
-            'https://cdn.discordapp.com/attachments/445199175244709898/616755258890387486/29e02f54-4741-40e5-b77d-788bf78b33ba.png')
+            'https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4')
 
 # -----------------------USER AND SERVER INFO------------------------------
 
