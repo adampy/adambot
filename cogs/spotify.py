@@ -24,17 +24,7 @@ class spotify(commands.Cog):
                         self.bot.correct_time()).strftime(self.bot.ts_format))
                 await ctx.send(embed=fail_embed)
                 return
-        #if isinstance(ctx.message.channel, discord.DMChannel): # dm code
-         #   print("dm channel")
-          #  guilds = self.bot.guilds
-           # for guild in guilds:
-            #    try:
-             #       print("trying guild")
-              #      print(guild)
-               #     user_ = guild.get_member(user.id)
-                #    user = user_
-                #except Exception as exception:
-                 #   pass # expected
+
         spotify_activity = None
         for i in range(0, len(user.activities)):
             if type(user.activities[i]).__name__ == "Spotify":
@@ -51,9 +41,9 @@ class spotify(commands.Cog):
         seconds = duration%60
         if seconds < 10:
             seconds = "0" + str(seconds)
-        song_start = spotify_activity.start.strftime("%H:%M:%S")
-        song_end = spotify_activity.end.strftime("%H:%M:%S")
-        embed=Embed(title=f"Spotify info for {user}", colour=user.colour)
+        song_start = self.bot.correct_time(spotify_activity.start).strftime("%H:%M:%S")
+        song_end = self.bot.correct_time(spotify_activity.end).strftime("%H:%M:%S")
+        embed = Embed(title=f"Spotify info for {user}", colour=user.colour)
         embed.add_field(name="Track", value=f"{spotify_activity.title}")
         embed.add_field(name="Artist(s)", value=f"{spotify_activity.artist}")
         embed.add_field(name="Album", value=f"{spotify_activity.album}")
