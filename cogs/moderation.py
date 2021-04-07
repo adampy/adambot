@@ -441,6 +441,22 @@ Staff role needed."""
                         *data)
                 except Exception:
                     pass
+    
+    @commands.command(pass_context = True)
+    @commands.has_any_role(*Permissions.MOD)
+    async def revokeinvite(self, ctx, invite_code):
+        """
+        Command that revokes an invite from a server
+        """
+        try:
+            await self.bot.delete_invite(invite_code)
+            await ctx.send(f"Invite code {invite_code} has been deleted :ok_hand:")
+        except discord.Forbidden:
+            await ctx.send("Adam-Bot does not have permissions to revoke invites.")
+        except discord.NotFound:
+            await ctx.send("Invite code was not found - it's either invalid or expired :sob:")
+        except Exception as e:
+            await ctx.send(f"Invite revoking failed: {e}")
 
 
 def setup(bot):
