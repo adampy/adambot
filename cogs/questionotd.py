@@ -62,7 +62,8 @@ class QuestionOTD(commands.Cog):
             else:
                 await connection.execute('INSERT INTO qotd (question, submitted_by) VALUES ($1, $2)', qotd, str(member))
                 id = await connection.fetchval("SELECT MAX(id) FROM qotd")
-                await ctx.send(f':thumbsup: Thank you for submitting your QOTD. Your QOTD ID is **{id}**.')
+                await ctx.message.delete()
+                await ctx.send(f':thumbsup: Thank you for submitting your QOTD. Your QOTD ID is **{id}**.', delete_after = 20)
 
                 embed = Embed(title='QOTD Submitted', color=Colour.from_rgb(177, 252, 129))
                 embed.add_field(name='ID', value=id)
