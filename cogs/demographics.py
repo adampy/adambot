@@ -217,7 +217,7 @@ class Demographics(commands.Cog):
 
                 ax.plot([x[0] for x in data], [x[1] for x in data], 'b-o', linewidth=1, markersize=2, color=rgb_scaled_tuple, label=role.name)
 
-        ax.set(xlabel='Time', ylabel='Frequency', title=f"{ctx.guild.name}'s  demographics")
+        ax.set(xlabel='Time', ylabel='Frequency', title=f"{ctx.guild.name}'s  demographics ({ctx.guild.member_count} members)")
         ax.grid()
         ax.legend(loc="upper left")
         ax.set_ylim(bottom=0)
