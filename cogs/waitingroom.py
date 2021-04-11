@@ -28,7 +28,7 @@ class WaitingRoom(commands.Cog):
             await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'welcome_msg';", new_welcome)
 
     async def _get_welcome_channel(self):
-        """Internal method that retreives the welcome channel from the DB."""
+        """Internal method that retrieves the welcome channel from the DB."""
         channel_id = 0
         async with self.bot.pool.acquire() as connection:
             channel_id = await connection.fetchval("SELECT value FROM variables WHERE variable = 'welcome_channel';")

@@ -196,6 +196,9 @@ async def send_file(fig, channel, filename):
     buf.seek(0)
     await channel.send(file=File(buf, filename=f'{filename}.png'))
 
+#async def separate_args(self, string):
+#    print("Not implemented")
+#    return
 
 async def get_spaced_member(ctx, args, bot):
     """Moves hell on Earth to get a guild member object from a given string
@@ -246,64 +249,126 @@ def ordinal(n: int) -> str:
         suffix = 'th'
     return str(n) + suffix
 
-def separate_args(args):
-    """Given the args tuple (from *args) and returns seconds in index position 0 and reason in index position 1"""
-    arg_list = [arg for arg in ' '.join(args).split(' -') if arg]  # slightly less elegant but stops stuff like test-t 5s
-    seconds = 0
-    reason = ''
-    for item in arg_list:
-        if item[0] == 't':
-            time = item[1:].strip()
-            #print(f"TIME IS {time}")
-            times = []
-            #split after the last character before whitespace after int
-            temp1 = '' #time
-            temp2 = '' #unit
-            for i, letter in enumerate(time):
-                if letter == ' ' and (temp1 and temp2):
-                    times.append([temp1, temp2])
-                    temp1, temp2 = '', ''
-                    #print('append')
-                if letter.isdigit():
-                    if not temp2:
-                        temp1 += letter
-                        #print('add time')
-                    else:
-                        times.append([temp1, temp2])
-                        temp1, temp2 = '', ''
-                        temp1 += letter
-                        #print('append')
+
+
+TIME_UNITS = {
+    "w": {"aliases": ("weeks", "week"), "in_seconds": 604800},
+    "d": {"aliases": ("days", "day"), "in_seconds": 86400},
+    "h": {"aliases": ("hours", "hour", "hr"), "in_seconds": 3600},
+    "m": {"aliases": ("minutes", "minute", "mins", "min"), "in_seconds": 60},
+    "s": {"aliases": ("seconds", "second", "secs", "sec"), "in_seconds": 1}
+}
+
+## WARNING: You are about to observe Area 51 code, proceed with caution
+
+class flag_methods:
+    def __init__(self):
+        #print("hi!")
+        return
+
+    #def reverse(string):
+    #    return string[::-1]
+
+    def str_time_to_seconds(string):  # when not close to having a brain aneurysm, rewrite this
+                                      # so it can convert up and down to any defined unit, not
+                                      # just seconds
+        string = string.replace(" ", "")
+        for unit in TIME_UNITS:
+            for alias in TIME_UNITS[unit]["aliases"]:
+                string = string.replace(alias, unit)
+        while ".." in string:  # grade A pointless feature
+            string = string.replace("..", ".")
+        string = list(string)
+        times = []
+        time_str = ""
+        for pos in string:
+            if pos.isdigit() or (pos == "." and "." not in time_str):
+                time_str += pos
+            else:
+                times.append([time_str, pos])
+                time_str = ""
+        seconds = 0
+        for time_ in times:
+            if len(time_) == 2 and time_[0] and time_[1] in TIME_UNITS:  # check to weed out dodgy stuff
+                seconds += float(time_[0]) * TIME_UNITS[time_[1]]["in_seconds"]
+        return seconds
+
+
+class flags:
+    def __init__(self):
+        self.flag_prefix = "-"
+        self.implemented_properties = ["flag", "post_parse_handler"]
+        self.flags = {"": {"flag": "", "post_parse_handler": None}}
+        self.inv_flags = {"": ""}
+
+    def set_flag(self, flag_name, flag_def):
+        assert type(flag_def) is dict and "flag" in flag_def
+        assert type(flag_def["flag"]) is str
+        assert callable(flag_def.get("post_parse_handler")) or flag_def.get("post_parse_handler") is None
+        for property in self.implemented_properties:
+            if property not in flag_def:
+                flag_def[property] = None
+        self.flags[flag_name] = flag_def
+        self.inv_flags[flag_def["flag"]] = flag_name
+
+    def remove_flag(self, flag_name):
+        if flag_name in self.flags:
+            del self.flags[flag_name]
+
+    def separate_args(self, args, fetch=["*"], has_cmd=False, blank_as_flag=None):
+        # TODO:
+        #   - Use getters for the flags at some point (not strictly necessary but OOP)
+        #   - Tidy up if at all possible :P
+        #   - possible some of the logic could be replaced by regex but who likes regex?
+
+        args = args.strip()
+        if has_cmd:
+            args = " " + " ".join(args.split(" ")[1:])
+        flag_dict = {}
+        startswithflag = False
+        for flag in self.inv_flags:
+            if args.startswith(f"{self.flag_prefix}{flag}") and flag:
+                startswithflag = True
+                break
+        if not startswithflag:  # then it's blank
+            args = self.flag_prefix + (str(self.flags[blank_as_flag]["flag"]) if (blank_as_flag in self.flags) else '') + ' ' + args
+        if args.startswith(self.flag_prefix):
+            args = " " + args
+        args = args.split(f" {self.flag_prefix}")
+        args = [a.split(" ") for a in args]
+        if not args[0][0]:
+            del args[0]
+        for a in range(len(args)):
+            if len(args[a]) == 1:
+                args[a].insert(0, '' if blank_as_flag not in self.flags else self.flags[blank_as_flag]["flag"])
+            args[a] = [args[a][0], " ".join(args[a][1:])]
+            if (args[a][0] in self.inv_flags) and (self.inv_flags[args[a][0]] in fetch or fetch == ["*"]):
+                if self.inv_flags[args[a][0]] in flag_dict:
+                    flag_dict[self.inv_flags[args[a][0]]] += " " + args[a][1]
                 else:
-                    if temp1 and letter != ' ':
-                        temp2 += letter
-                        #print('add letter')
-            times.append([temp1, temp2])
+                    flag_dict[self.inv_flags[args[a][0]]] = args[a][1]
+        flags_found = flag_dict.keys()
+        for flag in flags_found:
+            post_handler = self.flags[flag]["post_parse_handler"]
+            if post_handler:
+                updated_flag = post_handler(flag_dict[flag])
+                flag_dict[flag] = updated_flag
 
-            #print(f"TIMES ARE {times}")
-            for sets in times:
+        for fetcher in fetch:
+            if fetcher != "*" and fetcher not in flag_dict:
+                flag_dict[fetcher] = None  # saves a bunch of boilerplate code elsewhere
 
-                try:
-                    time, unit = sets
-                    if unit in TIMES.keys():
-                        multiplier = TIMES[unit]
-                        seconds += int(time)*multiplier
-                except ValueError:
-                    pass
+        return flag_dict  # YES IT HAS FINISHED! FINALLY!
 
-            #print(seconds)
 
-        if item[0] == 'r':
-            reason = item[1:].strip()
-            #print(reason)
-    return seconds, reason
 
-def time_arg(arg):
+
+def time_arg(arg):  # rewrite
     """Given a time argument gets the time in seconds"""
     total = 0
     times = arg.split(' ')
     if len(times) == 0:
         return 0
-    #else
     for item in times:
         if item[-1] == 'w':
             total += 7*24*60*60*int(item[:-1])
@@ -318,7 +383,7 @@ def time_arg(arg):
     return total
 
 
-def time_str(seconds):
+def time_str(seconds):  # rewrite before code police get dispatched
     """Given a number of seconds returns the string version of the time
     Is outputted in a format that can be fed into time_arg"""
     weeks = seconds // (7 * 24 * 60 * 60)
@@ -329,14 +394,16 @@ def time_str(seconds):
     seconds -= hours * 60 * 60
     minutes = seconds // 60
     seconds -= minutes * 60
+    seconds = round(seconds, 0 if str(seconds).endswith(".0") else 1)  # don't think the last bit needs to be as complex for all time units but oh well
 
     output = ""
-    if weeks: output += f"{weeks}w "
-    if days: output += f"{days}d "
-    if hours: output += f"{hours}h "
-    if minutes: output += f"{minutes}m "
-    if seconds: output += f"{seconds}s"
+    if weeks: output += f"{(str(weeks) + ' ').replace('.0 ', '').strip()}w "
+    if days: output += f"{(str(days) + ' ').replace('.0 ', '').strip()}d "
+    if hours: output += f"{(str(hours) + ' ').replace('.0 ', '').strip()}h "
+    if minutes: output += f"{(str(minutes) + ' ').replace('.0 ', '').strip()}m "
+    if seconds: output += f"{(str(seconds) + ' ').replace('.0 ', '').strip()}s"
     return output.strip()
+
 
 def starts_with_any(string, possible_starts):
     """Given a string and a list of possible_starts, the function returns

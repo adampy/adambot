@@ -3,3 +3,4 @@ requests
 asyncpg
 matplotlib
 pytz
+tzlocal

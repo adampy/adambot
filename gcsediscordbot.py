@@ -11,8 +11,10 @@ import os
 from datetime import datetime, timedelta
 from csv import reader
 import asyncpg
+import cogs.utils as utils
 from cogs.utils import EmojiEnum, Todo
 import pytz
+from tzlocal import get_localzone
 import argparse
 import sys
 
@@ -40,6 +42,12 @@ def get_credentials():
 class AdamBot(Bot):
     def __init__(self, local, cogs, start_time, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.__dict__.update(utils.__dict__)
+        self.flag_handler = self.flags()
+        # Hopefully can eventually move these out to some sort of config system
+        self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
+        self.flag_handler.set_flag("reason", {"flag": "r"})
+        print(self.GCSE_SERVER_ID)
         self.token = kwargs.get("token", None)
         self.online = True
         self.COGS = cogs
@@ -47,8 +55,9 @@ class AdamBot(Bot):
         self.DB = os.environ.get('DATABASE_URL')
         self.pages = []  # List of active pages that can be used
         self.last_active = {}  # easiest to put here for now, may move to a cog later
-        self.timezone = pytz.timezone(
-            'UTC')  # change as required, perhaps have some config for it? also perhaps detect from sys
+        self.timezone = get_localzone()
+        #self.timezone = pytz.timezone(
+        #    'UTC')  # change as required, perhaps have some config for it? also perhaps detect from sys
         self.display_timezone = pytz.timezone('Europe/London')
         self.ts_format = '%A %d/%m/%Y %H:%M:%S'
         self.start_time = start_time
@@ -295,6 +304,7 @@ if __name__ == "__main__":
                  'demographics',
                  'spotify',
                  'warnings',
-                 'logging'] # Make this dynamic?
+                 'logging',
+                 'eval'] # Make this dynamic?
     bot = AdamBot(local_host, cog_names, start_time, token=args.token, command_prefix=args.prefix, intents=intents)
     # bot.remove_command("help")

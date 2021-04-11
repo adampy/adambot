@@ -4,7 +4,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
 from discord.utils import get
 import asyncio
-from .utils import separate_args, Permissions, EmbedPages, PageTypes, Todo
+from .utils import Permissions, EmbedPages, PageTypes, Todo
 import os
 import asyncpg
 
@@ -28,11 +28,11 @@ class Warnings(commands.Cog):
     @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
-    async def warn(self, ctx, member: discord.Member, *reason):
+    async def warn(self, ctx, member: discord.Member, *, reason):
         """Gives a member a warning, a reason is optional but recommended.
 Staff role needed."""
-        reason = ' '.join(reason)
-        reason = reason.replace('-r', '') # Removes -r if a staff member includes it
+        parsed_args = self.bot.flag_handler.separate_args(reason, fetch=["reason"], blank_as_flag="reason")
+        reason = parsed_args["reason"]
         if len(reason) > 255:
             await ctx.send('The reason must be below 256 characters. Please shorten it before trying again.')
             return
