@@ -15,16 +15,6 @@ class WaitingRoom(commands.Cog):
         self.welcome_message = ""
         self.welcome_channel = None
     
-    async def _set_welcome_message(self, new_welcome):
-        """Internal method that sets the welcome message in the DB."""
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'welcome_msg';", new_welcome)
-
-    async def _set_welcome_channel(self, channel_id):
-        """Internal method that sets the welcome channel in the DB."""
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'welcome_channel';", str(channel_id))
-        
     async def get_parsed_welcome_message(self, welcome_msg, new_user: discord.User, guild: discord.Guild):
         """Method that gets the parsed welcome message, with channel and role mentions."""
         to_send = welcome_msg
