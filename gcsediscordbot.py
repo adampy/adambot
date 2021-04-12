@@ -220,8 +220,13 @@ class AdamBot(Bot):
                         try:
                             member = get(self.get_all_members(), id=remind[1])
                             message = f'You told me to remind you about this:\n{remind[3]}'
-                            await member.send(message)
-                            await connection.execute('DELETE FROM remind WHERE id = ($1)', remind[0])
+                            try:
+                                await member.send(message)
+                            except discord.Forbidden:
+                                channel = self.get_channel(remind[5]) # Get the channel it was invoked from
+                                await channel.send(member.mention + ", " + message)
+                            finally:
+                                await connection.execute('DELETE FROM remind WHERE id = ($1)', remind[0])
                         except Exception as e:
                             print(f'REMIND: {type(e).__name__}: {e}')
 

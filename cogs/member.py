@@ -484,13 +484,18 @@ class Member(commands.Cog):
     @commands.command(pass_context=True, aliases=['rm', 'remindme'])
     @commands.guild_only()
     async def remind(self, ctx, *, args):
-        async def write(self_write, reminder_write, seconds, member_id):
+        """
+        Command that is executed when a user wants to be reminded of something.
+        If the members DMs are closed, the reminder is sent in the channel the command
+        was invoked in.
+        """ 
+        async def write(self_write, reminder_write, seconds, member_id, channel_id):
             """Writes to remind table with the time to remind (e.g. remind('...', 120, <member_id>) would mean '...' is reminded out in 120 seconds for <member_id>)"""
             timestamp = datetime.utcnow()
             new_timestamp = timestamp + timedelta(seconds=seconds)
             async with self_write.bot.pool.acquire() as connection:
-                await connection.execute('INSERT INTO remind (member_id, reminder, reminder_time) values ($1, $2, $3)',
-                                         member_id, reminder_write, new_timestamp)
+                await connection.execute('INSERT INTO remind (member_id, reminder, reminder_time, channel_id) values ($1, $2, $3, $4)',
+                                         member_id, reminder_write, new_timestamp, channel_id)
 
         """Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1"""
         timeperiod = ''
@@ -509,10 +514,9 @@ class Member(commands.Cog):
         if len(reminder) >= 256:
             await ctx.send('Please shorten your reminder to under 256 characters.')
 
-        await write(self, reminder, timeperiod, ctx.author.id)
+        await write(self, reminder, timeperiod, ctx.author.id, ctx.channel.id)
         await ctx.send(
-            f":ok_hand: You'll be reminded in {str_tp} via a DM!")  # todo: either/or/and when setting and displaying the reminder, check if member's DMs are open
-        # if their DMs aren't open, remind on guild in context
+            f":ok_hand: You'll be reminded in {str_tp} via a DM! (or in this channel if your DMs are closed)")
 
 # -----------------------AVATAR------------------------------
 

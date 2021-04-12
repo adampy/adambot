@@ -132,6 +132,7 @@ member_id | bigint
 reminder_time | timestamptz
 reminder | varchar(255)
 created_at | timestamptz
+channel_id | BIGINT | NOT NULL
 
 <br>
 
