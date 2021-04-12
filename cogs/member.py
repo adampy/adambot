@@ -576,24 +576,6 @@ class Member(commands.Cog):
 **{m}** minutes
 **{s}** seconds''')
 
-
-# -----------------------1738------------------------------
-
-    @commands.command(pass_context=True)
-    async def toggle1738(self, ctx):
-        # db connections
-        async with self.bot.pool.acquire() as connection:
-            # check if already joined
-            member = await connection.fetch("SELECT * FROM ping WHERE member_id = ($1)", ctx.author.id)
-            if not member:
-                # not on - turn it on
-                await connection.execute('INSERT INTO ping (member_id) values ($1)', ctx.author.id)
-                await ctx.send(":ok_hand: You will receive notifications for 1738. :tada:")
-            else:
-                # on - turn it off
-                await connection.execute('DELETE FROM ping WHERE member_id = ($1)', ctx.author.id)
-                await ctx.send(":ok_hand: You will no longer receive notifications for 1738. :sob:")
-
     @commands.command(pass_context=True)
     async def code(self, ctx):
         await ctx.send(f"Adam-Bot code can be found here: {CODE_URL}")

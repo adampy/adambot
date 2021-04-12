@@ -230,13 +230,6 @@ class AdamBot(Bot):
                         except Exception as e:
                             print(f'REMIND: {type(e).__name__}: {e}')
 
-                # 1738 stuffs
-                # now = datetime.utcnow()
-                # if now.hour+1 == 17 and now.minute == 38 and now.second < 5:
-                #   cur.execute("SELECT * FROM ping")
-                #   members = ' '.join([f'<@{x[0]}>' for x in cur.fetchall()])
-                #   await self.get_channel(445199175244709898).send(f'**17:38** {members} https://cdn.discordapp.com/attachments/418467941294538772/577594985369829386/1738.compressed.mp4')
-
                 # Results day countdown stuffs
                 # now = datetime.utcnow()
                 # msg = await self.get_channel(743235561015476236).fetch_message(744611462244466689)

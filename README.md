@@ -92,7 +92,7 @@ where <GUILD_ID> is the guild ID, <CHANNEL_ID> is the log channel ID, and `varia
 
 
 # :open_file_folder: Database schema
-The following describes the database schema. (Last updated changed 28/03/2021)
+The following describes the database schema. (Last updated changed 12/04/2021)
 
 ##  qotd
 Field name | Type | Constraints
@@ -201,16 +201,5 @@ CONSTRAINT fk_role_reference
         REFERENCES demographic_roles(id)
         ON DELETE CASCADE
 ```
-
-<br>
-
-## ping
-Field name | Type | Constraints
------------|------|--------------
-member_id | bigint
-
-<br>
-
-This table is deprecated, and not currently used for anything. It was used for the `-toggle1738` command which has not been used for over a year.
 
 <br>
