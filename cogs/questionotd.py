@@ -22,7 +22,6 @@ class QuestionOTD(commands.Cog):
         return 'Staff' in r or 'QOTD' in r or 'Adam-Bot Developer' in r
 
     @commands.group()
-    @commands.check(in_gcse)
     async def qotd(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('```-qotd submit <question>```')
@@ -56,12 +55,12 @@ class QuestionOTD(commands.Cog):
         today_date = datetime.datetime(today.year, today.month, today.day)
         async with self.bot.pool.acquire() as connection:
             submitted_today = await connection.fetch(
-                'SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2)', str(member), today_date)
+                'SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2) AND guild_id = $3', str(member), today_date, ctx.guild.id)
             if len(submitted_today) >= 2 and not is_staff:  # Staff bypass
                 await ctx.send('You can only submit 2 QOTD per day - this is to stop bot abuse.')
             else:
-                await connection.execute('INSERT INTO qotd (question, submitted_by) VALUES ($1, $2)', qotd, str(member))
-                id = await connection.fetchval("SELECT MAX(id) FROM qotd")
+                await connection.execute('INSERT INTO qotd (question, submitted_by, guild_id) VALUES ($1, $2, $3)', qotd, str(member), ctx.guild.id)
+                id = await connection.fetchval("SELECT MAX(id) FROM qotd WHERE guild_id = $1", ctx.guild.id)
                 await ctx.message.delete()
                 await ctx.send(f':thumbsup: Thank you for submitting your QOTD. Your QOTD ID is **{id}**.', delete_after = 20)
 
@@ -76,14 +75,14 @@ class QuestionOTD(commands.Cog):
     @commands.check(qotd_perms)
     async def list(self, ctx, page_num=1):
         async with self.bot.pool.acquire() as connection:
-            qotds = await connection.fetch('SELECT * FROM qotd ORDER BY id')
+            qotds = await connection.fetch('SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id', ctx.guild.id)
 
         if len(qotds) > 0:
             embed = EmbedPages(PageTypes.QOTD, qotds, "QOTDs", Colour.from_rgb(177, 252, 129), self.bot, ctx.author, ctx.channel)
             await embed.set_page(int(page_num))
             await embed.send()
         else:
-            ctx.send("No warnings recorded!")
+            await ctx.send("No QOTD submitted!")
 
     @qotd.command(pass_context=True, aliases=['remove'])
     @commands.check(qotd_perms)
@@ -91,7 +90,7 @@ class QuestionOTD(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             for question_id in question_ids:
                 try:
-                    await connection.execute('DELETE FROM qotd WHERE id = ($1)', int(question_id))
+                    await connection.execute('DELETE FROM qotd WHERE id = ($1) WHERE guild_id = $2', int(question_id), ctx.guild.id)
                     embed = Embed(title='QOTD Deleted', color=Colour.from_rgb(177, 252, 129))
                     embed.add_field(name='ID', value=question_id)
                     embed.add_field(name='Staff', value=str(ctx.author))
@@ -109,9 +108,9 @@ class QuestionOTD(commands.Cog):
     async def pick(self, ctx, question_id):
         async with self.bot.pool.acquire() as connection:
             if question_id.lower() == 'random':
-                questions = await connection.fetch('SELECT * FROM qotd')
+                questions = await connection.fetch('SELECT * FROM qotd WHERE guild_id = $1', ctx.guild.id)
             else:
-                questions = await connection.fetch('SELECT * FROM qotd WHERE id = $1', int(question_id))
+                questions = await connection.fetch('SELECT * FROM qotd WHERE id = $1 AND guild_id = $2', int(question_id), ctx.guild.id)
             if not questions:
                 await ctx.send(f'Question with ID {question_id} not found. Please try again.')
                 return
@@ -122,7 +121,7 @@ class QuestionOTD(commands.Cog):
             member = await self.bot.fetch_user(question_data[2])
             message = f"**QOTD**\n{question} - Credit to {member.mention}"
 
-            await connection.execute('DELETE FROM qotd WHERE id = ($1)', int(question_id))
+            await connection.execute('DELETE FROM qotd WHERE id = ($1) AND guild_id = $2', int(question_id), ctx.guild.id)
 
         await ctx.send(':ok_hand:')
         await self.bot.get_channel(CHANNELS['qotd']).send(message)

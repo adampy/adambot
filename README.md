@@ -101,6 +101,7 @@ id | int | SERIAL PRIMARY KEY
 question | varchar(255) | 
 submitted_by | varchar(255)
 submitted_at | timestamptz | NOT NULL DEFAULT now()
+guild_id | bigint | NOT NULL
 
 <br>
 
