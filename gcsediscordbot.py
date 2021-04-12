@@ -18,16 +18,6 @@ from tzlocal import get_localzone
 import argparse
 import sys
 
-
-
-# -----------------------------------------------------------------
-
-# Move logging into a seperate cog for readability
-# create poll command
-# helper command w/ cooldown
-
-# -----------------------------------------------------------------
-
 def get_credentials():
     """Command that checks if a credentials file is available. If it is it puts the vars into environ and returns True, else returns False"""
     try:
@@ -38,11 +28,11 @@ def get_credentials():
     except FileNotFoundError:
         return False
 
-
 class AdamBot(Bot):
     def __init__(self, local, cogs, start_time, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__dict__.update(utils.__dict__)
+        self.configs = {} # Used to store configuration for guilds
         self.flag_handler = self.flags()
         # Hopefully can eventually move these out to some sort of config system
         self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
@@ -124,7 +114,6 @@ class AdamBot(Bot):
         await self.change_presence(activity=discord.Game(name=f'Type {self.prefix}help for help'),
                                    status=discord.Status.online)
    
-
     async def on_message(self, message):
         """Event that has checks that stop bots from executing commands"""
         if type(message.channel) == discord.DMChannel or message.author.bot:
@@ -273,6 +262,38 @@ class AdamBot(Bot):
                 await asyncio.sleep(5)  # workaround for task crashing when connection temporarily drops with db
 
             await asyncio.sleep(5)
+
+    async def add_config(self, guild_id):
+        """
+        Method that gets the configuraton for a guild and puts it into self.configs dictionary (with the guild ID as the key). The data
+        is stored in the `config` table. If no configuration is found, a new record is made and a blank configuration dict.
+        """
+        if guild_id not in self.configs: # This check (to see if a DB call is needed) is okay because any updates made will be directly made to self.configs (before DB propagation) TODO: Perhaps limit number of items in this
+            async with self.pool.acquire() as connection:
+                record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id)
+                if not record:
+                    await connection.execute("INSERT INTO config (guild_id) VALUES ($1);", guild_id)
+                    record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id)
+            self.configs[guild_id] = dict(record)
+
+    async def propagate_config(self, guild_id):
+        """
+        Method that sends the config data stored in self.configs and propagates them to the DB.
+        """
+        data = self.configs[guild_id]
+        length = len(data.keys())
+        
+        # Make SQL
+        sql_part = ""
+        keys = list(data)
+        for i in range(length):
+            sql_part += f"{keys[i]} = (${i + 1})"
+            if i != length - 1:
+                sql_part += ", " # If not the last element, add a ", "
+
+        sql = f"UPDATE config SET {sql_part} WHERE guild_id = {guild_id};"
+        async with self.pool.acquire() as connection:
+            await connection.execute(sql, *data.values())
 
 
 if __name__ == "__main__":

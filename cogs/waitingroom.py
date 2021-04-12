@@ -15,33 +15,19 @@ class WaitingRoom(commands.Cog):
         self.welcome_message = ""
         self.welcome_channel = None
     
-    async def _get_welcome_message(self):
-        """Internal method that retreives the welcome message from the DB."""
-        to_return = ""
-        async with self.bot.pool.acquire() as connection:
-            to_return = await connection.fetchval("SELECT value FROM variables WHERE variable = 'welcome_msg';")
-        return to_return
-
     async def _set_welcome_message(self, new_welcome):
         """Internal method that sets the welcome message in the DB."""
         async with self.bot.pool.acquire() as connection:
             await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'welcome_msg';", new_welcome)
 
-    async def _get_welcome_channel(self):
-        """Internal method that retrieves the welcome channel from the DB."""
-        channel_id = 0
-        async with self.bot.pool.acquire() as connection:
-            channel_id = await connection.fetchval("SELECT value FROM variables WHERE variable = 'welcome_channel';")
-        return int(channel_id)
-        #return 445198121618767872
     async def _set_welcome_channel(self, channel_id):
         """Internal method that sets the welcome channel in the DB."""
         async with self.bot.pool.acquire() as connection:
             await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'welcome_channel';", str(channel_id))
         
-    async def get_parsed_welcome_message(self, new_user: discord.User, guild: discord.Guild):
+    async def get_parsed_welcome_message(self, welcome_msg, new_user: discord.User, guild: discord.Guild):
         """Method that gets the parsed welcome message, with channel and role mentions."""
-        to_send = self.welcome_message
+        to_send = welcome_msg
         to_send = to_send.replace("<user>", new_user.mention)
         
         while True:
@@ -63,28 +49,14 @@ class WaitingRoom(commands.Cog):
         return to_send
 
     @commands.Cog.listener()
-    async def on_ready(self):
-        await asyncio.sleep(1)
-
-        # Get welcome message and parse it
-        self.welcome_message = await self._get_welcome_message()
-
-        # Get channel id and parse it
-        channel_id = await self._get_welcome_channel()
-        try:
-            self.welcome_channel = await self.bot.fetch_channel(channel_id)
-        except discord.errors.Forbidden:
-            pass
-
-    @commands.Cog.listener()
     async def on_member_join(self, member):
         #formatting stuffs
-        guild = self.bot.get_guild(GCSE_SERVER_ID)
-        try:
-            message = await self.get_parsed_welcome_message(member, guild)
-            await self.welcome_channel.send(message)
-        except(discord.errors.Forbidden, AttributeError):  # missing perms
-            pass
+        guild = member.guild
+        await self.bot.add_config(guild.id)
+        config = self.bot.configs[guild.id]
+        message = await self.get_parsed_welcome_message(config["welcome_msg"], member, guild)
+        channel = self.bot.get_channel(config["welcome_channel"])
+        await channel.send(message)
 
         #invite stuffs
         old_invites = []
@@ -178,8 +150,10 @@ class WaitingRoom(commands.Cog):
     @commands.has_any_role(*Permissions.MOD)
     async def testmessage(self, ctx, to_ping: discord.User = None):
         """Command that returns the welcome message, and pretends the command invoker is the new user."""
-        msg = await self.get_parsed_welcome_message(to_ping or ctx.author, ctx.guild) # to_ping or author means the author unless to_ping is provided.
-        await ctx.send(msg)
+        await self.bot.add_config(ctx.guild.id)
+        config = self.bot.configs[ctx.guild.id]
+        msg = await self.get_parsed_welcome_message(config["welcome_msg"], to_ping or ctx.author, ctx.guild) # to_ping or author means the author unless to_ping is provided.
+        await ctx.channel.send(msg)
 
     @editwelcome.command(pass_context=True)
     @commands.has_any_role(*Permissions.MOD)
@@ -192,12 +166,16 @@ Do C<channel_name> to mention a channel."""
         channel = ctx.channel
         def check(m):
             return m.channel == channel and m.author == author
+
+        await self.bot.add_config(ctx.guild.id)
+        config = self.bot.configs[ctx.guild.id]
+        welcome_msg = config["welcome_msg"]
         
         if not message:
-            await ctx.send(f"The current welcome message is:\n```{self.welcome_message}```\nPlease type you new welcome message. (Type 'no' to cancel)")
+            await ctx.send(f"The current welcome message is:\n```{welcome_msg}```\nPlease type you new welcome message. (Type 'no' to cancel)")
         else:
             message = ' '.join(message)
-            await ctx.send(f"The current welcome message is:\n```{self.welcome_message}```\n")
+            await ctx.send(f"The current welcome message is:\n```{welcome_msg}```\n")
             await ctx.send(f"Are you sure you want to change it to:\n```{message}```\n(Type 'yes' to change it, and 'no' to cancel)")
 
         try:
@@ -221,8 +199,8 @@ Do C<channel_name> to mention a channel."""
             await ctx.send("Your welcome message is bigger than the limit (1000 chars). Please shorten it and try again.")
             return
         
-        await self._set_welcome_message(message)
-        self.welcome_message = message
+        self.bot.configs[ctx.guild.id]["welcome_msg"] = message
+        await self.bot.propagate_config(ctx.guild.id)
         await ctx.send("The welcome message has been updated :ok_hand:")
 
     @editwelcome.command(pass_context=True)
@@ -234,10 +212,14 @@ Do C<channel_name> to mention a channel."""
         def check(m):
             return m.channel == command_channel and m.author == author
 
+        await self.bot.add_config(ctx.guild.id)
+        config = self.bot.configs[ctx.guild.id]
+        welcome_channel = self.bot.get_channel(config["welcome_channel"])
+
         if channel:
-            await ctx.send(f"The current welcome channel is:\n{self.welcome_channel.mention}\nAre you sure you want to change it to {channel.mention}? (Type 'yes' to change, or 'no' to cancel this change)")
+            await ctx.send(f"The current welcome channel is:\n{welcome_channel.mention}\nAre you sure you want to change it to {channel.mention}? (Type 'yes' to change, or 'no' to cancel this change)")
         else:
-            await ctx.send(f"The current welcome channel is:\n{self.welcome_channel.mention}\nPlease type the channel ID of the new welcome channel. (Type 'no' to cancel)")
+            await ctx.send(f"The current welcome channel is:\n{welcome_channel.mention}\nPlease type the channel ID of the new welcome channel. (Type 'no' to cancel)")
 
         try:
             response = await self.bot.wait_for('message', check=check, timeout=300)
@@ -272,8 +254,8 @@ Do C<channel_name> to mention a channel."""
             await ctx.send("Adam-Bot does not have permissions to access that channel, please try again.")
             return
 
-        await self._set_welcome_channel(channel.id)
-        self.welcome_channel = channel
+        self.bot.configs[ctx.guild.id]["welcome_channel"] = channel.id
+        await self.bot.propagate_config(ctx.guild.id)
         await ctx.send(f"The welcome channel has been updated to {channel.mention} :ok_hand:")
 
 
