@@ -100,21 +100,6 @@ class Moderation(commands.Cog):
     async def botclose(self, ctx):
         await self.bot.close(ctx)
 
-    # -----------------------ADAM-BOT DEV ROLE-----------------------
-
-    @commands.command(pass_context=True)
-    @commands.check(is_bot_owner)
-    async def dev(self, ctx, member: discord.Member):
-        """Toggles Adam-Bot Developer role to the specified user.
-Requires bot owner."""
-        role = get(member.guild.roles, name='Adam-Bot Developer')
-        if 'Adam-Bot Developer' in [x.name for x in member.roles]:
-            await member.remove_roles(role)
-            await ctx.send('Removed dev from `{0}`!'.format(member.mention))
-        else:
-            await member.add_roles(role)
-            await ctx.send('Added dev to `{0}`!'.format(member.mention))
-
     # -----------------------PURGE------------------------------
 
     @commands.command(pass_context=True)

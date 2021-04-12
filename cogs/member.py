@@ -4,7 +4,7 @@ from discord.utils import get
 from discord.errors import NotFound
 from discord import Embed, Colour, Status
 from .utils import time_str, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, \
-    GCSE_SERVER_ID
+    GCSE_SERVER_ID, SPAMPING_PERMS
 import requests
 import re
 import os
@@ -14,23 +14,13 @@ from random import choice as randchoice
 import asyncio
 import time
 
-
-class JoeMarjTypeTemplate:
-    """Enumeration that tells us what type of message needs to be given."""
-
-    def __init__(self):
-        self.NONE = 0
-        self.GIF = 1
-        self.MSG = 2
-
-
-JoeMarjType = JoeMarjTypeTemplate()
-
-
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.paper_warn_cooldown = {}
+
+    def in_private_server(ctx):
+        return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)  # in priv server or is adam
 
     def in_gcse(self, ctx):  # move to utils
         return ctx.guild.id == GCSE_SERVER_ID
@@ -54,33 +44,6 @@ class Member(commands.Cog):
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
-
-# -----------------------JOE MARJ--------------------------
-
-    async def _joe_marj_check(self, message):
-        """Internal method that checks a discord.Message for potential 'Joe Marj' infiltration. Returns a JoeMarjType enum."""
-        conditions = not message.author.bot and not message.content.startswith(
-            '-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
-        joe_marj_gifs = ["tenor.com/bwd9c", "tenor.com/bfk5w", "tenor.com/bwhez", "tenor.com/bwl5l", "tenor.com/bwlhw",
-                         "we_floss.gif"]
-        disallowed_chars = ["~", "*", "|"]
-        msg = message.content.lower()
-        for y in disallowed_chars:
-            msg = msg.replace(y, "")
-        if not conditions:  # Increase in performance to break early
-            return JoeMarjType.NONE
-        if max([x in msg.lower() for x in joe_marj_gifs]):  # Joe marj gif
-            return JoeMarjType.GIF
-        elif 'joe' in msg or 'marj' in msg:
-            return JoeMarjType.MSG
-
-    async def handle_joe_marj(self, message: discord.Message, delete_after=10):
-        """Method that receives a message, and replies to it if a 'Joe Marj' infiltration has been detected. Can receive a `delete_after` integer, which deletes the replies after that many seconds"""
-        result = await self._joe_marj_check(message)
-        if result == JoeMarjType.GIF:
-            await message.channel.send("STOP SENDING JOE MARJ GIF", delete_after=delete_after)
-        elif result == JoeMarjType.MSG:
-            await message.channel.send("STOP SAYING JOE MARJ", delete_after=delete_after)
 
 # -----------------------PAST PAPERS--------------------------
 
@@ -300,16 +263,6 @@ class Member(commands.Cog):
             print(e)
 
 # -----------------------FUN------------------------------
-    #    @commands.command()
-    #    @commands.guild_only()
-    #    async def zyclos(self, ctx):
-    #        zyclos = get(ctx.guild.members, id=202861110146236428)
-    #        await ctx.send(f'{zyclos.mention} https://tenor.com/view/jusreign-punjabi-indian-gif-5441330')
-
-    @commands.command()
-    async def test(self, ctx):
-        """Secret Area 51 command."""
-        await ctx.send('Testes')
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -326,15 +279,8 @@ class Member(commands.Cog):
                                          str(int(result) + 1))
         if conditions:
             await self.handle_paper_check(message)
-            # await self.handle_joe_marj(message)
             await self.handle_revise_keyword(message)
         return
-
-    @commands.Cog.listener()
-    async def on_message_edit(self, prev, curr):
-        already_warned = await self._joe_marj_check(prev)
-        if not already_warned:
-            await self.handle_joe_marj(curr)
 
     @commands.command(aliases=['bruh'])
     async def bruhs(self, ctx):
@@ -375,6 +321,32 @@ class Member(commands.Cog):
     async def cringe(self, ctx):
         await ctx.message.delete()
         await ctx.send('https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4')
+
+    @commands.command()
+    @commands.check(in_private_server)
+    async def spamping(self, ctx, amount, user: discord.Member, *message):
+        """For annoying certain people"""
+        await ctx.message.delete()
+
+        try:
+            iterations = int(amount)
+        except Exception:
+            await ctx.send(f"Please use a number for the amount, not {amount}")
+            return
+
+        msg = ' '.join(message) + " " + user.mention
+        for i in range(iterations):
+            await ctx.send(msg)
+
+    @commands.command()
+    @commands.check(in_private_server)
+    async def ghostping(self, ctx, amount, user: discord.Member):
+        """For sending a ghostping to annoy certain people"""
+        await ctx.message.delete()
+        for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
+            for i in range(int(amount)):
+                msg = await channel.send(user.mention)
+                await msg.delete()
 
 # -----------------------USER AND SERVER INFO------------------------------
 

@@ -298,7 +298,6 @@ if __name__ == "__main__":
                  'support',
                  'reputation',
                  'trivia',
-                 'private',
                  'demographics',
                  'spotify',
                  'warnings',
