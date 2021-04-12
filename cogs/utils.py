@@ -6,6 +6,7 @@ from datetime import timedelta
 from io import BytesIO
 from os import environ
 
+
 class EmbedPages:
     def __init__(self, page_type, data, title, colour: Colour, bot, initiator, channel, *args, **kwargs):
         self.bot = bot
@@ -14,7 +15,7 @@ class EmbedPages:
         self.page_type = page_type
         self.top_limit = 0
         self.colour = colour
-        self.embed = Embed(title=title + ": Page 1", color = colour)
+        self.embed = Embed(title=title + ": Page 1", color=colour)
         self.message: Message = None
         self.page_num = 1
         self.initiator = initiator # Here to stop others using the embed
@@ -60,8 +61,8 @@ class EmbedPages:
                     staff_string = f"DELETED USER ({self.data[i][2]})"
 
                 self.embed.add_field(name=f"**{self.data[i][0]}** : {member_string}",
-                                value=f"{self.data[i][3].strftime('On %d/%m/%Y at %I:%M %p')} by {staff_string}",
-                                inline=False)
+                                     value=f"{self.data[i][3].strftime('On %d/%m/%Y at %I:%M %p')} by {staff_string}",
+                                     inline=False)
 
             elif self.page_type == PageTypes.REP:
                 member = self.channel.guild.get_member(self.data[i][0])
@@ -107,16 +108,19 @@ class EmbedPages:
         """Edits the message to the current self.embed and updates self.message"""
         await self.message.edit(embed=self.embed)
 
+
 class PageTypes:
     QOTD = 0
     WARN = 1
     REP = 2
+
 
 class Todo:
     UNMUTE = 1
     UNBAN = 2
     DEMOGRAPHIC_SAMPLE = 3
     ONE_OFF_DEMOGRAPHIC_SAMPLE = 4
+
 
 class EmojiEnum:
     MIN_BUTTON = '\U000023ee'
@@ -126,68 +130,53 @@ class EmojiEnum:
     BUTTON = '\U00002b55'
     CLOSE = '\N{CROSS MARK}'
 
+
 class Permissions:
-    ROLE_ID = {"Administrator":445195157151809536,
-            "Head Mod":445195341310984203,
-            "Moderator":445195365625364490,
-            "Assistant":445195413343961092,
-            "Trial-Assistant":667872197091786793,
-            "Staff":445195535901655041,
-            "Adam-Bot Developer":740681121863303279,
-            "Member":445196497777197056,
-            "Priv":593791836209020928,
-            "Announcements":619243003202109470,}
+    ROLE_ID = {
+               "Administrator": 445195157151809536,
+               "Head Mod": 445195341310984203,
+               "Moderator": 445195365625364490,
+               "Assistant": 445195413343961092,
+               "Trial-Assistant": 667872197091786793,
+               "Staff": 445195535901655041,
+               "Adam-Bot Developer": 740681121863303279,
+               "Member": 445196497777197056,
+               "Priv": 593791836209020928,
+               "Announcements": 619243003202109470,
+    }
 
     ADMIN = [ROLE_ID['Administrator'], ROLE_ID['Priv']]
     MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
-    DEV = MOD + [ROLE_ID['Adam-Bot Developer']] # put here specifically so non-dev assistants can't mess with stuff
+    DEV = MOD + [ROLE_ID['Adam-Bot Developer']]  # put here specifically so non-dev assistants can't mess with stuff
     ASSISTANT = MOD + [ROLE_ID['Assistant']]
     TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
     STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
     MEMBERS = TRIALASSISTANT + [ROLE_ID['Member']]
 
-TIMES = {'w':7*24*60*60,
-         'week':7*24*60*60,
-         'weeks':7*24*60*60,
-         'd':24*60*60,
-         'day':24*60*60,
-         'days':24*60*60,
-         'hour':60*60,
-         'hours':60*60,
-         'hr':60*60,
-         'h':60*60,
-         'm':60,
-         'minute':60,
-         'minutes':60,
-         'min':60,
-         'mins':60,
-         's':1,
-         'second':1,
-         'seconds':1,
-         'sec':1,
-         'secs':1}
 
 CHANNELS = {
-    "waiting-room":445198121618767872,
-    "general":445199175244709898,
-    "trivia":498617494693478402,
-    "rules":445194263408672769,
-    "faqs":583798388718567444,
-    "qotd":496472968298496020,
-    "adambot-dev-spam":809791208884142140,
-    "announcements":445198590332370944,
-    "support-logs":597068935829127168,
-    "mod-logs":491726394598883338,
+    "waiting-room": 445198121618767872,
+    "general": 445199175244709898,
+    "trivia": 498617494693478402,
+    "rules": 445194263408672769,
+    "faqs": 583798388718567444,
+    "qotd": 496472968298496020,
+    "adambot-dev-spam": 809791208884142140,
+    "announcements": 445198590332370944,
+    "support-logs": 597068935829127168,
+    "mod-logs": 491726394598883338,
 }
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
 SPAMPING_PERMS = [
-394978551985602571, #Adam C
-374144745829826572, #Bxnana
+    394978551985602571, #Adam C
+    374144745829826572, #Bxnana
 ]
+
 GCSE_SERVER_ID = 445194262947037185
 NEWLINE = '\n'
 CODE_URL = "https://github.com/adampy/gcsediscordbot"
+
 
 async def send_file(fig, channel, filename):
     """Send data to a channel with filename `filename`"""
@@ -196,9 +185,6 @@ async def send_file(fig, channel, filename):
     buf.seek(0)
     await channel.send(file=File(buf, filename=f'{filename}.png'))
 
-#async def separate_args(self, string):
-#    print("Not implemented")
-#    return
 
 async def get_spaced_member(ctx, args, bot):
     """Moves hell on Earth to get a guild member object from a given string
@@ -250,7 +236,6 @@ def ordinal(n: int) -> str:
     return str(n) + suffix
 
 
-
 TIME_UNITS = {
     "w": {"aliases": ("weeks", "week"), "in_seconds": 604800},
     "d": {"aliases": ("days", "day"), "in_seconds": 86400},
@@ -261,13 +246,10 @@ TIME_UNITS = {
 
 ## WARNING: You are about to observe Area 51 code, proceed with caution
 
+
 class flag_methods:
     def __init__(self):
-        #print("hi!")
         return
-
-    #def reverse(string):
-    #    return string[::-1]
 
     def str_time_to_seconds(string):  # when not close to having a brain aneurysm, rewrite this
                                       # so it can convert up and down to any defined unit, not
@@ -280,13 +262,13 @@ class flag_methods:
             string = string.replace("..", ".")
         string = list(string)
         times = []
-        time_str = ""
+        time_string = ""
         for pos in string:
-            if pos.isdigit() or (pos == "." and "." not in time_str):
-                time_str += pos
+            if pos.isdigit() or (pos == "." and "." not in time_string):
+                time_string += pos
             else:
-                times.append([time_str, pos])
-                time_str = ""
+                times.append([time_string, pos])
+                time_string = ""
         seconds = 0
         for time_ in times:
             if len(time_) == 2 and time_[0] and time_[1] in TIME_UNITS:  # check to weed out dodgy stuff
