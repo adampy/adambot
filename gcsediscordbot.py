@@ -263,6 +263,12 @@ class AdamBot(Bot):
 
             await asyncio.sleep(5)
 
+
+    # General configuration workflow:
+    # 1) Call bot.add_config(guild.id) which makes sure there is that guild's config stuff in bot.configs dict
+    # 2) Make any edits directly to bot.configs[guild.id]
+    # 3) Call bot.propagate_config(guild.id) which propagates any edits to the DB
+
     async def add_config(self, guild_id):
         """
         Method that gets the configuraton for a guild and puts it into self.configs dictionary (with the guild ID as the key). The data
@@ -273,8 +279,8 @@ class AdamBot(Bot):
                 record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id)
                 if not record:
                     await connection.execute("INSERT INTO config (guild_id) VALUES ($1);", guild_id)
-                    record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id)
-            self.configs[guild_id] = dict(record)
+                    record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id) # Fetch configuration record
+            self.configs[guild_id] = dict(record) # Turns the record into a dictionary (column name = key, value = value)
 
     async def propagate_config(self, guild_id):
         """
@@ -285,9 +291,9 @@ class AdamBot(Bot):
         
         # Make SQL
         sql_part = ""
-        keys = list(data)
+        keys = list(data) # List of the keys (current column names in the database)
         for i in range(length):
-            sql_part += f"{keys[i]} = (${i + 1})"
+            sql_part += f"{keys[i]} = (${i + 1})" # For each key, add "{nth key_name} = $n+1"
             if i != length - 1:
                 sql_part += ", " # If not the last element, add a ", "
 
@@ -323,6 +329,7 @@ if __name__ == "__main__":
                  'spotify',
                  'warnings',
                  'logging',
-                 'eval'] # Make this dynamic?
+                 'eval',
+                 'config'] # Make this dynamic?
     bot = AdamBot(local_host, cog_names, start_time, token=args.token, command_prefix=args.prefix, intents=intents)
     # bot.remove_command("help")

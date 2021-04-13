@@ -224,6 +224,7 @@ Do C<channel_name> to mention a channel."""
         # Channel already given, and approved
         if channel and response.content.lower() != "yes":
             await ctx.send("Unknown response, please try again.")
+            return
         
         # Channel not given, parse it
         if not channel:
