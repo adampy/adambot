@@ -16,7 +16,7 @@ class Warnings(commands.Cog):
         """Handle gettings the warns for a specific member"""
         warns = []
         async with self.bot.pool.acquire() as connection:
-            warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) ORDER BY id', member.id)
+            warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) AND guild_id = $2 ORDER BY id;', member.id, ctx.guild.id)
 
         if len(warns) > 0:
             embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
@@ -26,11 +26,14 @@ class Warnings(commands.Cog):
             await ctx.send("No warnings recorded!")
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def warn(self, ctx, member: discord.Member, *, reason):
         """Gives a member a warning, a reason is optional but recommended.
 Staff role needed."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to warn.")
+            return
+
         parsed_args = self.bot.flag_handler.separate_args(reason, fetch=["reason"], blank_as_flag="reason")
         reason = parsed_args["reason"]
         if len(reason) > 255:
@@ -39,8 +42,8 @@ Staff role needed."""
         
         warns = 0
         async with self.bot.pool.acquire() as connection:
-            await connection.execute('INSERT INTO warn (member_id, staff_id, reason) values ($1, $2, $3)', member.id, ctx.author.id, reason)
-            warns = await connection.fetchval('SELECT COUNT(*) FROM warn WHERE member_id = ($1)', member.id)
+            await connection.execute('INSERT INTO warn (member_id, staff_id, guild_id, reason) values ($1, $2, $3, $4)', member.id, ctx.author.id, ctx.guild.id, reason)
+            warns = await connection.fetchval('SELECT COUNT(*) FROM warn WHERE member_id = ($1) AND guild_id = $2', member.id, ctx.guild.id)
 
         await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
         try:
@@ -51,18 +54,13 @@ Staff role needed."""
     @commands.command(pass_context = True)
     @commands.guild_only()
     async def warns(self, ctx, member: discord.Member = None):
-        is_staff = False
-        for role in ctx.author.roles:
-            if role.id in Permissions.STAFF:
-                is_staff = True
-                break
-
+        is_staff = await self.bot.is_staff(ctx)
         if is_staff:
             if not member:
                 # Show all warns
                 warns = []
                 async with self.bot.pool.acquire() as connection:
-                    warns = await connection.fetch('SELECT * FROM warn ORDER BY id')
+                    warns = await connection.fetch('SELECT * FROM warn WHERE guild_id = $1 ORDER BY id;', ctx.guild.id)
 
                 if len(warns) > 0:
                     embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
@@ -81,16 +79,18 @@ Staff role needed."""
                 await ctx.send("You don't have permission to view other people's warns.")
 
     @commands.command(pass_context=True, aliases=['warndelete'])
-    @commands.has_any_role(*Permissions.MOD)
     @commands.guild_only()
     async def warnremove(self, ctx, *warnings):
         """Remove warnings with this command, can do -warnremove <warnID> or -warnremove <warnID1> <warnID2>.
 Moderator role needed"""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to remove a warning.")
+            return
 
-        if warnings[0].lower() == 'all':
-            async with self.bot.pool.acquire() as connection:
-                await connection.execute('DELETE FROM warn')
-            await ctx.send("All warnings have been removed.")
+        # if warnings[0].lower() == 'all':
+        #     async with self.bot.pool.acquire() as connection:
+        #         await connection.execute('DELETE FROM warn WHERE guild_id = $1', ctx.guild.id)
+        #     await ctx.send("All warnings on this guild have been removed.")
 
         if len(warnings) > 1:
             await ctx.send('One moment...')
@@ -99,9 +99,15 @@ Moderator role needed"""
             for warning in warnings:
                 try:
                     warning = int(warning)
-                    await connection.execute('DELETE FROM warn WHERE id = ($1)', warning)
+                    existing_warnings = await connection.fetch("SELECT * FROM warn WHERE id = $1 AND guild_id = $2", warning, ctx.guild.id)
+                    if len(existing_warnings) == 0:
+                        await ctx.send("You cannot remove warnings originating from another guild, or those that do not exist.")
+                        continue # Try next warning instead
+
+                    await connection.execute('DELETE FROM warn WHERE id = ($1) AND guild_id = $2', warning, ctx.guild.id)
                     if len(warnings) == 1:
                         await ctx.send(f'Warning with ID {warning} has been deleted.')
+
                 except ValueError:
                     await ctx.send(f'Error whilst deleting ID {warning}: give me a warning ID, not words!')
 

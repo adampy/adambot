@@ -92,7 +92,7 @@ where <GUILD_ID> is the guild ID, <CHANNEL_ID> is the log channel ID, and `varia
 
 
 # :open_file_folder: Database schema
-The following describes the database schema. (Last updated changed 12/04/2021)
+The following describes the database schema. (Last updated changed 14/04/2021)
 
 ##  qotd
 Field name | Type | Constraints
@@ -145,6 +145,7 @@ member_id | bigint
 staff_id | bigint
 warned_at | timestamptz | NOT NULL DEFAULT now()
 reason | varchar(255)
+guild_id | BIGINT
 
 <br>
 

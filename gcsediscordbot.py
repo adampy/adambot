@@ -301,6 +301,14 @@ class AdamBot(Bot):
         async with self.pool.acquire() as connection:
             await connection.execute(sql, *data.values())
 
+    async def is_staff(self, ctx):
+        """
+        Method that checks if a user is staff in their guild or not
+        """
+        await self.add_config(ctx.guild.id)
+        staff_role_id = self.configs[ctx.guild.id]["staff_role"]
+        return staff_role_id in [y.id for y in ctx.author.roles]
+
 
 if __name__ == "__main__":
     local_host = get_credentials()

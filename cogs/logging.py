@@ -10,18 +10,6 @@ class Logging(commands.Cog):
         self.bot = bot
         self.mod_logs = {}
 
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     await asyncio.sleep(1)
-    #     async with self.bot.pool.acquire() as connection: # Get all mod log channel IDs and make a converter (dict)
-    #         data = await connection.fetch("SELECT * FROM variables WHERE variable LIKE 'mod-log-%';")
-    #         for entry in data:
-    #             guild_id = int(entry[0].split('mod-log-')[1])
-    #             channel_id = int(entry[1])
-    #             self.mod_logs[guild_id] = self.bot.get_channel(channel_id)
-
-    #     #self.mod_logs = self.bot.get_channel(CHANNELS['mod-logs'])
-
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
@@ -218,14 +206,20 @@ class Logging(commands.Cog):
                         log.set_thumbnail(url=after.avatar_url)
                     log.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
-                    #Send `log` embed to all servers the user is part of
-                    shared_guilds = [x for x in self.bot.guilds if after in x.members]
-                    for guild in shared_guilds:
-                        await self.bot.add_config(guild.id)
-                        channel_id = self.bot.configs[guild.id]["mod_log_channel"]
-                        if channel_id:
-                            channel = self.bot.get_channel(channel_id)
-                            await channel.send(embed=log)
+                    #Send `log` embed to all servers the user is part of, unless its a nickname change
+                    if prop["display_name"] == "Nickname":
+                        await self.bot.add_config(before.guild.id)
+                        channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
+                        channel = self.bot.get_channel(channel_id)
+                        await channel.send(embed=log)
+                    else:
+                        shared_guilds = [x for x in self.bot.guilds if after in x.members]
+                        for guild in shared_guilds:
+                            await self.bot.add_config(guild.id)
+                            channel_id = self.bot.configs[guild.id]["mod_log_channel"]
+                            if channel_id:
+                                channel = self.bot.get_channel(channel_id)
+                                await channel.send(embed=log)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):

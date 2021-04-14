@@ -7,14 +7,6 @@ class Config(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def is_staff(self, ctx):
-        """
-        Method that checks if a user is staff in their guild or not
-        """
-        await self.bot.add_config(ctx.guild.id)
-        staff_role_id = self.bot.configs[ctx.guild.id]["staff_role"]
-        return staff_role_id in [y.id for y in ctx.author.roles]
-
     @commands.command(pass_context = True)
     @commands.has_permissions(administrator = True)
     async def staff(self, ctx, role):
@@ -38,7 +30,7 @@ class Config(commands.Cog):
 
     @commands.command(pass_context = True)
     async def staffcmd(self, ctx):
-        if await self.is_staff(ctx):
+        if await self.bot.is_staff(ctx):
             await ctx.send("Hello staff member!")
         else:
             await ctx.send("You are not staff!")
