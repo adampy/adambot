@@ -143,7 +143,8 @@ class AdamBot(Bot):
                     elif reaction.emoji == EmojiEnum.MAX_BUTTON:
                         await page.last_page()
 
-                    await reaction.message.remove_reaction(reaction.emoji, user)
+                    if reaction.emoji != EmojiEnum.CLOSE:
+                        await reaction.message.remove_reaction(reaction.emoji, user)
                     break
 
     async def on_message_delete(self, message):

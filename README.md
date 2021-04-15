@@ -99,7 +99,7 @@ Field name | Type | Constraints
 -----------|------|--------------
 id | int | SERIAL PRIMARY KEY
 question | varchar(255) | 
-submitted_by | varchar(255)
+submitted_by | BIGINT
 submitted_at | timestamptz | NOT NULL DEFAULT now()
 guild_id | bigint | NOT NULL
 
