@@ -13,12 +13,15 @@ import matplotlib
 class Reputation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.key = os.environ.get('DATABASE_URL')
 
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
         async with self.bot.pool.acquire() as connection:
-            leaderboard = await connection.fetch('SELECT * FROM rep ORDER BY reps DESC')
+            leaderboard = await connection.fetch('SELECT * FROM rep WHERE guild_id = $1 ORDER BY reps DESC', ctx.guild.id)
+
+        if len(leaderboard) == 0:
+            await ctx.send("There are no rep points in this guild yet :sob:")
+            return
 
         embed = EmbedPages(PageTypes.REP, leaderboard, "Reputation Leaderboard", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
         await embed.set_page(1) # Default first page
@@ -27,34 +30,31 @@ class Reputation(commands.Cog):
     async def modify_rep(self, member, change):
         reps = change
         async with self.bot.pool.acquire() as connection:
-            reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", member.id)
+            reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1) AND guild_id = $2", member.id, member.guild.id)
             if not reps:
-                await connection.execute('INSERT INTO rep (reps, member_id) VALUES ($1, $2)', change, member.id)
+                await connection.execute('INSERT INTO rep (reps, member_id, guild_id) VALUES ($1, $2, $3)', change, member.id, member.guild.id)
             else:
-                await self.set_rep(member.id, reps+change)
+                await self.set_rep(member.id, member.guild.id, reps+change)
                 reps = reps + change
 
         return (reps if reps else change)
     
-    async def clear_rep(self, user_id):
+    async def clear_rep(self, user_id, guild_id):
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE FROM rep WHERE member_id = ($1)", user_id)
+            await connection.execute("DELETE FROM rep WHERE member_id = ($1) AND guild_id = $2", user_id, guild_id)
 
-    async def set_rep(self, user_id, reps):
+    async def set_rep(self, user_id, guild_id, reps):
         async with self.bot.pool.acquire() as connection:
             if reps == 0:
-                await self.clear_rep(user_id)
+                await self.clear_rep(user_id, guild_id)
                 return 0
             else:
-                await connection.execute("UPDATE rep SET reps = ($1) WHERE member_id = ($2)", reps, user_id)
-                new_reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user_id)
+                await connection.execute("UPDATE rep SET reps = ($1) WHERE member_id = ($2) AND guild_id = $3", reps, user_id, guild_id)
+                new_reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1) AND guild_id = $2", user_id, guild_id)
                 if not new_reps: # User was not already on the rep table, it needs adding
-                    await connection.execute("INSERT INTO rep (reps, member_id) VALUES ($1, $2)", reps, user_id)
+                    await connection.execute("INSERT INTO rep (reps, member_id, guild_id) VALUES ($1, $2, $3)", reps, user_id, guild_id)
                     new_reps = reps
                 return new_reps
-
-    def in_gcse(ctx):
-        return ctx.guild.id == GCSE_SERVER_ID
 
 #-----------------------REP COMMANDS------------------------------
 
@@ -127,18 +127,20 @@ class Reputation(commands.Cog):
 
     @rep.group()
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.MOD)
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('```-rep reset member @Member``` or ```-rep reset all```')
 
     @reset.command()
-    @commands.has_any_role(*Permissions.MOD)
     @commands.guild_only()
     async def member(self, ctx, user_id):
         """Resets a single users reps."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to reset a member's rep points :sob:")
+            return
+
         user = await self.bot.fetch_user(user_id)
-        await self.clear_rep(user.id)
+        await self.clear_rep(user.id, ctx.guild.id)
         await ctx.send(f'{user.mention} now has 0 points.')
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
@@ -148,11 +150,14 @@ class Reputation(commands.Cog):
 
     @reset.command(pass_context=True)
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.MOD)
     async def all(self, ctx):
         """Resets everyones reps."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to reset everyone's rep points :sob:")
+            return
+
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE from rep")
+            await connection.execute("DELETE from rep WHERE guild_id = $1", ctx.guild.id)
 
         await ctx.send('Done. Everyone now has 0 points.')
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
@@ -163,9 +168,12 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.ASSISTANT)
     async def set(self, ctx, user: discord.User, rep):
         """Sets a specific members reps to a given value."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to set a member's rep points :sob:")
+            return
+
         try:
             rep = int(rep)
         except ValueError:
@@ -174,7 +182,7 @@ class Reputation(commands.Cog):
 
         #user = await self.bot.fetch_user(user_id)
 
-        new_reps = await self.set_rep(user.id, rep)
+        new_reps = await self.set_rep(user.id, ctx.guild.id, rep)
         await ctx.send(f'{user.mention} now has {new_reps} reputation points.')
         embed = Embed(title='Reputation Points Set', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
@@ -185,16 +193,19 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.ASSISTANT)
     async def hardset(self, ctx, user_id, rep):
         """Sets a specific member's reps to a given value via their ID."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to hardset a member's rep points :sob:")
+            return
+
         try:
             rep = int(rep)
         except ValueError:
             await ctx.send('The rep must be a number!')
             return
 
-        new_reps = await self.set_rep(int(user_id), rep)
+        new_reps = await self.set_rep(int(user_id), ctx.guild_id, rep)
 
         await ctx.send(f'{user_id} now has {new_reps} reputation points.')
         embed = Embed(title='Reputation Points Set (Hard set)', color=Colour.from_rgb(177,252,129))
@@ -219,7 +230,7 @@ class Reputation(commands.Cog):
         rep = None
         lb_pos = None
         async with self.bot.pool.acquire() as connection:
-            all_rep = await connection.fetch("SELECT * FROM rep ORDER by reps DESC;")
+            all_rep = await connection.fetch("SELECT * FROM rep WHERE guild_id = $1 ORDER by reps DESC;", ctx.guild.id)
             all_rep = [x for x in all_rep if ctx.channel.guild.get_member(x[0]) is not None]
             member_record = next((x for x in all_rep if x[0] == user.id), None)
             if member_record: # If the user actually has reps
@@ -250,7 +261,7 @@ class Reputation(commands.Cog):
     async def data(self, ctx):
         vals = []
         async with self.bot.pool.acquire() as connection:
-            vals = await connection.fetch("SELECT DISTINCT reps, COUNT(member_id) FROM rep WHERE reps > 0 GROUP BY reps ORDER BY reps")
+            vals = await connection.fetch("SELECT DISTINCT reps, COUNT(member_id) FROM rep WHERE reps > 0 AND guild_id = $1 GROUP BY reps ORDER BY reps", ctx.guild.id)
 
         fig, ax = plt.subplots()
         ax.plot([x[0] for x in vals], [x[1] for x in vals], 'b-o', linewidth=0.5, markersize=1)

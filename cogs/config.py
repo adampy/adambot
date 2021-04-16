@@ -9,6 +9,7 @@ class Config(commands.Cog):
 
     @commands.command(pass_context = True)
     @commands.has_permissions(administrator = True)
+    @commands.guild_only()
     async def staff(self, ctx, role):
         """
         Command that sets up the staff role for the server the command is executed in
@@ -29,6 +30,7 @@ class Config(commands.Cog):
             return
 
     @commands.command(pass_context = True)
+    @commands.guild_only()
     async def staffcmd(self, ctx):
         if await self.bot.is_staff(ctx):
             await ctx.send("Hello staff member!")

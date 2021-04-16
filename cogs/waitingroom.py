@@ -129,7 +129,7 @@ class WaitingRoom(commands.Cog):
     #-----WELCOME MESSAGE-----
 
     @commands.group()
-    @commands.has_any_role(*Permissions.MOD)
+    @commands.guild_only()
     async def editwelcome(self, ctx):
         """Edit the welcome message and/or channel"""
         if ctx.invoked_subcommand is None:
@@ -137,21 +137,33 @@ class WaitingRoom(commands.Cog):
             return
 
     @editwelcome.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MOD)
+    @commands.guild_only()
     async def testmessage(self, ctx, to_ping: discord.User = None):
         """Command that returns the welcome message, and pretends the command invoker is the new user."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to test the welcome message.")
+            return
+
         await self.bot.add_config(ctx.guild.id)
-        config = self.bot.configs[ctx.guild.id]
-        msg = await self.get_parsed_welcome_message(config["welcome_msg"], to_ping or ctx.author, ctx.guild) # to_ping or author means the author unless to_ping is provided.
-        await ctx.channel.send(msg)
+        msg = self.bot.configs[ctx.guild.id]["welcome_msg"]
+        if msg == None:
+            await ctx.send("A welcome message has not been set.")
+            return
+            
+        msg = await self.get_parsed_welcome_message(msg, to_ping or ctx.author, ctx.guild) # to_ping or author means the author unless to_ping is provided.
+        await ctx.send(msg)
 
     @editwelcome.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MOD)
+    @commands.guild_only()
     async def message(self, ctx, *message):
-        """Changes the welcome message. Moderator+ role needed.
+        """Changes the welcome message.
 Do <user> to ping the new member.
 Do R<role_name> to ping a role.
 Do C<channel_name> to mention a channel."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to edit the welcome message.")
+            return
+
         author = ctx.author
         channel = ctx.channel
         def check(m):
@@ -160,7 +172,11 @@ Do C<channel_name> to mention a channel."""
         await self.bot.add_config(ctx.guild.id)
         config = self.bot.configs[ctx.guild.id]
         welcome_msg = config["welcome_msg"]
-        
+
+        if welcome_msg == None and not message: # If no welcome message set and no new welcome message provided
+            await ctx.send("A welcome message has not been set, you can set one doing ```-editwelcome message [message...]```")
+            return
+
         if not message:
             await ctx.send(f"The current welcome message is:\n```{welcome_msg}```\nPlease type you new welcome message. (Type 'no' to cancel)")
         else:
@@ -194,9 +210,13 @@ Do C<channel_name> to mention a channel."""
         await ctx.send("The welcome message has been updated :ok_hand:")
 
     @editwelcome.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MOD)
+    @commands.guild_only()
     async def channel(self, ctx, channel: discord.TextChannel = None):
-        """Changes the welcome channel. Moderator+ role needed."""
+        """Changes the welcome channel."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to edit the welcome channel.")
+            return
+
         command_channel = ctx.channel
         author = ctx.author
         def check(m):
@@ -204,6 +224,10 @@ Do C<channel_name> to mention a channel."""
 
         await self.bot.add_config(ctx.guild.id)
         config = self.bot.configs[ctx.guild.id]
+        welcome_channel_id = config["welcome_channel"]
+        if welcome_channel_id == None and channel == None: # If no welcome message set and no new welcome message provided
+            await ctx.send("A welcome channel has not been set. You can set one by doing ```-editwelcome channel <TextChannel>```")
+            return
         welcome_channel = self.bot.get_channel(config["welcome_channel"])
 
         if channel:

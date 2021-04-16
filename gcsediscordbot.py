@@ -143,7 +143,7 @@ class AdamBot(Bot):
                     elif reaction.emoji == EmojiEnum.MAX_BUTTON:
                         await page.last_page()
 
-                    if reaction.emoji != EmojiEnum.CLOSE:
+                    if reaction.emoji != EmojiEnum.CLOSE: # Fixes errors that occur when deleting the embed above
                         await reaction.message.remove_reaction(reaction.emoji, user)
                     break
 

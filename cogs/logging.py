@@ -206,8 +206,8 @@ class Logging(commands.Cog):
                         log.set_thumbnail(url=after.avatar_url)
                     log.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
-                    #Send `log` embed to all servers the user is part of, unless its a nickname change
-                    if prop["display_name"] == "Nickname":
+                    #Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
+                    if prop["display_name"] in ["Nickname", "Roles"]:
                         await self.bot.add_config(before.guild.id)
                         channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
                         channel = self.bot.get_channel(channel_id)

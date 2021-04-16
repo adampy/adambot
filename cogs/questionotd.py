@@ -35,7 +35,7 @@ class QuestionOTD(commands.Cog):
     @qotd.command(pass_context = True)
     @commands.guild_only() # TODO: Add guild only constraints to most admin commands
     @commands.has_permissions(administrator = True)
-    async def setrole(self, ctx, role):
+    async def role(self, ctx, role):
         """
         Command that sets the QOTD role - the role that has permissions to pick, delete, and show all QOTDs
         """
@@ -51,7 +51,7 @@ class QuestionOTD(commands.Cog):
     @qotd.command(pass_context = True)
     @commands.guild_only()
     @commands.has_permissions(administrator = True)
-    async def setlimit(self, ctx, limit):
+    async def limit(self, ctx, limit):
         """
         Command that sets the QOTD role - the role that has permissions to pick, delete, and show all QOTDs
         """
@@ -67,7 +67,7 @@ class QuestionOTD(commands.Cog):
     @qotd.command(pass_context = True)
     @commands.guild_only()
     @commands.has_permissions(administrator = True)
-    async def setchannel(self, ctx, channel: discord.TextChannel = None):
+    async def channel(self, ctx, channel: discord.TextChannel = None):
         """
         Command that sets up a QOTD channel in a given guild
         """
@@ -121,7 +121,7 @@ class QuestionOTD(commands.Cog):
                 'SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2) AND guild_id = $3', member, today_date, ctx.guild.id)
             
             limit = self.bot.configs[ctx.guild.id]["qotd_limit"] # Don't need to call add_config here, because it was called when checking is_staff
-            if limit == 0:
+            if limit == 0 or limit == None: # Account for a limit set to 0 and a non-changed limit
                 limit = inf # math.inf
 
             if len(submitted_today) >= limit and not is_staff:  # Staff bypass
