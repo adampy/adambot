@@ -141,7 +141,7 @@ Usage: `-purge 50`"""
 
     @commands.command(pass_context=True)
     @has_permissions(kick_members=True)
-    async def kick(self, ctx, member: discord.Member, *, args):
+    async def kick(self, ctx, member: discord.Member, *, args=""):
         """Kicks a given user.
 Staff role needed"""
         reason = None
@@ -152,7 +152,7 @@ Staff role needed"""
             reason = f'No reason provided'
         try:  # perhaps add some like `attempt_dm` thing in utils instead of this?
             await member.send(f"You have been kicked from {ctx.guild} ({reason})")
-        except discord.Errors.Forbidden:
+        except discord.errors.Forbidden:
             print(f"Could not DM {member.display_name} about their kick!")
         await member.kick(reason=reason)
         await ctx.send(f'{member.mention} has been kicked :boot:')
@@ -168,23 +168,21 @@ Staff role needed"""
 
     @commands.command(pass_context=True, aliases=["hackban"])
     @has_permissions(ban_members=True)
-    async def ban(self, ctx, member, *, args):
+    async def ban(self, ctx, member, *, args=""):
         """Bans a given user.
         Merged with previous command hackban
         Works with user mention or user ID
         Moderator role needed"""
+        reason = "No reason provided"
         member, in_guild = await self.get_member_obj(member)
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
 
-            if not reason:
-                reason = f'No reason provided'
             if timeperiod:
                 await self.timer(Todo.UNBAN, timeperiod, member.id)
-        else:
-            reason = None
+
         print(f"MEMBER IS TYPE {type(member).__name__}")
         if not member:
             await ctx.send("Couldn't find that user!")
@@ -194,7 +192,7 @@ Staff role needed"""
             return
         try:
             await member.send(f"You have been banned from {ctx.guild.name} ({reason})")
-        except discord.Errors.Forbidden:
+        except discord.errors.Forbidden:
             print(f"Could not DM {member.id} about their ban!")
         await ctx.guild.ban(member, reason=reason, delete_message_days=0)
         await ctx.send(f'{member.mention} has been banned.')
@@ -209,15 +207,14 @@ Staff role needed"""
 
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
-    async def unban(self, ctx, member, *, args):
+    async def unban(self, ctx, member, *, args=""):
         """Unbans a given user with the ID.
         Moderator role needed."""
+        reason = "No reason provided"
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"]
 
-        if not reason:
-            reason = "No reason provided"
         member, in_guild = await self.get_member_obj(member)
         if not member:
             await ctx.send("Couldn't find that user!")
@@ -245,6 +242,7 @@ Staff role needed"""
     async def mute(self, ctx, member: discord.Member, *, args=""):
         """Gives a given user the Muted role.
 Staff role needed."""
+        reason, timeperiod = None, None
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
             timeperiod = parsed_args["time"]
@@ -252,8 +250,6 @@ Staff role needed."""
 
             if timeperiod:
                 await self.timer(Todo.UNMUTE, timeperiod, member.id)
-        else:
-            reason, timeperiod = None, None
 
         role = get(member.guild.roles, name='Muted')
         await member.add_roles(role, reason=reason if reason else 'No reason - muted by {ctx.author.name}')
@@ -271,7 +267,7 @@ Staff role needed."""
             reasonstring = reason
         try:
             await member.send(f'You have been muted {timestring} for {reasonstring}.')
-        except discord.Errors.Forbidden:
+        except discord.errors.Forbidden:
             print(f"NOTE: Could not DM {member.display_name} about their mute")
 
         embed = Embed(title='Member Muted', color=Colour.from_rgb(172, 32, 31))
@@ -288,13 +284,11 @@ Staff role needed."""
     async def unmute(self, ctx, member: discord.Member, *, args=""):
         """Removes Muted role from a given user.
 Staff role needed."""
+        reason = None
         if args:
-
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"]
 
-        else:
-            reason = None
 
         role = get(member.guild.roles, name='Muted')
         await member.remove_roles(role,
