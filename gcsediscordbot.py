@@ -68,7 +68,7 @@ class AdamBot(Bot):
         self.start_up()
 
     async def close(self, ctx=None):  # ctx = None because this is also called upon CTRL+C in command line
-        """Procedure that closes down AdamBot, using the standard client.close() command, as well as some database hadling methods."""
+        """Procedure that closes down AdamBot, using the standard client.close() command, as well as some database handling methods."""
         self.online = False  # This is set to false to prevent DB things going on in the background once bot closed
         user = f"{self.user.mention} " if self.user else "" 
         p_s = f"Beginning process of shutting {user}down. DB pool shutting down..."
