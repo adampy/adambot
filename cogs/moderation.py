@@ -15,7 +15,7 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def get_member_obj(self, member):
+    async def get_member_obj(self, ctx, member):
         """
         Attempts to get user/member object from mention/user ID.
         Independent of whether the user is a member of a shared guild
@@ -24,8 +24,9 @@ class Moderation(commands.Cog):
         in_guild = True
         try:
             print("Attempted member conversion")
-            member = await commands.MemberConverter().convert(member)  # converts mention to member object
-        except Exception:
+            member = await commands.MemberConverter().convert(ctx, member)  # converts mention to member object
+        except Exception as e:
+            print(e)
             try:  # assumes id
                 member = member.replace("<@!", "").replace(">", "")  # fix for funny issue with mentioning users that aren't guild members
                 member = await self.bot.fetch_user(member)  # gets object from id, seems to work for users not in the server
@@ -174,7 +175,7 @@ Staff role needed"""
         Works with user mention or user ID
         Moderator role needed"""
         reason = "No reason provided"
-        member, in_guild = await self.get_member_obj(member)
+        member, in_guild = await self.get_member_obj(ctx, member)
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
             timeperiod = parsed_args["time"]
@@ -215,7 +216,7 @@ Staff role needed"""
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"]
 
-        member, in_guild = await self.get_member_obj(member)
+        member, in_guild = await self.get_member_obj(ctx, member)
         if not member:
             await ctx.send("Couldn't find that user!")
             return
