@@ -57,7 +57,7 @@ class QuestionOTD(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             submitted_today = await connection.fetch(
                 'SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2)', member, today_date)
-            if len(submitted_today) >= 2 and not is_staff:  # Staff bypass
+            if True or (len(submitted_today) >= 2 and not is_staff):  # Staff bypass
                 await ctx.send('You can only submit 2 QOTD per day - this is to stop bot abuse.')
             else:
                 await connection.execute('INSERT INTO qotd (question, submitted_by) VALUES ($1, $2)', qotd, member)
