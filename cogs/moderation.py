@@ -259,7 +259,7 @@ Staff role needed."""
         if not timeperiod:
             timestring = 'indefinitely'
         else:
-            time = (datetime.utcnow() + timedelta(seconds=timeperiod))  # + timedelta(hours = 1)
+            time = (self.bot.correct_time() + timedelta(seconds=timeperiod))  # + timedelta(hours = 1)
             timestring = 'until ' + time.strftime('%H:%M on %d/%m/%y')
 
         if not reason or reason is None:
