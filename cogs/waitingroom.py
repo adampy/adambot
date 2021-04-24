@@ -335,7 +335,7 @@ Do C<channel_name> to mention a channel."""
                     await question.edit(content = f"DMs have been sent to {i}/{len(members)} lurkers :ok_hand:")
 
                     try:
-                        await member.send("If you are wanting to join the GCSE 9-1 server then please tell us your year in the waiting room. Thanks!")
+                        await member.send(f"If you are wanting to join the {ctx.guild.name} server then please tell us your year in the waiting room. Thanks!")
                     except discord.Forbidden: # Catches if DMs are closed
                         pass
 
