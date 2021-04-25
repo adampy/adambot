@@ -28,10 +28,10 @@ class Moderation(commands.Cog):
         except Exception as e:
             print(e)
             try:  # assumes id
-                member = member.replace("<@!", "").replace(">",
-                                                           "")  # fix for funny issue with mentioning users that aren't guild members
-                member = await self.bot.fetch_user(
-                    member)  # gets object from id, seems to work for users not in the server
+                member = member.replace("<@!", "").replace(">", "")
+                # fix for funny issue with mentioning users that aren't guild members
+                member = await self.bot.fetch_user(member)
+                # gets object from id, seems to work for users not in the server
                 in_guild = False
             except Exception as e:
                 print(e)
@@ -448,8 +448,7 @@ Administrator role needed."""
     async def say(self, ctx, channel: discord.TextChannel, *, text):
         """Say a given string in a given channel
 Staff role needed."""
-        await channel.send(text[5:] if text.startswith("/tts") else text,
-                           tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
+        await channel.send(text[5:] if text.startswith("/tts") else text, tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
 
     @commands.command()
     @commands.guild_only()
