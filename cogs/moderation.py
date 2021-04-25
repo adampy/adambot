@@ -28,8 +28,10 @@ class Moderation(commands.Cog):
         except Exception as e:
             print(e)
             try:  # assumes id
-                member = member.replace("<@!", "").replace(">", "")  # fix for funny issue with mentioning users that aren't guild members
-                member = await self.bot.fetch_user(member)  # gets object from id, seems to work for users not in the server
+                member = member.replace("<@!", "").replace(">",
+                                                           "")  # fix for funny issue with mentioning users that aren't guild members
+                member = await self.bot.fetch_user(
+                    member)  # gets object from id, seems to work for users not in the server
                 in_guild = False
             except Exception as e:
                 print(e)
@@ -167,44 +169,84 @@ Staff role needed"""
 
     # -----------------------BAN------------------------------
 
-    @commands.command(pass_context=True, aliases=["hackban"])
+    @commands.command(pass_context=True, aliases=["hackban", "massban"])
     @has_permissions(ban_members=True)
     async def ban(self, ctx, member, *, args=""):
         """Bans a given user.
         Merged with previous command hackban
-        Works with user mention or user ID
+        Single bans work with user mention or user ID
+        Mass bans work with user IDs currently, reason flag HAS to be specified if setting
         Moderator role needed"""
         reason = "No reason provided"
-        member, in_guild = await self.get_member_obj(ctx, member)
+        massban = ctx.message.content.replace(self.bot.prefix, "").startswith("massban")  # surely there's a better way of doing this?
+        timeperiod = None
         if args:
-            parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
+            parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"],
+                                                              blank_as_flag="reason" if not massban else None)
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
 
+        if massban:
+            members = ctx.message.content[ctx.message.content.index(" ") + 1:].split(" ")
+            members = [member for member in members if len(member) == 18 and str(member).isnumeric()]
+            # possibly rearrange at some point to allow checking if the member/user object can be obtained?
+            tracker = await ctx.send(f"Processed bans for 0/{len(members)} members")
+        else:
+            members = [member]
+        already_banned = []
+        not_found = []
+        ban = 0
+        for ban, member_ in enumerate(members, start=1):
+            if massban:
+                await tracker.edit(content=f"Banning {ban}/{len(members)} users" + (
+                    f", {len(not_found)} users not found" if len(not_found) > 0 else "") + (
+                    f", {len(already_banned)} users already banned" if len(already_banned) > 0 else "")
+                )
+            member, in_guild = await self.get_member_obj(ctx, member_)
             if timeperiod:
                 await self.timer(Todo.UNBAN, timeperiod, member.id)
+            print(f"MEMBER IS TYPE {type(member).__name__}")
+            if not member:
+                not_found.append(member_)
+                if not massban:
+                    await ctx.send(f"Couldn't find that user ({member_})!")
+                    return
+                else:
+                    continue
+            if await self.is_user_banned(ctx, member):
+                already_banned.append(member.mention)
+                if not massban:
+                    await ctx.send(f"{member.mention} is already banned!")
+                    return
+                else:
+                    continue
+            try:
+                await member.send(f"You have been banned from {ctx.guild.name} ({reason})")
+            except discord.errors.Forbidden:
+                print(f"Could not DM {member.id} about their ban!")
+            await ctx.guild.ban(member, reason=reason, delete_message_days=0)
+            if not massban:
+                await ctx.send(f'{member.mention} has been banned.')
 
-        print(f"MEMBER IS TYPE {type(member).__name__}")
-        if not member:
-            await ctx.send("Couldn't find that user!")
-            return
-        if await self.is_user_banned(ctx, member):
-            await ctx.send(f"{member.mention} is already banned!")
-            return
-        try:
-            await member.send(f"You have been banned from {ctx.guild.name} ({reason})")
-        except discord.errors.Forbidden:
-            print(f"Could not DM {member.id} about their ban!")
-        await ctx.guild.ban(member, reason=reason, delete_message_days=0)
-        await ctx.send(f'{member.mention} has been banned.')
-
-        embed = Embed(title='Ban' if in_guild else 'Hackban', color=Colour.from_rgb(255, 255, 255))
-        embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
-        embed.add_field(name='Moderator', value=str(ctx.author))
-        embed.add_field(name='Reason', value=reason)
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+            embed = Embed(title='Ban' if in_guild else 'Hackban', color=Colour.from_rgb(255, 255, 255))
+            embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
+            embed.add_field(name='Moderator', value=str(ctx.author))
+            embed.add_field(name='Reason', value=reason)
+            embed.set_thumbnail(url=member.avatar_url)
+            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+            await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        if massban:
+            # chr(10) used for \n since you can't have backslash characters in f string fragments
+            await tracker.edit(content=f"Processed bans for {ban}/{len(members)} users" +
+                                       (
+                                           f"\n__**These users weren't found**__:\n\n - {f'{chr(10)} - '.join(f'{a_not_found}' for a_not_found in not_found)}\n" if len(
+                                               not_found) > 0 else ""
+                                       ) +
+                                       (
+                                           f"\n__**These users are already banned**__:\n\n - {f'{chr(10)} - '.join(f'{a_already_banned}' for a_already_banned in already_banned)}" if len(
+                                               already_banned) > 0 else ""
+                                       )
+                               )
 
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
@@ -259,7 +301,7 @@ Staff role needed."""
         if not timeperiod:
             timestring = 'indefinitely'
         else:
-            time = (self.bot.correct_time() + timedelta(seconds=timeperiod))  # + timedelta(hours = 1)
+            time = (datetime.utcnow() + timedelta(seconds=timeperiod))  # + timedelta(hours = 1)
             timestring = 'until ' + time.strftime('%H:%M on %d/%m/%y')
 
         if not reason or reason is None:
@@ -275,7 +317,8 @@ Staff role needed."""
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Moderator', value=str(ctx.author))
         embed.add_field(name='Reason', value=reason)
-        embed.add_field(name='Expires', value=timestring.replace('until ', '') if timestring != 'indefinitely' else "Never")
+        embed.add_field(name='Expires',
+                        value=timestring.replace('until ', '') if timestring != 'indefinitely' else "Never")
         embed.set_thumbnail(url=member.avatar_url)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
@@ -289,7 +332,6 @@ Staff role needed."""
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"]
-
 
         role = get(member.guild.roles, name='Muted')
         await member.remove_roles(role,
@@ -406,7 +448,8 @@ Administrator role needed."""
     async def say(self, ctx, channel: discord.TextChannel, *, text):
         """Say a given string in a given channel
 Staff role needed."""
-        await channel.send(text[5:] if text.startswith("/tts") else text, tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
+        await channel.send(text[5:] if text.startswith("/tts") else text,
+                           tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
 
     @commands.command()
     @commands.guild_only()
@@ -444,8 +487,8 @@ Staff role needed."""
                         *data)
                 except Exception:
                     pass
-    
-    @commands.command(pass_context = True)
+
+    @commands.command(pass_context=True)
     @commands.has_any_role(*Permissions.MOD)
     async def revokeinvite(self, ctx, invite_code):
         """
