@@ -88,20 +88,39 @@ class Reputation(commands.Cog):
         nick = user.display_name
 
         if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
-            reps = await self.modify_rep(user, 1)
+            title = ":x: "
+            color = Colour.from_rgb(57, 255, 20)
+            award = True
+            if "Rep Award Banned" in [str(role) for role in ctx.author.roles]:
+                color = Colour.from_rgb(172, 32, 31)
+                title += f'You have been blocked from awarding reputation!\n{nick} did not receive a reputation point!'
+                award = False
 
-            user_embed = Embed(title=f':white_check_mark:  {nick} received a reputation point!', color=Colour.from_rgb(57,255,20))
-            user_embed.add_field(name='_ _', value=f'{user.mention} now has {reps} reputation points!')
+            if "Rep Receive Banned" in [str(role) for role in user.roles]:
+                color = Colour.from_rgb(172, 32, 31)
+                title += ('\n:x: ' if title != ':x: ' else '') + f'{nick} has been blocked from receiving reputation points!'
+                award = False
+
+            if award:
+                title = f':white_check_mark:  {nick} received a reputation point!'
+
+            user_embed = Embed(title=title, color=color)
+
+            if award:
+                reps = await self.modify_rep(user, 1)
+                user_embed.add_field(name='_ _', value=f'{user.mention} now has {reps} reputation points!')
+            else:
+                user_embed.add_field(name='_ _', value='Contact a member of staff if you think you are seeing this by mistake.')
             user_embed.set_thumbnail(url=user.avatar_url)
-            user_embed.set_footer(text=f"Awarded by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
+            user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
             await ctx.send(embed=user_embed)
-            
-            embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
-            embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
-            embed.add_field(name='To', value=f'{str(user)} ({user.id})')
-            embed.add_field(name='New Rep', value=reps)
-            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-            await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+            if award:
+                embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
+                embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
+                embed.add_field(name='To', value=f'{str(user)} ({user.id})')
+                embed.add_field(name='New Rep', value=reps)
+                embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+                await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
         else:
             if user.bot:
