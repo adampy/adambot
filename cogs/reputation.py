@@ -119,6 +119,7 @@ class Reputation(commands.Cog):
                 embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
                 embed.add_field(name='To', value=f'{str(user)} ({user.id})')
                 embed.add_field(name='New Rep', value=reps)
+                embed.add_field(name='Awarded in', value=ctx.channel.mention)
                 embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
                 await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
 
