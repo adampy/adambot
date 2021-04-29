@@ -352,17 +352,17 @@ Do C<channel_name> to mention a channel."""
 
     @lurkers.command(pass_context = True, name = "kick") # Name parameter defines the name of the command the user will use
     @commands.guild_only()
-    async def lurker_kick(self, ctx):
+    async def lurker_kick(self, ctx, days=7):
         """Command that kicks people without a role, and joined 7 or more days ago."""
         def check(m):
             return m.channel == ctx.channel and m.author == ctx.author
 
-        week_ago = datetime.datetime.utcnow() - datetime.timedelta(days = 7)
-        members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < week_ago] # Members with only the everyone role and more than 7 days ago
+        time_ago = datetime.datetime.utcnow() - datetime.timedelta(days=days)
+        members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < time_ago] # Members with only the everyone role and more than 7 days ago
         
-        question = await ctx.send("Do you want me to kick all lurkers that've been here 7 days or longer? (Type either 'yes' or 'no')")
+        question = await ctx.send(f"Do you want me to kick all lurkers that have been here {days} days or longer ({len(members)} members)? (Type either 'yes' or 'no')")
         try:
-            response = await self.bot.wait_for("message", check = check, timeout = 300)
+            response = await self.bot.wait_for("message", check=check, timeout=300)
         except asyncio.TimeoutError:
             await question.delete()
             return
@@ -371,16 +371,16 @@ Do C<channel_name> to mention a channel."""
             for i in range(len(members)):
                 member = members[i]
 
-                await question.edit(content = f"Kicked {i}/{len(members)} lurkers :ok_hand:")
-                await member.kick(reason = "Auto-kicked following lurker kick command.")
+                await question.edit(content=f"Kicked {i}/{len(members)} lurkers :ok_hand:")
+                await member.kick(reason="Auto-kicked following lurker kick command.")
 
-            await question.edit(content = f"All {len(members)} lurkers that've been here more than 7 days have been kicked :ok_hand:")
+            await question.edit(content=f"All {len(members)} lurkers that have been here more than {days} days have been kicked :ok_hand:")
         
         elif response.content.lower() == "no":
-            await question.edit(content = "No lurkers have been kicked :ok_hand:")
+            await question.edit(content="No lurkers have been kicked :ok_hand:")
 
         else:
-            await question.edit(content = "Unknown response, therefore no lurkers have been kicked :ok_hand:")
+            await question.edit(content="Unknown response, therefore no lurkers have been kicked :ok_hand:")
 
         embed = Embed(title='Lurker-kick', color=Colour.from_rgb(220, 123, 28))
         embed.add_field(name='Members', value=str(len(members)))
