@@ -357,7 +357,7 @@ Do C<channel_name> to mention a channel."""
         def check(m):
             return m.channel == ctx.channel and m.author == ctx.author
 
-        time_ago = datetime.datetime.utcnow() - datetime.timedelta(days=days)
+        time_ago = self.bot.correct_time() - datetime.timedelta(days=days)
         members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < time_ago] # Members with only the everyone role and more than 7 days ago
         
         question = await ctx.send(f"Do you want me to kick all lurkers that have been here {days} days or longer ({len(members)} members)? (Type either 'yes' or 'no')")

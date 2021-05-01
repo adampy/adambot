@@ -501,8 +501,12 @@ class Member(commands.Cog):
 
 # -----------------------COUNTDOWNS------------------------------
 
-    @commands.command(pass_context=True, aliases=['results'])
+    @commands.command(pass_context=True, aliases=['results', 'gcseresults', 'alevelresults'])
     async def resultsday(self, ctx, hour=None):
+        if ctx.message.content.replace(self.bot.prefix, '').replace('gcse', '').startswith('results'):
+            which = "GCSE"
+        else:
+            which = "A-Level"
         if hour is None:
             hour = 10
         else:
@@ -523,30 +527,44 @@ class Member(commands.Cog):
             string = f'{hour - 12}PM'
         else:
             string = f'{hour}AM'
-        time = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0) - (
-                datetime.utcnow() + timedelta(hours=1))  # timezone edge case. also date needs updating
-        m, s = divmod(time.seconds, 60)
-        h, m = divmod(m, 60)
+        rn = self.bot.correct_time()
+        if which == "GCSE":
+            time = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0)
+        else:
+            time = datetime(year=2021, month=8, day=10, hour=hour, minute=0, second=0)
+        embed = Embed(title=f"Countdown until {which} results day at {string} (on {time.day}/{time.month}/{time.year})",
+                      color=Colour.from_rgb(148, 0, 211))
+        time = time.replace(tzinfo=self.bot.display_timezone)
+        if rn > time:
+            embed.description = "Results have already been released!"
+        else:
+            time = time - rn
+            m, s = divmod(time.seconds, 60)
+            h, m = divmod(m, 60)
+            embed.description = f"{time.days} days {h} hours {m} minutes {s} seconds remaining"
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
+                    self.bot.correct_time()).strftime(self.bot.ts_format))
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        await ctx.send(embed=embed)
 
-        await ctx.send(f'''Until GCSE results day at {string} it is
-**{time.days}** days
-**{h}** hours
-**{m}** minutes
-**{s}** seconds''')  # **{(time.days*24)+h}** hours
-
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["exams", "alevels"])
     async def gcses(self, ctx):
-        time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
-                datetime.utcnow() + timedelta(hours=1))  # as above
+        embed = Embed(title="Information on UK exams",  color=Colour.from_rgb(148, 0, 211),
+                      description="UK exams are not going ahead this year and have instead been replaced by teacher assessments!")
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
+                    self.bot.correct_time()).strftime(self.bot.ts_format))
+        await ctx.send(embed=embed)
+        #time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
+        #        datetime.utcnow() + timedelta(hours=1))  # as above
+#
+ #       m, s = divmod(time.seconds, 60)
+  #      h, m = divmod(m, 60)
 
-        m, s = divmod(time.seconds, 60)
-        h, m = divmod(m, 60)
-
-        await ctx.send(f'''Until CS Paper 1 (the first GCSE exam) is
-**{time.days}** days
-**{h}** hours
-**{m}** minutes
-**{s}** seconds''')
+        #await ctx.send(f'''Until CS Paper 1 (the first GCSE exam) is
+#**{time.days}** days
+#**{h}** hours
+#**{m}** minutes
+#**{s}** seconds''')
 
     @commands.command(pass_context=True)
     async def code(self, ctx):
