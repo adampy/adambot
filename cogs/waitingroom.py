@@ -352,14 +352,21 @@ Do C<channel_name> to mention a channel."""
 
     @lurkers.command(pass_context = True, name = "kick") # Name parameter defines the name of the command the user will use
     @commands.guild_only()
-    async def lurker_kick(self, ctx, days=7):
+    async def lurker_kick(self, ctx, days="7"):
+        # days is specifically "7" as default and not 7 since if you specify an integer it barfs if you supply a non-int value
         """Command that kicks people without a role, and joined 7 or more days ago."""
         def check(m):
             return m.channel == ctx.channel and m.author == ctx.author
-
-        time_ago = self.bot.correct_time() - datetime.timedelta(days=days)
+        if not days.isnumeric():
+            await ctx.send("Specify a whole, non-zero number of days!")
+            return
+        days = int(days)
+        time_ago = datetime.datetime.now() - datetime.timedelta(days=days)
+        ## NOTE THAT x.joined_at will be in the timezone of the system by default, so no messing around needed here
         members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < time_ago] # Members with only the everyone role and more than 7 days ago
-        
+        if len(members) == 0:
+            await ctx.send(f"There are no lurkers to kick that have been here {days} days or longer!")
+            return
         question = await ctx.send(f"Do you want me to kick all lurkers that have been here {days} days or longer ({len(members)} members)? (Type either 'yes' or 'no')")
         try:
             response = await self.bot.wait_for("message", check=check, timeout=300)
