@@ -295,7 +295,7 @@ Staff role needed."""
                 await self.timer(Todo.UNMUTE, timeperiod, member.id)
 
         role = get(member.guild.roles, name='Muted')
-        await member.add_roles(role, reason=reason if reason else 'No reason - muted by {ctx.author.name}')
+        await member.add_roles(role, reason=reason if reason else f'No reason - muted by {ctx.author.name}')
         await ctx.send(':ok_hand:')
         # 'you are muted ' + timestring
         if not timeperiod:
