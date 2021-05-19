@@ -295,13 +295,20 @@ Do C<channel_name> to mention a channel."""
             await ctx.send(f"```{self.verify.help}```")
             return
         if member is None:
-            await ctx.send("Specify a user to verify!")
-            return
+            if not ctx.message.reference:
+                await ctx.send("Specify a user to verify!")
+                return
+            ref = await ctx.fetch_message(ctx.message.reference.message_id)
+            member = ref.author
 
         year_roles = [get(member.guild.roles, name=self.YEARS[role]) for role in self.YEARS]
         pre_existing_roles = [r for r in year_roles if r in member.roles]
         await member.remove_roles(*year_roles)
-        await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=self.YEARS[content[:content.index(" ")].replace(self.bot.prefix, "")])])
+        if " " in content:
+            name = self.YEARS[content[:content.index(" ")].replace(self.bot.prefix, "")]
+        else:
+            name = self.YEARS[content.replace(self.bot.prefix, "")]
+        await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=name)])
         await ctx.send(f"{member.mention} has been verified!")
         if not pre_existing_roles: # If the user hadn't already been verified
             await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:')

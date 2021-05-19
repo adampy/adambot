@@ -543,7 +543,7 @@ class Member(commands.Cog):
             h, m = divmod(m, 60)
             embed.description = f"{time.days} days {h} hours {m} minutes {s} seconds remaining"
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format))
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
         embed.set_thumbnail(url=ctx.guild.icon_url)
         await ctx.send(embed=embed)
 
@@ -552,7 +552,7 @@ class Member(commands.Cog):
         embed = Embed(title="Information on UK exams",  color=Colour.from_rgb(148, 0, 211),
                       description="UK exams are not going ahead this year and have instead been replaced by teacher assessments!")
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format))
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
         #time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
         #        datetime.utcnow() + timedelta(hours=1))  # as above

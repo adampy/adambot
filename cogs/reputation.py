@@ -112,7 +112,7 @@ class Reputation(commands.Cog):
             else:
                 user_embed.add_field(name='_ _', value='Contact a member of staff if you think you are seeing this by mistake.')
             user_embed.set_thumbnail(url=user.avatar_url)
-            user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
+            user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
             await ctx.send(embed=user_embed)
             if award:
                 embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
@@ -259,7 +259,7 @@ class Reputation(commands.Cog):
         # could change to user.colour at some point, I prefer the purple for now though
         embed.add_field(name='Rep points', value=rep)
         embed.add_field(name='Leaderboard position', value=ordinal(lb_pos) if lb_pos else 'Nowhere :(')
-        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
+        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
         embed.set_thumbnail(url=user.avatar_url)
         await ctx.send(embed=embed)
         #await ctx.send(f'{user.mention} {f"is **{ordinal(lb_pos)}** on the reputation leaderboard with" if lb_pos else "has"} **{rep}** reputation points. {"They are not yet on the leaderboard because they have no reputation points." if (not lb_pos or rep == 0) else ""}')
