@@ -2,6 +2,7 @@ import discord
 from discord.utils import get
 from discord.ext import commands
 from discord import Embed, Colour
+import datetime
 from .utils import GCSE_SERVER_ID, CHANNELS, Permissions
 import asyncio
 
@@ -220,8 +221,26 @@ class Logging(commands.Cog):
     async def on_member_remove(self, member):
         if member.guild.id not in self.mod_logs: # Ensures guild has logging set up
             return
+        roles = [f"{role.mention}" for role in member.roles][1:]  # 1: eliminates @@everyone
+        roles_str = ""
+        for role_ in roles:
+            roles_str += f"{role_}, "
+        roles_str = roles_str[:len(roles_str)-2]
+        joined_at = member.joined_at
+        if joined_at is not None:
+            rn = self.bot.correct_time()
+            a = self.bot.correct_time(joined_at, timezone_="UTC")  # joined datetime is *always* in UTC for some annoying reason
+            since_joined = (rn - a)
+            since_str = ""
+            props = ["weeks", "days", "hours", "minutes", "seconds", "milliseconds", "microseconds"]
+            for prop in props:
+                if prop in dir(since_joined):  # datetime delta objects have no standard get method :(
+                    since_str += f"{since_joined.__getattribute__(prop)} {prop} " if since_joined.__getattribute__(prop) else ""
+            user_joined = a.strftime(self.bot.ts_format)
         member_left = Embed(title=":information_source: User Left", color=Colour.from_rgb(218, 118, 39))
         member_left.add_field(name="User", value=f"{member} ({member.id})\n {member.mention}")
+        member_left.add_field(name="Joined", value=f"{user_joined} ({since_str} ago)" if joined_at else "Undetected")
+        member_left.add_field(name="Roles", value=roles_str if member.roles[1:] else "None", inline=False)
         member_left.set_thumbnail(url=member.avatar_url)
         member_left.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await self.mod_logs[member.guild.id].send(embed=member_left)

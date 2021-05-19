@@ -113,10 +113,14 @@ class AdamBot(Bot):
             self.load_extension(f'cogs.{cog}')
             print(f"Loaded: {cog}")
 
-    def correct_time(self, conv_time=None):
+    def correct_time(self, conv_time=None, timezone_="system"):
         if not conv_time:
             conv_time = datetime.now()
-        return self.timezone.localize(conv_time).astimezone(self.display_timezone)
+        if timezone_ == "system":
+            tz_obj = self.timezone
+        else:
+            tz_obj = pytz.timezone(timezone_)
+        return tz_obj.localize(conv_time).astimezone(self.display_timezone)
 
     async def on_ready(self):
         self.login_time = time.time()
