@@ -210,8 +210,7 @@ class Member(commands.Cog):
     @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def user_addable_role(self, ctx):
-        content = ctx.message.content + " " if " " not in ctx.message.content else ""
-        role_name = self.ADDABLE_ROLES[content[:content.index(" ")].replace(self.bot.prefix, "")]
+        role_name = self.ADDABLE_ROLES[ctx.invoked_with]
         now_has_role = await self.manage_role(ctx, role_name)
         await ctx.send(f':ok_hand: You have been given `{role_name}` role!' if now_has_role else f':ok_hand: Your `{role_name}` role has vanished!')
 
@@ -503,11 +502,11 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True, aliases=['results', 'gcseresults', 'alevelresults'])
     async def resultsday(self, ctx, hour=None):
-        if ctx.message.content.replace(self.bot.prefix, '').replace('gcse', '').startswith('results'):
+        if ctx.invoked_with in ["resultsday", "gcseresults", "results", None]:
             which = "GCSE"
         else:
             which = "A-Level"
-        if hour is None:
+        if not hour:
             hour = 10
         else:
             try:
