@@ -58,7 +58,7 @@ class AdamBot(Bot):
         self.start_up()
 
     async def close(self, ctx=None):  # ctx = None because this is also called upon CTRL+C in command line
-        """Procedure that closes down AdamBot, using the standard client.close() command, as well as some database hadling methods."""
+        """Procedure that closes down AdamBot, using the standard client.close() command, as well as some database handling methods."""
         self.online = False  # This is set to false to prevent DB things going on in the background once bot closed
         user = f"{self.user.mention} " if self.user else "" 
         p_s = f"Beginning process of shutting {user}down. DB pool shutting down..."
@@ -103,10 +103,14 @@ class AdamBot(Bot):
             self.load_extension(f'cogs.{cog}')
             print(f"Loaded: {cog}")
 
-    def correct_time(self, conv_time=None):
+    def correct_time(self, conv_time=None, timezone_="system"):
         if not conv_time:
             conv_time = datetime.now()
-        return self.timezone.localize(conv_time).astimezone(self.display_timezone)
+        if timezone_ == "system":
+            tz_obj = self.timezone
+        else:
+            tz_obj = pytz.timezone(timezone_)
+        return tz_obj.localize(conv_time).astimezone(self.display_timezone)
 
     async def on_ready(self):
         self.login_time = time.time()

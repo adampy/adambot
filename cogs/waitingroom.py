@@ -292,13 +292,20 @@ Do C<channel_name> to mention a channel."""
             await ctx.send(f"```{self.verify.help}```")
             return
         if member is None:
-            await ctx.send("Specify a user to verify!")
-            return
+            if not ctx.message.reference:
+                await ctx.send("Specify a user to verify!")
+                return
+            ref = await ctx.fetch_message(ctx.message.reference.message_id)
+            member = ref.author
 
         year_roles = [get(member.guild.roles, name=self.YEARS[role]) for role in self.YEARS]
         pre_existing_roles = [r for r in year_roles if r in member.roles]
         await member.remove_roles(*year_roles)
-        await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=self.YEARS[content[:content.index(" ")].replace(self.bot.prefix, "")])])
+        if " " in content:
+            name = self.YEARS[content[:content.index(" ")].replace(self.bot.prefix, "")]
+        else:
+            name = self.YEARS[content.replace(self.bot.prefix, "")]
+        await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=name)])
         await ctx.send(f"{member.mention} has been verified!")
         if not pre_existing_roles: # If the user hadn't already been verified
             await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:')
@@ -349,17 +356,24 @@ Do C<channel_name> to mention a channel."""
 
     @lurkers.command(pass_context = True, name = "kick") # Name parameter defines the name of the command the user will use
     @commands.guild_only()
-    async def lurker_kick(self, ctx):
+    async def lurker_kick(self, ctx, days="7"):
+        # days is specifically "7" as default and not 7 since if you specify an integer it barfs if you supply a non-int value
         """Command that kicks people without a role, and joined 7 or more days ago."""
         def check(m):
             return m.channel == ctx.channel and m.author == ctx.author
-
-        week_ago = datetime.datetime.utcnow() - datetime.timedelta(days = 7)
-        members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < week_ago] # Members with only the everyone role and more than 7 days ago
-        
-        question = await ctx.send("Do you want me to kick all lurkers that've been here 7 days or longer? (Type either 'yes' or 'no')")
+        if not days.isnumeric():
+            await ctx.send("Specify a whole, non-zero number of days!")
+            return
+        days = int(days)
+        time_ago = datetime.datetime.now() - datetime.timedelta(days=days)
+        ## NOTE THAT x.joined_at will be in the timezone of the system by default, so no messing around needed here
+        members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < time_ago] # Members with only the everyone role and more than 7 days ago
+        if len(members) == 0:
+            await ctx.send(f"There are no lurkers to kick that have been here {days} days or longer!")
+            return
+        question = await ctx.send(f"Do you want me to kick all lurkers that have been here {days} days or longer ({len(members)} members)? (Type either 'yes' or 'no')")
         try:
-            response = await self.bot.wait_for("message", check = check, timeout = 300)
+            response = await self.bot.wait_for("message", check=check, timeout=300)
         except asyncio.TimeoutError:
             await question.delete()
             return
@@ -368,16 +382,16 @@ Do C<channel_name> to mention a channel."""
             for i in range(len(members)):
                 member = members[i]
 
-                await question.edit(content = f"Kicked {i}/{len(members)} lurkers :ok_hand:")
-                await member.kick(reason = "Auto-kicked following lurker kick command.")
+                await question.edit(content=f"Kicked {i}/{len(members)} lurkers :ok_hand:")
+                await member.kick(reason="Auto-kicked following lurker kick command.")
 
-            await question.edit(content = f"All {len(members)} lurkers that've been here more than 7 days have been kicked :ok_hand:")
+            await question.edit(content=f"All {len(members)} lurkers that have been here more than {days} days have been kicked :ok_hand:")
         
         elif response.content.lower() == "no":
-            await question.edit(content = "No lurkers have been kicked :ok_hand:")
+            await question.edit(content="No lurkers have been kicked :ok_hand:")
 
         else:
-            await question.edit(content = "Unknown response, therefore no lurkers have been kicked :ok_hand:")
+            await question.edit(content="Unknown response, therefore no lurkers have been kicked :ok_hand:")
 
         embed = Embed(title='Lurker-kick', color=Colour.from_rgb(220, 123, 28))
         embed.add_field(name='Members', value=str(len(members)))

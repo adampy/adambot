@@ -48,7 +48,7 @@ class Member(commands.Cog):
 # -----------------------PAST PAPERS--------------------------
 
     async def handle_paper_check(self, message: discord.Message):
-        paper_kw = [["2019", "paper"], ["2020", "paper"], ["2021", "paper"], ["mini exam"], ["past", "paper"],
+        paper_kw = [["2019", "paper"], ["2020", "paper"], ["2021", "paper"], ["mini exam"],
                     ["mini assessment"]]  # singular form of all as the singular is in the plural anyway
         ctx = await self.bot.get_context(message)
         if not self.in_gcse(ctx):  # to ignore priv server
@@ -67,8 +67,8 @@ class Member(commands.Cog):
             if (time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]) > 60 or first_warn:
                 self.paper_warn_cooldown[ctx.guild.id][message.author.id] = time.time()
                 await message.channel.send(
-                    f"{message.author.mention} REMINDER: This server **does not** distribute unreleased papers such as the 2019, 2020 or 2021 papers."
-                    f"  **This includes 'mini-exams'**."
+                    f"{message.author.mention} REMINDER: This server **does not** allow the distribution of unreleased papers such as the 2019, 2020 or 2021 papers."
+                    f"  **This includes any of the 2021 'mini-assessment' material that isn't public**."
                     f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__", delete_after=20)
             #else:
             #    await ctx.send(f"TEST: {time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]} into cooldown")
@@ -113,7 +113,7 @@ class Member(commands.Cog):
             await member.remove_roles(role)
             role = get(member.guild.roles, name='Members')
             await member.add_roles(role)
-            await self.bot.get_channel(445199175244709898).send(f'{member.mention} welcome back from revising mode!')
+            await self.bot.get_channel(445199175244709898).send(f'{member.mention} welcome back from revising mode!\n*You may want to refresh Discord to view any messages you missed in revision mode*')
         elif "Revising" in [y.name for y in member.roles]:
             channel = self.bot.get_channel(518901847981948938)  # Revision escape
             await ctx.send(f'Go to {channel.mention} to stop revising')
@@ -501,8 +501,12 @@ class Member(commands.Cog):
 
 # -----------------------COUNTDOWNS------------------------------
 
-    @commands.command(pass_context=True, aliases=['results'])
+    @commands.command(pass_context=True, aliases=['results', 'gcseresults', 'alevelresults'])
     async def resultsday(self, ctx, hour=None):
+        if ctx.message.content.replace(self.bot.prefix, '').replace('gcse', '').startswith('results'):
+            which = "GCSE"
+        else:
+            which = "A-Level"
         if hour is None:
             hour = 10
         else:
@@ -523,30 +527,44 @@ class Member(commands.Cog):
             string = f'{hour - 12}PM'
         else:
             string = f'{hour}AM'
-        time = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0) - (
-                datetime.utcnow() + timedelta(hours=1))  # timezone edge case. also date needs updating
-        m, s = divmod(time.seconds, 60)
-        h, m = divmod(m, 60)
+        rn = self.bot.correct_time()
+        if which == "GCSE":
+            time = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0)
+        else:
+            time = datetime(year=2021, month=8, day=10, hour=hour, minute=0, second=0)
+        embed = Embed(title=f"Countdown until {which} results day at {string} (on {time.day}/{time.month}/{time.year})",
+                      color=Colour.from_rgb(148, 0, 211))
+        time = time.replace(tzinfo=self.bot.display_timezone)
+        if rn > time:
+            embed.description = "Results have already been released!"
+        else:
+            time = time - rn
+            m, s = divmod(time.seconds, 60)
+            h, m = divmod(m, 60)
+            embed.description = f"{time.days} days {h} hours {m} minutes {s} seconds remaining"
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        await ctx.send(embed=embed)
 
-        await ctx.send(f'''Until GCSE results day at {string} it is
-**{time.days}** days
-**{h}** hours
-**{m}** minutes
-**{s}** seconds''')  # **{(time.days*24)+h}** hours
-
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["exams", "alevels"])
     async def gcses(self, ctx):
-        time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
-                datetime.utcnow() + timedelta(hours=1))  # as above
+        embed = Embed(title="Information on UK exams",  color=Colour.from_rgb(148, 0, 211),
+                      description="UK exams are not going ahead this year and have instead been replaced by teacher assessments!")
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=embed)
+        #time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
+        #        datetime.utcnow() + timedelta(hours=1))  # as above
+#
+ #       m, s = divmod(time.seconds, 60)
+  #      h, m = divmod(m, 60)
 
-        m, s = divmod(time.seconds, 60)
-        h, m = divmod(m, 60)
-
-        await ctx.send(f'''Until CS Paper 1 (the first GCSE exam) is
-**{time.days}** days
-**{h}** hours
-**{m}** minutes
-**{s}** seconds''')
+        #await ctx.send(f'''Until CS Paper 1 (the first GCSE exam) is
+#**{time.days}** days
+#**{h}** hours
+#**{m}** minutes
+#**{s}** seconds''')
 
     @commands.command(pass_context=True)
     async def code(self, ctx):
