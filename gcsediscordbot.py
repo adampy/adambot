@@ -37,8 +37,8 @@ class AdamBot(Bot):
         # Hopefully can eventually move these out to some sort of config system
         self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
         self.flag_handler.set_flag("reason", {"flag": "r"})
-        print(self.GCSE_SERVER_ID)
         self.token = kwargs.get("token", None)
+        self.connections = kwargs.get("connections", 10) # Max DB pool connections
         self.online = True
         self.COGS = cogs
         self.LOCAL_HOST = local
@@ -83,7 +83,7 @@ class AdamBot(Bot):
         print(f"Loaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
         print("Creating DB pool...")
         self.loop.create_task(self.execute_todos())
-        self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20))
+        self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=self.connections))
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
         print(f'Bot fully setup!\nDB took {time.time() - self.cog_load} seconds to connect to ({time.time() - self.start_time} seconds total)')
         token = os.environ.get('TOKEN') if not self.token else self.token
@@ -330,6 +330,7 @@ if __name__ == "__main__":
     # todo: make this more customisable
     parser.add_argument("-p", "--prefix", nargs="?", default="-")
     parser.add_argument("-t", "--token", nargs="?", default=None)  # can change token on the fly/keep env clean
+    parser.add_argument("-c", "--connections", nargs="?", default=10) # DB pool max_size (how many concurrent connections the pool can have)
     args = parser.parse_args()
     cog_names = ['member',
                  'moderation',
@@ -344,5 +345,5 @@ if __name__ == "__main__":
                  'logging',
                  'eval',
                  'config'] # Make this dynamic?
-    bot = AdamBot(local_host, cog_names, start_time, token=args.token, command_prefix=args.prefix, intents=intents)
+    bot = AdamBot(local_host, cog_names, start_time, token=args.token, command_prefix=args.prefix, connections=args.connections, intents=intents)
     # bot.remove_command("help")
