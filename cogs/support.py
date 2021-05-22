@@ -43,17 +43,21 @@ class SupportConnection:
         """Method that should be executed when a new message is sent through a support ticket. `message`
         refers to the actual message object sent and `msg_type` should be of the MessageOrigin type."""
         await self.bot.add_config(self.guild.id)
-        channel = self.bot.get_channel(self.bot.configs[self.guild.id]["support_log_channel"])
+        channel_id = self.bot.configs[self.guild.id]["support_log_channel"]
+        if channel_id is not None:
+            channel = self.bot.get_channel(self.bot.configs[self.guild.id]["support_log_channel"])
+            if channel is None:
+                return
 
-        embed = Embed(title='Message Sent', color=Colour.from_rgb(177,252,129))
-        embed.add_field(name="ID", value=f"{self.id}", inline=True)
-        if msg_type == MessageOrigin.MEMBER:
-            embed.add_field(name='Author', value=f'Member', inline=True)
-        elif msg_type == MessageOrigin.STAFF:
-            embed.add_field(name='Author', value=f'Staff: {message.author.display_name}')
+            embed = Embed(title='Message Sent', color=Colour.from_rgb(177,252,129))
+            embed.add_field(name="ID", value=f"{self.id}", inline=True)
+            if msg_type == MessageOrigin.MEMBER:
+                embed.add_field(name='Author', value=f'Member', inline=True)
+            elif msg_type == MessageOrigin.STAFF:
+                embed.add_field(name='Author', value=f'Staff: {message.author.display_name}')
 
-        embed.add_field(name='Content', value=f'{message.content}', inline=False)
-        await channel.send(embed=embed)
+            embed.add_field(name='Content', value=f'{message.content}', inline=False)
+            await channel.send(embed=embed)
 
     async def accept(self, staff: discord.User):
         """Method that executes when a staff member has accepted the support ticket that handles the database and objects but nothing else"""
@@ -86,15 +90,18 @@ class SupportConnectionManager:
 
         await self.bot.add_config(guild_id)
         channel_id = self.bot.configs[guild_id]["support_log_channel"]
-        staff_id = self.bot.configs[guild_id]["staff_role"]
-        channel = self.bot.get_channel(channel_id)
-        guild = self.bot.get_guild(guild_id)
-        staff = guild.get_role(staff_id) #TODO: HANDLES FOR WHEN EITHER A ROLE OR CHANNEL GET REMOVED AND NOT CHANGED IN THE CONFIG
+        if channel_id is not None:
+            guild = self.bot.get_guild(guild_id)
+            staff_id = self.bot.configs[guild_id]["staff_role"]
+            staff = guild.get_role(staff_id) #TODO: HANDLES FOR WHEN EITHER A ROLE OR CHANNEL GET REMOVED AND NOT CHANGED IN THE CONFIG
+            channel = self.bot.get_channel(channel_id)
+            if channel is None or staff is None: # If channel or staff removed
+                return
+        
+            embed = Embed(title='New Ticket', color=Colour.from_rgb(0,0,255))
+            embed.add_field(name='ID', value=f"{new_connection.id}", inline=True)
 
-        embed = Embed(title='New Ticket', color=Colour.from_rgb(0,0,255))
-        embed.add_field(name='ID', value=f"{new_connection.id}", inline=True)
-
-        await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `-support accept {new_connection.id}` to accept it.", embed=embed)
+            await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `-support accept {new_connection.id}` to accept it.", embed=embed)
         return new_connection
 
     async def get(self, id = -1, guild_id = -1):
@@ -144,16 +151,20 @@ class SupportConnectionManager:
         async with self.bot.pool.acquire() as db_connection:
             await db_connection.execute("DELETE FROM support WHERE id = $1", connection.id)
 
-        embed = Embed(title='Ticket Ended', color=Colour.from_rgb(255,0,0))
-        embed.add_field(name='ID', value=connection.id, inline=True)
-        if staff is not None:
-            embed.add_field(name='Initiator', value=f"Staff: {staff.display_name}", inline=True)
-        else:
-            embed.add_field(name='Initiator', value="Member", inline=True)
-
         await self.bot.add_config(connection.guild_id)
-        channel = self.bot.get_channel(self.bot.configs[connection.guild_id]["support_log_channel"])
-        await channel.send(embed=embed)
+        channel_id = self.bot.configs[connection.guild_id]["support_log_channel"]
+        if channel_id is not None:
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                return
+            embed = Embed(title='Ticket Ended', color=Colour.from_rgb(255,0,0))
+            embed.add_field(name='ID', value=connection.id, inline=True)
+            if staff is not None:
+                embed.add_field(name='Initiator', value=f"Staff: {staff.display_name}", inline=True)
+            else:
+                embed.add_field(name='Initiator', value="Member", inline=True)
+
+            await channel.send(embed=embed)
 
 class Support(commands.Cog):
     def __init__(self, bot):
@@ -200,7 +211,7 @@ class Support(commands.Cog):
                 await self.bot.add_config(guild_id)
                 log_channel_id = self.bot.configs[guild_id]["support_log_channel"]
                 if not log_channel_id:
-                    await message.author.send(f"**{self.bot.get_guild(guild_id).name}** has not set up the support module :sob:")
+                    await message.author.send(f"**{self.bot.get_guild(guild_id).name}** has not set up the support module :sob:") # This prevents any connections being made at all
                     return
 
                 connection = await self.support_manager.create(message.author.id, guild_id) # This method handles the embed making the staff aware of the ticket
@@ -288,12 +299,17 @@ class Support(commands.Cog):
         await connection.accept(ctx.author)
         await ctx.author.send('You are now connected anonymously with a member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)')
         await connection.member.send('You are now connected anonymously with a staff member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)')
-        embed = Embed(color=Colour.from_rgb(0,0,255))
-        embed.add_field(name='Staff Connected', value=f"ID: {connection.id}", inline=False)
-
+        
         await self.bot.add_config(ctx.guild.id)
-        channel = self.bot.get_channel(self.bot.configs[ctx.guild.id]["support_log_channel"])
-        await channel.send(embed=embed)
+        channel_id = self.bot.configs[ctx.guild.id]["support_log_channel"]
+        if channel_id is not None:
+            embed = Embed(color=Colour.from_rgb(0,0,255))
+            embed.add_field(name='Staff Connected', value=f"ID: {connection.id}", inline=False)
+
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                return
+            await channel.send(embed=embed)
 
     @support.command(pass_context=True)
     @commands.guild_only()
