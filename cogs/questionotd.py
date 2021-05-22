@@ -101,6 +101,7 @@ class QuestionOTD(commands.Cog):
     # TODO: QOTD Remove command that removes all config relating to QOTDs?
 
     @qotd.command(pass_context=True)
+    @commands.guild_only()
     async def submit(self, ctx, *args):
         """Submit a QOTD"""
         qotd = ' '.join(args)
@@ -143,6 +144,7 @@ class QuestionOTD(commands.Cog):
                     await mod_log.send(embed=embed)
 
     @qotd.command(pass_context=True)
+    @commands.guild_only()
     async def list(self, ctx, page_num=1):
         if not await self.has_qotd_perms(ctx):
             await ctx.send("You do not have permissions to show all QOTDs :sob:")
@@ -159,6 +161,7 @@ class QuestionOTD(commands.Cog):
             await ctx.send("No QOTD have been submitted in thie guild before.")
 
     @qotd.command(pass_context=True, aliases=['remove'])
+    @commands.guild_only()
     async def delete(self, ctx, *question_ids):
         if not await self.has_qotd_perms(ctx):
             await ctx.send("You do not have permissions to delete a QOTD :sob:")
@@ -185,6 +188,7 @@ class QuestionOTD(commands.Cog):
                     await ctx.send(f'Error whilst deleting question ID {question_id}: {e}')
 
     @qotd.command(pass_context=True, aliases=['choose'])
+    @commands.guild_only()
     async def pick(self, ctx, question_id):
         if not await self.has_qotd_perms(ctx):
             await ctx.send("You do not have permissions to pick a QOTD :sob:")
