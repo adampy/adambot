@@ -4,7 +4,7 @@ import inspect
 from discord.utils import get
 from discord.ext import commands
 from discord import Embed, Colour
-from .utils import GCSE_SERVER_ID, CHANNELS, Permissions
+from .utils import GCSE_SERVER_ID, CHANNELS, Permissions, send_text_file
 import asyncio
 
 
@@ -55,6 +55,37 @@ class Eval(commands.Cog):
             e = str(e)
             e.replace(os.getcwd(), ".")
             await ctx.message.channel.send(e)
+
+    @commands.group()
+    @commands.guild_only()
+    async def sql(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('```-help sql```')
+
+    @sql.command(pass_context = True)
+    @commands.is_owner()
+    async def execute(self, ctx, *command):
+        async with self.bot.pool.acquire() as connection:
+            try:
+                await connection.execute(' '.join(command))
+            except Exception as e:
+                await ctx.send(f"EXCEPTION: {e}")
+
+    @sql.command(pass_context = True)
+    @commands.is_owner()
+    async def fetch(self, ctx, *command):
+        async with self.bot.pool.acquire() as connection:
+            try:
+                records = await connection.fetch(' '.join(command))
+                final_str = ""
+                for i in range(len(records)):
+                    final_str += str(records[i])
+                    if i != len(records) - 1:
+                        final_str += "\n"
+
+                await send_text_file(final_str, ctx.channel, "query")
+            except Exception as e:
+                await ctx.send(f"EXCEPTION: {e}")
 
 
 def setup(bot):

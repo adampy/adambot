@@ -3,7 +3,7 @@ from discord import Embed, Colour, Message, TextChannel, File
 from discord.ext import commands
 from math import ceil
 from datetime import timedelta
-from io import BytesIO
+from io import BytesIO, StringIO
 from os import environ
 
 
@@ -174,16 +174,22 @@ SPAMPING_PERMS = [
 ]
 
 GCSE_SERVER_ID = 445194262947037185
-NEWLINE = '\n'
 CODE_URL = "https://github.com/adampy/gcsediscordbot"
 
 
-async def send_file(fig, channel, filename):
+async def send_file(fig, channel, filename): # TODO: Rename this to send_image_file
     """Send data to a channel with filename `filename`"""
     buf = BytesIO()
     fig.savefig(buf)
     buf.seek(0)
     await channel.send(file=File(buf, filename=f'{filename}.png'))
+
+async def send_text_file(text, channel, filename):
+    """Send a text data to a channel with filename `filename`"""
+    buf = StringIO()
+    buf.write(text)
+    buf.seek(0)
+    await channel.send(file=File(buf, filename=f'{filename}.txt'))
 
 
 async def get_spaced_member(ctx, args, bot):
