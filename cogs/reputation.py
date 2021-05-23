@@ -63,6 +63,7 @@ class Reputation(commands.Cog):
     async def rep(self, ctx):
         """Reputation module"""
         subcommands = []
+        award_commands = ["award"] + [alias for alias in self.rep.get_command("award").aliases]
         for command in self.rep.walk_commands():
             subcommands.append(command.name)
             for alias in command.aliases:
@@ -70,6 +71,8 @@ class Reputation(commands.Cog):
         if ctx.subcommand_passed not in subcommands:
             args = ctx.message.content.replace(f"{self.bot.prefix}rep", "").strip()
             await ctx.invoke(self.rep.get_command("award"), args)
+        if ctx.subcommand_passed in award_commands:
+            await ctx.send(f"*You can now use {self.bot.prefix}rep user rather than needing {self.bot.prefix}rep award!*")
             
     @rep.error
     async def rep_error(self, ctx, error):
@@ -84,13 +87,20 @@ class Reputation(commands.Cog):
         """Gives the member a reputation point. Aliases are give and point"""
         args_ = " ".join(args)
         author_nick = ctx.author.display_name
-        if len(args_) == 0:  # check so -rep award doesn't silently fail when no string given
-            user = ctx.author
-        else:
+        if args_:  # check so -rep award doesn't silently fail when no string given
             user = await get_spaced_member(ctx, self.bot, *args)
-            if user is None:
-                await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
-                return
+        else:
+            user = None
+        if not user:
+            failed = Embed(title=f':x:  Sorry we could not find the user!' if args_ else 'Rep Help', color=Colour.from_rgb(255, 7, 58))
+            if args_:
+                failed.add_field(name="Requested user", value=args_)
+            failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{self.bot.prefix}rep Member_Name`\nor\n`{self.bot.prefix}rep @Member`\n'
+                             f'Pro tip: If e.g. fred roberto was recently active you can type `{self.bot.prefix}rep fred`\n\nTo see the other available rep commands type `{self.bot.prefix}help rep`', inline=False)
+            failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+            await ctx.send(embed=failed)
+            return
         nick = user.display_name
 
         if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
