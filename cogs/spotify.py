@@ -17,7 +17,7 @@ class spotify(commands.Cog):
         if len(args) == 0:
             user = ctx.message.author
         else:
-            user = await get_spaced_member(ctx, args, self.bot)
+            user = await get_spaced_member(ctx, self.bot, *args)
             if user is None:
                 fail_embed = Embed(title="Spotify info", description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**', color=Colour.from_rgb(255, 7, 58))
                 fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (

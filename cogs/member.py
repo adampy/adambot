@@ -384,7 +384,7 @@ class Member(commands.Cog):
         if len(args) == 0:
             user = author
         else:
-            user = await get_spaced_member(ctx, args, self.bot)
+            user = await get_spaced_member(ctx, self.bot, *args)
             if user is None:
                 await ctx.send(embed=Embed(title="Userinfo",
                                            description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**',

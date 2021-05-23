@@ -62,9 +62,14 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def rep(self, ctx):
         """Reputation module"""
-        if ctx.invoked_subcommand is None:
-            await ctx.send('To award rep to someone, type \n`-rep award Member_Name`\nor\n`-rep award @Member`\n'
-                           'Pro tip: If e.g. fred roberto was recently active you can type `-rep award fred`')
+        subcommands = []
+        for command in self.rep.walk_commands():
+            subcommands.append(command.name)
+            for alias in command.aliases:
+                subcommands.append(alias)
+        if ctx.subcommand_passed not in subcommands:
+            args = ctx.message.content.replace(f"{self.bot.prefix}rep", "").strip()
+            await ctx.invoke(self.rep.get_command("award"), args)
             
     @rep.error
     async def rep_error(self, ctx, error):
@@ -77,11 +82,12 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def award(self, ctx, *args):
         """Gives the member a reputation point. Aliases are give and point"""
+        args_ = " ".join(args)
         author_nick = ctx.author.display_name
-        if len(args) == 0:  # check so -rep award doesn't silently fail when no string given
+        if len(args_) == 0:  # check so -rep award doesn't silently fail when no string given
             user = ctx.author
         else:
-            user = await get_spaced_member(ctx, args, self.bot)
+            user = await get_spaced_member(ctx, self.bot, *args)
             if user is None:
                 await ctx.send(embed=Embed(title=f':x:  Sorry {author_nick} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
                 return
@@ -115,7 +121,7 @@ class Reputation(commands.Cog):
             user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
             await ctx.send(embed=user_embed)
             if award:
-                embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
+                embed = Embed(title='Reputation Points', color=Colour.from_rgb(177, 252, 129))
                 embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
                 embed.add_field(name='To', value=f'{str(user)} ({user.id})')
                 embed.add_field(name='New Rep', value=reps)
@@ -231,7 +237,7 @@ class Reputation(commands.Cog):
         if len(args) == 0:
             user = ctx.author
         else:
-            user = await get_spaced_member(ctx, args, self.bot)
+            user = await get_spaced_member(ctx, self.bot, *args)
             if user is None:
                 await ctx.send(embed=Embed(title=f':x:  Sorry {ctx.author.display_name} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
                 return
