@@ -1,10 +1,6 @@
 import discord
-from discord.utils import get
 from discord.ext import commands
 from discord import Embed, Colour
-import datetime
-from .utils import GCSE_SERVER_ID, CHANNELS, Permissions
-import asyncio
 
 class Logging(commands.Cog):
     def __init__(self, bot):

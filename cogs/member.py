@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
-from discord.errors import NotFound
 from discord import Embed, Colour, Status
 from .utils import time_str, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, \
     GCSE_SERVER_ID, SPAMPING_PERMS
@@ -9,9 +8,6 @@ import requests
 import re
 import os
 from datetime import datetime, timedelta
-import asyncpg
-from random import choice as randchoice
-import asyncio
 import time
 
 class Member(commands.Cog):

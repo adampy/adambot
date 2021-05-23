@@ -1,11 +1,7 @@
-import discord
 import os
 import inspect
-from discord.utils import get
 from discord.ext import commands
-from discord import Embed, Colour
-from .utils import GCSE_SERVER_ID, CHANNELS, Permissions, send_text_file
-import asyncio
+from .utils import Permissions, send_text_file
 
 
 class Eval(commands.Cog):

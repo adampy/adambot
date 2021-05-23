@@ -1,10 +1,8 @@
-import discord
-from discord import Embed, Colour, Message, TextChannel, File
+from discord import Embed, Colour, Message, File
 from discord.ext import commands
 from math import ceil
 from datetime import timedelta
 from io import BytesIO, StringIO
-from os import environ
 
 
 class EmbedPages:

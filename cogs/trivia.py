@@ -1,7 +1,6 @@
 import discord
 from discord import Embed, Colour
 from discord.ext import commands
-from discord.utils import get
 import urllib.request as request
 import csv
 from random import choice as randchoice

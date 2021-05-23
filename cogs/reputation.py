@@ -3,12 +3,8 @@ from discord.ext import commands
 #from discord.ext.commands import MemberConverter, UserConverter
 from discord.utils import get
 from discord import Embed, Colour
-import os
-import asyncpg
-import datetime
-from .utils import Permissions, ordinal, Embed, EmbedPages, PageTypes, send_file, get_spaced_member, GCSE_SERVER_ID
+from .utils import ordinal, Embed, EmbedPages, PageTypes, send_file, get_spaced_member
 import matplotlib.pyplot as plt
-import matplotlib
 
 class Reputation(commands.Cog):
     def __init__(self, bot):

@@ -1,14 +1,10 @@
 import discord
 from discord import Embed, Colour
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.utils import get
-import asyncio
-from .utils import Permissions, EmbedPages, PageTypes, Todo, CHANNELS
+from .utils import Permissions, Todo, CHANNELS
 from datetime import datetime, timedelta
-import os
-import asyncpg
-from math import ceil
 
 
 class Moderation(commands.Cog):

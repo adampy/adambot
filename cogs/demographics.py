@@ -2,11 +2,9 @@
 from discord.ext import commands
 from .utils import Permissions, Todo, send_file
 import asyncio
-import asyncpg
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
-import matplotlib
 
 
 class Demographics(commands.Cog):

@@ -1,14 +1,11 @@
 import discord
 from discord.ext import commands
-import asyncpg
 import datetime
 from discord import Embed, Colour
-from discord.utils import get
 import datetime
-import os
 from random import choice
-from math import ceil, inf
-from .utils import SPAMPING_PERMS, Permissions, EmbedPages, PageTypes, CHANNELS, GCSE_SERVER_ID
+from math import inf
+from .utils import EmbedPages, PageTypes, CHANNELS, GCSE_SERVER_ID
 
 
 class QuestionOTD(commands.Cog):

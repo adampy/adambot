@@ -2,9 +2,7 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 from discord.utils import get
-import os
-import asyncpg
-from .utils import Permissions, CHANNELS, GCSE_SERVER_ID
+from .utils import Permissions, CHANNELS
 import re
 import asyncio
 import datetime # For handling lurker_kick

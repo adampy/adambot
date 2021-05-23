@@ -1,12 +1,7 @@
 import discord
-from discord import Embed, Colour
-from discord.ext import commands, tasks
-from discord.ext.commands import has_permissions
-from discord.utils import get
-import asyncio
-from .utils import Permissions, EmbedPages, PageTypes, Todo
-import os
-import asyncpg
+from discord import Colour
+from discord.ext import commands
+from .utils import EmbedPages, PageTypes
 
 class Warnings(commands.Cog):
     def __init__(self, bot):

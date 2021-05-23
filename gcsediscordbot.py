@@ -2,8 +2,6 @@ import time
 start_time = time.time()
 import discord
 from discord.ext.commands import Bot
-from discord.ext import commands
-from discord.ext.tasks import loop
 from discord.utils import get
 import asyncio
 import time
@@ -223,25 +221,6 @@ class AdamBot(Bot):
                                 await connection.execute('DELETE FROM remind WHERE id = ($1)', remind[0])
                         except Exception as e:
                             print(f'REMIND: {type(e).__name__}: {e}')
-
-                # Results day countdown stuffs
-                # now = datetime.utcnow()
-                # msg = await self.get_channel(743235561015476236).fetch_message(744611462244466689)
-                # if now >= RESULTS_DAY:
-                #    #after results day
-                #    await msg.edit(content="RESULTS DAY IS HERE! GOOD LUCK! Please put your grades here!")
-                # elif now < RESULTS_DAY:
-                #    time_left = RESULTS_DAY - datetime.utcnow()
-                #
-                #    m, s = divmod(time_left.seconds, 60)
-                #    h, m = divmod(m, 60)
-                #
-                #    await msg.edit(content=f'''**LIVE** GCSE Results day countdown!
-                # **{time_left.days}** days
-                # **{h}** hours
-                # **{m}** minutes
-                # **{s}** seconds
-                # left until 8AM on results day. GOOD LUCK!!! :ok_hand:''')
 
                 # invite stuffs
                     try:
