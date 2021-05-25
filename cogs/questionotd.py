@@ -5,7 +5,7 @@ from discord import Embed, Colour
 import datetime
 from random import choice
 from math import inf
-from .utils import EmbedPages, PageTypes, CHANNELS, GCSE_SERVER_ID
+from .utils import EmbedPages, PageTypes
 
 
 class QuestionOTD(commands.Cog):
