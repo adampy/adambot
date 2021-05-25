@@ -3,7 +3,7 @@ from discord import Embed, Colour
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.utils import get
-from .utils import Permissions, Todo, CHANNELS
+from .utils import Permissions, Todo
 from datetime import datetime, timedelta
 
 
@@ -49,7 +49,7 @@ class Moderation(commands.Cog):
             await connection.execute('INSERT INTO todo (todo_id, todo_time, member_id) values ($1, $2, $3)', todo,
                                      new_timestamp, member_id)
 
-    async def advance_user(self, ctx: commands.Context, member: discord.Member, print=False):
+    async def advance_user(self, ctx: commands.Context, member: discord.Member, print=False): # TODO: This is GCSE9-1 specific
         roles = [y.name for y in member.roles]
         years = ['Y9', 'Y10', 'Y11', 'Post-GCSE']
         total = 0
@@ -76,20 +76,6 @@ class Moderation(commands.Cog):
                 if print:
                     await ctx.send(':ok_hand: The year has been advanced!')
                 return 'success'
-
-    def is_bot_owner(ctx):
-        return ctx.message.author.id == 394978551985602571
-
-    def bot_owner_or_permissions(**perms):
-        """Checks if bot owner or has perms"""
-        original = commands.has_permissions(**perms).predicate
-
-        async def extended_check(ctx):
-            if ctx.guild is None:
-                return False
-            return 394978551985602571 == ctx.author.id or await original(ctx)
-
-        return commands.check(extended_check)
 
     # -----------------------CLOSE COMMAND-----------------------
 
@@ -447,22 +433,7 @@ Staff role needed."""
         await channel.send(text[5:] if text.startswith("/tts") else text, tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
 
     @commands.command()
-    @commands.guild_only()
-    @commands.has_any_role(*Permissions.STAFF)
-    async def announce(self, ctx, *text):
-        role = ctx.guild.get_role(Permissions.ROLE_ID['Announcements'])
-        msg = role.mention + " " + " ".join(text)
-        if len(msg) >= 2000:
-            await ctx.send(
-                "The message is over 2000 characters, you must shorten it or do the announcement in multiple messages.")
-
-        await role.edit(mentionable=True)
-        channel = ctx.guild.get_channel(CHANNELS["announcements"])
-        await channel.send(msg)
-        await role.edit(mentionable=False)
-
-    @commands.command()
-    @commands.check(is_bot_owner)
+    @commands.is_owner()
     async def reset_invites(self, ctx):
         """A command for adam only which resets the invites"""
         invites = await ctx.guild.invites()
