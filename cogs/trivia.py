@@ -267,21 +267,14 @@ class Trivia(commands.Cog):
             await ctx.send('No trivia session running!')
 
     @trivia.command()
+    @commands.has_any_role(*Permissions.MOD)
     async def reload(self, ctx):
-        if ctx.author.id == 394978551985602571:
-            result = self.reload_trivias()
-            if result:
-                await ctx.send('Done!')
-            else:
-                await ctx.send('Please reload the bot instead.')
+        result = self.reload_trivias()
+        if result:
+            await ctx.send('Done!')
         else:
-            await ctx.send("Insufficient permission.")
+            await ctx.send('Please reload the bot instead.')
 
-
-        
-
-            
-    
 
 def setup(bot):
     bot.add_cog(Trivia(bot))

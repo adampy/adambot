@@ -171,7 +171,7 @@ Kick members perm needed"""
         Mass bans work with user IDs currently, reason flag HAS to be specified if setting
         Ban members perm needed"""
         reason = "No reason provided"
-        massban = ctx.message.content.replace(self.bot.prefix, "").startswith("massban")  # surely there's a better way of doing this?
+        massban = (ctx.invoked_with == "massban")
         timeperiod = None
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"],

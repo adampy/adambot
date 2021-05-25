@@ -193,42 +193,45 @@ async def send_text_file(text, channel, filename, extension = "txt"):
     await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
 
-async def get_spaced_member(ctx, args, bot):
+async def get_spaced_member(ctx, bot, *args):
     """Moves hell on Earth to get a guild member object from a given string
     Makes use of last_active, a priority temp list that stores member objects of
     the most recently active members"""
+    if type(args) in [tuple, list]:
+        possible_mention = args[0]
+    else:
+        possible_mention = args
     user = None
     try:
-        user = await commands.MemberConverter().convert(ctx, args[0])  # try standard approach before anything daft
+        user = await commands.MemberConverter().convert(ctx, possible_mention)  # try standard approach before anything daft
     except commands.errors.MemberNotFound:
+        args = " ".join(args)
         try:
-            user = await commands.MemberConverter().convert(ctx, ' '.join(args))
+            user = await commands.MemberConverter().convert(ctx, args)
         except commands.errors.MemberNotFound:
             # for the love of god
-
             lists = [bot.last_active[ctx.guild.id], ctx.guild.members]
             attribs = ["display_name", "name"]
-            print(bot.last_active)
             for list_ in lists:
                 for attrib in attribs:
                     if user is not None:
                         break
                     for member in list_:
                         name = getattr(member, attrib)
-                        if args[0] in name or ' '.join(args) in name:
+                        if possible_mention in name or args in name:
                             user = member
                             break
                     if user is None:
                         for member in list_:
                             name = getattr(member, attrib)
-                            if name.lower() == args[0].lower() or name.lower() == ' '.join(args).lower():
+                            if name.lower() == possible_mention.lower() or name.lower() == args.lower():
                                 ## don't need normal checks for this as the converter would have got it already
                                 user = member
                                 break
                     if user is None:
                         for member in list_:
                             name = getattr(member, attrib)
-                            if args[0].lower() in name.lower() or ' '.join(args).lower() in name.lower():
+                            if possible_mention.lower() in name.lower() or args.lower() in name.lower():
                                 user = member
                                 break
 

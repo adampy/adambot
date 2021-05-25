@@ -285,11 +285,12 @@ Do C<channel_name> to mention a channel."""
         This is done by looking up the alias used in the YEARS dictionary to get the corresponding role
         Using -verify shows the specified help message, it's just a dummy to allow the aliases
         """
-        content = ctx.message.content
-        if content[1:].startswith("verify"): # assuming message is invoker. TODO: if external use case arises, tweak this
+
+        if ctx.invoked_with == "verify" or not ctx.invoked_with:
             await ctx.send(f"```{self.verify.help}```")
             return
-        if member is None:
+
+        if not member:
             if not ctx.message.reference:
                 await ctx.send("Specify a user to verify!")
                 return
@@ -299,10 +300,7 @@ Do C<channel_name> to mention a channel."""
         year_roles = [get(member.guild.roles, name=self.YEARS[role]) for role in self.YEARS]
         pre_existing_roles = [r for r in year_roles if r in member.roles]
         await member.remove_roles(*year_roles)
-        if " " in content:
-            name = self.YEARS[content[:content.index(" ")].replace(self.bot.prefix, "")]
-        else:
-            name = self.YEARS[content.replace(self.bot.prefix, "")]
+        name = self.YEARS[ctx.invoked_with]
         await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=name)])
         await ctx.send(f"{member.mention} has been verified!")
         if not pre_existing_roles: # If the user hadn't already been verified
