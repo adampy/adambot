@@ -111,13 +111,19 @@ class Reputation(commands.Cog):
             user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
             await ctx.send(embed=user_embed)
             if award:
+                await self.bot.add_config(ctx.guild.id)
+                channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+                if channel_id is None:
+                    return
+                channel = self.bot.get_channel(channel_id)
+
                 embed = Embed(title='Reputation Points', color=Colour.from_rgb(177,252,129))
                 embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
                 embed.add_field(name='To', value=f'{str(user)} ({user.id})')
                 embed.add_field(name='New Rep', value=reps)
                 embed.add_field(name='Awarded in', value=ctx.channel.mention)
                 embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-                await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+                await channel.send(embed=embed)
 
         else:
             if user.bot:
@@ -158,11 +164,17 @@ class Reputation(commands.Cog):
         user = await self.bot.fetch_user(user_id)
         await self.clear_rep(user.id, ctx.guild.id)
         await ctx.send(f'{user.mention} now has 0 points.')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @reset.command(pass_context=True)
     @commands.guild_only()
@@ -176,11 +188,17 @@ class Reputation(commands.Cog):
             await connection.execute("DELETE from rep WHERE guild_id = $1", ctx.guild.id)
 
         await ctx.send('Done. Everyone now has 0 points.')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value='**EVERYONE**')
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @rep.command()
     @commands.guild_only()
@@ -200,12 +218,18 @@ class Reputation(commands.Cog):
 
         new_reps = await self.set_rep(user.id, ctx.guild.id, rep)
         await ctx.send(f'{user.mention} now has {new_reps} reputation points.')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
         embed = Embed(title='Reputation Points Set', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @rep.command()
     @commands.guild_only()
@@ -222,14 +246,19 @@ class Reputation(commands.Cog):
             return
 
         new_reps = await self.set_rep(int(user_id), ctx.guild_id, rep)
-
         await ctx.send(f'{user_id} now has {new_reps} reputation points.')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
         embed = Embed(title='Reputation Points Set (Hard set)', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=user_id)
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @rep.command()
     @commands.guild_only()
