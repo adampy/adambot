@@ -1,8 +1,8 @@
-# GCSEDiscordBot (Adam-Bot)
+# Adam-Bot
 
 ![Adam-Bot logo](https://cdn.discordapp.com/avatars/525083089924259898/c16a8482a4151d0bc291bf5a2e61acf0.webp?size=256)
 
-Python code that runs "Adam-Bot", mainly for use in the GCSE 9-1 Discord server. If you have an issue, feature request, or would like to report a bug, please feel free to [raise an issue](https://github.com/adampy/gcsediscordbot/issues/new/choose).
+Python code that runs "Adam-Bot". If you have an issue, feature request, or would like to report a bug, please feel free to [raise an issue](https://github.com/adampy/gcsediscordbot/issues/new/choose).
 
 The bot is hosted on [Heroku](https://www.heroku.com), and uses a [free-tier PostgreSQL database](https://elements.heroku.com/addons/heroku-postgresql) (maximum 10,000 total rows limit and 1GB maximum storage).
 

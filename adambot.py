@@ -16,10 +16,10 @@ from tzlocal import get_localzone
 import argparse
 import sys
 
-def get_credentials():
+def get_credentials(filename):
     """Command that checks if a credentials file is available. If it is it puts the vars into environ and returns True, else returns False"""
     try:
-        with open('credentials.csv') as f:
+        with open(filename) as f:
             for credential in reader(f):
                 os.environ[credential[0]] = credential[1]
         return True
@@ -94,7 +94,7 @@ class AdamBot(Bot):
             # overridden close cleans this up neatly
 
     def load_cogs(self):
-        """Loads all the cogs passed into AdamBot"""
+        """Procedure that loads all the cogs, listed in `self.COGS`"""
         for cog in self.COGS:
             if cog == "trivia" and self.LOCAL_HOST:  # Don't load trivia if running locally
                 continue
@@ -264,7 +264,10 @@ class AdamBot(Bot):
                 if not record:
                     await connection.execute("INSERT INTO config (guild_id) VALUES ($1);", guild_id)
                     record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id) # Fetch configuration record
-            self.configs[guild_id] = dict(record) # Turns the record into a dictionary (column name = key, value = value)
+
+            keys = list(record.keys())[1:]
+            values = list(record.values())[1:] # Include all keys and values apart from the first one (guild_id)
+            self.configs[guild_id] = dict(zip(keys, values)) # Turns the record into a dictionary (column name = key, value = value)
 
     async def propagate_config(self, guild_id):
         """
@@ -295,7 +298,7 @@ class AdamBot(Bot):
 
 
 if __name__ == "__main__":
-    local_host = get_credentials()
+    local_host = get_credentials('credentials.csv')
 
     intents = discord.Intents.default()
     intents.members = True

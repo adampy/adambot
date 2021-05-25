@@ -1,1 +1,1 @@
-worker: python gcsediscordbot.py
+worker: python adambot.py
