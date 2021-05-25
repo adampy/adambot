@@ -171,23 +171,34 @@ SPAMPING_PERMS = [
     374144745829826572, #Bxnana
 ]
 
+DEVS = [
+    394978551985602571, # Adam C
+    420961337448071178, # Hodor
+    686967704116002827, # Xp
+]
+
+def is_dev():
+    async def predicate(ctx):
+        return ctx.author.id in DEVS
+    return commands.check(predicate)
+
 GCSE_SERVER_ID = 445194262947037185
 CODE_URL = "https://github.com/adampy/gcsediscordbot"
 
 
-async def send_file(fig, channel, filename): # TODO: Rename this to send_image_file
+async def send_file(fig, channel, filename, extension = "png"): # TODO: Rename this to send_image_file
     """Send data to a channel with filename `filename`"""
     buf = BytesIO()
     fig.savefig(buf)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f'{filename}.png'))
+    await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
-async def send_text_file(text, channel, filename):
+async def send_text_file(text, channel, filename, extension = "txt"):
     """Send a text data to a channel with filename `filename`"""
     buf = StringIO()
     buf.write(text)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f'{filename}.txt'))
+    await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
 
 async def get_spaced_member(ctx, args, bot):

@@ -1,7 +1,7 @@
 import os
 import inspect
 from discord.ext import commands
-from .utils import Permissions, send_text_file
+from .utils import send_text_file, is_dev
 
 
 class Eval(commands.Cog):
@@ -17,7 +17,7 @@ class Eval(commands.Cog):
         return chunks
 
     @commands.command(name="eval", pass_context=True)
-    @commands.has_any_role(*Permissions.MOD)
+    @is_dev()
     async def evaluate(self, ctx, *, command=""):  # command is kwarg to stop it flooding the console when no input is provided
         """
         Allows evaluating strings of code (intended for testing).
@@ -54,12 +54,13 @@ class Eval(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
+    @is_dev()
     async def sql(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('```-help sql```')
 
     @sql.command(pass_context = True)
-    @commands.is_owner()
+    @is_dev()
     async def execute(self, ctx, *command):
         async with self.bot.pool.acquire() as connection:
             try:
@@ -68,7 +69,7 @@ class Eval(commands.Cog):
                 await ctx.send(f"EXCEPTION: {e}")
 
     @sql.command(pass_context = True)
-    @commands.is_owner()
+    @is_dev()
     async def fetch(self, ctx, *command):
         async with self.bot.pool.acquire() as connection:
             try:
