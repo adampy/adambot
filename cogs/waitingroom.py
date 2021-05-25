@@ -306,7 +306,7 @@ Do C<channel_name> to mention a channel."""
         await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=name)])
         await ctx.send(f"{member.mention} has been verified!")
         if not pre_existing_roles: # If the user hadn't already been verified
-            await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:')
+            await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:') # TODO: GCSE9-1 specific - sort it out!
 
     @commands.group(aliases=['lurker'])
     @commands.has_any_role(*Permissions.STAFF)
@@ -391,14 +391,19 @@ Do C<channel_name> to mention a channel."""
         else:
             await question.edit(content="Unknown response, therefore no lurkers have been kicked :ok_hand:")
 
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
+
         embed = Embed(title='Lurker-kick', color=Colour.from_rgb(220, 123, 28))
         embed.add_field(name='Members', value=str(len(members)))
         embed.add_field(name='Reason', value='Auto-kicked from the -lurkers kick command')
         embed.add_field(name='Initiator', value=ctx.author.mention)
         embed.set_thumbnail(url=ctx.author.avatar_url)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
-
+        await channel.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(WaitingRoom(bot))

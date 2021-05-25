@@ -153,16 +153,8 @@ class Permissions:
 
 
 CHANNELS = {
-    "waiting-room": 445198121618767872,
     "general": 445199175244709898,
     "trivia": 498617494693478402,
-    "rules": 445194263408672769,
-    "faqs": 583798388718567444,
-    "qotd": 496472968298496020,
-    "adambot-dev-spam": 809791208884142140,
-    "announcements": 445198590332370944,
-    "support-logs": 597068935829127168,
-    "mod-logs": 491726394598883338,
 }
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
