@@ -24,7 +24,8 @@ class Config(commands.Cog):
             "qotd_limit": [Validation.Integer, "How many QOTDs people can submit per day"],
             "qotd_channel": [Validation.Channel, "Where the QOTDs are displayed when picked"],
             "muted_role": [Validation.Role, "The role that prevents someone from talking"],
-            "mod_log_channel": [Validation.Channel, "Where the main logs go"]
+            "mod_log_channel": [Validation.Channel, "Where the main logs go"],
+            "prefix": [Validation.String, "The prefix the bot uses, default is '-'"]
         }
 
     # EMBED RESPONSES
@@ -69,10 +70,11 @@ class Config(commands.Cog):
         if ctx.invoked_subcommand is None:
             # User is staff and no subcommand => send embed
             await self.bot.add_config(ctx.guild.id)
+            p = self.bot.configs[ctx.guild.id]["prefix"]
             embed = Embed(
                 title = f":tools:  {ctx.guild.name} ({ctx.guild.id}) configuration",
                 color = ctx.author.color, 
-                description = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{self.bot.prefix}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{self.bot.prefix}config set qotd_limit 2`."
+                description = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{p}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{p}config set qotd_limit 2`."
             ) # TODO: Make bot colours global - e.g. in a config json
 
             config_dict = self.bot.configs[ctx.guild.id]
@@ -108,7 +110,6 @@ class Config(commands.Cog):
             return
 
         await self.bot.add_config(ctx.guild.id)
-        config_dict = self.bot.configs[ctx.guild.id]
         key = key.lower()
         if key not in self.CONFIG.keys():
             await self._invalid_config(ctx)

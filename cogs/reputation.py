@@ -64,11 +64,14 @@ class Reputation(commands.Cog):
             subcommands.append(command.name)
             for alias in command.aliases:
                 subcommands.append(alias)
+
+        await self.bot.add_config(ctx.guild.id)
+        p = self.bot.configs[ctx.guild.id]["prefix"]
         if ctx.subcommand_passed not in subcommands:
-            args = ctx.message.content.replace(f"{self.bot.prefix}rep", "").strip()
+            args = ctx.message.content.replace(f"{p}rep", "").strip()
             await ctx.invoke(self.rep.get_command("award"), args)
         if ctx.subcommand_passed in award_commands:
-            await ctx.send(f"*You can now use {self.bot.prefix}rep user rather than needing {self.bot.prefix}rep award!*")
+            await ctx.send(f"*You can now use {p}rep user rather than needing {p}rep award!*")
             
     @rep.error
     async def rep_error(self, ctx, error):
@@ -91,8 +94,11 @@ class Reputation(commands.Cog):
             failed = Embed(title=f':x:  Sorry we could not find the user!' if args_ else 'Rep Help', color=Colour.from_rgb(255, 7, 58))
             if args_:
                 failed.add_field(name="Requested user", value=args_)
-            failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{self.bot.prefix}rep Member_Name`\nor\n`{self.bot.prefix}rep @Member`\n'
-                             f'Pro tip: If e.g. fred roberto was recently active you can type `{self.bot.prefix}rep fred`\n\nTo see the other available rep commands type `{self.bot.prefix}help rep`', inline=False)
+
+            await self.bot.add_config(ctx.guild.id)
+            p = self.bot.configs[ctx.guild.id]["prefix"]
+            failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{p}rep Member_Name`\nor\n`{p}rep @Member`\n'
+                             f'Pro tip: If e.g. fred roberto was recently active you can type `{p}rep fred`\n\nTo see the other available rep commands type `{p}help rep`', inline=False)
             failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
                     self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
             await ctx.send(embed=failed)
@@ -167,7 +173,9 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send(f'```{self.bot.prefix}rep reset member @Member``` or ```{self.bot.prefix}rep reset all```')
+            await self.bot.add_config(ctx.guild.id)
+            p = self.bot.configs[ctx.guild.id]["prefix"]
+            await ctx.send(f'```{p}rep reset member @Member``` or ```{p}rep reset all```')
 
     @reset.command()
     @commands.guild_only()

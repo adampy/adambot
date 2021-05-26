@@ -99,7 +99,8 @@ class SupportConnectionManager:
             embed = Embed(title='New Ticket', color=Colour.from_rgb(0,0,255))
             embed.add_field(name='ID', value=f"{new_connection.id}", inline=True)
 
-            await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `{self.bot.prefix}support accept {new_connection.id}` to accept it.", embed=embed)
+            p = self.bot.configs[guild_id]["prefix"]
+            await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `{p}support accept {new_connection.id}` to accept it.", embed=embed)
         return new_connection
 
     async def get(self, id = -1, guild_id = -1):
@@ -179,19 +180,19 @@ class Support(commands.Cog):
             # If support requested
             connection = await self.support_manager.in_connections(message.author)  # Holds connection data or False if a connection is not open
 
-            if not connection and starts_with_any(message.content.lower(), ['support start', 'support begin', f'{self.bot.prefix}support start', f'{self.bot.prefix}support begin']):
+            if not connection and starts_with_any(message.content.lower(), ['support start', 'support begin']):
                 # Start a new connection
                 try: # Try clause gets a valid guild_id
                     guild_id = int(message.content.split(' ')[2])
                     if not guild_id in [g.id for g in self.bot.guilds]:
-                        await message.author.send(f"That is not a guild I know of, to get a list of guilds type `{self.bot.prefix}support start`")
+                        await message.author.send(f"That is not a guild I know of, to get a list of guilds type `support start`")
                         return
                 except ValueError:
-                    await message.author.send(f"That is not a guild I know of, to get a list of guilds type `{self.bot.prefix}support start`")
+                    await message.author.send(f"That is not a guild I know of, to get a list of guilds type `support start`")
                     return
                 except IndexError:
                     shared_guilds = [g for g in self.bot.guilds if message.author in g.members]
-                    output = f"To start a ticket, you must run this command with a guild ID, e.g. `{self.bot.prefix}support start 1234567890`. Guild IDs of servers that we share are:\n"
+                    output = f"To start a ticket, you must run this command with a guild ID, e.g. `support start 1234567890`. Guild IDs of servers that we share are:\n"
                     for i in range(len(shared_guilds)):
                         guild = shared_guilds[i]
                         output += f"• {guild.name}: **{guild.id}**"
@@ -230,7 +231,7 @@ class Support(commands.Cog):
             else:
                 if not connection and not message.content.startswith('-'):
                     # Not in connection and not starts with `support` AND not trying to do a command
-                    await message.author.send(f'Hi! You are not in a support chat with a staff member. If you would like to start an anonymous chat with an anonymous staff member type `{self.bot.prefix}support start` to get started.')
+                    await message.author.send(f'Hi! You are not in a support chat with a staff member. If you would like to start an anonymous chat with an anonymous staff member type `support start` to get started.')
                 else:
                     # Doesn't start with -
                     if connection:
@@ -261,7 +262,9 @@ class Support(commands.Cog):
     async def support(self, ctx):
         """Support module"""
         if ctx.invoked_subcommand is None:
-            await ctx.send(f'```{self.bot.prefix}help support``` for more commands. If you want to open a ticket type ```{self.bot.prefix}support start```')
+            await self.bot.add_config(ctx.guild.id)
+            p = self.bot.configs[ctx.guild.id]["prefix"]
+            await ctx.send(f'```{p}help support``` for more commands. If you want to open a ticket type ```{p}support start```')
 
     @support.command(pass_context=True)
     @commands.guild_only()

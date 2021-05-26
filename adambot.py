@@ -1,7 +1,9 @@
 import time
+
+from discord.ext.commands.core import command
 start_time = time.time()
 import discord
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, when_mentioned_or
 from discord.utils import get
 import asyncio
 import time
@@ -27,9 +29,24 @@ def get_credentials(filename):
         return False
 
 class AdamBot(Bot):
-    def __init__(self, local, cogs, start_time, *args, **kwargs):
+    @classmethod # Does not depend on self - can be called as AdamBot._determine_prefix
+    async def _determine_prefix(cls, bot, message):
+        """Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used"""
+        await bot.add_config(message.guild.id)
+        guild_prefix = bot.configs[message.guild.id]["prefix"]
+        return when_mentioned_or(guild_prefix)(bot, message)
+
+    def __init__(self, local, cogs, start_time, command_prefix = None, *args, **kwargs):
+        if command_prefix is None:
+            # Respond to guild specific pings, and mentions
+            kwargs["command_prefix"] = AdamBot._determine_prefix
+        else:
+            # Respond to the global prefix, and mentions
+            kwargs["command_prefix"] = when_mentioned_or(command_prefix)
+        
         super().__init__(*args, **kwargs)
         self.__dict__.update(utils.__dict__)
+
         self.configs = {} # Used to store configuration for guilds
         self.flag_handler = self.flags()
         # Hopefully can eventually move these out to some sort of config system
@@ -49,8 +66,6 @@ class AdamBot(Bot):
         self.display_timezone = pytz.timezone('Europe/London')
         self.ts_format = '%A %d/%m/%Y %H:%M:%S'
         self.start_time = start_time
-        self.prefix = kwargs.get("command_prefix",
-                                 "-")  # Defaults to "-" TODO: Can this be a required parameter instead of being in **kwargs?
         self._init_time = time.time()
         print(f"BOT INITIALISED {self._init_time - start_time} seconds")
         self.start_up()
@@ -113,7 +128,7 @@ class AdamBot(Bot):
     async def on_ready(self):
         self.login_time = time.time()
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
-        await self.change_presence(activity=discord.Game(name=f'Type {self.prefix}help for help'),
+        await self.change_presence(activity=discord.Game(name=f'Type `help` for help'),
                                    status=discord.Status.online)
    
     async def on_message(self, message):
@@ -296,7 +311,6 @@ class AdamBot(Bot):
         staff_role_id = self.configs[ctx.guild.id]["staff_role"]
         return staff_role_id in [y.id for y in ctx.author.roles]
 
-
 if __name__ == "__main__":
     local_host = get_credentials('credentials.csv')
 
@@ -310,7 +324,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     args = sys.argv[1:]
     # todo: make this more customisable
-    parser.add_argument("-p", "--prefix", nargs="?", default="-")
+    
+    parser.add_argument("-p", "--prefix", nargs="?", default=None)
     parser.add_argument("-t", "--token", nargs="?", default=None)  # can change token on the fly/keep env clean
     parser.add_argument("-c", "--connections", nargs="?", default=10) # DB pool max_size (how many concurrent connections the pool can have)
     args = parser.parse_args()
@@ -327,5 +342,5 @@ if __name__ == "__main__":
                  'logging',
                  'eval',
                  'config'] # Make this dynamic?
-    bot = AdamBot(local_host, cog_names, start_time, token=args.token, command_prefix=args.prefix, connections=args.connections, intents=intents)
+    bot = AdamBot(local_host, cog_names, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
     # bot.remove_command("help")
