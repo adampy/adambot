@@ -20,7 +20,7 @@ class Config(commands.Cog):
             "welcome_msg": [Validation.String, "What is sent when someone new joins (<user> tags the new user)"],
             "support_log_channel": [Validation.Channel, "Where the logs from the support module go"],
             "staff_role": [Validation.Role, "The role that designates bot perms"],
-            "qotd_role": [Validation.Role, "The role that designates QOTD perms"],
+            "qotd_role": [Validation.Role, "The role that designates QOTD perms (show, pick, delete)"],
             "qotd_limit": [Validation.Integer, "How many QOTDs people can submit per day"],
             "qotd_channel": [Validation.Channel, "Where the QOTDs are displayed when picked"],
             "muted_role": [Validation.Role, "The role that prevents someone from talking"],

@@ -337,39 +337,5 @@ class Support(commands.Cog):
         string = f"__**Current connections**__{NEWLINE}{x}{NEWLINE}__**Waiting connections**__{NEWLINE}{y}"
         await ctx.send(string)
 
-    @support.command(pass_context = True)
-    @commands.guild_only()
-    @commands.has_permissions(administrator = True)
-    async def channel(self, ctx, channel: discord.TextChannel = None):
-        """
-        Command that sets up a support log channel in a given guild
-        """
-        # Check if channel already exists
-        await self.bot.add_config(ctx.guild.id)
-        channel_id = self.bot.configs[ctx.guild.id]["support_log_channel"]
-        if not channel_id:
-            before = False
-        else:
-            before = self.bot.get_channel(channel_id)
-
-        if not channel: # If channel not provided to command - give more detail
-            if before:
-                await ctx.send(f"The current support log channel is: {before.mention}. If you'd like to change it, run this command again with the following syntax. ```-support channel <TextChannel>```")
-            else:
-                await ctx.send(f"You currently do not have a log channel. If you'd like to set it up, run this command again with the following syntax. ```-support channel <TextChannel>```")
-            return
-        
-        # Update channel
-        if not channel.permissions_for(ctx.guild.me).send_messages:
-            await ctx.send("Adam-Bot does not have permissions to send messages in that channel :sob:")
-            return
-        self.bot.configs[ctx.guild.id]["support_log_channel"] = channel.id
-        await self.bot.propagate_config(ctx.guild.id)
-        
-        if before:
-            await ctx.send(f"The support log channel has been changed from {before.mention} to {channel.mention} :ok_hand:")
-        else:
-            await ctx.send(f"The support log channel has been set to {channel.mention} :ok_hand:")
-
 def setup(bot):
     bot.add_cog(Support(bot))

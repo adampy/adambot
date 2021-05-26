@@ -124,19 +124,11 @@ class WaitingRoom(commands.Cog):
             await connection.execute('DELETE FROM invites')
             await connection.executemany('INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)', to_insert)
 
-    #-----WELCOME MESSAGE-----
+    #-----WELCOME MESSAGE TEST-----
 
-    @commands.group()
+    @commands.command(pass_context=True)
     @commands.guild_only()
-    async def editwelcome(self, ctx):
-        """Edit the welcome message and/or channel"""
-        if ctx.invoked_subcommand is None:
-            await ctx.send('```-editwelcome message [message...]``` or ```-editwelcome channel <text_channel>```')
-            return
-
-    @editwelcome.command(pass_context=True)
-    @commands.guild_only()
-    async def testmessage(self, ctx, to_ping: discord.User = None):
+    async def testwelcome(self, ctx, to_ping: discord.User = None):
         """Command that returns the welcome message, and pretends the command invoker is the new user."""
         if not await self.bot.is_staff(ctx):
             await ctx.send("You do not have permissions to test the welcome message.")
@@ -150,127 +142,6 @@ class WaitingRoom(commands.Cog):
             
         msg = await self.get_parsed_welcome_message(msg, to_ping or ctx.author, ctx.guild) # to_ping or author means the author unless to_ping is provided.
         await ctx.send(msg)
-
-    @editwelcome.command(pass_context=True)
-    @commands.guild_only()
-    async def message(self, ctx, *message):
-        """Changes the welcome message.
-Do <user> to ping the new member.
-Do R<role_name> to ping a role.
-Do C<channel_name> to mention a channel."""
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to edit the welcome message.")
-            return
-
-        author = ctx.author
-        channel = ctx.channel
-        def check(m):
-            return m.channel == channel and m.author == author
-
-        await self.bot.add_config(ctx.guild.id)
-        config = self.bot.configs[ctx.guild.id]
-        welcome_msg = config["welcome_msg"]
-
-        if welcome_msg == None and not message: # If no welcome message set and no new welcome message provided
-            await ctx.send("A welcome message has not been set, you can set one doing ```-editwelcome message [message...]```")
-            return
-
-        if not message:
-            await ctx.send(f"The current welcome message is:\n```{welcome_msg}```\nPlease type you new welcome message. (Type 'no' to cancel)")
-        else:
-            message = ' '.join(message)
-            await ctx.send(f"The current welcome message is:\n```{welcome_msg}```\n")
-            await ctx.send(f"Are you sure you want to change it to:\n```{message}```\n(Type 'yes' to change it, and 'no' to cancel)")
-
-        try:
-            response = await self.bot.wait_for('message', check=check, timeout=300)
-        except asyncio.TimeoutError:
-            await ctx.send("Editing timed-out, please try again.")
-            return
-
-        if response.content.lower() == "no":
-            await ctx.send("Editing cancelled :ok_hand:")
-            return
-        if message and response.content.lower() != "yes":
-            await ctx.send("Unknown response, please try again.")
-            return
-
-        # If the message was provided to begin with, move that to `response`
-        if not message:
-            message = response.content
-
-        if len(message) > 1000:
-            await ctx.send("Your welcome message is bigger than the limit (1000 chars). Please shorten it and try again.")
-            return
-        
-        self.bot.configs[ctx.guild.id]["welcome_msg"] = message
-        await self.bot.propagate_config(ctx.guild.id)
-        await ctx.send("The welcome message has been updated :ok_hand:")
-
-    @editwelcome.command(pass_context=True)
-    @commands.guild_only()
-    async def channel(self, ctx, channel: discord.TextChannel = None):
-        """Changes the welcome channel."""
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to edit the welcome channel.")
-            return
-
-        command_channel = ctx.channel
-        author = ctx.author
-        def check(m):
-            return m.channel == command_channel and m.author == author
-
-        await self.bot.add_config(ctx.guild.id)
-        config = self.bot.configs[ctx.guild.id]
-        welcome_channel_id = config["welcome_channel"]
-        if welcome_channel_id == None and channel == None: # If no welcome message set and no new welcome message provided
-            await ctx.send("A welcome channel has not been set. You can set one by doing ```-editwelcome channel <TextChannel>```")
-            return
-        welcome_channel = self.bot.get_channel(config["welcome_channel"])
-
-        if channel:
-            await ctx.send(f"The current welcome channel is:\n{welcome_channel.mention}\nAre you sure you want to change it to {channel.mention}? (Type 'yes' to change, or 'no' to cancel this change)")
-        else:
-            await ctx.send(f"The current welcome channel is:\n{welcome_channel.mention}\nPlease type the channel ID of the new welcome channel. (Type 'no' to cancel)")
-
-        try:
-            response = await self.bot.wait_for('message', check=check, timeout=300)
-        except asyncio.TimeoutError:
-            await ctx.send("Editing timed-out, please try again.")
-            return
-
-        if response.content.lower() == "no":
-            await ctx.send("Editing cancelled :ok_hand:")
-            return
-
-        # Channel already given, and approved
-        if channel and response.content.lower() != "yes":
-            await ctx.send("Unknown response, please try again.")
-            return
-        
-        # Channel not given, parse it
-        if not channel:
-            try:
-                channel = await self.bot.fetch_channel(int(response.content))
-            except discord.NotFound:
-                await ctx.send("No channel with that ID found, please try again.")
-                return
-            except discord.Forbidden:
-                await ctx.send("Adam-Bot does not have permissions to access that channel, please try again.")
-                return
-            except Exception as e:
-                await ctx.send(f"Something went wrong: {e}, please try again.")
-                return
-
-        # Check adambot can write here
-        if not channel.permissions_for(ctx.guild.me).send_messages:
-            await ctx.send("Adam-Bot does not have permissions to access that channel, please try again.")
-            return
-
-        self.bot.configs[ctx.guild.id]["welcome_channel"] = channel.id
-        await self.bot.propagate_config(ctx.guild.id)
-        await ctx.send(f"The welcome channel has been updated to {channel.mention} :ok_hand:")
-
 
     #-----YEAR COMMANDS-----
 
