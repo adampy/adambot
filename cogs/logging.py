@@ -40,7 +40,7 @@ class Logging(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
         """
-        Logs bulk message deletes, such as those used in `-purge` command
+        Logs bulk message deletes, such as those used in `purge` command
         """
         await self.bot.add_config(payload.guild_id)
         channel_id = self.bot.configs[payload.guild_id]["mod_log_channel"]

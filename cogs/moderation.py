@@ -91,7 +91,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages = True) # TODO: Perhaps make it possible to turn some commands, like purge, off
     async def purge(self, ctx, limit='5', member: discord.Member = None):
         """Purges the channel.
-Usage: `-purge 50`"""
+Usage: `purge 50`"""
         channel = ctx.channel
 
         if limit.isdigit():
@@ -385,7 +385,7 @@ Manage roles perm needed."""
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles = True)
     async def unjail(self, ctx, member: discord.Member):
-        """Puts a member in #the-court.
+        """Removes the jail role.
 Manage roles perm needed."""
         try:
             role = get(member.guild.roles, name='Jail')

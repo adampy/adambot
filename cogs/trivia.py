@@ -200,7 +200,7 @@ class Trivia(commands.Cog):
     async def trivia(self, ctx):
         """Trivia module"""
         if ctx.invoked_subcommand is None:
-            await ctx.send('```-trivia list```')
+            await ctx.send(f'```{self.bot.prefix}trivia list```')
 
     @trivia.error
     async def trivia_error(self, ctx, error):
@@ -217,7 +217,7 @@ class Trivia(commands.Cog):
     @commands.has_any_role(*Permissions.MEMBERS)
     async def start(self, ctx, trivia = None):
         if trivia is None:
-            await ctx.send('You must choose a trivia from `-trivia list`.')
+            await ctx.send(f'You must choose a trivia from `{self.bot.prefix}trivia list`.')
             return
         if trivia not in self.trivia_list:
             await ctx.send('This trivia doesn\'t exist :sob: (the trivia names are case sensitive).')

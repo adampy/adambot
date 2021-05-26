@@ -35,6 +35,7 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     async def uptime(self, ctx):
+        """View how long the bot has been running for"""
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
@@ -95,7 +96,7 @@ class Member(commands.Cog):
         role = get(member.guild.roles, name='Revising')
         await member.add_roles(role)
         await self.bot.get_channel(518901847981948938).send(
-            f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `-stoprevising`, `end`, `stop`, `exit` or `finished revising` in this channel!')
+            f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `stoprevising`, `end`, `stop`, `exit` or `finished revising` in this channel!')
 
     @commands.command(pass_context=True) # TODO: Remove GCSE9-1 dependency
     @commands.guild_only()
@@ -212,7 +213,7 @@ class Member(commands.Cog):
         try:
             msg = await channel.fetch_message(messageid)
         except Exception:
-            await ctx.send('```-quote <message_id> [channel-id]```')
+            await ctx.send(f'```{self.bot.prefix}quote <message_id> [channel_id]```')
             return
 
         user = msg.author
@@ -455,7 +456,7 @@ class Member(commands.Cog):
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
         if not args or not timeperiod:
-            await ctx.send('```-remind <sentence...> -t <time>```')
+            await ctx.send(f'```{self.bot.prefix}remind <sentence...> -t <time>```')
             return
 
         str_tp = time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s

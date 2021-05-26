@@ -23,8 +23,7 @@ class Warnings(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def warn(self, ctx, member: discord.Member, *, reason):
-        """Gives a member a warning, a reason is optional but recommended.
-Staff role needed."""
+        """Gives a member a warning, a reason is optional but recommended."""
         if not await self.bot.is_staff(ctx):
             await ctx.send("You do not have permissions to warn.")
             return
@@ -49,6 +48,7 @@ Staff role needed."""
     @commands.command(pass_context = True)
     @commands.guild_only()
     async def warns(self, ctx, member: discord.Member = None):
+        """Shows a user their warnings, or shows staff members all/a single persons warnings"""
         is_staff = await self.bot.is_staff(ctx)
         if is_staff:
             if not member:
@@ -76,8 +76,7 @@ Staff role needed."""
     @commands.command(pass_context=True, aliases=['warndelete'])
     @commands.guild_only()
     async def warnremove(self, ctx, *warnings):
-        """Remove warnings with this command, can do -warnremove <warnID> or -warnremove <warnID1> <warnID2>.
-Moderator role needed"""
+        """Remove warnings with this command, can do `warnremove <warnID>` or `warnremove <warnID1> <warnID2> ... <warnIDn>`."""
         if not await self.bot.is_staff(ctx):
             await ctx.send("You do not have permissions to remove a warning.")
             return

@@ -74,7 +74,6 @@ class Config(commands.Cog):
                 color = ctx.author.color, 
                 description = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{self.bot.prefix}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{self.bot.prefix}config set qotd_limit 2`."
             ) # TODO: Make bot colours global - e.g. in a config json
-            # TODO: Change all prefix's to `self.bot.prefix`
 
             config_dict = self.bot.configs[ctx.guild.id]
             for key in config_dict.keys():

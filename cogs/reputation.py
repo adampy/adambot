@@ -83,7 +83,7 @@ class Reputation(commands.Cog):
         """Gives the member a reputation point. Aliases are give and point"""
         args_ = " ".join(args)
         author_nick = ctx.author.display_name
-        if args_:  # check so -rep award doesn't silently fail when no string given
+        if args_:  # check so rep award doesn't silently fail when no string given
             user = await get_spaced_member(ctx, self.bot, *args)
         else:
             user = None
@@ -167,7 +167,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send('```-rep reset member @Member``` or ```-rep reset all```')
+            await ctx.send(f'```{self.bot.prefix}rep reset member @Member``` or ```{self.bot.prefix}rep reset all```')
 
     @reset.command()
     @commands.guild_only()

@@ -154,7 +154,7 @@ class WaitingRoom(commands.Cog):
         """
         When a Year role is specified, the specified user is given that role.
         This is done by looking up the alias used in the YEARS dictionary to get the corresponding role
-        Using -verify shows the specified help message, it's just a dummy to allow the aliases
+        Using `verify` shows the specified help message, it's just a dummy to allow the aliases
         """
 
         if ctx.invoked_with == "verify" or not ctx.invoked_with:
