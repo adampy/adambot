@@ -355,7 +355,7 @@ Manage roles perm needed."""
     @commands.command(pass_context=True)
     async def slowmode(self, ctx, time):
         """Adds slowmode in a specific channel. Time is given in seconds."""
-        if not ctx.channel.permissions_for(ctx.author).manage_channel:
+        if not ctx.channel.permissions_for(ctx.author).manage_channels:
             await ctx.send("You do not have permissions for that :sob:")
             return
 
