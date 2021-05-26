@@ -1,12 +1,8 @@
 ## Adapted from Hodor's private bot
 
-
-import discord
 from discord.ext import commands
-from discord import Embed, Colour, Status
+from discord import Embed, Colour
 from .utils import get_spaced_member
-import platform
-import datetime
 
 class spotify(commands.Cog):
     def __init__(self, bot):

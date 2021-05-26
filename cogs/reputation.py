@@ -3,22 +3,21 @@ from discord.ext import commands
 #from discord.ext.commands import MemberConverter, UserConverter
 from discord.utils import get
 from discord import Embed, Colour
-import os
-import asyncpg
-import datetime
-from .utils import Permissions, ordinal, Embed, EmbedPages, PageTypes, send_file, get_spaced_member, GCSE_SERVER_ID
+from .utils import ordinal, Embed, EmbedPages, PageTypes, send_file, get_spaced_member
 import matplotlib.pyplot as plt
-import matplotlib
 
 class Reputation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.key = os.environ.get('DATABASE_URL')
 
     async def get_leaderboard(self, ctx, only_members = False):
         leaderboard = []
         async with self.bot.pool.acquire() as connection:
-            leaderboard = await connection.fetch('SELECT * FROM rep ORDER BY reps DESC')
+            leaderboard = await connection.fetch('SELECT * FROM rep WHERE guild_id = $1 ORDER BY reps DESC', ctx.guild.id)
+
+        if len(leaderboard) == 0:
+            await ctx.send("There are no rep points in this guild yet :sob:")
+            return
 
         embed = EmbedPages(PageTypes.REP, leaderboard, "Reputation Leaderboard", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
         await embed.set_page(1) # Default first page
@@ -27,34 +26,31 @@ class Reputation(commands.Cog):
     async def modify_rep(self, member, change):
         reps = change
         async with self.bot.pool.acquire() as connection:
-            reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", member.id)
+            reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1) AND guild_id = $2", member.id, member.guild.id)
             if not reps:
-                await connection.execute('INSERT INTO rep (reps, member_id) VALUES ($1, $2)', change, member.id)
+                await connection.execute('INSERT INTO rep (reps, member_id, guild_id) VALUES ($1, $2, $3)', change, member.id, member.guild.id)
             else:
-                await self.set_rep(member.id, reps+change)
+                await self.set_rep(member.id, member.guild.id, reps+change)
                 reps = reps + change
 
         return (reps if reps else change)
     
-    async def clear_rep(self, user_id):
+    async def clear_rep(self, user_id, guild_id):
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE FROM rep WHERE member_id = ($1)", user_id)
+            await connection.execute("DELETE FROM rep WHERE member_id = ($1) AND guild_id = $2", user_id, guild_id)
 
-    async def set_rep(self, user_id, reps):
+    async def set_rep(self, user_id, guild_id, reps):
         async with self.bot.pool.acquire() as connection:
             if reps == 0:
-                await self.clear_rep(user_id)
+                await self.clear_rep(user_id, guild_id)
                 return 0
             else:
-                await connection.execute("UPDATE rep SET reps = ($1) WHERE member_id = ($2)", reps, user_id)
-                new_reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1)", user_id)
+                await connection.execute("UPDATE rep SET reps = ($1) WHERE member_id = ($2) AND guild_id = $3", reps, user_id, guild_id)
+                new_reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1) AND guild_id = $2", user_id, guild_id)
                 if not new_reps: # User was not already on the rep table, it needs adding
-                    await connection.execute("INSERT INTO rep (reps, member_id) VALUES ($1, $2)", reps, user_id)
+                    await connection.execute("INSERT INTO rep (reps, member_id, guild_id) VALUES ($1, $2, $3)", reps, user_id, guild_id)
                     new_reps = reps
                 return new_reps
-
-    def in_gcse(ctx):
-        return ctx.guild.id == GCSE_SERVER_ID
 
 #-----------------------REP COMMANDS------------------------------
 
@@ -68,11 +64,14 @@ class Reputation(commands.Cog):
             subcommands.append(command.name)
             for alias in command.aliases:
                 subcommands.append(alias)
+
+        await self.bot.add_config(ctx.guild.id)
+        p = self.bot.configs[ctx.guild.id]["prefix"]
         if ctx.subcommand_passed not in subcommands:
-            args = ctx.message.content.replace(f"{self.bot.prefix}rep", "").strip()
+            args = ctx.message.content.replace(f"{p}rep", "").strip()
             await ctx.invoke(self.rep.get_command("award"), args)
         if ctx.subcommand_passed in award_commands:
-            await ctx.send(f"*You can now use {self.bot.prefix}rep user rather than needing {self.bot.prefix}rep award!*")
+            await ctx.send(f"*You can now use {p}rep user rather than needing {p}rep award!*")
             
     @rep.error
     async def rep_error(self, ctx, error):
@@ -87,7 +86,7 @@ class Reputation(commands.Cog):
         """Gives the member a reputation point. Aliases are give and point"""
         args_ = " ".join(args)
         author_nick = ctx.author.display_name
-        if args_:  # check so -rep award doesn't silently fail when no string given
+        if args_:  # check so rep award doesn't silently fail when no string given
             user = await get_spaced_member(ctx, self.bot, *args)
         else:
             user = None
@@ -95,8 +94,11 @@ class Reputation(commands.Cog):
             failed = Embed(title=f':x:  Sorry we could not find the user!' if args_ else 'Rep Help', color=Colour.from_rgb(255, 7, 58))
             if args_:
                 failed.add_field(name="Requested user", value=args_)
-            failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{self.bot.prefix}rep Member_Name`\nor\n`{self.bot.prefix}rep @Member`\n'
-                             f'Pro tip: If e.g. fred roberto was recently active you can type `{self.bot.prefix}rep fred`\n\nTo see the other available rep commands type `{self.bot.prefix}help rep`', inline=False)
+
+            await self.bot.add_config(ctx.guild.id)
+            p = self.bot.configs[ctx.guild.id]["prefix"]
+            failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{p}rep Member_Name`\nor\n`{p}rep @Member`\n'
+                             f'Pro tip: If e.g. fred roberto was recently active you can type `{p}rep fred`\n\nTo see the other available rep commands type `{p}help rep`', inline=False)
             failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
                     self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
             await ctx.send(embed=failed)
@@ -131,13 +133,19 @@ class Reputation(commands.Cog):
             user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
             await ctx.send(embed=user_embed)
             if award:
+                await self.bot.add_config(ctx.guild.id)
+                channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+                if channel_id is None:
+                    return
+                channel = self.bot.get_channel(channel_id)
+
                 embed = Embed(title='Reputation Points', color=Colour.from_rgb(177, 252, 129))
                 embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
                 embed.add_field(name='To', value=f'{str(user)} ({user.id})')
                 embed.add_field(name='New Rep', value=reps)
                 embed.add_field(name='Awarded in', value=ctx.channel.mention)
                 embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-                await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+                await channel.send(embed=embed)
 
         else:
             if user.bot:
@@ -163,45 +171,67 @@ class Reputation(commands.Cog):
 
     @rep.group()
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.MOD)
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send('```-rep reset member @Member``` or ```-rep reset all```')
+            await self.bot.add_config(ctx.guild.id)
+            p = self.bot.configs[ctx.guild.id]["prefix"]
+            await ctx.send(f'```{p}rep reset member @Member``` or ```{p}rep reset all```')
 
     @reset.command()
-    @commands.has_any_role(*Permissions.MOD)
     @commands.guild_only()
     async def member(self, ctx, user_id):
         """Resets a single users reps."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to reset a member's rep points :sob:")
+            return
+
         user = await self.bot.fetch_user(user_id)
-        await self.clear_rep(user.id)
+        await self.clear_rep(user.id, ctx.guild.id)
         await ctx.send(f'{user.mention} now has 0 points.')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @reset.command(pass_context=True)
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.MOD)
     async def all(self, ctx):
         """Resets everyones reps."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to reset everyone's rep points :sob:")
+            return
+
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE from rep")
+            await connection.execute("DELETE from rep WHERE guild_id = $1", ctx.guild.id)
 
         await ctx.send('Done. Everyone now has 0 points.')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
         embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value='**EVERYONE**')
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.ASSISTANT)
     async def set(self, ctx, user: discord.User, rep):
         """Sets a specific members reps to a given value."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to set a member's rep points :sob:")
+            return
+
         try:
             rep = int(rep)
         except ValueError:
@@ -210,35 +240,49 @@ class Reputation(commands.Cog):
 
         #user = await self.bot.fetch_user(user_id)
 
-        new_reps = await self.set_rep(user.id, rep)
+        new_reps = await self.set_rep(user.id, ctx.guild.id, rep)
         await ctx.send(f'{user.mention} now has {new_reps} reputation points.')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
         embed = Embed(title='Reputation Points Set', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=str(user))
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @rep.command()
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.ASSISTANT)
     async def hardset(self, ctx, user_id, rep):
         """Sets a specific member's reps to a given value via their ID."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You do not have permissions to hardset a member's rep points :sob:")
+            return
+
         try:
             rep = int(rep)
         except ValueError:
             await ctx.send('The rep must be a number!')
             return
 
-        new_reps = await self.set_rep(int(user_id), rep)
-
+        new_reps = await self.set_rep(int(user_id), ctx.guild_id, rep)
         await ctx.send(f'{user_id} now has {new_reps} reputation points.')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
         embed = Embed(title='Reputation Points Set (Hard set)', color=Colour.from_rgb(177,252,129))
         embed.add_field(name='Member', value=user_id)
         embed.add_field(name='Staff', value=str(ctx.author))
         embed.add_field(name='New Rep', value=new_reps)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @rep.command()
     @commands.guild_only()
@@ -255,7 +299,7 @@ class Reputation(commands.Cog):
         rep = None
         lb_pos = None
         async with self.bot.pool.acquire() as connection:
-            all_rep = await connection.fetch("SELECT * FROM rep ORDER by reps DESC;")
+            all_rep = await connection.fetch("SELECT * FROM rep WHERE guild_id = $1 ORDER by reps DESC;", ctx.guild.id)
             all_rep = [x for x in all_rep if ctx.channel.guild.get_member(x[0]) is not None]
             member_record = next((x for x in all_rep if x[0] == user.id), None)
             if member_record: # If the user actually has reps
@@ -286,7 +330,7 @@ class Reputation(commands.Cog):
     async def data(self, ctx):
         vals = []
         async with self.bot.pool.acquire() as connection:
-            vals = await connection.fetch("SELECT DISTINCT reps, COUNT(member_id) FROM rep WHERE reps > 0 GROUP BY reps ORDER BY reps")
+            vals = await connection.fetch("SELECT DISTINCT reps, COUNT(member_id) FROM rep WHERE reps > 0 AND guild_id = $1 GROUP BY reps ORDER BY reps", ctx.guild.id)
 
         fig, ax = plt.subplots()
         ax.plot([x[0] for x in vals], [x[1] for x in vals], 'b-o', linewidth=0.5, markersize=1)

@@ -1,9 +1,9 @@
 import time
+
+from discord.ext.commands.core import command
 start_time = time.time()
 import discord
-from discord.ext.commands import Bot
-from discord.ext import commands
-from discord.ext.tasks import loop
+from discord.ext.commands import Bot, when_mentioned_or
 from discord.utils import get
 import asyncio
 import time
@@ -18,37 +18,42 @@ from tzlocal import get_localzone
 import argparse
 import sys
 
-
-
-# -----------------------------------------------------------------
-
-# Move logging into a seperate cog for readability
-# create poll command
-# helper command w/ cooldown
-
-# -----------------------------------------------------------------
-
-def get_credentials():
+def get_credentials(filename):
     """Command that checks if a credentials file is available. If it is it puts the vars into environ and returns True, else returns False"""
     try:
-        with open('credentials.csv') as f:
+        with open(filename) as f:
             for credential in reader(f):
                 os.environ[credential[0]] = credential[1]
         return True
     except FileNotFoundError:
         return False
 
-
 class AdamBot(Bot):
-    def __init__(self, local, cogs, start_time, *args, **kwargs):
+    @classmethod # Does not depend on self - can be called as AdamBot._determine_prefix
+    async def _determine_prefix(cls, bot, message):
+        """Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used"""
+        await bot.add_config(message.guild.id)
+        guild_prefix = bot.configs[message.guild.id]["prefix"]
+        return when_mentioned_or(guild_prefix)(bot, message)
+
+    def __init__(self, local, cogs, start_time, command_prefix = None, *args, **kwargs):
+        if command_prefix is None:
+            # Respond to guild specific pings, and mentions
+            kwargs["command_prefix"] = AdamBot._determine_prefix
+        else:
+            # Respond to the global prefix, and mentions
+            kwargs["command_prefix"] = when_mentioned_or(command_prefix)
+        
         super().__init__(*args, **kwargs)
         self.__dict__.update(utils.__dict__)
+
+        self.configs = {} # Used to store configuration for guilds
         self.flag_handler = self.flags()
         # Hopefully can eventually move these out to some sort of config system
         self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
         self.flag_handler.set_flag("reason", {"flag": "r"})
-        print(self.GCSE_SERVER_ID)
         self.token = kwargs.get("token", None)
+        self.connections = kwargs.get("connections", 10) # Max DB pool connections
         self.online = True
         self.COGS = cogs
         self.LOCAL_HOST = local
@@ -61,8 +66,6 @@ class AdamBot(Bot):
         self.display_timezone = pytz.timezone('Europe/London')
         self.ts_format = '%A %d/%m/%Y %H:%M:%S'
         self.start_time = start_time
-        self.prefix = kwargs.get("command_prefix",
-                                 "-")  # Defaults to "-" TODO: Can this be a required parameter instead of being in **kwargs?
         self._init_time = time.time()
         print(f"BOT INITIALISED {self._init_time - start_time} seconds")
         self.start_up()
@@ -93,7 +96,7 @@ class AdamBot(Bot):
         print(f"Loaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
         print("Creating DB pool...")
         self.loop.create_task(self.execute_todos())
-        self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=20))
+        self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=self.connections))
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
         print(f'Bot fully setup!\nDB took {time.time() - self.cog_load} seconds to connect to ({time.time() - self.start_time} seconds total)')
         token = os.environ.get('TOKEN') if not self.token else self.token
@@ -106,7 +109,7 @@ class AdamBot(Bot):
             # overridden close cleans this up neatly
 
     def load_cogs(self):
-        """Loads all the cogs passed into AdamBot"""
+        """Procedure that loads all the cogs, listed in `self.COGS`"""
         for cog in self.COGS:
             if cog == "trivia" and self.LOCAL_HOST:  # Don't load trivia if running locally
                 continue
@@ -125,10 +128,9 @@ class AdamBot(Bot):
     async def on_ready(self):
         self.login_time = time.time()
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
-        await self.change_presence(activity=discord.Game(name=f'Type {self.prefix}help for help'),
+        await self.change_presence(activity=discord.Game(name=f'Type `help` for help'),
                                    status=discord.Status.online)
    
-
     async def on_message(self, message):
         """Event that has checks that stop bots from executing commands"""
         if type(message.channel) == discord.DMChannel or message.author.bot:
@@ -158,7 +160,8 @@ class AdamBot(Bot):
                     elif reaction.emoji == EmojiEnum.MAX_BUTTON:
                         await page.last_page()
 
-                    await reaction.message.remove_reaction(reaction.emoji, user)
+                    if reaction.emoji != EmojiEnum.CLOSE: # Fixes errors that occur when deleting the embed above
+                        await reaction.message.remove_reaction(reaction.emoji, user)
                     break
 
     async def on_message_delete(self, message):
@@ -234,25 +237,6 @@ class AdamBot(Bot):
                         except Exception as e:
                             print(f'REMIND: {type(e).__name__}: {e}')
 
-                # Results day countdown stuffs
-                # now = datetime.utcnow()
-                # msg = await self.get_channel(743235561015476236).fetch_message(744611462244466689)
-                # if now >= RESULTS_DAY:
-                #    #after results day
-                #    await msg.edit(content="RESULTS DAY IS HERE! GOOD LUCK! Please put your grades here!")
-                # elif now < RESULTS_DAY:
-                #    time_left = RESULTS_DAY - datetime.utcnow()
-                #
-                #    m, s = divmod(time_left.seconds, 60)
-                #    h, m = divmod(m, 60)
-                #
-                #    await msg.edit(content=f'''**LIVE** GCSE Results day countdown!
-                # **{time_left.days}** days
-                # **{h}** hours
-                # **{m}** minutes
-                # **{s}** seconds
-                # left until 8AM on results day. GOOD LUCK!!! :ok_hand:''')
-
                 # invite stuffs
                     try:
                         guild = self.get_guild(445194262947037185)
@@ -279,8 +263,56 @@ class AdamBot(Bot):
             await asyncio.sleep(5)
 
 
+    # General configuration workflow:
+    # 1) Call bot.add_config(guild.id) which makes sure there is that guild's config stuff in bot.configs dict
+    # 2) Make any edits directly to bot.configs[guild.id]
+    # 3) Call bot.propagate_config(guild.id) which propagates any edits to the DB
+
+    async def add_config(self, guild_id):
+        """
+        Method that gets the configuraton for a guild and puts it into self.configs dictionary (with the guild ID as the key). The data
+        is stored in the `config` table. If no configuration is found, a new record is made and a blank configuration dict.
+        """
+        if guild_id not in self.configs: # This check (to see if a DB call is needed) is okay because any updates made will be directly made to self.configs (before DB propagation) TODO: Perhaps limit number of items in this
+            async with self.pool.acquire() as connection:
+                record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id)
+                if not record:
+                    await connection.execute("INSERT INTO config (guild_id) VALUES ($1);", guild_id)
+                    record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id) # Fetch configuration record
+
+            keys = list(record.keys())[1:]
+            values = list(record.values())[1:] # Include all keys and values apart from the first one (guild_id)
+            self.configs[guild_id] = dict(zip(keys, values)) # Turns the record into a dictionary (column name = key, value = value)
+
+    async def propagate_config(self, guild_id):
+        """
+        Method that sends the config data stored in self.configs and propagates them to the DB.
+        """
+        data = self.configs[guild_id]
+        length = len(data.keys())
+        
+        # Make SQL
+        sql_part = ""
+        keys = list(data) # List of the keys (current column names in the database)
+        for i in range(length):
+            sql_part += f"{keys[i]} = (${i + 1})" # For each key, add "{nth key_name} = $n+1"
+            if i != length - 1:
+                sql_part += ", " # If not the last element, add a ", "
+
+        sql = f"UPDATE config SET {sql_part} WHERE guild_id = {guild_id};"
+        async with self.pool.acquire() as connection:
+            await connection.execute(sql, *data.values())
+
+    async def is_staff(self, ctx):
+        """
+        Method that checks if a user is staff in their guild or not
+        """
+        await self.add_config(ctx.guild.id)
+        staff_role_id = self.configs[ctx.guild.id]["staff_role"]
+        return staff_role_id in [y.id for y in ctx.author.roles]
+
 if __name__ == "__main__":
-    local_host = get_credentials()
+    local_host = get_credentials('credentials.csv')
 
     intents = discord.Intents.default()
     intents.members = True
@@ -292,8 +324,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     args = sys.argv[1:]
     # todo: make this more customisable
-    parser.add_argument("-p", "--prefix", nargs="?", default="-")
+    
+    parser.add_argument("-p", "--prefix", nargs="?", default=None)
     parser.add_argument("-t", "--token", nargs="?", default=None)  # can change token on the fly/keep env clean
+    parser.add_argument("-c", "--connections", nargs="?", default=10) # DB pool max_size (how many concurrent connections the pool can have)
     args = parser.parse_args()
     cog_names = ['member',
                  'moderation',
@@ -306,6 +340,7 @@ if __name__ == "__main__":
                  'spotify',
                  'warnings',
                  'logging',
-                 'eval'] # Make this dynamic?
-    bot = AdamBot(local_host, cog_names, start_time, token=args.token, command_prefix=args.prefix, intents=intents)
+                 'eval',
+                 'config'] # Make this dynamic?
+    bot = AdamBot(local_host, cog_names, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
     # bot.remove_command("help")

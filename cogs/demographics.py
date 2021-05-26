@@ -1,17 +1,14 @@
 ﻿import discord
 from discord.ext import commands
-from .utils import Permissions, Todo, send_file
+from .utils import Todo, send_file
 import asyncio
-import asyncpg
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
-import matplotlib
 
 
 class Demographics(commands.Cog):
-    # Tracks the change in specific roles.
-    # This works over multiple guilds, but cannot function like that due to utils.Permissions.
+    """Tracks the change in specific roles"""
     def __init__(self, bot):
         self.bot = bot
 
@@ -63,20 +60,26 @@ class Demographics(commands.Cog):
             return
 
     @demographics.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def viewroles(self, ctx):
         """Gets all the roles that are tracked in a guild."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You need the staff role to do this :sob:")
+            return
+
         role_ids = await self._get_roles(ctx.guild)
         roles = [ctx.guild.get_role(x).name for x in role_ids]
         await ctx.send("Currently tracked roles are: " + ', '.join(roles))
 
     @demographics.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def addrole(self, ctx, role: discord.Role, sample_rate: int = 1):
         """Adds a role to the server's demographic samples.
         `sample_rate` shows how many days are inbetween each sample, and by default is 1."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You need the staff role to do this :sob:")
+            return
+
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
 
@@ -101,10 +104,13 @@ class Demographics(commands.Cog):
             question.edit("Unknown response, please try again. :sob:")
 
     @demographics.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def removerole(self, ctx, role: discord.Role):
         """Gets all the roles that are tracked in a guild."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You need the staff role to do this :sob:")
+            return
+
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
 
@@ -127,10 +133,13 @@ class Demographics(commands.Cog):
             await question.edit(content="No action taken.")
 
     @demographics.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def takesample(self, ctx, role: discord.Role = None):
         """Adds a TODO saying that a sample is required ASAP. If `role` == None then all guild demographics are sampled."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You need the staff role to do this :sob:")
+            return
+
         guild_tracked_roles = await self._get_roles(ctx.guild)
         if not role:
             # Take a sample of all roles
@@ -162,12 +171,15 @@ class Demographics(commands.Cog):
         await ctx.send("A sample has been taken, it may take a few seconds to be registered in the database. :ok_hand:")
 
     @demographics.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
     @commands.guild_only()
     async def removeallsamples(self, ctx):
         """Removes all samples from the `demographic_samples` table."""
+        if not await self.bot.is_staff(ctx):
+            await ctx.send("You need the staff role to do this :sob:")
+            return
+
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE FROM demographic_samples;")
+            await connection.execute("DELETE FROM demographic_samples WHERE role_reference IN (SELECT id FROM demographic_roles WHERE guild_id = $1);", ctx.guild.id) # Removes samples for that guild
         await ctx.send("All samples have been deleted. :sob:")
 
     # Error handlers
@@ -183,26 +195,27 @@ class Demographics(commands.Cog):
     async def takesample_error(self, ctx, error):
         await self._role_error(ctx, error)
 
-    # Old command
     @demographics.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def show(self, ctx):
         """View server demographics."""  # DO NOT REMOVE THIS METHOD (if you plan on removing, remove dependency in demographics command group declaration)
-        numbers = [len(ctx.guild.members)]
-        for role in ['Post-GCSE', 'Y11', 'Y10', 'Y9']:
-            numbers.append(len([x for x in ctx.guild.members if role in [y.name for y in x.roles]]))
-        message = """We have {} members.
-        
-**{}** Post-GCSE
-**{}** Year 11s
-**{}** Year 10s
-**{}** Year 9s
-*Note: do `-demographics chart` to view change in demographics over time!*""".format(*numbers)
+        tracked_roles = [ctx.guild.get_role(r) for r in await self._get_roles(ctx.guild) if ctx.guild.get_role(r) is not None]
+        message = f"There are a total of **{ctx.guild.member_count}** users in **{ctx.guild.name}**."
+
+        double_newline = True
+        for role in tracked_roles:
+            n = len(role.members)
+            if double_newline:
+                message += "\n"
+                double_newline = False # Adds an extra new line on the first iteration
+            message += f"\n•**{n}** {role.name}"
+
+        await self.bot.add_config(ctx.guild.id)
+        p = self.bot.configs[ctx.guild.id]["prefix"]
+        message += f"\n*Note: do `{p}demographics chart` to view change in demographics over time!*"
         await ctx.send(message)
 
     @demographics.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS)
     @commands.guild_only()
     async def chart(self, ctx):
         """View a guild's demographics over time"""

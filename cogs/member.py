@@ -1,17 +1,11 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
-from discord.errors import NotFound
 from discord import Embed, Colour, Status
 from .utils import time_str, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, \
-    GCSE_SERVER_ID, SPAMPING_PERMS
-import requests
+    GCSE_SERVER_ID, SPAMPING_PERMS, send_text_file
 import re
-import os
 from datetime import datetime, timedelta
-import asyncpg
-from random import choice as randchoice
-import asyncio
 import time
 
 class Member(commands.Cog):
@@ -41,6 +35,7 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     async def uptime(self, ctx):
+        """View how long the bot has been running for"""
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
@@ -89,7 +84,7 @@ class Member(commands.Cog):
             await ctx.invoke(self.bot.get_command('stoprevising'))
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS)
+    @commands.has_any_role(*Permissions.MEMBERS) # TODO: Revising is GCSE9-1 specific - fix that
     @commands.guild_only()
     async def revise(self, ctx):
         """Puts you in revising mode."""
@@ -101,9 +96,9 @@ class Member(commands.Cog):
         role = get(member.guild.roles, name='Revising')
         await member.add_roles(role)
         await self.bot.get_channel(518901847981948938).send(
-            f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `-stoprevising`, `end`, `stop`, `exit` or `finished revising` in this channel!')
+            f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `stoprevising`, `end`, `stop`, `exit` or `finished revising` in this channel!')
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True) # TODO: Remove GCSE9-1 dependency
     @commands.guild_only()
     async def stoprevising(self, ctx):
         """Exits revising mode."""
@@ -161,25 +156,12 @@ class Member(commands.Cog):
                         break
             new_message = '\n'.join(message)
             new_message += f"\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** user{'' if len(message) == 0 else 's'} with this role."
-            try:
+            
+            if len(new_message) > 2000:
+                await send_text_file(new_message, ctx.channel, "roles", "txt")
+            else:
                 await ctx.send(new_message)
-            except Exception:  # longer than 2000 letters causes this to be run
-                new_message = '\n'.join([f'**{member.display_name}**' for member in people])
-                new_message += f'\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** users with this role.'
-                if len(new_message) >= 2000:
-                    params = {'api_dev_key': os.environ.get("PASTEBIN_KEY"),
-                              'api_option': 'paste',
-                              'api_paste_code': new_message,
-                              'api_paste_private': '1',
-                              'api_paste_expire_date': '1D',
-                              'api_paste_name': role.name}
-
-                    req = requests.post('https://pastebin.com/api/api_post.php', params)
-                    await ctx.send(f'Over 2000 characters. Go to {req.text} to see what I would have said')
-                else:
-                    await ctx.send('Longer than 2000 characters - member ID\'s have been cut from the message.')
-                    await ctx.send(new_message)
-
+                
 # -----------------------MC & CC & WEEABOO------------------------------
     ADDABLE_ROLES = {
         "mc": "Maths Challenge",
@@ -218,7 +200,6 @@ class Member(commands.Cog):
 # -----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS)
     async def quote(self, ctx, messageid, channelid=None):
         """Quote a message to remember it."""
         if channelid is not None:
@@ -232,7 +213,9 @@ class Member(commands.Cog):
         try:
             msg = await channel.fetch_message(messageid)
         except Exception:
-            await ctx.send('```-quote <message_id> [channel-id]```')
+            await self.bot.add_config(ctx.guild.id)
+            p = self.bot.configs[ctx.guild.id]["prefix"]
+            await ctx.send(f'```{p}quote <message_id> [channel_id]```')
             return
 
         user = msg.author
@@ -475,7 +458,9 @@ class Member(commands.Cog):
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
         if not args or not timeperiod:
-            await ctx.send('```-remind <sentence...> -t <time>```')
+            await self.bot.add_config(ctx.guild.id)
+            p = self.bot.configs[ctx.guild.id]["prefix"]
+            await ctx.send(f'```{p}remind <sentence...> -t <time>```')
             return
 
         str_tp = time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s

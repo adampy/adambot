@@ -1,8 +1,8 @@
-# GCSEDiscordBot (Adam-Bot)
+# Adam-Bot
 
 ![Adam-Bot logo](https://cdn.discordapp.com/avatars/525083089924259898/c16a8482a4151d0bc291bf5a2e61acf0.webp?size=256)
 
-Python code that runs "Adam-Bot", mainly for use in the GCSE 9-1 Discord server. If you have an issue, feature request, or would like to report a bug, please feel free to [raise an issue](https://github.com/adampy/gcsediscordbot/issues/new/choose).
+Python code that runs "Adam-Bot". If you have an issue, feature request, or would like to report a bug, please feel free to [raise an issue](https://github.com/adampy/gcsediscordbot/issues/new/choose).
 
 The bot is hosted on [Heroku](https://www.heroku.com), and uses a [free-tier PostgreSQL database](https://elements.heroku.com/addons/heroku-postgresql) (maximum 10,000 total rows limit and 1GB maximum storage).
 
@@ -92,15 +92,16 @@ where <GUILD_ID> is the guild ID, <CHANNEL_ID> is the log channel ID, and `varia
 
 
 # :open_file_folder: Database schema
-The following describes the database schema. (Last updated changed 12/04/2021)
+The following describes the database schema. (Last updated changed 14/04/2021)
 
 ##  qotd
 Field name | Type | Constraints
 -----------|------|--------------
 id | int | SERIAL PRIMARY KEY
 question | varchar(255) | 
-submitted_by | varchar(255)
+submitted_by | BIGINT
 submitted_at | timestamptz | NOT NULL DEFAULT now()
+guild_id | bigint | NOT NULL
 
 <br>
 
@@ -144,6 +145,7 @@ member_id | bigint
 staff_id | bigint
 warned_at | timestamptz | NOT NULL DEFAULT now()
 reason | varchar(255)
+guild_id | BIGINT
 
 <br>
 

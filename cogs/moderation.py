@@ -1,14 +1,10 @@
 import discord
 from discord import Embed, Colour
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.utils import get
-import asyncio
-from .utils import Permissions, EmbedPages, PageTypes, Todo, CHANNELS
+from .utils import Permissions, Todo, is_dev
 from datetime import datetime, timedelta
-import os
-import asyncpg
-from math import ceil
 
 
 class Moderation(commands.Cog):
@@ -53,7 +49,7 @@ class Moderation(commands.Cog):
             await connection.execute('INSERT INTO todo (todo_id, todo_time, member_id) values ($1, $2, $3)', todo,
                                      new_timestamp, member_id)
 
-    async def advance_user(self, ctx: commands.Context, member: discord.Member, print=False):
+    async def advance_user(self, ctx: commands.Context, member: discord.Member, print=False): # TODO: This is GCSE9-1 specific
         roles = [y.name for y in member.roles]
         years = ['Y9', 'Y10', 'Y11', 'Post-GCSE']
         total = 0
@@ -81,36 +77,21 @@ class Moderation(commands.Cog):
                     await ctx.send(':ok_hand: The year has been advanced!')
                 return 'success'
 
-    def is_bot_owner(ctx):
-        return ctx.message.author.id == 394978551985602571
-
-    def bot_owner_or_permissions(**perms):
-        """Checks if bot owner or has perms"""
-        original = commands.has_permissions(**perms).predicate
-
-        async def extended_check(ctx):
-            if ctx.guild is None:
-                return False
-            return 394978551985602571 == ctx.author.id or await original(ctx)
-
-        return commands.check(extended_check)
-
     # -----------------------CLOSE COMMAND-----------------------
 
     @commands.command(pass_context=True, name="close")
     @commands.guild_only()
-    @commands.has_any_role(*Permissions.DEV)
+    @is_dev()
     async def botclose(self, ctx):
         await self.bot.close(ctx)
 
     # -----------------------PURGE------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MOD)
+    @commands.has_permissions(manage_messages = True) # TODO: Perhaps make it possible to turn some commands, like purge, off
     async def purge(self, ctx, limit='5', member: discord.Member = None):
         """Purges the channel.
-Moderator role needed.
-Usage: `-purge 50`"""
+Usage: `purge 50`"""
         channel = ctx.channel
 
         if limit.isdigit():
@@ -132,11 +113,17 @@ Usage: `-purge 50`"""
 
             await ctx.send(f"Purged **{len(deleted)}** messages!", delete_after=3)
 
+            await self.bot.add_config(ctx.guild.id)
+            channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+            if channel_id is None:
+                return
+            channel = self.bot.get_channel(channel_id)
+
             embed = Embed(title='Purge', color=Colour.from_rgb(175, 29, 29))
             embed.add_field(name='Count', value=len(deleted))
             embed.add_field(name='Channel', value=channel.mention)
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-            await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+            await channel.send(embed=embed)
         else:
             await ctx.send(f'Please use an integer for the amount of messages to delete, not `{limit}` :ok_hand:')
 
@@ -146,7 +133,7 @@ Usage: `-purge 50`"""
     @has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *, args=""):
         """Kicks a given user.
-Staff role needed"""
+Kick members perm needed"""
         reason = None
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
@@ -160,12 +147,18 @@ Staff role needed"""
         await member.kick(reason=reason)
         await ctx.send(f'{member.mention} has been kicked :boot:')
 
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
+        
         embed = Embed(title='Kick', color=Colour.from_rgb(220, 123, 28))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Reason', value=reason + f" (kicked by {ctx.author.name})")
         embed.set_thumbnail(url=member.avatar_url)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     # -----------------------BAN------------------------------
 
@@ -176,7 +169,7 @@ Staff role needed"""
         Merged with previous command hackban
         Single bans work with user mention or user ID
         Mass bans work with user IDs currently, reason flag HAS to be specified if setting
-        Moderator role needed"""
+        Ban members perm needed"""
         reason = "No reason provided"
         massban = (ctx.invoked_with == "massban")
         timeperiod = None
@@ -228,13 +221,20 @@ Staff role needed"""
             if not massban:
                 await ctx.send(f'{member.mention} has been banned.')
 
+            await self.bot.add_config(ctx.guild.id)
+            channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+            if channel_id is None:
+                return
+            channel = self.bot.get_channel(channel_id)
+
             embed = Embed(title='Ban' if in_guild else 'Hackban', color=Colour.from_rgb(255, 255, 255))
             embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
             embed.add_field(name='Moderator', value=str(ctx.author))
             embed.add_field(name='Reason', value=reason)
             embed.set_thumbnail(url=member.avatar_url)
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-            await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+
+            await channel.send(embed=embed)
         if massban:
             # chr(10) used for \n since you can't have backslash characters in f string fragments
             await tracker.edit(content=f"Processed bans for {ban}/{len(members)} users" +
@@ -252,7 +252,7 @@ Staff role needed"""
     @has_permissions(ban_members=True)
     async def unban(self, ctx, member, *, args=""):
         """Unbans a given user with the ID.
-        Moderator role needed."""
+        Ban members perm needed."""
         reason = "No reason provided"
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
@@ -270,21 +270,27 @@ Staff role needed"""
         await ctx.guild.unban(member, reason=reason)
         await ctx.send(f'{member.mention} has been unbanned!')
 
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
+
         embed = Embed(title='Unban', color=Colour.from_rgb(76, 176, 80))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Moderator', value=str(ctx.author))
         embed.add_field(name='Reason', value=reason)
         embed.set_thumbnail(url=member.avatar_url)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     # -----------------------MUTES------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
+    @commands.has_permissions(manage_roles = True)
     async def mute(self, ctx, member: discord.Member, *, args=""):
         """Gives a given user the Muted role.
-Staff role needed."""
+Manage roles perm needed."""
         reason, timeperiod = None, None
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
@@ -313,6 +319,12 @@ Staff role needed."""
         except discord.errors.Forbidden:
             print(f"NOTE: Could not DM {member.display_name} about their mute")
 
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
+
         embed = Embed(title='Member Muted', color=Colour.from_rgb(172, 32, 31))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Moderator', value=str(ctx.author))
@@ -321,13 +333,13 @@ Staff role needed."""
                         value=timestring.replace('until ', '') if timestring != 'indefinitely' else "Never")
         embed.set_thumbnail(url=member.avatar_url)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await get(ctx.guild.text_channels, name='adambot-logs').send(embed=embed)
+        await channel.send(embed=embed)
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
+    @commands.has_permissions(manage_roles = True)
     async def unmute(self, ctx, member: discord.Member, *, args=""):
         """Removes Muted role from a given user.
-Staff role needed."""
+Manage roles perm needed."""
         reason = None
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
@@ -341,10 +353,12 @@ Staff role needed."""
     # -----------------------SLOWMODE------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
     async def slowmode(self, ctx, time):
-        """Adds slowmode in a specific channel. Time is given in seconds.
-        Staff role needed."""
+        """Adds slowmode in a specific channel. Time is given in seconds."""
+        if not ctx.channel.permissions_for(ctx.author).manage_channels:
+            await ctx.send("You do not have permissions for that :sob:")
+            return
+
         try:
             if int(time) <= 60:
                 await ctx.channel.edit(slowmode_delay=int(time))
@@ -360,19 +374,19 @@ Staff role needed."""
     # -----------------------JAIL & BANISH------------------------------
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
+    @commands.has_permissions(manage_roles = True)
     async def jail(self, ctx, member: discord.Member):
         """Lets a member view whatever channel has been set up with view channel perms for the Jail role.
-Staff role needed."""
+Manage roles perm needed."""
         role = get(member.guild.roles, name='Jail')
         await member.add_roles(role)
         await ctx.send(f':ok_hand: {member.mention} has been jailed.')
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
+    @commands.has_permissions(manage_roles = True)
     async def unjail(self, ctx, member: discord.Member):
-        """Puts a member in #the-court.
-Staff role needed."""
+        """Removes the jail role.
+Manage roles perm needed."""
         try:
             role = get(member.guild.roles, name='Jail')
             await member.remove_roles(role)
@@ -381,10 +395,10 @@ Staff role needed."""
             await ctx.send(f'{member.mention} could not be unjailed. Please do it manually.')
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.STAFF)
+    @commands.has_permissions(manage_roles = True)
     async def banish(self, ctx, member: discord.Member):
         """Removes all roles from a user, rendering them powerless.
-Staff role needed."""
+Manage roles perm needed."""
         await member.edit(roles=[])
         await ctx.send(f':ok_hand: {member.mention} has been banished.')
 
@@ -401,7 +415,7 @@ Y9 -> Y10"""
             await ctx.send('```-advance member @Member``` or ```-advance all```')
 
     @advance.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MOD)
+    @commands.has_permissions(administrator = True)
     async def memberx(self, ctx, member: discord.Member):
         """Advances one user.
 Moderator role needed."""
@@ -413,7 +427,7 @@ Moderator role needed."""
 ```{}```'''.format(e))
 
     @advance.command(pass_context=True)
-    @commands.has_any_role(*Permissions.ADMIN)
+    @commands.has_permissions(administrator = True)
     async def allx(self, ctx):
         """Advances everybody in the server.
 Administrator role needed."""
@@ -432,9 +446,15 @@ Administrator role needed."""
                 errors.append([member, f'unexpected: {e}'])
 
         await ctx.send('Advanced everyone\'s year!')
+
+        await self.bot.add_config(ctx.guild.id)
+        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
+            
         for error in errors:
-            log_channel = get(ctx.guild.text_channels, name='adambot-logs')
-            await log_channel.send(f'{error[0].mention} = {error[1]}')
+            await channel.send(f'{error[0].mention} = {error[1]}')
 
     # @all.error
     # async def all_handler(self, ctx, error):
@@ -444,29 +464,16 @@ Administrator role needed."""
     # -----------------------MISC------------------------------
 
     @commands.command()
-    @commands.has_any_role(*Permissions.STAFF)
     async def say(self, ctx, channel: discord.TextChannel, *, text):
         """Say a given string in a given channel
 Staff role needed."""
-        await channel.send(text[5:] if text.startswith("/tts") else text, tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
+        if await self.bot.is_staff(ctx):
+            await channel.send(text[5:] if text.startswith("/tts") else text, tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
+        else:
+            await ctx.send("You do not have permissions to do that :sob:")
 
     @commands.command()
-    @commands.guild_only()
-    @commands.has_any_role(*Permissions.STAFF)
-    async def announce(self, ctx, *text):
-        role = ctx.guild.get_role(Permissions.ROLE_ID['Announcements'])
-        msg = role.mention + " " + " ".join(text)
-        if len(msg) >= 2000:
-            await ctx.send(
-                "The message is over 2000 characters, you must shorten it or do the announcement in multiple messages.")
-
-        await role.edit(mentionable=True)
-        channel = ctx.guild.get_channel(CHANNELS["announcements"])
-        await channel.send(msg)
-        await role.edit(mentionable=False)
-
-    @commands.command()
-    @commands.check(is_bot_owner)
+    @commands.is_owner()
     async def reset_invites(self, ctx):
         """A command for adam only which resets the invites"""
         invites = await ctx.guild.invites()
@@ -488,7 +495,7 @@ Staff role needed."""
                     pass
 
     @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MOD)
+    @commands.has_permissions(manage_guild = True)
     async def revokeinvite(self, ctx, invite_code):
         """
         Command that revokes an invite from a server

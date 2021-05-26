@@ -1,10 +1,8 @@
-import discord
-from discord import Embed, Colour, Message, TextChannel, File
+from discord import Embed, Colour, Message, File
 from discord.ext import commands
 from math import ceil
 from datetime import timedelta
-from io import BytesIO
-from os import environ
+from io import BytesIO, StringIO
 
 
 class EmbedPages:
@@ -155,16 +153,8 @@ class Permissions:
 
 
 CHANNELS = {
-    "waiting-room": 445198121618767872,
     "general": 445199175244709898,
     "trivia": 498617494693478402,
-    "rules": 445194263408672769,
-    "faqs": 583798388718567444,
-    "qotd": 496472968298496020,
-    "adambot-dev-spam": 809791208884142140,
-    "announcements": 445198590332370944,
-    "support-logs": 597068935829127168,
-    "mod-logs": 491726394598883338,
 }
 
 DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
@@ -173,17 +163,34 @@ SPAMPING_PERMS = [
     374144745829826572, #Bxnana
 ]
 
+DEVS = [
+    394978551985602571, # Adam C
+    420961337448071178, # Hodor
+    686967704116002827, # Xp
+]
+
+def is_dev():
+    async def predicate(ctx):
+        return ctx.author.id in DEVS
+    return commands.check(predicate)
+
 GCSE_SERVER_ID = 445194262947037185
-NEWLINE = '\n'
 CODE_URL = "https://github.com/adampy/gcsediscordbot"
 
 
-async def send_file(fig, channel, filename):
+async def send_file(fig, channel, filename, extension = "png"): # TODO: Rename this to send_image_file
     """Send data to a channel with filename `filename`"""
     buf = BytesIO()
     fig.savefig(buf)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f'{filename}.png'))
+    await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
+
+async def send_text_file(text, channel, filename, extension = "txt"):
+    """Send a text data to a channel with filename `filename`"""
+    buf = StringIO()
+    buf.write(text)
+    buf.seek(0)
+    await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
 
 async def get_spaced_member(ctx, bot, *args):
