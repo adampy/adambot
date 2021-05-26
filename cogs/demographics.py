@@ -195,21 +195,22 @@ class Demographics(commands.Cog):
     async def takesample_error(self, ctx, error):
         await self._role_error(ctx, error)
 
-    # Old command
     @demographics.command(pass_context=True)
     @commands.guild_only()
     async def show(self, ctx):
         """View server demographics."""  # DO NOT REMOVE THIS METHOD (if you plan on removing, remove dependency in demographics command group declaration)
-        numbers = [len(ctx.guild.members)]
-        for role in ['Post-GCSE', 'Y11', 'Y10', 'Y9']:
-            numbers.append(len([x for x in ctx.guild.members if role in [y.name for y in x.roles]]))
-        message = """We have {} members.
-        
-**{}** Post-GCSE
-**{}** Year 11s
-**{}** Year 10s
-**{}** Year 9s
-*Note: do `-demographics chart` to view change in demographics over time!*""".format(*numbers)
+        tracked_roles = [ctx.guild.get_role(r) for r in await self._get_roles(ctx.guild) if ctx.guild.get_role(r) is not None]
+        message = f"There are a total of **{ctx.guild.member_count}** users in **{ctx.guild.name}**."
+
+        double_newline = True
+        for role in tracked_roles:
+            n = len(role.members)
+            if double_newline:
+                message += "\n"
+                double_newline = False # Adds an extra new line on the first iteration
+            message += f"\n•**{n}** {role.name}"
+
+        message += f"\n*Note: do `{self.bot.prefix}demographics chart` to view change in demographics over time!*"
         await ctx.send(message)
 
     @demographics.command(pass_context=True)
