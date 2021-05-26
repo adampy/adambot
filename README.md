@@ -2,7 +2,7 @@
 
 ![Adam-Bot logo](https://cdn.discordapp.com/avatars/525083089924259898/c16a8482a4151d0bc291bf5a2e61acf0.webp?size=256)
 
-Python code that runs "Adam-Bot". If you have an issue, feature request, or would like to report a bug, please feel free to [raise an issue](https://github.com/adampy/gcsediscordbot/issues/new/choose).
+Python code that runs "Adam-Bot". If you have an issue, feature request, or would like to report a bug, please feel free to [raise an issue](https://github.com/adampy/adambot/issues/new/choose).
 
 The bot is hosted on [Heroku](https://www.heroku.com), and uses a [free-tier PostgreSQL database](https://elements.heroku.com/addons/heroku-postgresql) (maximum 10,000 total rows limit and 1GB maximum storage).
 
@@ -24,10 +24,10 @@ I'd like to give a special thanks to all who have contributed to the bot :wave: 
 * @Nebulastix#3279 (for creating the Adam-Bot profile picture seen above :ok_hand:)
 
 # :calendar: Todo
-To see the current roadmap for the bot, please see [here](https://github.com/adampy/gcsediscordbot/projects/1).
+To see the current roadmap for the bot, please see [here](https://github.com/adampy/adambot/projects/1).
 
 # :office: Heroku
-Heroku is a PaaS (platform as a service) that allows developers to create and run applications on the cloud. An app can use an array of add-ons, one of which is a PostgreSQL database. Heroku sets up the provision of the database and the bot can connect to it using the `asyncpg` library (a asyncio version of `psycopg2`, see issue [#1](https://github.com/adampy/gcsediscordbot/issues/1)).
+Heroku is a PaaS (platform as a service) that allows developers to create and run applications on the cloud. An app can use an array of add-ons, one of which is a PostgreSQL database. Heroku sets up the provision of the database and the bot can connect to it using the `asyncpg` library (a asyncio version of `psycopg2`, see issue [#1](https://github.com/adampy/adambot/issues/1)).
 
 To successfully connect to Heroku, there are multiple steps. The first is to have `Procfile` in the top-most level of the directory. This outlines the type of "dyno", and the command that is executed to start program execution. The second is a `runtime.txt` in the top-most level level which outlines what version of Python needs to be installed on the remote host. The third requirement is a `requirements.txt` which outlines the different external libraries that Python needs to have installed for the program to work. These are installed via `pip`, so its necessary to have the module name exactly as it would appear in `pip`.
 

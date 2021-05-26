@@ -175,7 +175,7 @@ def is_dev():
     return commands.check(predicate)
 
 GCSE_SERVER_ID = 445194262947037185
-CODE_URL = "https://github.com/adampy/gcsediscordbot"
+CODE_URL = "https://github.com/adampy/adambot"
 
 
 async def send_file(fig, channel, filename, extension = "png"): # TODO: Rename this to send_image_file
