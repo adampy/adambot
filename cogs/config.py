@@ -171,9 +171,13 @@ class Config(commands.Cog):
             await self._invalid_config(ctx)
             return
 
+        if key == "prefix":
+            await self._error_embed(ctx, "Validation error!", "The prefix cannot be removed")
+            return
+
         self.bot.configs[ctx.guild.id][key] = None
         await self.bot.propagate_config(ctx.guild.id)
-        await self._success_embed(ctx, f"{key} has been updated!", f"It has been changed from to ***N/A***")
+        await self._success_embed(ctx, f"{key} has been updated!", f"It has been changed to ***N/A***")
 
     @config.command(pass_context = True)
     @commands.guild_only()
