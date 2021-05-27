@@ -40,7 +40,7 @@ class WaitingRoom(commands.Cog):
     async def on_member_join(self, member):
         #formatting stuffs
         guild = member.guild
-        await self.bot.add_config(guild.id)
+
         config = self.bot.configs[guild.id]
         message = await self.get_parsed_welcome_message(config["welcome_msg"], member, guild)
         channel = self.bot.get_channel(config["welcome_channel"])
@@ -57,7 +57,7 @@ class WaitingRoom(commands.Cog):
             await ctx.send("You do not have permissions to test the welcome message.")
             return
 
-        await self.bot.add_config(ctx.guild.id)
+
         msg = self.bot.configs[ctx.guild.id]["welcome_msg"]
         if msg == None:
             await ctx.send("A welcome message has not been set.")
@@ -183,7 +183,7 @@ class WaitingRoom(commands.Cog):
         else:
             await question.edit(content="Unknown response, therefore no lurkers have been kicked :ok_hand:")
 
-        await self.bot.add_config(ctx.guild.id)
+
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return

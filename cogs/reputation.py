@@ -65,7 +65,6 @@ class Reputation(commands.Cog):
             for alias in command.aliases:
                 subcommands.append(alias)
 
-        await self.bot.add_config(ctx.guild.id)
         p = self.bot.configs[ctx.guild.id]["prefix"]
         if ctx.subcommand_passed not in subcommands:
             args = ctx.message.content.replace(f"{p}rep", "").strip()
@@ -95,7 +94,6 @@ class Reputation(commands.Cog):
             if args_:
                 failed.add_field(name="Requested user", value=args_)
 
-            await self.bot.add_config(ctx.guild.id)
             p = self.bot.configs[ctx.guild.id]["prefix"]
             failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{p}rep Member_Name`\nor\n`{p}rep @Member`\n'
                              f'Pro tip: If e.g. fred roberto was recently active you can type `{p}rep fred`\n\nTo see the other available rep commands type `{p}help rep`', inline=False)
@@ -133,7 +131,6 @@ class Reputation(commands.Cog):
             user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
             await ctx.send(embed=user_embed)
             if award:
-                await self.bot.add_config(ctx.guild.id)
                 channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
                 if channel_id is None:
                     return
@@ -173,7 +170,6 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
-            await self.bot.add_config(ctx.guild.id)
             p = self.bot.configs[ctx.guild.id]["prefix"]
             await ctx.send(f'```{p}rep reset member @Member``` or ```{p}rep reset all```')
 
@@ -189,7 +185,6 @@ class Reputation(commands.Cog):
         await self.clear_rep(user.id, ctx.guild.id)
         await ctx.send(f'{user.mention} now has 0 points.')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -213,7 +208,6 @@ class Reputation(commands.Cog):
 
         await ctx.send('Done. Everyone now has 0 points.')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -243,7 +237,6 @@ class Reputation(commands.Cog):
         new_reps = await self.set_rep(user.id, ctx.guild.id, rep)
         await ctx.send(f'{user.mention} now has {new_reps} reputation points.')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -272,7 +265,6 @@ class Reputation(commands.Cog):
         new_reps = await self.set_rep(int(user_id), ctx.guild_id, rep)
         await ctx.send(f'{user_id} now has {new_reps} reputation points.')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return

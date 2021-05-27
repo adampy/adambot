@@ -113,7 +113,6 @@ Usage: `purge 50`"""
 
             await ctx.send(f"Purged **{len(deleted)}** messages!", delete_after=3)
 
-            await self.bot.add_config(ctx.guild.id)
             channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
             if channel_id is None:
                 return
@@ -147,7 +146,6 @@ Kick members perm needed"""
         await member.kick(reason=reason)
         await ctx.send(f'{member.mention} has been kicked :boot:')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -221,7 +219,6 @@ Kick members perm needed"""
             if not massban:
                 await ctx.send(f'{member.mention} has been banned.')
 
-            await self.bot.add_config(ctx.guild.id)
             channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
             if channel_id is None:
                 return
@@ -270,7 +267,6 @@ Kick members perm needed"""
         await ctx.guild.unban(member, reason=reason)
         await ctx.send(f'{member.mention} has been unbanned!')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -319,7 +315,6 @@ Manage roles perm needed."""
         except discord.errors.Forbidden:
             print(f"NOTE: Could not DM {member.display_name} about their mute")
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -447,7 +442,6 @@ Administrator role needed."""
 
         await ctx.send('Advanced everyone\'s year!')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return

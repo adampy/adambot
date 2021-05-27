@@ -200,7 +200,6 @@ class Trivia(commands.Cog):
     async def trivia(self, ctx):
         """Trivia module"""
         if ctx.invoked_subcommand is None:
-            await self.bot.add_config(ctx.guild.id)
             p = self.bot.configs[ctx.guild.id]["prefix"]
             await ctx.send(f'```{p}trivia list```')
 
@@ -219,7 +218,6 @@ class Trivia(commands.Cog):
     @commands.has_any_role(*Permissions.MEMBERS)
     async def start(self, ctx, trivia = None):
         if trivia is None:
-            await self.bot.add_config(ctx.guild.id)
             p = self.bot.configs[ctx.guild.id]["prefix"]
             await ctx.send(f'You must choose a trivia from `{p}trivia list`.')
             return

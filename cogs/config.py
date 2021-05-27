@@ -26,7 +26,7 @@ class Config(commands.Cog):
             "muted_role": [Validation.Role, "The role that prevents someone from talking"],
             "mod_log_channel": [Validation.Channel, "Where the main logs go"],
             "invite_log_channel": [Validation.Channel, "Where invites are logged"],
-            "prefix": [Validation.String, "The prefix the bot uses, default is '-'"]
+            "prefix": [Validation.String, f"The prefix the bot uses, default is '-'"]
         }
 
     # EMBED RESPONSES
@@ -70,7 +70,7 @@ class Config(commands.Cog):
 
         if ctx.invoked_subcommand is None:
             # User is staff and no subcommand => send embed
-            await self.bot.add_config(ctx.guild.id)
+
             p = self.bot.configs[ctx.guild.id]["prefix"]
             embed = Embed(
                 title = f":tools:  {ctx.guild.name} ({ctx.guild.id}) configuration",
@@ -102,9 +102,9 @@ class Config(commands.Cog):
             embed.set_footer(text = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url = ctx.author.avatar_url)
             await ctx.send(embed = embed)
 
-    @config.command(pass_context = True)
+    @config.command(pass_context=True)
     @commands.guild_only()
-    async def set(self, ctx, key=None, value=None):
+    async def set(self, ctx, key=None, *, value=None):  # consume then you don't have to wrap phrases in quotes
         """Sets a configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
             await self._invalid_perms(ctx)
@@ -118,7 +118,7 @@ class Config(commands.Cog):
             await self._error_embed(ctx, "Validation error!", "You must specify a value to set the key to!")
             return
 
-        await self.bot.add_config(ctx.guild.id)
+
         key = key.lower()
         if key not in self.CONFIG.keys():
             await self._invalid_config(ctx)
@@ -173,7 +173,7 @@ class Config(commands.Cog):
             await self._invalid_perms(ctx)
             return
 
-        await self.bot.add_config(ctx.guild.id)
+
         config_dict = self.bot.configs[ctx.guild.id]
         key = key.lower()
         if key not in self.CONFIG.keys():
@@ -199,7 +199,7 @@ class Config(commands.Cog):
         if not key:
             await ctx.invoke(self.bot.get_command("config"))
         else:
-            await self.bot.add_config(ctx.guild.id)
+
             config_dict = self.bot.configs[ctx.guild.id]
             key = key.lower()
             if key not in self.CONFIG.keys():

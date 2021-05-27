@@ -213,7 +213,7 @@ class Member(commands.Cog):
         try:
             msg = await channel.fetch_message(messageid)
         except Exception:
-            await self.bot.add_config(ctx.guild.id)
+
             p = self.bot.configs[ctx.guild.id]["prefix"]
             await ctx.send(f'```{p}quote <message_id> [channel_id]```')
             return
@@ -458,7 +458,6 @@ class Member(commands.Cog):
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
         if not args or not timeperiod:
-            await self.bot.add_config(ctx.guild.id)
             p = self.bot.configs[ctx.guild.id]["prefix"]
             await ctx.send(f'```{p}remind <sentence...> -t <time>```')
             return

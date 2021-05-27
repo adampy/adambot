@@ -17,15 +17,17 @@ class Logging(commands.Cog):
             self.invites[guild.id] = await guild.invites()
 
     @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        self.invites[guild.id] = await guild.invites()
+
+    @commands.Cog.listener()
     async def on_message_delete(self, message):
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
 
-        await self.bot.add_config(message.guild.id)
         channel_id = self.bot.configs[message.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
-
         embed = Embed(title=':information_source: Message Deleted', color=Colour.from_rgb(172, 32, 31))
         embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
         embed.add_field(name='Message ID', value=message.id, inline=True)
@@ -51,7 +53,6 @@ class Logging(commands.Cog):
         """
         Logs bulk message deletes, such as those used in `purge` command
         """
-        await self.bot.add_config(payload.guild_id)
         channel_id = self.bot.configs[payload.guild_id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -74,7 +75,6 @@ class Logging(commands.Cog):
         if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
             return
 
-        await self.bot.add_config(before.guild.id)
         channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -214,14 +214,12 @@ class Logging(commands.Cog):
 
                     #Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
                     if prop["display_name"] in ["Nickname", "Roles"]:
-                        await self.bot.add_config(before.guild.id)
                         channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
                         channel = self.bot.get_channel(channel_id)
                         await channel.send(embed=log)
                     else:
                         shared_guilds = [x for x in self.bot.guilds if after in x.members]
                         for guild in shared_guilds:
-                            await self.bot.add_config(guild.id)
                             channel_id = self.bot.configs[guild.id]["mod_log_channel"]
                             if channel_id:
                                 channel = self.bot.get_channel(channel_id)
@@ -237,7 +235,6 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        await self.bot.add_config(member.guild.id)
         channel_id = self.bot.configs[member.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -269,7 +266,7 @@ class Logging(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         guild = member.guild
-        await self.bot.add_config(guild.id)
+
         ichannel_id = self.bot.configs[guild.id]["invite_log_channel"]
         ichannel = self.bot.get_channel(ichannel_id)
         old_invites = self.invites[guild.id]
