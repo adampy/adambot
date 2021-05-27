@@ -291,7 +291,7 @@ class Logging(commands.Cog):
 
         self.invites[guild.id] = new_invites
         if ichannel:  # still check & update invites in case channel is configured later
-            invite_log = Embed(title="Invite data (NEW VERSION)", color=Colour.from_rgb(0, 0, 255))
+            invite_log = Embed(title="Invite data", color=Colour.from_rgb(0, 0, 255))
             if len(updated_invites) == 1:
                 invite_log.set_author(name=f"{updated_invites[0].inviter} ~ {updated_invites[0].inviter.display_name}", icon_url=updated_invites[0].inviter.avatar_url)
                 invite_log.description = ":arrow_up: Inviter Avatar\n:arrow_right: Member Avatar"
