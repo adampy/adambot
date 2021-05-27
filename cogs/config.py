@@ -25,6 +25,7 @@ class Config(commands.Cog):
             "qotd_channel": [Validation.Channel, "Where the QOTDs are displayed when picked"],
             "muted_role": [Validation.Role, "The role that prevents someone from talking"],
             "mod_log_channel": [Validation.Channel, "Where the main logs go"],
+            "invite_log_channel": [Validation.Channel, "Where invites are logged"],
             "prefix": [Validation.String, "The prefix the bot uses, default is '-'"]
         }
 
@@ -103,10 +104,18 @@ class Config(commands.Cog):
 
     @config.command(pass_context = True)
     @commands.guild_only()
-    async def set(self, ctx, key, value):
+    async def set(self, ctx, key=None, value=None):
         """Sets a configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
             await self._invalid_perms(ctx)
+            return
+
+        if not key:
+            await self._error_embed(ctx, "Validation error!", "You must specify a key to set!")
+            return
+
+        if not value:
+            await self._error_embed(ctx, "Validation error!", "You must specify a value to set the key to!")
             return
 
         await self.bot.add_config(ctx.guild.id)

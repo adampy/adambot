@@ -472,28 +472,6 @@ Staff role needed."""
         else:
             await ctx.send("You do not have permissions to do that :sob:")
 
-    @commands.command()
-    @commands.is_owner()
-    async def reset_invites(self, ctx):
-        """A command for adam only which resets the invites"""
-        invites = await ctx.guild.invites()
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute('DELETE FROM invites')
-            for invite in invites:
-                try:
-                    data = [invite.inviter.id,
-                            invite.code,
-                            invite.uses,
-                            invite.max_uses,
-                            invite.created_at,
-                            invite.max_age]
-
-                    await connection.execute(
-                        'INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)',
-                        *data)
-                except Exception:
-                    pass
-
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_guild = True)
     async def revokeinvite(self, ctx, invite_code):

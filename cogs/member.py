@@ -426,7 +426,7 @@ class Member(commands.Cog):
 
         if user.avatar:
             avatar = user.avatar_url_as(static_format="png")
-            data.set_author(name=name, url=avatar)
+            data.set_author(name=name, icon_url=avatar)
             data.set_thumbnail(url=avatar)
         else:
             data.set_author(name=name)
