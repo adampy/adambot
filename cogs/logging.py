@@ -276,18 +276,14 @@ class Logging(commands.Cog):
         possible_joins_missed = False
         seen_invites = []
         for invite in new_invites:
-            found = False
             for old_invite in old_invites:
                 if old_invite.code == invite.code:
-                    found = True
                     seen_invites.append(invite)
                     if invite.uses > old_invite.uses:
                         updated_invites.append(invite)
                         if invite.uses - old_invite.uses != 1:
                             possible_joins_missed = True
 
-            if not found:
-                updated_invites.append(invite)
 
         self.invites[guild.id] = new_invites
         if ichannel:  # still check & update invites in case channel is configured later
