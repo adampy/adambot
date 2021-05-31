@@ -274,15 +274,17 @@ class Logging(commands.Cog):
 
         updated_invites = []
         possible_joins_missed = False
-        seen_invites = []
         for invite in new_invites:
+            found = False
             for old_invite in old_invites:
                 if old_invite.code == invite.code:
-                    seen_invites.append(invite)
+                    found = True
                     if invite.uses > old_invite.uses:
                         updated_invites.append(invite)
                         if invite.uses - old_invite.uses != 1:
                             possible_joins_missed = True
+            if not found and invite.uses != 0:  # else 0-use invites will be logged
+                updated_invites.append(invite)  # new invites
 
 
         self.invites[guild.id] = new_invites
