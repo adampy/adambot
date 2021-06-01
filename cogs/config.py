@@ -59,37 +59,6 @@ class Config(commands.Cog):
         embed.set_footer(text = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url = ctx.author.avatar_url)
         await ctx.send(embed = embed)
 
-    # INTERNAL CONFIG
-    
-    async def _add_guild_to_config(self, guild_id):
-        async with self.bot.pool.acquire() as connection:
-            try:
-                await connection.execute("INSERT INTO config (guild_id) VALUES ($1);", guild_id)
-            except UniqueViolationError: # config already exists
-                pass
-
-    # LISTENERS
-
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild):
-        """Listener that adds a guild when it first joins it"""
-        await self._add_guild_to_config(guild.id)
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        """Listener that adds all guilds when the bot starts - incase the bot was added to any guilds whilst offline"""
-        while True:
-            async with self.bot.pool.acquire() as connection:
-                exists = await connection.fetchval("""SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE  table_name   = 'config'
-                );""")
-
-                if exists:
-                    for guild in self.bot.guilds:
-                        await self._add_guild_to_config(guild.id)
-                    break
-
     # COMMANDS
 
     @commands.group()
