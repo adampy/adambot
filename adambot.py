@@ -2,7 +2,7 @@ import time
 from discord.ext.commands.core import command
 start_time = time.time()
 import discord
-from discord.ext.commands import Bot, when_mentioned_or
+from discord.ext.commands import Bot, when_mentioned_or, when_mentioned
 from discord.utils import get
 import asyncio
 import time
@@ -32,8 +32,11 @@ class AdamBot(Bot):
     @classmethod # Does not depend on self - can be called as AdamBot._determine_prefix
     async def _determine_prefix(cls, bot, message):
         """Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used"""
-        guild_prefix = bot.configs[message.guild.id]["prefix"]
-        return when_mentioned_or(guild_prefix)(bot, message)
+        try:
+            guild_prefix = bot.configs[message.guild.id]["prefix"]
+            return when_mentioned_or(guild_prefix)(bot, message)
+        except KeyError:
+            return when_mentioned(bot, message) # Config tables aren't loaded yet, temporarily set to mentions only
 
     def __init__(self, local, cogs, start_time, command_prefix=None, *args, **kwargs):
         if command_prefix is None:
@@ -134,10 +137,12 @@ class AdamBot(Bot):
         await self.add_all_guild_configs()
 
     async def add_all_guild_configs(self):
+        """Adds configs to all guilds - executed on startup"""
         for guild in self.guilds:
             await self.add_config(guild.id)
 
-    async def on_guild_join(self, guild):  # if a bot joins a guild whilst offline it should be picked up in add_all_guild_configs when it's next started
+    async def on_guild_join(self, guild):
+        """Adds configs to a certain guild - executed upon joining a new guild"""
         await self.add_config(guild.id)
    
     async def on_message(self, message):
@@ -252,9 +257,8 @@ class AdamBot(Bot):
 
 
     # General configuration workflow:
-    # 1) Call bot.add_config(guild.id) which makes sure there is that guild's config stuff in bot.configs dict
-    # 2) Make any edits directly to bot.configs[guild.id]
-    # 3) Call bot.propagate_config(guild.id) which propagates any edits to the DB
+    # 1) Make any edits directly to bot.configs[guild.id]
+    # 2) Call bot.propagate_config(guild.id) which propagates any edits to the DB
 
     async def add_config(self, guild_id):
         """
