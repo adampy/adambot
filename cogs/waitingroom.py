@@ -42,9 +42,12 @@ class WaitingRoom(commands.Cog):
         guild = member.guild
 
         config = self.bot.configs[guild.id]
-        message = await self.get_parsed_welcome_message(config["welcome_msg"], member, guild)
-        channel = self.bot.get_channel(config["welcome_channel"])
-        await channel.send(message)
+        raw_msg = config["welcome_msg"]
+        channel_id = config["welcome_channel"]
+        if raw_msg and channel_id:
+            message = await self.get_parsed_welcome_message(raw_msg, member, guild)
+            channel = self.bot.get_channel(channel_id)
+            await channel.send(message)
 
 
     #-----WELCOME MESSAGE TEST-----

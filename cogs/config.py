@@ -1,6 +1,7 @@
 from discord.ext import commands
 from discord import Embed, Colour
 from enum import Enum
+from asyncpg.exceptions import UniqueViolationError
 
 ERROR_RED = Colour.from_rgb(255,7,58)
 SUCCESS_GREEN = Colour.from_rgb(57, 255, 20)
@@ -27,7 +28,7 @@ class Config(commands.Cog):
             "mod_log_channel": [Validation.Channel, "Where the main logs go"],
             "invite_log_channel": [Validation.Channel, "Where invites are logged"],
             "prefix": [Validation.String, f"The prefix the bot uses, default is '-'"]
-        }
+        } # TODO: Perhaps change order of config embed to mirror the order of SELF.CONFIG?
 
     # EMBED RESPONSES
 
@@ -79,7 +80,11 @@ class Config(commands.Cog):
             ) # TODO: Make bot colours global - e.g. in a config json
 
             config_dict = self.bot.configs[ctx.guild.id]
+            tracked_configs = self.CONFIG.keys() # Get the config options that need to be included on the embed
             for key in config_dict.keys():
+                if key not in tracked_configs:
+                    continue # This clause ensures that variables, e.g. "bruhs", does not appear in the config
+
                 name = f"{str(key)} ({self.CONFIG[key][1]})"
 
                 if self.CONFIG[key][0] == Validation.Channel:
@@ -151,8 +156,8 @@ class Config(commands.Cog):
             value = int(value)
         
         elif validation_type == Validation.String:
-            if len(value) >= 2000:
-                await self._error_embed(ctx, "Validation error!", f"The string provided needs to be less than 2000 characters")
+            if len(value) >= 1000:
+                await self._error_embed(ctx, "Validation error!", f"The string provided needs to be less than 1000 characters")
                 return
 
         # At this point, the input is valid and can be changed
@@ -208,11 +213,26 @@ class Config(commands.Cog):
 
             if self.CONFIG[key][0] == Validation.Channel:
                 current = ctx.guild.get_channel(config_dict[key])
+                await self._information_embed(ctx, f"Current value of {key}",  current.mention if current else "***N/A***")
             elif self.CONFIG[key][0] == Validation.Role:
                 current = ctx.guild.get_role(config_dict[key])
-               
-            await self._information_embed(ctx, f"Current value of {key}",  config_dict[key] if config_dict[key] else "***N/A***")
+                await self._information_embed(ctx, f"Current value of {key}",  current.mention if current else "***N/A***")
+            else:
+                await self._information_embed(ctx, f"Current value of {key}",  config_dict[key] if config_dict[key] else "***N/A***")
 
+    @commands.command(pass_context = True)
+    @commands.guild_only()
+    async def prefix(self, ctx, new_prefix = None):
+        """View the current prefix or change it"""
+        await self.bot.add_config(ctx.guild.id)
+        if new_prefix is None:
+            prefix = self.bot.configs[ctx.guild.id]["prefix"]
+            await self._information_embed(ctx, f"Current value of prefix",  prefix)
+        else:
+            if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
+                await self._invalid_perms(ctx)
+            else:
+                await ctx.invoke(self.bot.get_command("config set"), "prefix", new_prefix)
 
     @commands.command(pass_context = True)
     @commands.guild_only()

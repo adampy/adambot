@@ -11,10 +11,9 @@ This guide contains:
 * [TODOs](#calendar-Todo)
 * [Heroku](#office-Heroku)
 * [Information on every cog](#wrench-Cogs)
-* [The most recent database schema](#open_file_folder-Database-Schema)
 
 # :page_facing_up: Preliminary note
-For future reference, maintainability, and the fact that database information/schemas are not included in the program, here are some notes that should be read before editing a particular file, so that you become accustomed to the workflow.
+For future reference and maintainability here are some notes that should be read before editing a particular file, so that you become accustomed to the workflow.
 
 I'd like to give a special thanks to all who have contributed to the bot :wave: :clap: :
 * [@adampy](https://github.com/adampy)
@@ -42,9 +41,7 @@ Used for miscellaneous commands ranging from -userinfo, to -bruhs. There is no r
 Contains moderation commands, such as kicks, bans, and mutes. Slowmodes, and the jail command reside here too. The advance command, that advances everyones year (e.g. Y9 -> Y10) is here and has admin perms.
 
 ## QuestionOTD
-The module that contains all of the commands relating to QOTDs (commonly known as question of the day). People with a "QOTD" role have permissions to view, delete, and pick OQTDs. People without these roles can only submit QOTDs (2 per 24h).
-
-QOTDs are stored in the database in this table with the following schema.
+The module that contains all of the commands relating to QOTDs (commonly known as question of the day). People with a "QOTD" role have permissions to view, delete, and pick OQTDs. People without these roles can only submit QOTDs (the limit is defined as qotd_limit, and by default is 0).
 
 ## Reputation
 The reputation module, as the name gives away, is used for storing reputation points. Reputation points, or "reps", are given in the server when some user helps another user. The `-rep leaderboard` command is guild-specific, meaning that it can be executed in any guild, and includes all members that are part of that guild. The same mechanics are in use when checking someone's leaderboard position with the `-rep check` command. `-rep data` is a command that allows people to see the distribution of reps in the server. The amount of reps is on the x-axis, and the number of people with that specific number of rep is on the y-axis. This, again, uses `matplotlib`. 
@@ -65,8 +62,6 @@ WaitingRoom cog is used for verifying members into the server. The `-y9`, `-y10`
 
 As well as this, there are commands to change the welcome message that the bot produces when someone new joins the server. This can be done using the `-editwelcome` commands, where the channel and the message can both be changed. In the message, channels can either be referenced normally (#channel), or using the syntax `C<channel_id>`. Roles are mentioned the same way: either using @role_name, or `R<role_id>`. 
 
-The welcome message, and the welcome channel, are both stored in the `variables` table in the database. The channel is under the field `welcome_channel`, and the message is under `welcome_msg`.
-
 ## Warnings
 This cog is for moderation, and was originally within the Moderation cog, but I had split it out making the code easier to read. Warnings are given by staff and then can be viewed using the `-warns` command. When a member does this, they can only see their own warnings, but when a staff member does this by default it views everyones warnings. For a staff member to view their own warnings, the must do `-warns @themself`. Warnings can be removed by a staff member using the `-warnremove` command.
 
@@ -81,127 +76,3 @@ The logging cog is used for, as the name suggests, logging certain events. The e
 * `on_member_join`
 
 Both `on_member_update` and `on_user_update` are called for [multiple reasons](https://discordpy.readthedocs.io/en/latest/api.html#discord.on_member_update) so the code filters out the correct reason by spotting differences in the member objects - the correct reason is then logged.
-
-The log channels work by storing the log channel's ID in the `variables` table. It stores it in the format
-
-variable|value
---------|-----
-mod-log-<GUILD_ID> | <CHANNEL_ID>
-
-where <GUILD_ID> is the guild ID, <CHANNEL_ID> is the log channel ID, and `variable` and `value` are both strings.
-
-
-# :open_file_folder: Database schema
-The following describes the database schema. (Last updated changed 14/04/2021)
-
-##  qotd
-Field name | Type | Constraints
------------|------|--------------
-id | int | SERIAL PRIMARY KEY
-question | varchar(255) | 
-submitted_by | BIGINT
-submitted_at | timestamptz | NOT NULL DEFAULT now()
-guild_id | bigint | NOT NULL
-
-<br>
-
-## todo
-Field name | Type | Constraints
------------|------|--------------
-id | int | SERIAL PRIMARY KEY
-todo_id | int
-todo_time | timestamptz
-member_id | bigint
-
-<br>
-
-## support
-Field name | Type | Constraints
------------|------|--------------
-id | int | SERIAL PRIMARY KEY
-member_id | bigint
-staff_id | bigint
-started_at | timestamptz
-
-<br>
-
-## remind
-Field name | Type | Constraints
------------|------|--------------
-id | int | SERIAL PRIMARY KEY
-member_id | bigint
-reminder_time | timestamptz
-reminder | varchar(255)
-created_at | timestamptz
-channel_id | BIGINT | NOT NULL
-
-<br>
-
-## warn
-Field name | Type | Constraints
------------|------|--------------
-id | int | SERIAL PRIMARY KEY
-member_id | bigint
-staff_id | bigint
-warned_at | timestamptz | NOT NULL DEFAULT now()
-reason | varchar(255)
-guild_id | BIGINT
-
-<br>
-
-## rep
-Field name | Type | Constraints
------------|------|--------------
-member_id | bigint
-reps | int
-
-<br>
-
-## invite
-Field name | Type | Constraints
------------|------|--------------
-inviter | bigint
-code | varchar(255)
-uses | int
-max_uses | int
-created_at | timestamptz
-max_age | bigint
-
-<br>
-
-## variables
-Field name | Type | Constraints
------------|------|--------------
-variable | varchar(255)
-value | varchar(1023)
-
-<br>
-
-## demographic_roles
-Field name | Type | Constraints
------------|------|--------------
-id | int | SERIAL PRIMARY KEY
-sample_rate | int | NOT NULL DEFAULT 1
-guild_id | bigint | NOT NULL
-role_id | bigint | NOT NULL
-
-<br>
-
-## demographic_samples
-Field name | Type | Constraints
------------|------|--------------
-n | int | NOT NULL DEFAULT 0
-taken_at | timestamptz | NOT NULL DEFAULT now()
-role_reference | int | NOT NULL
-
-<br>
-
-This table has a foreign key relation to demographic roles in the `demographic_roles` table. It is declared as:
-```postgres
-CONSTRAINT fk_role_reference 
-    FOREIGN KEY (role_reference)
-        REFERENCES demographic_roles(id)
-        ON DELETE CASCADE
-```
-
-<br>
