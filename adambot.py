@@ -1,5 +1,4 @@
 import time
-
 from discord.ext.commands.core import command
 start_time = time.time()
 import discord
@@ -17,6 +16,7 @@ import pytz
 from tzlocal import get_localzone
 import argparse
 import sys
+import database_handle
 
 def get_credentials(filename):
     """Command that checks if a credentials file is available. If it is it puts the vars into environ and returns True, else returns False"""
@@ -54,7 +54,7 @@ class AdamBot(Bot):
         self.flag_handler.set_flag("reason", {"flag": "r"})
         self.token = kwargs.get("token", None)
         self.connections = kwargs.get("connections", 10) # Max DB pool connections
-        self.online = True
+        self.online = False # Start at False, changes to True once fully initialised
         self.COGS = cogs
         self.LOCAL_HOST = local
         self.DB = os.environ.get('DATABASE_URL')
@@ -126,10 +126,12 @@ class AdamBot(Bot):
         return tz_obj.localize(conv_time).astimezone(self.display_timezone)
 
     async def on_ready(self):
+        await database_handle.create_tables_if_not_exists(self.pool) # Makes tables if they do not exist
         self.login_time = time.time()
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
         await self.change_presence(activity=discord.Game(name=f'Type `help` for help'),
                                    status=discord.Status.online)
+        self.online = True
    
     async def on_message(self, message):
         """Event that has checks that stop bots from executing commands"""
@@ -277,8 +279,12 @@ class AdamBot(Bot):
             async with self.pool.acquire() as connection:
                 record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id)
                 if not record:
-                    await connection.execute("INSERT INTO config (guild_id) VALUES ($1);", guild_id)
-                    record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id) # Fetch configuration record
+                    try:
+                        await connection.execute("INSERT INTO config (guild_id) VALUES ($1);", guild_id)
+                    except asyncpg.exceptions.UniqueViolationError: # config already exists
+                        pass
+                    finally:
+                        record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id) # Fetch configuration record
 
             keys = list(record.keys())[1:]
             values = list(record.values())[1:] # Include all keys and values apart from the first one (guild_id)
