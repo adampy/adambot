@@ -254,11 +254,9 @@ class Member(commands.Cog):
             '-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
         msg = message.content.lower()
 
-        if 'bruh' in msg and conditions:
-            async with self.bot.pool.acquire() as connection:
-                result = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh';")
-                await connection.execute("UPDATE variables SET value = ($1) WHERE variable = 'bruh';",
-                                         str(int(result) + 1))
+        if 'bruh' in msg and not message.author.bot and not message.content.startswith('-'):
+            self.bot.configs[message.guild.id]["bruhs"] += 1
+            await self.bot.propagate_config(message.guild.id)
         if conditions:
             await self.handle_paper_check(message)
             await self.handle_revise_keyword(message)
@@ -268,9 +266,10 @@ class Member(commands.Cog):
     async def bruhs(self, ctx):
         """See how many bruh moments we've had"""
         async with self.bot.pool.acquire() as connection:
-            bruhs = await connection.fetchval("SELECT value FROM variables WHERE variable = 'bruh'")
-            await ctx.send(f'Bruh moments: **{bruhs}**')
-            return
+            global_bruhs = await connection.fetchval("SELECT SUM(bruhs) FROM config;")
+        
+        guild_bruhs = self.bot.configs[ctx.guild.id]["bruhs"]
+        await ctx.send(f'•**Global** bruh moments: **{global_bruhs}**\n•**{ctx.guild.name}** bruh moments: **{guild_bruhs}**')
 
     @commands.command()
     async def cool(self, ctx, *message):

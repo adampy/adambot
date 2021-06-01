@@ -276,7 +276,7 @@ class Reputation(commands.Cog):
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    @rep.command()
+    @rep.command(aliases=["count"])
     @commands.guild_only()
     async def check(self, ctx, *args):
         """Checks a specific person reps, or your own if user is left blank"""

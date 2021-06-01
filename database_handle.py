@@ -1,7 +1,5 @@
 import asyncpg
 
-#TODO: Change most tables to make member_id the PK
-
 async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
     """Procedure that creates the tables necessary if they do not already exist"""
     async with pool.acquire() as connection:
@@ -17,8 +15,9 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             qotd_channel BIGINT,
             muted_role BIGINT,
             mod_log_channel BIGINT,
-            prefix VARCHAR(1023) DEFAULT '-'
-        )""")
+            prefix VARCHAR(1023) DEFAULT '-',
+            bruhs INT DEFAULT 0
+        )""") # bruhs counts how many bruh moments a guild has had
 
         # QOTD table
         await connection.execute("""CREATE TABLE IF NOT EXISTS qotd(
@@ -71,12 +70,6 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             member_id BIGINT,
             guild_id BIGINT,
             reps INT
-        )""")
-
-        # Variables table - used for storing global vars, such as "bruh"
-        await connection.execute("""CREATE TABLE IF NOT EXISTS variables(
-            variable VARCHAR(255),
-	        value VARCHAR(1023)
         )""")
 
         # Demographic roles table

@@ -28,7 +28,7 @@ class Config(commands.Cog):
             "mod_log_channel": [Validation.Channel, "Where the main logs go"],
             "invite_log_channel": [Validation.Channel, "Where invites are logged"],
             "prefix": [Validation.String, f"The prefix the bot uses, default is '-'"]
-        }
+        } # TODO: Perhaps change order of config embed to mirror the order of SELF.CONFIG?
 
     # EMBED RESPONSES
 
@@ -80,7 +80,11 @@ class Config(commands.Cog):
             ) # TODO: Make bot colours global - e.g. in a config json
 
             config_dict = self.bot.configs[ctx.guild.id]
+            tracked_configs = self.CONFIG.keys() # Get the config options that need to be included on the embed
             for key in config_dict.keys():
+                if key not in tracked_configs:
+                    continue # This clause ensures that variables, e.g. "bruhs", does not appear in the config
+
                 name = f"{str(key)} ({self.CONFIG[key][1]})"
 
                 if self.CONFIG[key][0] == Validation.Channel:
