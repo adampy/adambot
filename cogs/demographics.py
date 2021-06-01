@@ -210,7 +210,7 @@ class Demographics(commands.Cog):
                 double_newline = False # Adds an extra new line on the first iteration
             message += f"\n•**{n}** {role.name}"
 
-        await self.bot.add_config(ctx.guild.id)
+
         p = self.bot.configs[ctx.guild.id]["prefix"]
         message += f"\n*Note: do `{p}demographics chart` to view change in demographics over time!*"
         await ctx.send(message)

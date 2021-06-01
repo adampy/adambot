@@ -40,7 +40,6 @@ class SupportConnection:
     async def log_message(self, msg_type: MessageOrigin, message: discord.Message):
         """Method that should be executed when a new message is sent through a support ticket. `message`
         refers to the actual message object sent and `msg_type` should be of the MessageOrigin type."""
-        await self.bot.add_config(self.guild.id)
         channel_id = self.bot.configs[self.guild.id]["support_log_channel"]
         if channel_id is not None:
             channel = self.bot.get_channel(self.bot.configs[self.guild.id]["support_log_channel"])
@@ -86,7 +85,6 @@ class SupportConnectionManager:
             ticket_id = await connection.fetchval("SELECT MAX(id) FROM support")
             new_connection = await SupportConnection.create(self.bot, ticket_id, author_id, 0, None, guild_id)  # Set started_at to None
 
-        await self.bot.add_config(guild_id)
         channel_id = self.bot.configs[guild_id]["support_log_channel"]
         if channel_id is not None:
             guild = self.bot.get_guild(guild_id)
@@ -150,7 +148,6 @@ class SupportConnectionManager:
         async with self.bot.pool.acquire() as db_connection:
             await db_connection.execute("DELETE FROM support WHERE id = $1", connection.id)
 
-        await self.bot.add_config(connection.guild_id)
         channel_id = self.bot.configs[connection.guild_id]["support_log_channel"]
         if channel_id is not None:
             channel = self.bot.get_channel(channel_id)
@@ -207,7 +204,6 @@ class Support(commands.Cog):
                     return
 
                 # Check if guild has support module set up
-                await self.bot.add_config(guild_id)
                 log_channel_id = self.bot.configs[guild_id]["support_log_channel"]
                 if not log_channel_id:
                     await message.author.send(f"**{self.bot.get_guild(guild_id).name}** has not set up the support module :sob:") # This prevents any connections being made at all
@@ -262,7 +258,6 @@ class Support(commands.Cog):
     async def support(self, ctx):
         """Support module"""
         if ctx.invoked_subcommand is None:
-            await self.bot.add_config(ctx.guild.id)
             p = self.bot.configs[ctx.guild.id]["prefix"]
             await ctx.send(f'```{p}help support``` for more commands. If you want to open a ticket type ```{p}support start```')
 
@@ -300,8 +295,7 @@ class Support(commands.Cog):
         await connection.accept(ctx.author)
         await ctx.author.send('You are now connected anonymously with a member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)')
         await connection.member.send('You are now connected anonymously with a staff member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)')
-        
-        await self.bot.add_config(ctx.guild.id)
+
         channel_id = self.bot.configs[ctx.guild.id]["support_log_channel"]
         if channel_id is not None:
             embed = Embed(color=Colour.from_rgb(0,0,255))

@@ -16,7 +16,6 @@ class QuestionOTD(commands.Cog):
         """
         Method that returns true if the ctx.author has either a staff or QOTD role
         """
-        await self.bot.add_config(ctx.guild.id)
         qotd_role_id = self.bot.configs[ctx.guild.id]["qotd_role"]
         staff_role_id = self.bot.configs[ctx.guild.id]["staff_role"]
         for role in ctx.author.roles:
@@ -27,7 +26,6 @@ class QuestionOTD(commands.Cog):
     @commands.group()
     async def qotd(self, ctx):
         if ctx.invoked_subcommand is None:
-            await self.bot.add_config(ctx.guild.id)
             p = self.bot.configs[ctx.guild.id]["prefix"]
             await ctx.send(f'```{p}qotd submit <question>```')
 
@@ -40,7 +38,6 @@ class QuestionOTD(commands.Cog):
             await ctx.send('Question over **255** characters, please **shorten** before trying the command again.')
             return
         if not args:
-            await self.bot.add_config(ctx.guild.id)
             p = self.bot.configs[ctx.guild.id]["prefix"]
             await ctx.send(f'```{p}qotd submit <question>```')
             return
@@ -54,7 +51,7 @@ class QuestionOTD(commands.Cog):
             submitted_today = await connection.fetch(
                 'SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2) AND guild_id = $3', member, today_date, ctx.guild.id)
             
-            limit = self.bot.configs[ctx.guild.id]["qotd_limit"] # Don't need to call add_config here, because it was called when checking is_staff
+            limit = self.bot.configs[ctx.guild.id]["qotd_limit"]
             if limit == 0 or limit == None: # Account for a limit set to 0 and a non-changed limit
                 limit = inf # math.inf
 

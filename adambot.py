@@ -32,11 +32,10 @@ class AdamBot(Bot):
     @classmethod # Does not depend on self - can be called as AdamBot._determine_prefix
     async def _determine_prefix(cls, bot, message):
         """Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used"""
-        await bot.add_config(message.guild.id)
         guild_prefix = bot.configs[message.guild.id]["prefix"]
         return when_mentioned_or(guild_prefix)(bot, message)
 
-    def __init__(self, local, cogs, start_time, command_prefix = None, *args, **kwargs):
+    def __init__(self, local, cogs, start_time, command_prefix=None, *args, **kwargs):
         if command_prefix is None:
             # Respond to guild specific pings, and mentions
             kwargs["command_prefix"] = AdamBot._determine_prefix
@@ -131,7 +130,15 @@ class AdamBot(Bot):
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
         await self.change_presence(activity=discord.Game(name=f'Type `help` for help'),
                                    status=discord.Status.online)
-        self.online = True
+
+        await self.add_all_guild_configs()
+
+    async def add_all_guild_configs(self):
+        for guild in self.guilds:
+            await self.add_config(guild.id)
+
+    async def on_guild_join(self, guild):  # if a bot joins a guild whilst offline it should be picked up in add_all_guild_configs when it's next started
+        await self.add_config(guild.id)
    
     async def on_message(self, message):
         """Event that has checks that stop bots from executing commands"""
@@ -238,27 +245,6 @@ class AdamBot(Bot):
                                 await connection.execute('DELETE FROM remind WHERE id = ($1)', remind[0])
                         except Exception as e:
                             print(f'REMIND: {type(e).__name__}: {e}')
-
-                # invite stuffs
-                    try:
-                        guild = self.get_guild(445194262947037185)
-                        invites = await guild.invites()
-                        await connection.execute('DELETE FROM invites')
-                        new_invites = []
-                        for invite in invites:
-                            data = [invite.inviter.id,
-                                invite.code,
-                                invite.uses,
-                                invite.max_uses,
-                                invite.created_at,
-                                invite.max_age]
-                            new_invites.append(data)
-                        await connection.executemany(
-                            'INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)',
-                            new_invites)
-                    except Exception as e:
-                        pass
-                        #print(f'INVITES: {type(e).__name__}: {e}')
             except (OSError, asyncpg.exceptions.ConnectionDoesNotExistError):
                 await asyncio.sleep(5)  # workaround for task crashing when connection temporarily drops with db
 
@@ -313,7 +299,6 @@ class AdamBot(Bot):
         """
         Method that checks if a user is staff in their guild or not
         """
-        await self.add_config(ctx.guild.id)
         staff_role_id = self.configs[ctx.guild.id]["staff_role"]
         return staff_role_id in [y.id for y in ctx.author.roles]
 
@@ -326,7 +311,8 @@ if __name__ == "__main__":
     intents.reactions = True
     intents.typing = True
     intents.dm_messages = True
-    
+    intents.guilds = True
+
     parser = argparse.ArgumentParser()
     args = sys.argv[1:]
     # todo: make this more customisable

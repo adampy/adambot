@@ -113,7 +113,6 @@ Usage: `purge 50`"""
 
             await ctx.send(f"Purged **{len(deleted)}** messages!", delete_after=3)
 
-            await self.bot.add_config(ctx.guild.id)
             channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
             if channel_id is None:
                 return
@@ -147,7 +146,6 @@ Kick members perm needed"""
         await member.kick(reason=reason)
         await ctx.send(f'{member.mention} has been kicked :boot:')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -221,7 +219,6 @@ Kick members perm needed"""
             if not massban:
                 await ctx.send(f'{member.mention} has been banned.')
 
-            await self.bot.add_config(ctx.guild.id)
             channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
             if channel_id is None:
                 return
@@ -270,7 +267,6 @@ Kick members perm needed"""
         await ctx.guild.unban(member, reason=reason)
         await ctx.send(f'{member.mention} has been unbanned!')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -319,7 +315,6 @@ Manage roles perm needed."""
         except discord.errors.Forbidden:
             print(f"NOTE: Could not DM {member.display_name} about their mute")
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -447,7 +442,6 @@ Administrator role needed."""
 
         await ctx.send('Advanced everyone\'s year!')
 
-        await self.bot.add_config(ctx.guild.id)
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -471,28 +465,6 @@ Staff role needed."""
             await channel.send(text[5:] if text.startswith("/tts") else text, tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
         else:
             await ctx.send("You do not have permissions to do that :sob:")
-
-    @commands.command()
-    @commands.is_owner()
-    async def reset_invites(self, ctx):
-        """A command for adam only which resets the invites"""
-        invites = await ctx.guild.invites()
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute('DELETE FROM invites')
-            for invite in invites:
-                try:
-                    data = [invite.inviter.id,
-                            invite.code,
-                            invite.uses,
-                            invite.max_uses,
-                            invite.created_at,
-                            invite.max_age]
-
-                    await connection.execute(
-                        'INSERT INTO invites (inviter, code, uses, max_uses, created_at, max_age) values ($1, $2, $3, $4, $5, $6)',
-                        *data)
-                except Exception:
-                    pass
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_guild = True)

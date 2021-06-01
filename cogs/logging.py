@@ -1,22 +1,33 @@
 import discord
 from discord.ext import commands
 from discord import Embed, Colour
+from discord.utils import get
 
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.mod_logs = {}
+        self.previous_inv_log_embeds = []
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.invites = {}
+        self.guilds = self.bot.guilds
+        for guild in self.guilds:
+            self.invites[guild.id] = await guild.invites()
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        self.invites[guild.id] = await guild.invites()
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
 
-        await self.bot.add_config(message.guild.id)
         channel_id = self.bot.configs[message.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
-
         embed = Embed(title=':information_source: Message Deleted', color=Colour.from_rgb(172, 32, 31))
         embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
         embed.add_field(name='Message ID', value=message.id, inline=True)
@@ -42,7 +53,6 @@ class Logging(commands.Cog):
         """
         Logs bulk message deletes, such as those used in `purge` command
         """
-        await self.bot.add_config(payload.guild_id)
         channel_id = self.bot.configs[payload.guild_id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -65,7 +75,6 @@ class Logging(commands.Cog):
         if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
             return
 
-        await self.bot.add_config(before.guild.id)
         channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -205,14 +214,12 @@ class Logging(commands.Cog):
 
                     #Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
                     if prop["display_name"] in ["Nickname", "Roles"]:
-                        await self.bot.add_config(before.guild.id)
                         channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
                         channel = self.bot.get_channel(channel_id)
                         await channel.send(embed=log)
                     else:
                         shared_guilds = [x for x in self.bot.guilds if after in x.members]
                         for guild in shared_guilds:
-                            await self.bot.add_config(guild.id)
                             channel_id = self.bot.configs[guild.id]["mod_log_channel"]
                             if channel_id:
                                 channel = self.bot.get_channel(channel_id)
@@ -228,7 +235,6 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        await self.bot.add_config(member.guild.id)
         channel_id = self.bot.configs[member.guild.id]["mod_log_channel"]
         if channel_id is None:
             return
@@ -259,8 +265,60 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        await self.bot.add_config(member.guild.id)
-        channel_id = self.bot.configs[member.guild.id]["mod_log_channel"]
+        guild = member.guild
+
+        ichannel_id = self.bot.configs[guild.id]["invite_log_channel"]
+        ichannel = self.bot.get_channel(ichannel_id)
+        old_invites = self.invites[guild.id]
+        new_invites = await guild.invites()
+
+        updated_invites = []
+        possible_joins_missed = False
+        for invite in new_invites:
+            found = False
+            for old_invite in old_invites:
+                if old_invite.code == invite.code:
+                    found = True
+                    if invite.uses > old_invite.uses:
+                        updated_invites.append(invite)
+                        if invite.uses - old_invite.uses != 1:
+                            possible_joins_missed = True
+            if not found and invite.uses != 0:  # else 0-use invites will be logged
+                updated_invites.append(invite)  # new invites
+
+
+        self.invites[guild.id] = new_invites
+        if ichannel:  # still check & update invites in case channel is configured later
+            invite_log = Embed(title="Invite data", color=Colour.from_rgb(0, 0, 255))
+            if len(updated_invites) == 1:
+                invite_log.set_author(name=f"{updated_invites[0].inviter} ~ {updated_invites[0].inviter.display_name}", icon_url=updated_invites[0].inviter.avatar_url)
+                invite_log.description = ":arrow_up: Inviter Avatar\n:arrow_right: Member Avatar"
+            else:
+                invite_log.description = ":arrow_right: Member Avatar"
+
+            invite_log.add_field(name="Member", value=member.mention)
+
+            for x, invite in enumerate(updated_invites):
+                invite_log.add_field(name=f"\nPossible Invite #{x+1}\n\nInviter" if len(updated_invites) != 1 else "Inviter", value=invite.inviter.mention, inline = len(updated_invites) == 1)
+                invite_log.add_field(name="Code", value=invite.code)
+                invite_log.add_field(name="Channel", value=invite.channel.mention)
+                invite_log.add_field(name="Expires", value=self.bot.time_str(invite.max_age) if invite.max_age != 0 else "Never")
+                invite_log.add_field(name="Uses", value=str(invite.uses) + (f"/{invite.max_uses}" if invite.max_uses != 0 else ""))
+                invite_log.add_field(name="Invite Created", value=self.bot.correct_time(invite.created_at).strftime(self.bot.ts_format), inline=False)
+            invite_log.add_field(name="Account created",
+                                 value=self.bot.correct_time(member.created_at).strftime(self.bot.ts_format), inline=False)
+            if not updated_invites:
+                invite_log.add_field(name="Invite used", value="Undetected")
+
+            invite_log.set_thumbnail(url=member.avatar_url)
+            if (invite_log.to_dict() not in self.previous_inv_log_embeds) or not updated_invites:  # limits log spam e.g. if connection drops
+                if possible_joins_missed or len(updated_invites) != 1:
+                    await get(guild.text_channels, name='invite-logs').send(
+                        "*WARNING: Due to a bot glitch or other reason, the below data may be inaccurate due to potentially missed previous joins.*")
+                self.previous_inv_log_embeds.append(invite_log.to_dict())
+                await ichannel.send(embed=invite_log)
+
+        channel_id = self.bot.configs[guild.id]["mod_log_channel"]
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
