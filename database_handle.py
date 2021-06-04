@@ -52,7 +52,7 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             staff_id BIGINT,
             warned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
             reason VARCHAR(255),
-            guild_id BIGINT
+            channel_id BIGINT
         )""")
 
         # Warn table
