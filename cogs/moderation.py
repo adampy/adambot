@@ -168,6 +168,10 @@ Kick members perm needed"""
         Single bans work with user mention or user ID
         Mass bans work with user IDs currently, reason flag HAS to be specified if setting
         Ban members perm needed"""
+        if not ctx.me.guild_permissions.ban_members:
+            await ctx.send("Can't do that sorry :(")
+            return
+        invites = await ctx.guild.invites()
         reason = "No reason provided"
         massban = (ctx.invoked_with == "massban")
         timeperiod = None
@@ -194,9 +198,15 @@ Kick members perm needed"""
                     f", {len(already_banned)} users already banned" if len(already_banned) > 0 else "")
                 )
             member, in_guild = await self.get_member_obj(ctx, member_)
+            if in_guild:
+                if ctx.me.top_role < member.top_role:
+                    await ctx.send(f"Can't ban {member.mention}, they have a higher role than the bot!")
+                    continue
+            for invite in invites:
+                if invite.inviter.id == member.id:
+                    await ctx.invoke(self.bot.get_command("revokeinvite"), invite_code=invite.code)
             if timeperiod:
                 await self.timer(Todo.UNBAN, timeperiod, member.id)
-            print(f"MEMBER IS TYPE {type(member).__name__}")
             if not member:
                 not_found.append(member_)
                 if not massban:
