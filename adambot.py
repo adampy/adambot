@@ -97,7 +97,6 @@ class AdamBot(Bot):
         self.cog_load = time.time()
         print(f"Loaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
         print("Creating DB pool...")
-        self.loop.create_task(self.execute_todos())
         self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=self.connections))
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
         print(f'Bot fully setup!\nDB took {time.time() - self.cog_load} seconds to connect to ({time.time() - self.start_time} seconds total)')
@@ -133,8 +132,10 @@ class AdamBot(Bot):
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
         await self.change_presence(activity=discord.Game(name=f'Type `help` for help'),
                                    status=discord.Status.online)
+        self.online = True
 
         await self.add_all_guild_configs()
+        await self.execute_todos()
 
     async def add_all_guild_configs(self):
         """Adds configs to all guilds - executed on startup"""
@@ -194,7 +195,6 @@ class AdamBot(Bot):
 	            member_id bigint
                 member_id may not always be a member ID, and can sometimes be a FK to demographic_roles.id"""
 
-        await self.wait_until_ready()
         while self.online:
             try:
                 async with self.pool.acquire() as connection:
@@ -239,7 +239,7 @@ class AdamBot(Bot):
                     reminds = await connection.fetch('SELECT * FROM remind WHERE reminder_time <= now()')
                     for remind in reminds:
                         try:
-                            member = get(self.get_all_members(), id=remind[1])
+                            member = self.get_user(remind[1])
                             message = f'You told me to remind you about this:\n{remind[3]}'
                             try:
                                 await member.send(message)
