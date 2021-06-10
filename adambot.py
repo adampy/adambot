@@ -38,6 +38,10 @@ class AdamBot(Bot):
         except KeyError:
             return when_mentioned(bot, message) # Config tables aren't loaded yet, temporarily set to mentions only
 
+    async def get_used_prefixes(self, message):
+        """Gets the prefixes that can be used to invoke a command in the guild where the message is from"""
+        return self.command_prefix(self, message) if self.global_prefix else await self.command_prefix(self, message) # If global is used, no need to use await
+
     def __init__(self, local, cogs, start_time, command_prefix=None, *args, **kwargs):
         if command_prefix is None:
             # Respond to guild specific pings, and mentions
@@ -49,6 +53,7 @@ class AdamBot(Bot):
         super().__init__(*args, **kwargs)
         self.__dict__.update(utils.__dict__)
 
+        self.global_prefix = command_prefix # Stores the global prefix, or None if not set / using guild specific one
         self.configs = {} # Used to store configuration for guilds
         self.flag_handler = self.flags()
         # Hopefully can eventually move these out to some sort of config system
