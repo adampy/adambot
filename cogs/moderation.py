@@ -79,7 +79,7 @@ class Moderation(commands.Cog):
 
     # -----------------------CLOSE COMMAND-----------------------
 
-    @commands.command(pass_context=True, name="close")
+    @commands.command(pass_context=True, name="close", aliases = ["die"])
     @commands.guild_only()
     @is_dev()
     async def botclose(self, ctx):
