@@ -19,6 +19,13 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             bruhs INT DEFAULT 0
         )""") # bruhs counts how many bruh moments a guild has had
 
+        # Censor table
+        await connection.execute("""CREATE TABLE IF NOT EXISTS censor(
+            guild_id BIGINT PRIMARY KEY,
+            censors TEXT
+        
+        )""")
+
         # QOTD table
         await connection.execute("""CREATE TABLE IF NOT EXISTS qotd(
             id SERIAL PRIMARY KEY,

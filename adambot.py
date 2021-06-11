@@ -308,8 +308,11 @@ class AdamBot(Bot):
         """
         Method that checks if a user is staff in their guild or not
         """
-        staff_role_id = self.configs[ctx.guild.id]["staff_role"]
-        return staff_role_id in [y.id for y in ctx.author.roles]
+        try:
+            staff_role_id = self.configs[ctx.guild.id]["staff_role"]
+            return staff_role_id in [y.id for y in ctx.author.roles]
+        except Exception:  # usually ends up being a KeyError. would be neater if all that's relevant can be caught instead
+            return False  # prevents daft spam before bot is ready with configs
 
 if __name__ == "__main__":
     local_host = get_credentials('credentials.csv')
@@ -342,6 +345,7 @@ if __name__ == "__main__":
                  'warnings',
                  'logging',
                  'eval',
-                 'config'] # Make this dynamic?
+                 'config',
+                 'censor'] # Make this dynamic?
     bot = AdamBot(local_host, cog_names, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
     # bot.remove_command("help")
