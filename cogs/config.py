@@ -34,7 +34,7 @@ class Config(commands.Cog):
     async def config(self, ctx):
         """View the current configuration settings of the guild"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-            await DefaultEmbedResponses.invalid_perms(ctx)
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if ctx.invoked_subcommand is None:
@@ -77,10 +77,10 @@ class Config(commands.Cog):
 
     @config.command(pass_context=True)
     @commands.guild_only()
-    async def set(self, ctx, key=None, *, value=None):  # consume then you don't have to wrap phrases in quotes
+    async def set(self, ctx, key=None, value=None):  # consume then you don't have to wrap phrases in quotes
         """Sets a configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-            await DefaultEmbedResponses.invalid_perms(ctx)
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if not key:
@@ -143,7 +143,7 @@ class Config(commands.Cog):
     async def remove(self, ctx, key):
         """Removes a configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-            await DefaultEmbedResponses.invalid_perms(ctx)
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
 
@@ -166,7 +166,7 @@ class Config(commands.Cog):
     async def current(self, ctx, key = None):
         """Shows the current configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-            await DefaultEmbedResponses.invalid_perms(ctx)
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if not key:
@@ -198,7 +198,7 @@ class Config(commands.Cog):
             await DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of prefix",  prefix)
         else:
             if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-                await DefaultEmbedResponses.invalid_perms(ctx)
+                await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             else:
                 await ctx.invoke(self.bot.get_command("config set"), "prefix", new_prefix)
 
