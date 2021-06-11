@@ -82,7 +82,7 @@ class Censor(commands.Cog):
     @commands.guild_only()
     async def censor(self, ctx):
         if not ctx.invoked_subcommand:
-            prefixes = await self.get_used_prefixes(ctx.message) # TODO: Is there a nicer way to get the prefix, if not change all previous occasions of getting the prefix to this
+            prefixes = await self.bot.get_used_prefixes(ctx.message) # TODO: Is there a nicer way to get the prefix, if not change all previous occasions of getting the prefix to this
             await ctx.reply(f"Type `{prefixes[2]}help censor` to get info!")
 
     @censor.command()
