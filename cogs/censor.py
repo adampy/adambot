@@ -4,12 +4,16 @@ from discord.utils import get
 import asyncio
 import ast  # using ast for literal_eval, stops code injection
 import asyncpg
+from .utils import DefaultEmbedResponses
 
 class Censor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     async def check_is_command(self, message):
+        """
+        Checks whether or not `message` is a valid censor command or not
+        """
         ctx = await self.bot.get_context(message)
         content = message.content
         prefixes = await self.bot.get_used_prefixes(message)
@@ -22,26 +26,10 @@ class Censor(commands.Cog):
             "censor") and content != message.content) else False
         return is_command
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        # Maybe tweak this so the tables are only created on the fly as and when they are needed?
-        self.censors = {}
-        success = False
-        while not success:  # race condition for table to be created otherwise
-            try:
-                for guild in self.bot.guilds:
-                    await self.load_censors(guild)
-                    success = True
-            except asyncpg.exceptions.UndefinedTableError:
-                success = False
-                print("Censor table doesn't exist yet, waiting 1 second...")
-                await asyncio.sleep(1)
-
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild):
-        await self.load_censors(guild)
-
     async def load_censors(self, guild):
+        """
+        Method used to load censor data for all guilds into self.censors
+        """
         async with self.bot.pool.acquire() as connection:
             prop = await connection.fetchval('SELECT censors FROM censor WHERE guild_id = $1', guild.id)
             if not prop:
@@ -62,6 +50,23 @@ class Censor(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             await connection.execute('UPDATE censor SET censors = $1 WHERE guild_id = $2', str(self.censors[guild.id]), guild.id)
 
+    # ---LISTENERS---
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        # Maybe tweak this so the tables are only created on the fly as and when they are needed?
+        self.censors = {}
+        success = False
+        while not success:  # race condition for table to be created otherwise
+            try:
+                for guild in self.bot.guilds:
+                    await self.load_censors(guild)
+                    success = True
+            except asyncpg.exceptions.UndefinedTableError:
+                success = False
+                print("Censor table doesn't exist yet, waiting 1 second...")
+                await asyncio.sleep(1)
+
     @commands.Cog.listener()
     async def on_message(self, message):
         ctx = await self.bot.get_context(message)
@@ -77,7 +82,8 @@ class Censor(commands.Cog):
     @commands.guild_only()
     async def censor(self, ctx):
         if not ctx.invoked_subcommand:
-            await ctx.reply("Use help censor to get info!")
+            prefixes = await self.get_used_prefixes(ctx.message) # TODO: Is there a nicer way to get the prefix, if not change all previous occasions of getting the prefix to this
+            await ctx.reply(f"Type `{prefixes[2]}help censor` to get info!")
 
     @censor.command()
     @commands.guild_only()
@@ -86,8 +92,9 @@ class Censor(commands.Cog):
         Allows adding a filtered phrase for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await ctx.message.reply("You don't have permissions to do that :sob:")
+            await DefaultEmbedResponses.invalid_perms(sef.bot, ctx)
             return
+
         if text not in self.censors[ctx.guild.id]:
             if True in [phrase in text for phrase in self.censors[ctx.guild.id]]:
                 """
@@ -106,9 +113,9 @@ class Censor(commands.Cog):
             message = message if not removed else (message + "\n\nRemoved some redundant phrases from the censor:\n " + "\n ".join(removed))
             self.censors[ctx.guild.id].append(text)
             await self.propagate_new_guild_censor(ctx.guild)
-            await ctx.message.reply(message)
+            await DefaultEmbedResponses.success_embed(self.bot, ctx, "Censor added!", desc = message)
         else:
-            await ctx.message.reply(f"That's already in the censor!")
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "That's already in the censor!")
 
     @censor.command()
     @commands.guild_only()
@@ -117,14 +124,15 @@ class Censor(commands.Cog):
         Allows removing a filtered phrase for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await ctx.message.reply("You don't have permissions to do that :sob:")
+            await DefaultEmbedResponses.invalid_perms(sef.bot, ctx)
             return
+
         if text not in self.censors[ctx.guild.id]:
-            await ctx.message.reply("No such thing is being censored!")
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "No such thing is being censored!")
         else:
             del self.censors[ctx.guild.id][self.censors[ctx.guild.id].index(text)]
             await self.propagate_new_guild_censor(ctx.guild)
-            await ctx.message.reply(f"Removed ||{text}|| from the censor!")
+            await DefaultEmbedResponses.success_embed(self.bot, ctx, "Censor removed!")
 
     @censor.command(name="list")
     @commands.guild_only()
@@ -133,9 +141,11 @@ class Censor(commands.Cog):
         Allows viewing the list of filtered phrases for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await ctx.message.reply("You don't have permissions to do that :sob:")
+            await DefaultEmbedResponses.invalid_perms(sef.bot, ctx)
             return
-        await ctx.message.reply(("\n".join([f"||{word}||" for word in self.censors[ctx.guild.id]])) if self.censors[ctx.guild.id] else "Nothing to show here!")
+
+        msg_content = ("\n".join([f"||{word}||" for word in self.censors[ctx.guild.id]])) if self.censors[ctx.guild.id] else "Nothing to show here!"
+        await DefaultEmbedResponses.information_embed(self.bot, ctx, f"{ctx.guild.name} censors", desc = msg_content)
 
     @censor.command(name="clear")
     @commands.guild_only()
@@ -144,11 +154,12 @@ class Censor(commands.Cog):
         Allows clearing the list of filtered phrases for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await ctx.message.reply("You don't have permissions to do that :sob:")
+            await DefaultEmbedResponses.invalid_perms(sef.bot, ctx)
             return
+
         self.censors[ctx.guild.id] = []
         await self.propagate_new_guild_censor(ctx.guild)
-        await ctx.message.reply("Censor has been cleared!")
+        await DefaultEmbedResponses.success_embed(self.bot, ctx, "Censors cleared!", desc = f"All censors in **{ctx.guild.name}** have been cleared")
 
 def setup(bot):
     bot.add_cog(Censor(bot))
