@@ -144,7 +144,7 @@ class Censor(commands.Cog):
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
-        msg_content = ("\n".join([f"||{word}||" for word in self.censors[ctx.guild.id]])) if self.censors[ctx.guild.id] else "Nothing to show here!"
+        msg_content = ("\n".join([f"• ||{word}||" for word in self.censors[ctx.guild.id]])) if self.censors[ctx.guild.id] else "Nothing to show here!"
         await DefaultEmbedResponses.information_embed(self.bot, ctx, f"{ctx.guild.name} censors", desc = msg_content)
 
     @censor.command(name="clear")
