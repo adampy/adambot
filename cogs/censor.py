@@ -92,7 +92,7 @@ class Censor(commands.Cog):
         Allows adding a filtered phrase for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(sef.bot, ctx)
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if text not in self.censors[ctx.guild.id]:
@@ -124,7 +124,7 @@ class Censor(commands.Cog):
         Allows removing a filtered phrase for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(sef.bot, ctx)
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if text not in self.censors[ctx.guild.id]:
@@ -141,7 +141,7 @@ class Censor(commands.Cog):
         Allows viewing the list of filtered phrases for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(sef.bot, ctx)
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         msg_content = ("\n".join([f"||{word}||" for word in self.censors[ctx.guild.id]])) if self.censors[ctx.guild.id] else "Nothing to show here!"
@@ -154,7 +154,7 @@ class Censor(commands.Cog):
         Allows clearing the list of filtered phrases for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(sef.bot, ctx)
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         self.censors[ctx.guild.id] = []
