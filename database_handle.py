@@ -53,7 +53,7 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
         )""")
 
         # Remind table
-        await connection.execute("""CREATE TABLE IF NOT EXISTS warn(
+        await connection.execute("""CREATE TABLE IF NOT EXISTS remind(
             id SERIAL PRIMARY KEY,
             member_id BIGINT,
             staff_id BIGINT,
