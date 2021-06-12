@@ -69,6 +69,8 @@ class Censor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if not self.bot.is_ready():
+            return  # sometimes barfs on startup
         ctx = await self.bot.get_context(message)
         is_command = await self.check_is_command(message)
         if not is_command and message.author.id == self.bot.user.id and message.reference:
