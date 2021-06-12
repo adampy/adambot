@@ -9,16 +9,20 @@ class Logging(commands.Cog):
         self.mod_logs = {}
         self.previous_inv_log_embeds = []
 
+    async def get_all_invites(self, guild):
+        return await guild.invites() + [await guild.vanity_invite()] if "VANITY_URL" in guild.features else []
+
     @commands.Cog.listener()
     async def on_ready(self):
         self.invites = {}
         self.guilds = self.bot.guilds
         for guild in self.guilds:
-            self.invites[guild.id] = await guild.invites()
+            self.invites[guild.id] = await self.get_all_invites(guild)
+
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        self.invites[guild.id] = await guild.invites()
+        self.invites[guild.id] = await self.get_all_invites(guild)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -270,7 +274,7 @@ class Logging(commands.Cog):
         ichannel_id = self.bot.configs[guild.id]["invite_log_channel"]
         ichannel = self.bot.get_channel(ichannel_id)
         old_invites = self.invites[guild.id]
-        new_invites = await guild.invites()
+        new_invites = await self.get_all_invites(guild)
 
         updated_invites = []
         possible_joins_missed = False
@@ -291,7 +295,7 @@ class Logging(commands.Cog):
         if ichannel:  # still check & update invites in case channel is configured later
             invite_log = Embed(title="Invite data", color=Colour.from_rgb(0, 0, 255))
             if len(updated_invites) == 1:
-                invite_log.set_author(name=f"{updated_invites[0].inviter} ~ {updated_invites[0].inviter.display_name}", icon_url=updated_invites[0].inviter.avatar_url)
+                invite_log.set_author(name=f"{updated_invites[0].inviter} ~ {updated_invites[0].inviter.display_name}" if updated_invites[0].inviter else f"{guild.name} ~ Vanity URL", icon_url=updated_invites[0].inviter.avatar_url if hasattr(updated_invites[0].inviter, 'avatar_url') else guild.icon_url)
                 invite_log.description = ":arrow_up: Inviter Avatar\n:arrow_right: Member Avatar"
             else:
                 invite_log.description = ":arrow_right: Member Avatar"
@@ -299,7 +303,7 @@ class Logging(commands.Cog):
             invite_log.add_field(name="Member", value=member.mention)
 
             for x, invite in enumerate(updated_invites):
-                invite_log.add_field(name=f"\nPossible Invite #{x+1}\n\nInviter" if len(updated_invites) != 1 else "Inviter", value=invite.inviter.mention, inline = len(updated_invites) == 1)
+                invite_log.add_field(name=f"\nPossible Invite #{x+1}\n\nInviter" if len(updated_invites) != 1 else "Inviter", value=invite.inviter.mention if invite.inviter else "Server (Vanity)", inline=len(updated_invites) == 1)
                 invite_log.add_field(name="Code", value=invite.code)
                 invite_log.add_field(name="Channel", value=invite.channel.mention)
                 invite_log.add_field(name="Expires", value=self.bot.time_str(invite.max_age) if invite.max_age != 0 else "Never")
