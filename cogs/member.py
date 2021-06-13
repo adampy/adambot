@@ -40,33 +40,6 @@ class Member(commands.Cog):
         time_string = time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
 
-# -----------------------PAST PAPERS--------------------------
-
-    async def handle_paper_check(self, message: discord.Message):
-        paper_kw = [["2019", "paper"], ["2020", "paper"], ["2021", "paper"], ["mini exam"],
-                    ["mini assessment"]]  # singular form of all as the singular is in the plural anyway
-        ctx = await self.bot.get_context(message)
-        if not self.in_gcse(ctx):  # to ignore priv server
-            return
-        first_warn = False
-        if True in [False not in [x in message.content.lower().replace("-", " ") for x in y] for y in paper_kw]:
-            # if a check has multiple conditions, False must not be in it
-            # but if any one of the checks comes back True, then the warning message should be sent
-            # todo: if this gets too spammy then add some kind of cooldown
-            # e.g. once per minute per guild, or per user etc
-            if ctx.guild.id not in self.paper_warn_cooldown.keys():
-                self.paper_warn_cooldown[ctx.guild.id] = {}
-            if message.author.id not in self.paper_warn_cooldown[ctx.guild.id].keys():
-                first_warn = True
-                self.paper_warn_cooldown[ctx.guild.id][message.author.id] = time.time()
-            if (time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]) > 60 or first_warn:
-                self.paper_warn_cooldown[ctx.guild.id][message.author.id] = time.time()
-                await message.channel.send(
-                    f"{message.author.mention} REMINDER: This server **does not** allow the distribution of unreleased papers such as the 2019, 2020 or 2021 papers."
-                    f"  **This includes any of the 2021 'mini-assessment' material that isn't public**."
-                    f"\n__**Anyone found distributing these to members through the server or through DMs WILL be banned**__", delete_after=20)
-            #else:
-            #    await ctx.send(f"TEST: {time.time() - self.paper_warn_cooldown[ctx.guild.id][message.author.id]} into cooldown")
 
 # -----------------------REVISE------------------------------
 
