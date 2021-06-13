@@ -11,7 +11,6 @@ import time
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.paper_warn_cooldown = {}
 
     def in_private_server(ctx):
         return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)  # in priv server or is adam
@@ -231,7 +230,6 @@ class Member(commands.Cog):
             self.bot.configs[message.guild.id]["bruhs"] += 1
             await self.bot.propagate_config(message.guild.id)
         if conditions:
-            await self.handle_paper_check(message)
             await self.handle_revise_keyword(message)
         return
 
