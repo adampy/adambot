@@ -59,9 +59,13 @@ class ReactionRoles(commands.Cog):
     async def add(self, ctx, emoji, role: discord.Role):
         """
         Adds an emoji and a corresponding role to the replied message
+        
         """
-        message_id = ctx.message.reference.message_id
+        if not await self.bot.is_staff(ctx):
+            await DefaultEmbedResponses.error_embed("You do not have permissions to do this!")
+            return
 
+        message_id = ctx.message.reference.message_id
         # Check if custom emoji
         try:
             emoji = await commands.EmojiConverter().convert(ctx, emoji)
@@ -92,6 +96,10 @@ class ReactionRoles(commands.Cog):
         """
         Removes an emoji and a corresponding role from the replied message
         """
+        if not await self.bot.is_staff(ctx):
+            await DefaultEmbedResponses.error_embed("You do not have permissions to do this!")
+            return
+
         message_id = ctx.message.reference.message_id
         # Check if custom emoji
         try:
@@ -116,6 +124,10 @@ class ReactionRoles(commands.Cog):
         """
         Removes the reaction roles from the replied message
         """
+        if not await self.bot.is_staff(ctx):
+            await DefaultEmbedResponses.error_embed("You do not have permissions to do this!")
+            return
+            
         message_id = ctx.message.reference.message_id
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE FROM reaction_roles WHERE message_id = $1;", message_id)
@@ -130,6 +142,10 @@ class ReactionRoles(commands.Cog):
         """
         Shows all the current reaction roles in the guild
         """
+        if not await self.bot.is_staff(ctx):
+            await DefaultEmbedResponses.error_embed("You do not have permissions to do this!")
+            return
+            
         async with self.bot.pool.acquire() as connection:
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)
 
