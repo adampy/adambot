@@ -76,9 +76,13 @@ class Censor(commands.Cog):
         if not is_command and message.author.id == self.bot.user.id and message.reference:
             is_command = await self.check_is_command(await ctx.fetch_message(message.reference.message_id))
 
-        if True in [phrase.lower() in message.content.lower() for phrase in self.censors[message.guild.id]] and not is_command:
-            # case insensitive is probably the best idea
-            await message.delete()
+        try:
+            censors = self.censors[message.guild.id]
+            if True in [phrase.lower() in message.content.lower() for phrase in censors] and not is_command:
+                # case insensitive is probably the best idea
+                await message.delete()
+        except KeyError: # If the bot hasn't loaded the censors yet
+            pass
 
     @commands.group()
     @commands.guild_only()
