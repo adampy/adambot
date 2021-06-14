@@ -138,6 +138,8 @@ class WaitingRoom(commands.Cog):
                         await member.send(f"If you are wanting to join the {ctx.guild.name} server then please tell us your year in the waiting room. Thanks!")
                     except discord.Forbidden: # Catches if DMs are closed
                         pass
+                    except discord.HTTPException:
+                        pass
 
                 await question.edit(content = "DMs have been sent to all lurkers :ok_hand:")
             
