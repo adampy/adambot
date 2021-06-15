@@ -9,13 +9,21 @@ class ReactionRoles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def _get_role(self, payload):
+    async def _get_roles(self, payload):
+        """
+        Returns a list of (discord.Role, bool) pairs for the given `payload`. bool refers to whether the reaction role gives or removes a role on reaction add.
+        """ 
         async with self.bot.pool.acquire() as connection:
-            role_id = await connection.fetchval("SELECT role_id FROM reaction_roles WHERE message_id = $1 AND (emoji_id = $2 OR emoji = $3);", payload.message_id, payload.emoji.id, str(payload.emoji))
+            data = await connection.fetch("SELECT role_id, inverse FROM reaction_roles WHERE message_id = $1 AND (emoji_id = $2 OR emoji = $3);", payload.message_id, payload.emoji.id, str(payload.emoji))
         guild = self.bot.get_guild(payload.guild_id)
-        if not role_id or not guild:
+        if not data or not guild:
             return None
-        return guild.get_role(role_id)
+
+        to_return = []
+        for i in range(len(data)):
+            role = guild.get_role(data[i][0]) # Get the role and add to to_return
+            to_return.append([role, data[i][1]])
+        return to_return
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -26,9 +34,12 @@ class ReactionRoles(commands.Cog):
         member = guild.get_member(payload.user_id)
         if member.bot:
             return
-        role = await self._get_role(payload)
-        if role:
-            await member.add_roles(role)
+        data = await self._get_roles(payload) # Get roles linked to that message
+        for role, inverse in data:
+            if role and not inverse:
+                await member.add_roles(role)
+            elif role and inverse:
+                await member.remove_roles(role)
     
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -39,9 +50,12 @@ class ReactionRoles(commands.Cog):
         member = guild.get_member(payload.user_id)
         if member.bot:
             return
-        role = await self._get_role(payload)
-        if role:
-            await member.remove_roles(role) #TODO: Handle exceptions here
+        data = await self._get_roles(payload)
+        for role, inverse in data:
+            if role and not inverse:
+                await member.remove_roles(role) # TODO: Handle exceptions here
+            elif role and inverse:
+                await member.add_roles(role)
 
     @commands.group()
     @commands.guild_only()
@@ -56,9 +70,9 @@ class ReactionRoles(commands.Cog):
 
     @rr.command()
     @commands.guild_only()
-    async def add(self, ctx, emoji, role: discord.Role):
+    async def add(self, ctx, emoji, role: discord.Role, inverse = None):
         """
-        Adds an emoji and a corresponding role to the replied message
+        Adds an emoji and a corresponding role to the replied message. If the `inverse` argument == "true" the role is removed upon reaction add and vice versa.
         
         """
         if not await self.bot.is_staff(ctx):
@@ -83,16 +97,17 @@ class ReactionRoles(commands.Cog):
             custom_emoji = False
 
         # Add to DB
+        inverse = True if inverse and inverse.lower() in ["yes", "y", "true"] else False
         async with self.bot.pool.acquire() as connection:
             if custom_emoji:
-                await connection.execute("INSERT INTO reaction_roles (message_id, emoji_id, role_id, guild_id, channel_id) VALUES ($1, $2, $3, $4, $5);", message_id, emoji.id, role.id, ctx.guild.id, ctx.channel.id) # If custom emoji, store ID in DB
+                await connection.execute("INSERT INTO reaction_roles (message_id, emoji_id, role_id, guild_id, channel_id, inverse) VALUES ($1, $2, $3, $4, $5, $6);", message_id, emoji.id, role.id, ctx.guild.id, ctx.channel.id, inverse) # If custom emoji, store ID in DB
             else:
-                await connection.execute("INSERT INTO reaction_roles (message_id, emoji, role_id, guild_id, channel_id) VALUES ($1, $2, $3, $4, $5);", message_id, emoji, role.id, ctx.guild.id, ctx.channel.id) # If not custom emoji, store emoji in DB
+                await connection.execute("INSERT INTO reaction_roles (message_id, emoji, role_id, guild_id, channel_id, inverse) VALUES ($1, $2, $3, $4, $5, $6);", message_id, emoji, role.id, ctx.guild.id, ctx.channel.id, inverse) # If not custom emoji, store emoji in DB
 
         # Add reaction
         message = await ctx.channel.fetch_message(message_id)
         await message.add_reaction(emoji)
-        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"Reaction role added to that message!", desc=f"{emoji} links to {role.mention}")
+        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"Reaction role added to that message!", desc=f"{emoji} {'inversly' if inverse else ''} links to {role.mention}")
 
     @rr.command()
     @commands.guild_only()
@@ -126,7 +141,7 @@ class ReactionRoles(commands.Cog):
     @commands.guild_only()
     async def delete(self, ctx):
         """
-        Removes the reaction roles from the replied message
+        Removes all the reaction roles from the replied message
         """
         if not await self.bot.is_staff(ctx):
             await DefaultEmbedResponses.error_embed(self.bot, ctx, "You do not have permissions to do this!")
@@ -162,9 +177,9 @@ class ReactionRoles(commands.Cog):
             role = ctx.guild.get_role(rr["role_id"])
             emoji = rr["emoji"] or [x for x in ctx.guild.emojis if x.id == rr["emoji_id"]][0]
             if rr["message_id"] not in message_reactions.keys():
-                message_reactions[rr["message_id"]] = f"{emoji} -> {role.mention}"
+                message_reactions[rr["message_id"]] = f"{emoji} -> {role.mention} {'(inverse)' if rr['inverse'] else ''}"
             else:
-                message_reactions[rr["message_id"]] += f"\n{emoji} -> {role.mention}"
+                message_reactions[rr["message_id"]] += f"\n{emoji} -> {role.mention} {'(inverse)' if rr['inverse'] else ''}"
 
             if rr["message_id"] not in message_channels.keys():
                 message_channels[rr["message_id"]] = self.bot.get_channel(rr["channel_id"])

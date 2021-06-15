@@ -103,6 +103,7 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             role_id BIGINT NOT NULL,
             guild_id BIGINT NOT NULL,
             channel_id BIGINT NOT NULL,
+            inverse BOOLEAN DEFAULT FALSE,
             emoji TEXT,
             emoji_id BIGINT
         )""") # TODO: Normalise this table to 3NF?
