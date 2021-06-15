@@ -101,7 +101,8 @@ class WaitingRoom(commands.Cog):
         await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=name)])
         await ctx.send(f"{member.mention} has been verified!")
         if not pre_existing_roles: # If the user hadn't already been verified
-            await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave:') # TODO: GCSE9-1 specific - sort it out!
+            get_role_channel = self.bot.get_channel(854148889409617920) # Get role channel
+            await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave: Take a look in {get_role_channel.mention} for additional channels!') # TODO: GCSE9-1 specific - sort it out!
 
     @commands.group(aliases=['lurker'])
     @commands.has_any_role(*Permissions.STAFF)
