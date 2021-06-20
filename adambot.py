@@ -346,6 +346,8 @@ if __name__ == "__main__":
                  'logging',
                  'eval',
                  'config',
-                 'censor'] # Make this dynamic?
+                 'censor',
+                 'reactionroles',
+                 ] # Make this dynamic?
     bot = AdamBot(local_host, cog_names, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
     # bot.remove_command("help")

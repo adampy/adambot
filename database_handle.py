@@ -23,7 +23,6 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
         await connection.execute("""CREATE TABLE IF NOT EXISTS censor(
             guild_id BIGINT PRIMARY KEY,
             censors TEXT
-        
         )""")
 
         # QOTD table
@@ -97,3 +96,14 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
                         REFERENCES demographic_roles(id)
                         ON DELETE CASCADE
         )""")
+
+        # Reaction role emoji table
+        await connection.execute("""CREATE TABLE IF NOT EXISTS reaction_roles(
+            message_id BIGINT NOT NULL,
+            role_id BIGINT NOT NULL,
+            guild_id BIGINT NOT NULL,
+            channel_id BIGINT NOT NULL,
+            inverse BOOLEAN DEFAULT FALSE,
+            emoji TEXT,
+            emoji_id BIGINT
+        )""") # TODO: Normalise this table to 3NF?

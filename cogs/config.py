@@ -77,7 +77,7 @@ class Config(commands.Cog):
 
     @config.command(pass_context=True)
     @commands.guild_only()
-    async def set(self, ctx, key=None, value=None):  # consume then you don't have to wrap phrases in quotes
+    async def set(self, ctx, key = None, *, value = None):  # consume then you don't have to wrap phrases in quotes
         """Sets a configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
@@ -132,11 +132,11 @@ class Config(commands.Cog):
         if validation_type == Validation.Channel or validation_type == Validation.Role:
             self.bot.configs[ctx.guild.id][key] = value.id
             await self.bot.propagate_config(ctx.guild.id)
-            await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f"It has been changed to {value.mention}") # Value is either a TextChannel or Role
+            await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value.mention}"') # Value is either a TextChannel or Role
         else:
             self.bot.configs[ctx.guild.id][key] = value
             await self.bot.propagate_config(ctx.guild.id)
-            await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f"It has been changed to **{value}**")
+            await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value}"')
 
     @config.command(pass_context = True)
     @commands.guild_only()

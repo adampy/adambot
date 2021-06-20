@@ -3,7 +3,7 @@ from discord.ext import commands
 #from discord.ext.commands import MemberConverter, UserConverter
 from discord.utils import get
 from discord import Embed, Colour
-from .utils import ordinal, Embed, EmbedPages, PageTypes, send_file, get_spaced_member
+from .utils import ordinal, Embed, EmbedPages, PageTypes, send_image_file, get_spaced_member
 import matplotlib.pyplot as plt
 
 class Reputation(commands.Cog):
@@ -330,7 +330,7 @@ class Reputation(commands.Cog):
         ax.grid()
         ax.set_ylim(bottom=0)
 
-        await send_file(fig, ctx.channel, "rep-data")
+        await send_image_file(fig, ctx.channel, "rep-data")
 
 def setup(bot):
     bot.add_cog(Reputation(bot))
