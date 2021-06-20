@@ -1,6 +1,6 @@
 ﻿import discord
 from discord.ext import commands
-from .utils import Todo, send_file
+from .utils import Todo, send_image_file
 import asyncio
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -237,7 +237,7 @@ class Demographics(commands.Cog):
         ax.fmt_xdata = DateFormatter('% Y-% m-% d % H:% M:% S') 
         fig.autofmt_xdate()
 
-        await send_file(fig, ctx.channel, "demographics-data")
+        await send_image_file(fig, ctx.channel, "demographics-data")
 
 
 def setup(bot):

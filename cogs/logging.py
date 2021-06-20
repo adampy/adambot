@@ -6,7 +6,6 @@ from discord.utils import get
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.mod_logs = {}
         self.previous_inv_log_embeds = []
 
     async def get_all_invites(self, guild):
@@ -272,6 +271,8 @@ class Logging(commands.Cog):
         guild = member.guild
 
         ichannel_id = self.bot.configs[guild.id]["invite_log_channel"]
+        if ichannel_id is None: # If invite channel not set
+            return
         ichannel = self.bot.get_channel(ichannel_id)
         old_invites = self.invites[guild.id]
         new_invites = await self.get_all_invites(guild)

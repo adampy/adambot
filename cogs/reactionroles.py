@@ -34,7 +34,7 @@ class ReactionRoles(commands.Cog):
         member = guild.get_member(payload.user_id)
         if member.bot:
             return
-        data = await self._get_roles(payload) # Get roles linked to that message
+        data = await self._get_roles(payload) # Get roles linked to that message + emoji pair
         for role, inverse in data:
             if role and not inverse:
                 await member.add_roles(role)
@@ -53,9 +53,10 @@ class ReactionRoles(commands.Cog):
         data = await self._get_roles(payload)
         for role, inverse in data:
             if role and not inverse:
-                await member.remove_roles(role) # TODO: Handle exceptions here
+                await member.remove_roles(role) # TODO: What's the best way to handle exceptions here?
             elif role and inverse:
                 await member.add_roles(role)
+
 
     @commands.group()
     @commands.guild_only()
