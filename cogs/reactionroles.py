@@ -77,7 +77,7 @@ class ReactionRoles(commands.Cog):
         
         """
         if not await self.bot.is_staff(ctx):
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "You do not have permissions to do this!")
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if not ctx.me.guild_permissions.manage_roles:
@@ -117,7 +117,7 @@ class ReactionRoles(commands.Cog):
         Removes an emoji and a corresponding role from the replied message
         """
         if not await self.bot.is_staff(ctx):
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "You do not have permissions to do this!")
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         message_id = ctx.message.reference.message_id
@@ -145,7 +145,7 @@ class ReactionRoles(commands.Cog):
         Removes all the reaction roles from the replied message
         """
         if not await self.bot.is_staff(ctx):
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "You do not have permissions to do this!")
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
             
         message_id = ctx.message.reference.message_id
@@ -163,7 +163,7 @@ class ReactionRoles(commands.Cog):
         Shows all the current reaction roles in the guild
         """
         if not await self.bot.is_staff(ctx):
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "You do not have permissions to do this!")
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         async with self.bot.pool.acquire() as connection:
