@@ -3,7 +3,7 @@ from discord import Embed, Colour
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.utils import get
-from .utils import Permissions, Todo, is_dev
+from .utils import Todo, is_dev
 from datetime import datetime, timedelta
 
 

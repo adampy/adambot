@@ -2,7 +2,7 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 from discord.utils import get
-from .utils import Permissions, CHANNELS
+from .utils import CHANNELS, DefaultEmbedResponses
 import re
 import asyncio
 import datetime # For handling lurker_kick
@@ -75,13 +75,15 @@ class WaitingRoom(commands.Cog):
     @commands.command(pass_context=True,
                       aliases=[*YEARS],
                       help="Verifies members into the server. Use e.g. -y9 to verify members")
-    @commands.has_any_role(*Permissions.STAFF)
     async def verify(self, ctx, member: discord.Member = None):
         """
         When a Year role is specified, the specified user is given that role.
         This is done by looking up the alias used in the YEARS dictionary to get the corresponding role
         Using `verify` shows the specified help message, it's just a dummy to allow the aliases
         """
+        if not await self.bot.is_staff(ctx):
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
 
         if ctx.invoked_with == "verify" or not ctx.invoked_with:
             await ctx.send(f"```{self.verify.help}```")
@@ -105,8 +107,11 @@ class WaitingRoom(commands.Cog):
             await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave: Take a look in {get_role_channel.mention} for additional roles!') # TODO: GCSE9-1 specific - sort it out!
 
     @commands.group(aliases=['lurker'])
-    @commands.has_any_role(*Permissions.STAFF)
     async def lurkers(self, ctx):
+        if not await self.bot.is_staff(ctx):
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
+
         if ctx.invoked_subcommand is None:
             members = [x for x in ctx.guild.members if len(x.roles) <= 1] # Only the everyone role
             message = ""
@@ -155,6 +160,10 @@ class WaitingRoom(commands.Cog):
     async def lurker_kick(self, ctx, days="7"):
         # days is specifically "7" as default and not 7 since if you specify an integer it barfs if you supply a non-int value
         """Command that kicks people without a role, and joined 7 or more days ago."""
+        if not await self.bot.is_staff(ctx):
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
+        
         def check(m):
             return m.channel == ctx.channel and m.author == ctx.author
         if not days.isnumeric():
