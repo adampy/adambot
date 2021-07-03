@@ -1,9 +1,7 @@
 import discord
 from discord.ext import commands
-from discord.utils import get
 from discord import Embed, Colour, Status
-from .utils import time_str, get_spaced_member, DISALLOWED_COOL_WORDS, Permissions, CODE_URL, \
-    GCSE_SERVER_ID, SPAMPING_PERMS, send_text_file
+from .utils import time_str, get_spaced_member, CODE_URL, SPAMPING_PERMS, send_text_file
 import re
 from datetime import datetime, timedelta
 import time
@@ -14,9 +12,6 @@ class Member(commands.Cog):
 
     def in_private_server(ctx):
         return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)  # in priv server or is adam
-
-    def in_gcse(self, ctx):  # move to utils
-        return ctx.guild.id == GCSE_SERVER_ID
 
 # -----------------------MISC------------------------------
 
@@ -38,52 +33,6 @@ class Member(commands.Cog):
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
-
-
-# -----------------------REVISE------------------------------
-
-    async def handle_revise_keyword(self, message):
-        """Internal procedure that handles potential key phrase attempts to get into revision mode"""
-        conditions = not message.author.bot and not message.content.startswith(
-            '-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
-        ctx = await self.bot.get_context(message)
-        stoprevising_combos = ["stop revising", "end", "stop", "exit", "finished", "finish", "finished revising",
-                               "done revising", "leave"]
-        msg = message.content.lower()
-        if msg == 'need to revise' and conditions:
-            await ctx.invoke(self.bot.get_command('revise'))
-        elif msg in stoprevising_combos and conditions:
-            await ctx.invoke(self.bot.get_command('stoprevising'))
-
-    @commands.command(pass_context=True)
-    @commands.has_any_role(*Permissions.MEMBERS) # TODO: Revising is GCSE9-1 specific - fix that
-    @commands.guild_only()
-    async def revise(self, ctx):
-        """Puts you in revising mode."""
-        member = ctx.author
-        if member.bot:  # Stops bots from putting theirselves into revising mode
-            return
-        role = get(member.guild.roles, name='Members')
-        await member.remove_roles(role)
-        role = get(member.guild.roles, name='Revising')
-        await member.add_roles(role)
-        await self.bot.get_channel(518901847981948938).send(
-            f'{member.mention} Welcome to revising mode! Have fun revising and once you\'re done type `stoprevising`, `end`, `stop`, `exit` or `finished revising` in this channel!')
-
-    @commands.command(pass_context=True) # TODO: Remove GCSE9-1 dependency
-    @commands.guild_only()
-    async def stoprevising(self, ctx):
-        """Exits revising mode."""
-        member = ctx.author
-        if ctx.channel.id == 518901847981948938:
-            role = get(member.guild.roles, name='Revising')
-            await member.remove_roles(role)
-            role = get(member.guild.roles, name='Members')
-            await member.add_roles(role)
-            await self.bot.get_channel(445199175244709898).send(f'{member.mention} welcome back from revising mode!\n*You may want to refresh Discord to view any messages you missed in revision mode*')
-        elif "Revising" in [y.name for y in member.roles]:
-            channel = self.bot.get_channel(518901847981948938)  # Revision escape
-            await ctx.send(f'Go to {channel.mention} to stop revising')
 
 # -----------------------LIST------------------------------
 
@@ -134,41 +83,6 @@ class Member(commands.Cog):
             else:
                 await ctx.send(new_message)
                 
-# -----------------------MC & CC & WEEABOO------------------------------
-    ADDABLE_ROLES = {
-        "mc": "Maths Challenge",
-        "cc": "CompSci Challenge",
-        "ec": "English Challenge",
-        "weeaboo": "Weeaboo",
-        "announcements": "Announcements",
-        "notifications": "Announcements"
-    }
-
-    async def manage_role(self, ctx, role_name, member: discord.Member = None):
-        """
-        Role assign handler. If the member has a role with the specified name, it's removed
-        Otherwise it is assigned to the member.
-        Returns True if the user was given the role, otherwise False
-        """
-        if not member:
-            member = ctx.author  # of the message context that gets passed
-        role = get(member.guild.roles, name=role_name)
-        if role_name in [y.name for y in member.roles]:
-            await member.remove_roles(role)
-        else:
-            await member.add_roles(role)
-            return True
-        return False
-
-    @commands.command(pass_context=True, name=[*ADDABLE_ROLES][0] if ADDABLE_ROLES else None, aliases=[*ADDABLE_ROLES][1:] if ADDABLE_ROLES else [])
-    @commands.has_any_role(*Permissions.MEMBERS)
-    @commands.guild_only()
-    async def user_addable_role(self, ctx):
-        role_name = self.ADDABLE_ROLES[ctx.invoked_with]
-        now_has_role = await self.manage_role(ctx, role_name)
-        await ctx.send(f':ok_hand: You have been given `{role_name}` role!' if now_has_role else f':ok_hand: Your `{role_name}` role has vanished!')
-
-
 # -----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
@@ -222,15 +136,10 @@ class Member(commands.Cog):
     async def on_message(self, message):
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
-        conditions = not message.author.bot and not message.content.startswith(
-            '-') and not message.author.id == 525083089924259898 and message.guild.id == GCSE_SERVER_ID
-        msg = message.content.lower()
 
-        if 'bruh' in msg and not message.author.bot and not message.content.startswith('-'):
+        if 'bruh' in message.content.lower() and not message.author.bot and not message.content.startswith('-'):
             self.bot.configs[message.guild.id]["bruhs"] += 1
             await self.bot.propagate_config(message.guild.id)
-        if conditions:
-            await self.handle_revise_keyword(message)
         return
 
     @commands.command(aliases=['bruh'])
@@ -246,9 +155,6 @@ class Member(commands.Cog):
     async def cool(self, ctx, *message):
         """MaKe YoUr MeSsAgE cOoL"""
         text = ' '.join(message)
-        if text.lower() in DISALLOWED_COOL_WORDS:
-            await ctx.send("You can't make that message cool!")
-            return
         new = ""
         uppercase = True
         for index, letter in enumerate(text):

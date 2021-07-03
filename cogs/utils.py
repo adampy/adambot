@@ -157,7 +157,6 @@ CHANNELS = {
     "trivia": 498617494693478402,
 }
 
-DISALLOWED_COOL_WORDS = ['need to revise', 'stop revising']
 SPAMPING_PERMS = [
     394978551985602571, #Adam C
     374144745829826572, #Bxnana
@@ -169,14 +168,12 @@ DEVS = [
     686967704116002827, # Xp
 ]
 
+CODE_URL = "https://github.com/adampy/adambot"
+
 def is_dev():
     async def predicate(ctx):
         return ctx.author.id in DEVS
     return commands.check(predicate)
-
-GCSE_SERVER_ID = 445194262947037185
-CODE_URL = "https://github.com/adampy/adambot"
-
 
 async def send_image_file(fig, channel, filename, extension = "png"):
     """Send data to a channel with filename `filename`"""
