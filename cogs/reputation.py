@@ -1,9 +1,9 @@
+from collections import defaultdict
 import discord
 from discord.ext import commands
 #from discord.ext.commands import MemberConverter, UserConverter
-from discord.utils import get
 from discord import Embed, Colour
-from .utils import ordinal, Embed, EmbedPages, PageTypes, send_image_file, get_spaced_member
+from .utils import ordinal, Embed, EmbedPages, PageTypes, send_image_file, get_spaced_member, DefaultEmbedResponses, ERROR_RED
 import matplotlib.pyplot as plt
 
 class Reputation(commands.Cog):
@@ -16,7 +16,7 @@ class Reputation(commands.Cog):
             leaderboard = await connection.fetch('SELECT * FROM rep WHERE guild_id = $1 ORDER BY reps DESC', ctx.guild.id)
 
         if len(leaderboard) == 0:
-            await ctx.send("There are no rep points in this guild yet :sob:")
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, f"There aren't any reputation points in {ctx.guild.name} yet! ")
             return
 
         embed = EmbedPages(PageTypes.REP, leaderboard, "Reputation Leaderboard", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
@@ -69,28 +69,25 @@ class Reputation(commands.Cog):
         if ctx.subcommand_passed not in subcommands:
             args = ctx.message.content.replace(f"{p}rep", "").strip()
             await ctx.invoke(self.rep.get_command("award"), args)
-        if ctx.subcommand_passed in award_commands:
-            await ctx.send(f"*You can now use {p}rep user rather than needing {p}rep award!*")
+        #if ctx.subcommand_passed in award_commands:
+        #    await ctx.send(f"*You can now use {p}rep user rather than needing {p}rep award!*")
             
     @rep.error
     async def rep_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
-            await ctx.send("You cannot award rep in this server!")
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, f"You cannot award reputation points in {ctx.guild.name}")
         else:
-            await ctx.send(error)#"Oopsies something went wrong with that!")
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "Unexpected error!", desc = error)
 
     @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
     async def award(self, ctx, *args):
         """Gives the member a reputation point. Aliases are give and point"""
         args_ = " ".join(args)
-        author_nick = ctx.author.display_name
-        if args_:  # check so rep award doesn't silently fail when no string given
-            user = await get_spaced_member(ctx, self.bot, *args)
-        else:
-            user = None
+        user = await get_spaced_member(ctx, self.bot, *args) if args_ else None # check so rep award doesn't silently fail when no string given
+
         if not user:
-            failed = Embed(title=f':x:  Sorry we could not find the user!' if args_ else 'Rep Help', color=Colour.from_rgb(255, 7, 58))
+            failed = Embed(title=f':x:  Sorry we could not find the user!' if args_ else 'Rep Help', color=ERROR_RED)
             if args_:
                 failed.add_field(name="Requested user", value=args_)
 
@@ -103,39 +100,25 @@ class Reputation(commands.Cog):
             return
         nick = user.display_name
 
-        if ctx.author != user and not user.bot:  # check to not rep yourself and that user is not a bot
-            title = ":x: "
-            color = Colour.from_rgb(57, 255, 20)
-            award = True
-            if "Rep Award Banned" in [str(role) for role in ctx.author.roles]:
-                color = Colour.from_rgb(172, 32, 31)
-                title += f'You have been blocked from awarding reputation!\n{nick} did not receive a reputation point!'
-                award = False
-
-            if "Rep Receive Banned" in [str(role) for role in user.roles]:
-                color = Colour.from_rgb(172, 32, 31)
-                title += ('\n:x: ' if title != ':x: ' else '') + f'{nick} has been blocked from receiving reputation points!'
-                award = False
-
-            if award:
-                title = f':white_check_mark:  {nick} received a reputation point!'
-
-            user_embed = Embed(title=title, color=color)
+        if ctx.author != user and not user.bot:  # Check prevents self-rep and that receiver is not a bot
+            title = ""
+            award_banned = "Rep Award Banned" in [str(role) for role in ctx.author.roles] # TODO: Make this included in config options
+            receive_banned = "Rep Receive Banned" in [str(role) for role in user.roles]
+            award = not award_banned and not receive_banned
+            title = f"You have been blocked from awarding reputation points" if award_banned else ""
+            title += " and " if award_banned and receive_banned else "!" if award_banned and not receive_banned else ""
+            title += f"{nick} has been blocked from receiving reputation points!" if receive_banned else ""
+            title += f"\n\n{nick} did not receive a reputation point!" if not award else ""
 
             if award:
                 reps = await self.modify_rep(user, 1)
-                user_embed.add_field(name='_ _', value=f'{user.mention} now has {reps} reputation points!')
-            else:
-                user_embed.add_field(name='_ _', value='Contact a member of staff if you think you are seeing this by mistake.')
-            user_embed.set_thumbnail(url=user.avatar_url)
-            user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
-            await ctx.send(embed=user_embed)
-            if award:
+                await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick} received a reputation point!", desc=f"{user.mention} now has {reps} reputation points!", thumbnail_url=user.avatar_url)
+
+                # Log rep
                 channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
                 if channel_id is None:
                     return
                 channel = self.bot.get_channel(channel_id)
-
                 embed = Embed(title='Reputation Points', color=Colour.from_rgb(177, 252, 129))
                 embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
                 embed.add_field(name='To', value=f'{str(user)} ({user.id})')
@@ -144,16 +127,12 @@ class Reputation(commands.Cog):
                 embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
                 await channel.send(embed=embed)
 
+            else: # Rep cannot be given
+                await DefaultEmbedResponses.error_embed(self.bot, ctx, title, desc="Contact a member of staff if you think you are seeing this by mistake.", thumbnail_url=user.avatar_url)
+                #user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
         else:
-            if user.bot:
-                fail_text = "The bot overlords do not accept puny humans' rewards"
-            else:
-                fail_text = "You cannot rep yourself, cheating bugger."
-            embed = Embed(title=f':x: Failed to award a reputation point to {nick}!', color=Colour.from_rgb(255,7,58))
-            embed.add_field(name='_ _', value=fail_text)
-            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-            embed.set_thumbnail(url=user.avatar_url)
-            await ctx.send(embed=embed)
+            desc = "The bot overlords do not accept puny humans' rewards" if user.bot else "You cannot rep yourself, cheating bugger."
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, f"Failed to award a reputation point to {nick}", desc = desc, thumbnail_url = user.avatar_url)
 
     @rep.command(aliases=['lb'])
     @commands.guild_only()
@@ -171,42 +150,40 @@ class Reputation(commands.Cog):
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
             p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}rep reset member @Member``` or ```{p}rep reset all```')
+            await ctx.send(f'```{p}rep reset all```')
 
-    @reset.command()
-    @commands.guild_only()
-    async def member(self, ctx, user_id):
-        """Resets a single users reps."""
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to reset a member's rep points :sob:")
-            return
+    # TODO: Remove this fully in the future?
+    # @reset.command()
+    # @commands.guild_only()
+    # async def member(self, ctx, user_id):
+    #     """Resets a single users reps."""
+    #     if not await self.bot.is_staff(ctx):
+    #         await ctx.send("You do not have permissions to reset a member's rep points :sob:")
+    #         return
+    
+    #     user = await self.bot.fetch_user(user_id)
+    #     await self.clear_rep(user.id, ctx.guild.id)
+    #     await ctx.send(f'{user.mention} now has 0 points.')
 
-        user = await self.bot.fetch_user(user_id)
-        await self.clear_rep(user.id, ctx.guild.id)
-        await ctx.send(f'{user.mention} now has 0 points.')
-
-        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
-        if channel_id is None:
-            return
-        channel = self.bot.get_channel(channel_id)
-        embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
-        embed.add_field(name='Member', value=str(user))
-        embed.add_field(name='Staff', value=str(ctx.author))
-        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await channel.send(embed=embed)
+    #     channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+    #     if channel_id is None:
+    #         return
+    #     channel = self.bot.get_channel(channel_id)
+    #     embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177,252,129))
+    #     embed.add_field(name='Member', value=str(user))
+    #     embed.add_field(name='Staff', value=str(ctx.author))
+    #     embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+    #     await channel.send(embed=embed)
 
     @reset.command(pass_context=True)
     @commands.guild_only()
+    @commands.has_permissions(administrator = True)
     async def all(self, ctx):
         """Resets everyones reps."""
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to reset everyone's rep points :sob:")
-            return
-
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE from rep WHERE guild_id = $1", ctx.guild.id)
 
-        await ctx.send('Done. Everyone now has 0 points.')
+        await DefaultEmbedResponses.success_embed(self.bot, ctx, "Reputation reset completed!", desc=f"All reputation points in {ctx.guild.name} have been removed")
 
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
@@ -223,19 +200,14 @@ class Reputation(commands.Cog):
     async def set(self, ctx, user: discord.User, rep):
         """Sets a specific members reps to a given value."""
         if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to set a member's rep points :sob:")
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
-        try:
-            rep = int(rep)
-        except ValueError:
-            await ctx.send('The rep must be a number!')
+        if not rep.isdigit():
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "The reputation points must be a number!")
             return
-
-        #user = await self.bot.fetch_user(user_id)
-
-        new_reps = await self.set_rep(user.id, ctx.guild.id, rep)
-        await ctx.send(f'{user.mention} now has {new_reps} reputation points.')
+        new_reps = await self.set_rep(user.id, ctx.guild.id, int(rep))
+        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{user.display_name}'s reputation points have been changed!", desc=f"{user.display_name} now has {new_reps} reputation points!", thumbnail_url=user.avatar_url)
 
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
@@ -253,17 +225,23 @@ class Reputation(commands.Cog):
     async def hardset(self, ctx, user_id, rep):
         """Sets a specific member's reps to a given value via their ID."""
         if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to hardset a member's rep points :sob:")
+            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
-
+        if not user_id.isdigit():
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "The user's ID must be a valid ID!")
+            return
+        if not rep.isdigit():
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "The reputation points must be a number!")
+            return
         try:
-            rep = int(rep)
-        except ValueError:
-            await ctx.send('The rep must be a number!')
+            user = await self.bot.fetch_user(user_id)
+        except discord.errors.NotFound:
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "That user does not exist!")
             return
 
-        new_reps = await self.set_rep(int(user_id), ctx.guild_id, rep)
-        await ctx.send(f'{user_id} now has {new_reps} reputation points.')
+        new_reps = await self.set_rep(int(user_id), ctx.guild.id, int(rep))
+        nick = user.display_name if user else user_id
+        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick}'s reputation points have been changed!", desc=f"{nick} now has {new_reps} reputation points!")
 
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
@@ -285,7 +263,7 @@ class Reputation(commands.Cog):
         else:
             user = await get_spaced_member(ctx, self.bot, *args)
             if user is None:
-                await ctx.send(embed=Embed(title=f':x:  Sorry {ctx.author.display_name} we could not find that user!', color=Colour.from_rgb(255, 7, 58)))
+                await DefaultEmbedResponses.error_embed(self.bot, ctx, "We could not find that user!")
                 return
 
         rep = None
