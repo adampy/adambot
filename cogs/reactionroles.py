@@ -35,6 +35,8 @@ class ReactionRoles(commands.Cog):
         if member.bot:
             return
         data = await self._get_roles(payload) # Get roles linked to that message + emoji pair
+        if not data:
+            return # If no roles linked to that msg, return
         for role, inverse in data:
             if role and not inverse:
                 await member.add_roles(role)
@@ -51,6 +53,8 @@ class ReactionRoles(commands.Cog):
         if member.bot:
             return
         data = await self._get_roles(payload)
+        if not data:
+            return # If no roles linked to that msg, return
         for role, inverse in data:
             if role and not inverse:
                 await member.remove_roles(role) # TODO: What's the best way to handle exceptions here?
