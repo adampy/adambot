@@ -24,7 +24,9 @@ class Config(commands.Cog):
             "muted_role": [Validation.Role, "The role that prevents someone from talking"],
             "mod_log_channel": [Validation.Channel, "Where the main logs go"],
             "invite_log_channel": [Validation.Channel, "Where invites are logged"],
-            "prefix": [Validation.String, f"The prefix the bot uses, default is '-'"]
+            "prefix": [Validation.String, "The prefix the bot uses, default is '-'"],
+            "rep_award_banned": [Validation.Role, "The role that blocks people giving reputation"],
+            "rep_receive_banned": [Validation.Role, "The role that blocks people receiving reputation"],
         } # TODO: Perhaps change order of config embed to mirror the order of SELF.CONFIG?
 
     # COMMANDS

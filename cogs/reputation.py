@@ -102,8 +102,10 @@ class Reputation(commands.Cog):
 
         if ctx.author != user and not user.bot:  # Check prevents self-rep and that receiver is not a bot
             title = ""
-            award_banned = "Rep Award Banned" in [str(role) for role in ctx.author.roles] # TODO: Make this included in config options
-            receive_banned = "Rep Receive Banned" in [str(role) for role in user.roles]
+            award_banned_role = ctx.guild.get_role(self.bot.configs[ctx.guild.id]["rep_award_banned"])
+            receive_banned_role = ctx.guild.get_role(self.bot.configs[ctx.guild.id]["rep_receive_banned"])
+            award_banned = award_banned_role in ctx.author.roles
+            receive_banned = receive_banned_role in user.roles
             award = not award_banned and not receive_banned
             title = f"You have been blocked from awarding reputation points" if award_banned else ""
             title += " and " if award_banned and receive_banned else "!" if award_banned and not receive_banned else ""
