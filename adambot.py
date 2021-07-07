@@ -1,5 +1,4 @@
 import time
-from discord.ext.commands.core import command
 start_time = time.time()
 import discord
 from discord.ext.commands import Bot, when_mentioned_or, when_mentioned
@@ -15,7 +14,7 @@ from cogs.utils import EmojiEnum, Todo
 import pytz
 from tzlocal import get_localzone
 import argparse
-import sys
+#import sys
 import database_handle
 
 def get_credentials(filename):
@@ -326,7 +325,7 @@ if __name__ == "__main__":
     intents.guilds = True
 
     parser = argparse.ArgumentParser()
-    args = sys.argv[1:]
+    #args = sys.argv[1:]
     # todo: make this more customisable
     
     parser.add_argument("-p", "--prefix", nargs="?", default=None)

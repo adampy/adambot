@@ -409,6 +409,7 @@ INFORMATION_BLUE = Colour.from_rgb(32, 141, 177)
 
 # EMBED RESPONSES
 class DefaultEmbedResponses:
+    @staticmethod
     async def invalid_perms(bot, ctx, thumbnail_url = ""):
         """Internal procedure that is executed when a user has invalid perms"""
         embed = Embed(title = f':x: You do not have permissions to do that!', description = "You are but a weakling.", color = ERROR_RED)
@@ -416,20 +417,27 @@ class DefaultEmbedResponses:
         if thumbnail_url: embed.set_thumbnail(url = thumbnail_url)
         await ctx.reply(embed = embed)
 
+    @staticmethod
     async def error_embed(bot, ctx, title, desc = "", thumbnail_url = ""):
         embed = Embed(title = f':x: {title}', description = desc, color = ERROR_RED)
         embed.set_footer(text = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(bot.ts_format), icon_url = ctx.author.avatar_url)
         if thumbnail_url: embed.set_thumbnail(url = thumbnail_url)
         await ctx.reply(embed = embed)
 
+    @staticmethod
     async def success_embed(bot, ctx, title, desc = "", thumbnail_url = ""):
         embed = Embed(title = f':white_check_mark: {title}', description = desc, color = SUCCESS_GREEN)
         embed.set_footer(text = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(bot.ts_format), icon_url = ctx.author.avatar_url)
         if thumbnail_url: embed.set_thumbnail(url = thumbnail_url)
         await ctx.reply(embed = embed)
 
+    @staticmethod
     async def information_embed(bot, ctx, title, desc = "", thumbnail_url = ""):
         embed = Embed(title = f':information_source: {title}', description = desc, color = INFORMATION_BLUE)
         embed.set_footer(text = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(bot.ts_format), icon_url = ctx.author.avatar_url)
         if thumbnail_url: embed.set_thumbnail(url = thumbnail_url)
         await ctx.reply(embed = embed)
+
+def in_private_server(ctx):
+    """Returns True if ctx is from Adam private server, or spamping perms manually given"""
+    return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)  # in priv server or is adam

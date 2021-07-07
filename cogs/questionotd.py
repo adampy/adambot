@@ -1,8 +1,6 @@
-import discord
 from discord.ext import commands
 import datetime
 from discord import Embed, Colour
-import datetime
 from random import choice
 from math import inf
 from .utils import EmbedPages, PageTypes
@@ -52,7 +50,7 @@ class QuestionOTD(commands.Cog):
                 'SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2) AND guild_id = $3', member, today_date, ctx.guild.id)
             
             limit = self.bot.configs[ctx.guild.id]["qotd_limit"]
-            if limit == 0 or limit == None: # Account for a limit set to 0 and a non-changed limit
+            if limit is None or limit == 0: # Account for a limit set to 0 and a non-changed limit
                 limit = inf # math.inf
 
             if len(submitted_today) >= limit and not is_staff:  # Staff bypass
@@ -125,7 +123,7 @@ class QuestionOTD(commands.Cog):
             return
 
         qotd_channel_id = self.bot.configs[ctx.guild.id]["qotd_channel"]
-        if qotd_channel_id == None:
+        if qotd_channel_id is None:
             await ctx.send("You cannot pick a QOTD because a QOTD channel has not been set :sob:")
             return
         qotd_channel = self.bot.get_channel(qotd_channel_id)

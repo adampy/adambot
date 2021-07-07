@@ -1,7 +1,5 @@
 import discord
-from discord import message
 from discord.ext import commands
-import asyncpg
 from .utils import DefaultEmbedResponses, INFORMATION_BLUE
 import re
 

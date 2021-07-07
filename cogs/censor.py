@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from discord.utils import get
 import asyncio
 import ast  # using ast for literal_eval, stops code injection
 import asyncpg

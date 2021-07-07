@@ -1,7 +1,6 @@
 from discord.ext import commands
-from discord import Embed, Colour
+from discord import Embed
 from enum import Enum
-from asyncpg.exceptions import UniqueViolationError
 from .utils import DefaultEmbedResponses
 
 class Validation(Enum):
@@ -148,8 +147,6 @@ class Config(commands.Cog):
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
-
-        config_dict = self.bot.configs[ctx.guild.id]
         key = key.lower()
         if key not in self.CONFIG.keys():
             await DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")

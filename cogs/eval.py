@@ -9,7 +9,7 @@ class Eval(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def split_2000(text):
+    def split_2000(self, text):
         chunks = []
         while len(text) > 0:
             chunks.append(text[:2000])

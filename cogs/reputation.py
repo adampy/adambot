@@ -1,4 +1,3 @@
-from collections import defaultdict
 import discord
 from discord.ext import commands
 #from discord.ext.commands import MemberConverter, UserConverter
@@ -10,8 +9,7 @@ class Reputation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def get_leaderboard(self, ctx, only_members = False):
-        leaderboard = []
+    async def get_leaderboard(self, ctx):
         async with self.bot.pool.acquire() as connection:
             leaderboard = await connection.fetch('SELECT * FROM rep WHERE guild_id = $1 ORDER BY reps DESC', ctx.guild.id)
 
@@ -24,7 +22,6 @@ class Reputation(commands.Cog):
         await embed.send()
 
     async def modify_rep(self, member, change):
-        reps = change
         async with self.bot.pool.acquire() as connection:
             reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1) AND guild_id = $2", member.id, member.guild.id)
             if not reps:
@@ -59,7 +56,7 @@ class Reputation(commands.Cog):
     async def rep(self, ctx):
         """Reputation module"""
         subcommands = []
-        award_commands = ["award"] + [alias for alias in self.rep.get_command("award").aliases]
+        #award_commands = ["award"] + [alias for alias in self.rep.get_command("award").aliases]
         for command in self.rep.walk_commands():
             subcommands.append(command.name)
             for alias in command.aliases:
@@ -140,11 +137,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def leaderboard(self, ctx, modifier=''):
         """Displays the leaderboard of reputation points, if [modifier] is 'members' then it only shows current server members"""
-        if modifier.lower() in ['members', 'member']:
-            await self.get_leaderboard(ctx, only_members=True)
-        else:
-            await self.get_leaderboard(ctx, only_members=False)
-
+        await self.get_leaderboard(ctx)
         #await ctx.send(embed=lb)
 
     @rep.group()

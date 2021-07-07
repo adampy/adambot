@@ -62,7 +62,7 @@ class WaitingRoom(commands.Cog):
 
 
         msg = self.bot.configs[ctx.guild.id]["welcome_msg"]
-        if msg == None:
+        if msg is None:
             await ctx.send("A welcome message has not been set.")
             return
             

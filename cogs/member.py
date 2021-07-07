@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import Embed, Colour, Status
-from .utils import time_str, get_spaced_member, CODE_URL, SPAMPING_PERMS, send_text_file
+from .utils import time_str, get_spaced_member, CODE_URL, SPAMPING_PERMS, send_text_file, in_private_server
 import re
 from datetime import datetime, timedelta
 import time
@@ -9,9 +9,6 @@ import time
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    def in_private_server(ctx):
-        return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)  # in priv server or is adam
 
 # -----------------------MISC------------------------------
 
