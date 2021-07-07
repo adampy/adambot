@@ -71,6 +71,15 @@ class Censor(commands.Cog):
     async def on_message(self, message):
         if not self.bot.is_ready() or type(message.channel) != discord.TextChannel: # Only censor on TextChannels
             return  # sometimes barfs on startup
+        await self.handle_message(message)
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        if not self.bot.is_ready() or type(after.channel) != discord.TextChannel: # Only censor on TextChannels
+            return  # sometimes barfs on startup
+        await self.handle_message(after)
+
+    async def handle_message(self, message):
         ctx = await self.bot.get_context(message)
         is_command = await self.check_is_command(message)
         if not is_command and message.author.id == self.bot.user.id and message.reference:
