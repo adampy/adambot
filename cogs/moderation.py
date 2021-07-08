@@ -133,6 +133,9 @@ Usage: `purge 50`"""
     async def kick(self, ctx, member: discord.Member, *, args=""):
         """Kicks a given user.
 Kick members perm needed"""
+        if ctx.me.top_role < member.top_role:
+            await ctx.send(f"Can't ban {member.mention}, they have a higher role than the bot!")
+            return
         reason = None
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
@@ -298,7 +301,7 @@ Kick members perm needed"""
         Method to reinforce mutes in cases where Discord permissions cause problems
         Blameth discordeth foreth thiseth codeth
         """
-        if type(message.channel) == discord.DMChannel:
+        if type(message.channel) == discord.DMChannel or type(message.author) == discord.User:
             return
 
         if self.bot.configs[message.guild.id]["muted_role"] in [role.id for role in message.author.roles]:
