@@ -292,11 +292,30 @@ Kick members perm needed"""
 
     # -----------------------MUTES------------------------------
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """
+        Method to reinforce mutes in cases where Discord permissions cause problems
+        Blameth discordeth foreth thiseth codeth
+        """
+        if type(message.channel) == discord.DMChannel:
+            return
+
+        if self.bot.configs[message.guild.id]["muted_role"] in [role.id for role in message.author.roles]:
+            try:
+                await message.delete()
+            except discord.errors.NotFound:
+                pass  # nobody cares
+
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles = True)
     async def mute(self, ctx, member: discord.Member, *, args=""):
         """Gives a given user the Muted role.
 Manage roles perm needed."""
+        role = get(member.guild.roles, id=self.bot.configs[member.guild.id]["muted_role"])
+        if role in member.roles:
+            await ctx.send(f":x: **{member}** is already muted! Unmute them and mute them again to change their mute")
+            return
         reason, timeperiod = None, None
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
@@ -305,10 +324,8 @@ Manage roles perm needed."""
 
             if timeperiod:
                 await self.timer(Todo.UNMUTE, timeperiod, member.id)
-
-        role = get(member.guild.roles, name='Muted')
         await member.add_roles(role, reason=reason if reason else f'No reason - muted by {ctx.author.name}')
-        await ctx.send(':ok_hand:')
+        await ctx.send(f':ok_hand: **{member}** has been muted')
         # 'you are muted ' + timestring
         if not timeperiod:
             timestring = 'indefinitely'
@@ -350,10 +367,10 @@ Manage roles perm needed."""
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"]
 
-        role = get(member.guild.roles, name='Muted')
+        role = get(member.guild.roles, id=self.bot.configs[member.guild.id]["muted_role"])
         await member.remove_roles(role,
                                   reason=reason if reason else f'No reason - unmuted by {ctx.author.name}')
-        await ctx.send(':ok_hand:')
+        await ctx.send(f':ok_hand: **{member}** has been unmuted')
 
     # -----------------------SLOWMODE------------------------------
 
