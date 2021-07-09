@@ -81,7 +81,7 @@ class WaitingRoom(commands.Cog):
         This is done by looking up the alias used in the YEARS dictionary to get the corresponding role
         Using `verify` shows the specified help message, it's just a dummy to allow the aliases
         """
-        if not await self.bot.is_staff(ctx):
+        if not await self.bot.is_staff(ctx) or ctx.guild.id == 445194262947037185:
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
