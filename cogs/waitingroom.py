@@ -108,7 +108,7 @@ class WaitingRoom(commands.Cog):
 
     @commands.group(aliases=['lurker'])
     async def lurkers(self, ctx):
-        if not await self.bot.is_staff(ctx):
+        if not await self.bot.is_staff(ctx) or ctx.guild.id == 445194262947037185:
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
@@ -160,7 +160,7 @@ class WaitingRoom(commands.Cog):
     async def lurker_kick(self, ctx, days="7"):
         # days is specifically "7" as default and not 7 since if you specify an integer it barfs if you supply a non-int value
         """Command that kicks people without a role, and joined 7 or more days ago."""
-        if not await self.bot.is_staff(ctx):
+        if not await self.bot.is_staff(ctx) or ctx.guild.id == 445194262947037185:
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
         
