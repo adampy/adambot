@@ -26,6 +26,7 @@ class Config(commands.Cog):
             "prefix": [Validation.String, "The prefix the bot uses, default is '-'"],
             "rep_award_banned": [Validation.Role, "The role that blocks people giving reputation"],
             "rep_receive_banned": [Validation.Role, "The role that blocks people receiving reputation"],
+            "jail_role": [Validation.Role, "The role that puts people into jail"]
         }
 
     # COMMANDS

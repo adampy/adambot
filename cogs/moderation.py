@@ -3,7 +3,7 @@ from discord import Embed, Colour
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.utils import get
-from .utils import Todo, is_dev
+from .utils import Todo, is_dev, DefaultEmbedResponses
 from datetime import datetime, timedelta
 
 
@@ -403,21 +403,28 @@ Manage roles perm needed."""
     async def jail(self, ctx, member: discord.Member):
         """Lets a member view whatever channel has been set up with view channel perms for the Jail role.
 Manage roles perm needed."""
-        role = get(member.guild.roles, name='Jail')
+        role_id = self.bot.configs[ctx.guild.id]["jail_role"]
+        if role_id is None:
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
+            return
+
+        role = ctx.guild.get_role(role_id)
         await member.add_roles(role)
-        await ctx.send(f':ok_hand: {member.mention} has been jailed.')
+        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{member.display_name} has been jailed.")
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles = True)
     async def unjail(self, ctx, member: discord.Member):
-        """Removes the jail role.
+        """Removes the Jail role.
 Manage roles perm needed."""
-        try:
-            role = get(member.guild.roles, name='Jail')
-            await member.remove_roles(role)
-            await ctx.send(f':ok_hand: {member.mention} has been unjailed.')
-        except Exception:
-            await ctx.send(f'{member.mention} could not be unjailed. Please do it manually.')
+        role_id = self.bot.configs[ctx.guild.id]["jail_role"]
+        if role_id is None:
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
+            return
+        
+        role = get(member.guild.roles, name='Jail')
+        await member.remove_roles(role)
+        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{member.display_name} has been unjailed.")
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles = True)
