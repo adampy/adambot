@@ -178,30 +178,29 @@ class Member(commands.Cog):
         await ctx.send('https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4')
 
     @commands.command()
-    @commands.check(in_private_server)
     async def spamping(self, ctx, amount, user: discord.Member, *message):
         """For annoying certain people"""
-        await ctx.message.delete()
+        if in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
+            await ctx.message.delete()
+            try:
+                iterations = int(amount)
+            except Exception:
+                await ctx.send(f"Please use a number for the amount, not {amount}")
+                return
 
-        try:
-            iterations = int(amount)
-        except Exception:
-            await ctx.send(f"Please use a number for the amount, not {amount}")
-            return
-
-        msg = ' '.join(message) + " " + user.mention
-        for i in range(iterations):
-            await ctx.send(msg)
+            msg = ' '.join(message) + " " + user.mention
+            for i in range(iterations):
+                await ctx.send(msg)
 
     @commands.command()
-    @commands.check(in_private_server)
     async def ghostping(self, ctx, amount, user: discord.Member):
         """For sending a ghostping to annoy certain people"""
-        await ctx.message.delete()
-        for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
-            for i in range(int(amount)):
-                msg = await channel.send(user.mention)
-                await msg.delete()
+        if in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
+            await ctx.message.delete()
+            for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
+                for i in range(int(amount)):
+                    msg = await channel.send(user.mention)
+                    await msg.delete()
 
 # -----------------------USER AND SERVER INFO------------------------------
 
