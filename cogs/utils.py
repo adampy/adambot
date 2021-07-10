@@ -1,23 +1,31 @@
 from discord import Embed, Colour, Message, File
+from discord.errors import HTTPException
 from discord.ext import commands
 from math import ceil
 from datetime import timedelta
 from io import BytesIO, StringIO
-
+import asyncio
 
 class EmbedPages:
-    def __init__(self, page_type, data, title, colour: Colour, bot, initiator, channel, *args, **kwargs):
+    def __init__(self, page_type, data, title, colour: Colour, bot, initiator, channel, desc = "", thumbnail_url = "", footer = "", icon_url = "", *args, **kwargs):
         self.bot = bot
         self.data = data
         self.title = title
         self.page_type = page_type
         self.top_limit = 0
-        self.colour = colour
-        self.embed = Embed(title=title + ": Page 1", color=colour)
+        self.timeout = 300 # 300 seconds, or 5 minutes
+        self.embed: Embed = None #Embed(title=title + ": Page 1", color=colour, desc=desc)
         self.message: Message = None
         self.page_num = 1
         self.initiator = initiator # Here to stop others using the embed
         self.channel = channel
+
+        # These are for formatting the embed
+        self.desc = desc
+        self.footer = footer
+        self.thumbnail_url = thumbnail_url
+        self.icon_url = icon_url
+        self.colour = colour
 
     async def set_page(self, page_num: int):
         """Changes the embed accordingly"""
@@ -29,7 +37,9 @@ class EmbedPages:
         self.top_limit = ceil(len(self.data)/page_length)
 
         # Clear previous data
-        self.embed = Embed(title=f"{self.title}: Page {page_num}/{self.top_limit}", color = self.colour)
+        self.embed = Embed(title=f"{self.title} (Page {page_num}/{self.top_limit})", color = self.colour, description=self.desc)
+        self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
+        self.embed.set_thumbnail(url=self.thumbnail_url)
 
         # Gettings the wanted data
         self.page_num = page_num
@@ -70,6 +80,12 @@ class EmbedPages:
                 #if member is not None:
                 self.embed.add_field(name=f"{member.display_name}", value=f"{self.data[i][1]}", inline=False)
 
+            elif self.page_type == PageTypes.CONFIG:
+                config_key = list(self.data.keys())[i] # Change the index into the key
+                config_option = self.data[config_key] # Get the current value list from the key
+                name = f"• {str(config_key)} ({config_option[1]})" # Config name that appears on the embed
+                self.embed.add_field(name=name, value=config_option[2], inline=False)
+
     async def previous_page(self, *args):
         """Moves the embed to the previous page"""
         if self.page_num != 1: # Cannot go to previous page if already on first page
@@ -94,13 +110,18 @@ class EmbedPages:
 
     async def send(self, *args):
         """Sends the embed message. The message is deleted after 300 seconds (5 minutes)."""
-        self.message = await self.channel.send(embed = self.embed, delete_after = 300)
+        self.message = await self.channel.send(embed = self.embed)
         await self.message.add_reaction(EmojiEnum.MIN_BUTTON)
         await self.message.add_reaction(EmojiEnum.LEFT_ARROW)
         await self.message.add_reaction(EmojiEnum.RIGHT_ARROW)
         await self.message.add_reaction(EmojiEnum.MAX_BUTTON)
         await self.message.add_reaction(EmojiEnum.CLOSE)
         self.bot.pages.append(self)
+        try:
+            await asyncio.sleep(self.timeout)
+            await self.message.clear_reactions()
+        except HTTPException: # Removing reactions failed (perhaps message already deleted)
+            pass
 
     async def edit(self, *args):
         """Edits the message to the current self.embed and updates self.message"""
@@ -111,7 +132,7 @@ class PageTypes:
     QOTD = 0
     WARN = 1
     REP = 2
-
+    CONFIG = 3
 
 class Todo:
     UNMUTE = 1

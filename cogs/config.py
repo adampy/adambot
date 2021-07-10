@@ -1,7 +1,7 @@
 from discord.ext import commands
-from discord import Embed
 from enum import Enum
-from .utils import DefaultEmbedResponses
+from .utils import DefaultEmbedResponses, EmbedPages, PageTypes
+import copy
 
 class Validation(Enum):
     Channel = 1     # Is a channel that the bot can read/write in
@@ -12,7 +12,7 @@ class Validation(Enum):
 class Config(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.CONFIG = { # Stores each column of the config table, the type of validation it is, and a short description of how its used
+        self.CONFIG = { # Stores each column of the config table, the type of validation it is, and a short description of how its used - the embed follows the same order as this
             "welcome_channel": [Validation.Channel, "Where the welcome message is sent"],
             "welcome_msg": [Validation.String, "What is sent when someone new joins (<user> tags the new user)"],
             "support_log_channel": [Validation.Channel, "Where the logs from the support module go"],
@@ -26,7 +26,7 @@ class Config(commands.Cog):
             "prefix": [Validation.String, "The prefix the bot uses, default is '-'"],
             "rep_award_banned": [Validation.Role, "The role that blocks people giving reputation"],
             "rep_receive_banned": [Validation.Role, "The role that blocks people receiving reputation"],
-        } # TODO: Perhaps change order of config embed to mirror the order of SELF.CONFIG?
+        }
 
     # COMMANDS
 
@@ -38,43 +38,46 @@ class Config(commands.Cog):
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
-        if ctx.invoked_subcommand is None:
-            # User is staff and no subcommand => send embed
-
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            embed = Embed(
-                title = f":tools:  {ctx.guild.name} ({ctx.guild.id}) configuration",
-                color = ctx.author.color, 
-                description = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{p}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{p}config set qotd_limit 2`."
-            ) # TODO: Make bot colours global - e.g. in a config json
-
+        if ctx.invoked_subcommand is None: # User is staff and no subcommand => send embed
+            # To get the config options
+            # 1. Copy self.CONFIG into a new variable
+            # 2. Foreach config option, append the option to the list under the specific option's key (this is the embed value)
+            # 3. Pass the dict into EmbedPages for formatting
+            data = copy.deepcopy(self.CONFIG)
             config_dict = self.bot.configs[ctx.guild.id]
-            tracked_configs = self.CONFIG.keys() # Get the config options that need to be included on the embed
             for key in config_dict.keys():
-                if key not in tracked_configs:
-                    continue # This clause ensures that variables, e.g. "bruhs", does not appear in the config
-
-                name = f"{str(key)} ({self.CONFIG[key][1]})"
-
-                if self.CONFIG[key][0] == Validation.Channel:
+                if key not in data.keys():
+                    continue # This clause ensures that variables, e.g. "bruhs", that are in the DB but not in self.CONFIG, do not appear
+                
+                name = f"{str(key)} ({data[key][1]})" # Config name that appears on the embed
+                if data[key][0] == Validation.Channel:
                     channel = ctx.guild.get_channel(config_dict[key])
-                    if channel:
-                        embed.add_field(name = name, value = f"{channel.mention} ({config_dict[key]})", inline = False)
-                    else:
-                        embed.add_field(name = name, value = "*N/A*", inline = False)
+                    data[key].append(f"{channel.mention} ({config_dict[key]})" if channel else "*N/A*")
 
-                elif self.CONFIG[key][0] == Validation.Role:
+                elif data[key][0] == Validation.Role:
                     role = ctx.guild.get_role(config_dict[key])
-                    if role:
-                        embed.add_field(name = name, value = f"{role.mention} ({config_dict[key]})", inline = False)
-                    else:
-                        embed.add_field(name = name, value = "*N/A*", inline = False)
+                    data[key].append(f"{role.mention} ({config_dict[key]})" if role else "*N/A*")
+                
                 else:
-                    embed.add_field(name = name, value = config_dict[key] if config_dict[key] else "*N/A*", inline = False)
-
-            embed.set_thumbnail(url = ctx.guild.icon_url)
-            embed.set_footer(text = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url = ctx.author.avatar_url)
-            await ctx.send(embed = embed)
+                    data[key].append(config_dict[key] if config_dict[key] else "*N/A*")
+            
+            p = config_dict["prefix"]
+            desc = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{p}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{p}config set qotd_limit 2`"
+            embed = EmbedPages(
+                PageTypes.CONFIG,
+                data,
+                f":tools:  {ctx.guild.name} ({ctx.guild.id}) configuration",
+                ctx.author.colour,
+                self.bot,
+                ctx.author,
+                ctx.channel,
+                desc=desc,
+                thumbnail_url = ctx.guild.icon_url,
+                icon_url = ctx.author.avatar_url,
+                footer = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
+            )
+            await embed.set_page(1) # Default first page
+            await embed.send()
 
     @config.command(pass_context=True)
     @commands.guild_only()
