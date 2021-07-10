@@ -17,7 +17,18 @@ class Reputation(commands.Cog):
             await DefaultEmbedResponses.error_embed(self.bot, ctx, f"There aren't any reputation points in {ctx.guild.name} yet! ")
             return
 
-        embed = EmbedPages(PageTypes.REP, leaderboard, "Reputation Leaderboard", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
+        embed = EmbedPages(
+            PageTypes.REP,
+            leaderboard,
+            f"{ctx.guild.name}'s Reputation Leaderboard",
+            Colour.from_rgb(177,252,129),
+            self.bot,
+            ctx.author,
+            ctx.channel,
+            thumbnail_url = ctx.guild.icon_url,
+            icon_url = ctx.author.avatar_url,
+            footer = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
+        )
         await embed.set_page(1) # Default first page
         await embed.send()
 

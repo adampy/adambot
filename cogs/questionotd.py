@@ -82,7 +82,18 @@ class QuestionOTD(commands.Cog):
             qotds = await connection.fetch('SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id', ctx.guild.id)
 
         if len(qotds) > 0:
-            embed = EmbedPages(PageTypes.QOTD, qotds, "QOTDs", Colour.from_rgb(177, 252, 129), self.bot, ctx.author, ctx.channel)
+            embed = EmbedPages(
+                PageTypes.QOTD,
+                qotds,
+                f"{ctx.guild.name}'s QOTDs",
+                Colour.from_rgb(177, 252, 129),
+                self.bot,
+                ctx.author,
+                ctx.channel,
+                thumbnail_url = ctx.guild.icon_url,
+                icon_url = ctx.author.avatar_url,
+                footer = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
+            )
             await embed.set_page(int(page_num))
             await embed.send()
         else:

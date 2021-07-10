@@ -14,7 +14,17 @@ class Warnings(commands.Cog):
             warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) AND guild_id = $2 ORDER BY id;', member.id, ctx.guild.id)
 
         if len(warns) > 0:
-            embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
+            embed = EmbedPages(
+                PageTypes.WARN,
+                warns,
+                f"{member.display_name}'s warnings",
+                Colour.from_rgb(177,252,129),
+                self.bot,
+                ctx.author,
+                ctx.channel,
+                thumbnail_url = ctx.guild.icon_url,
+                icon_url = ctx.author.avatar_url,
+                footer = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
             await embed.set_page(int(page_num))
             await embed.send()
         else:
@@ -58,7 +68,17 @@ class Warnings(commands.Cog):
                     warns = await connection.fetch('SELECT * FROM warn WHERE guild_id = $1 ORDER BY id;', ctx.guild.id)
 
                 if len(warns) > 0:
-                    embed = EmbedPages(PageTypes.WARN, warns, "Warnings", Colour.from_rgb(177,252,129), self.bot, ctx.author, ctx.channel)
+                    embed = EmbedPages(
+                        PageTypes.WARN,
+                        warns,
+                        f"{ctx.guild.name if not member else member.display_name}'s warnings",
+                        Colour.from_rgb(177,252,129),
+                        self.bot,
+                        ctx.author,
+                        ctx.channel,
+                        thumbnail_url = ctx.guild.icon_url,
+                        icon_url = ctx.author.avatar_url,
+                        footer = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
                     await embed.set_page(1)
                     await embed.send()
                 else:
