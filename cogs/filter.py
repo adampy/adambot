@@ -97,7 +97,7 @@ class Filter(commands.Cog):
             filters = self.filters[message.guild.id]
             msg = message.content.lower()
             for ignore in filters["ignored"]:
-                msg = msg.replace(ignore, "")
+                msg = msg.replace(ignore.lower(), "")
             if True in [phrase.lower() in msg for phrase in filters["filtered"]] and not is_command:
                 # case insensitive is probably the best idea
                 await message.delete()
