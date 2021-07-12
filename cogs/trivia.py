@@ -8,43 +8,50 @@ import asyncio
 from datetime import datetime
 from .utils import DefaultEmbedResponses
 
-SETTINGS = {
-    'timeout':[20, 0],
-    'overrides':['abdul'],
-    'timeout_after':5, #after not getting 5 questions right
-    'trivias':['cars',
-                'computers',
-                'disney',
-                'elements',
-                'games',
-                'GCSEBio',
-                'GCSEBloodBrothers',
-                'GCSEChemAQAPaper2',
-                'GCSECompSci',
-                'GCSEFrench',
-                'GCSEMaths',
-                'GCSEPhys',
-                'GCSERomeoJuliet',
-                'GCSERS',
-                'GCSESpanish',
-                'general',
-                'harrypotter',
-                'lordt-history',
-                'nato',
-                'SpecIonTests',
-                'usstateabbreviations',
-                'worldcapitals',
-                'worldflags',
-                'WW2'],
-    }
+TRIVIAS = [
+    'cars',
+    'computers',
+    'disney',
+    'elements',
+    'games',
+    'GCSEBio',
+    'GCSEBloodBrothers',
+    'GCSEChemAQAPaper2',
+    'GCSECompSci',
+    'GCSEFrench',
+    'GCSEMaths',
+    'GCSEPhys',
+    'GCSERomeoJuliet',
+    'GCSERS',
+    'GCSESpanish',
+    'general',
+    'harrypotter',
+    'lordt-history',
+    'nato',
+    'SpecIonTests',
+    'usstateabbreviations',
+    'worldcapitals',
+    'worldflags',
+    'WW2'
+]
 
-RESPONSES = {'positive':['Well done {}! **+1** to you!',
-                                      'You got it, {}! **+1** for you!',
-                                      'Amazing! **+1** for {}',
-                                      'Nice work, Mr {}, you get **+1**!'],
-                          'negative':['It\'s {} of course. **+1** for me!',
-                                      'I know, It\'s {}! **+1** to the bot!',
-                                      'You suck, loser. {} is the right answer. I get **+1**']}
+SETTINGS = {
+    'question_duration':20
+}
+
+RESPONSES = {
+    'positive':[
+        'Well done {}! **+1** to you!',
+        'You got it, {}! **+1** for you!',
+        'Amazing! **+1** for {}',
+        'Nice work, Mr {}, you get **+1**!'
+    ],
+    'negative':[
+        'It\'s {} of course. **+1** for me!',
+        'I know, It\'s {}! **+1** to the bot!',
+        'You suck, loser. {} is the right answer. I get **+1**'
+    ]
+}
 
 class TriviaSession:
     def __init__(self, bot, channel, trivia_name):
@@ -105,7 +112,7 @@ class TriviaSession:
             )
 
         try:
-            response = await self.bot.wait_for("message", check=check, timeout = SETTINGS["timeout"][0])
+            response = await self.bot.wait_for("message", check=check, timeout = SETTINGS["question_duration"])
             # Correct answer
             if not self.running: return
             await self.channel.send(random.choice(RESPONSES["positive"]).format(response.author.display_name))
@@ -153,10 +160,7 @@ class TriviaSession:
 class Trivia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.trivia_list = SETTINGS['trivias']
         self.trivia_sessions = {}
-
-#---------------------------------------------------------------------------------
 
     @commands.group()
     @commands.guild_only()
@@ -168,23 +172,28 @@ class Trivia(commands.Cog):
 
     @trivia.command()
     async def list(self, ctx):
-        message = ', '.join(SETTINGS["trivias"])
-        await ctx.send(f'```{message}```')
+        desc = ""
+        for trivia in TRIVIAS:
+            desc += "• " + trivia + ("" if trivia == TRIVIAS[-1] else "\n")
+        await DefaultEmbedResponses.information_embed(self.bot, ctx, "Avaliable trivias", desc = desc)
 
     @trivia.command(pass_context=True)
     async def start(self, ctx, trivia = None):
+        """
+        Command that starts a new trivia game in the currently set trivia channel
+        """
         config = self.bot.configs[ctx.guild.id]
         trivia_channel_id = config["trivia_channel"]
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if session and session.running: # TriviaSession.stop() cannot remove from this dict, only change self.running, so we only need to check that
-            await ctx.send('Trivia already happening, please wait until this one is finshed.')
+            await DefaultEmbedResponses.information_embed(self.bot, ctx, "Trivia game already happening", desc="Please wait until the current trivia is over before starting a new one")
             return
         if trivia_channel_id is None:
-            await ctx.send(f"{ctx.guild.name} does not have a trivia channel set!")
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, f"{ctx.guild.name} does not have a trivia channel set!")
             return
-        if trivia is None or trivia not in SETTINGS["trivias"]:
+        if trivia is None or trivia not in TRIVIAS:
             p = config["prefix"]
-            await ctx.send(f'You must choose a trivia from `{p}trivia list` (trivia names are case-sensitive)')
+            await DefaultEmbedResponses.error_embed(self.bot, ctx, f"You must choose a trivia from `{p}trivia list`", desc="(Trivia names are case-sensitive)")
             return
 
         trivia_channel = self.bot.get_channel(trivia_channel_id)
@@ -194,42 +203,57 @@ class Trivia(commands.Cog):
 
     @trivia.command(aliases=['finish', 'end'])
     async def stop(self, ctx):
+        """
+        Command that stops a current trivia game
+        """
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:
-            await ctx.send('No trivia session happening.')
+            await DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
             return
         await session.stop(ctx.author)
         del self.trivia_sessions[ctx.guild.id] # Delete it from dict, and memory
 
     @trivia.command(aliases=['answers','cheat'])
     async def answer(self, ctx):
+        """
+        Command that allows staff to see the correct answer
+        """
         if not await self.bot.is_staff(ctx.message):
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:
-            await ctx.send('No trivia session happening.')
+            await DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
             return
-        await ctx.send(f"The answers are `{'`,`'.join(session.answers)}`")
+        
+        desc = ""
+        for ans in session.answers:
+            desc += "• " + ans + ("" if ans == session.answers[-1] else "\n")
+        await DefaultEmbedResponses.information_embed(self.bot, ctx, f"Answers to: '{session.question}'", desc=desc)
 
     @trivia.command()
     async def skip(self, ctx):
+        """
+        Command that skips a question - a point is given to the bot
+        """
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:
-            await ctx.send('No trivia session happening.')
+            await DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
             return
         session.increment_score(self.bot.user)
         await session.ask_next_question()
 
     @trivia.command(aliases=['lb'])
     async def leaderboard(self, ctx):
+        """
+        Command that shows the leaderboard for the current trivia game
+        """
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:
-            await ctx.send('No trivia session happening.')
+            await DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
             return
         await session.trivia_end_leaderboard(reset=False)
-
 
 def setup(bot):
     bot.add_cog(Trivia(bot))
