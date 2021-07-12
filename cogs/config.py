@@ -51,7 +51,6 @@ class Config(commands.Cog):
                 if key not in data.keys():
                     continue # This clause ensures that variables, e.g. "bruhs", that are in the DB but not in self.CONFIG, do not appear
                 
-                name = f"{str(key)} ({data[key][1]})" # Config name that appears on the embed
                 if data[key][0] == Validation.Channel:
                     channel = ctx.guild.get_channel(config_dict[key])
                     data[key].append(f"{channel.mention} ({config_dict[key]})" if channel else "*N/A*")
