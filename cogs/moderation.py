@@ -304,11 +304,14 @@ Kick members perm needed"""
         if type(message.channel) == discord.DMChannel or type(message.author) == discord.User:
             return
 
-        if self.bot.configs[message.guild.id]["muted_role"] in [role.id for role in message.author.roles]:
-            try:
+        try:
+            muted_role = self.bot.configs[message.guild.id]["muted_role"]
+            if muted_role is not None and muted_role in [role.id for role in message.author.roles]:
                 await message.delete()
-            except discord.errors.NotFound:
-                pass  # nobody cares
+        except discord.errors.NotFound:
+             pass  # Message can't be deleted (nobody cares)
+        except KeyError:
+            pass # Bot not fully loaded yet (nobody cares)
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles = True)
