@@ -117,6 +117,7 @@ class Filter(commands.Cog):
         Strictly only cleans up one list. Cross-checks occur specifically within their own scopes.
         This makes sure space isn't wasted by adding random garbage to the filter that will already be in effect anyway
         """
+        text = text.lower()  # shouldn't be necessary but removes dependency on other methods to implement case standard
         keys = ["filtered", "ignored"]
         if key not in keys:
             return  # get ignored
@@ -132,10 +133,9 @@ class Filter(commands.Cog):
             removed.append(f"{self.filters[ctx.guild.id][key][index]}")
             del self.filters[ctx.guild.id][key][index]
         message = f"Added *{disp_text}* to the {key} list!"
-        the_list = "*\n•  ".join(removed)
-        the_list += "*" if not the_list.endswith("*") else ""
+        the_list = '\n'.join([f"•  *{word}*" if key == "ignored" else f"•  ||*{word}*||" for word in removed])
         message = message if not removed else (
-                    message + f"\n\nRemoved some redundant phrases from the {key} list too:\n\n•  *" + "*\n•  ".join(removed))
+                    message + f"\n\nRemoved some redundant phrases from the {key} list too:\n\n{the_list}")
         return message
 
     @filter.command()
@@ -144,6 +144,7 @@ class Filter(commands.Cog):
         """
         Allows adding a filtered phrase for the guild. Staff role needed.
         """
+        text = text.lower()
         if not await self.bot.is_staff(ctx.message):
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
@@ -152,7 +153,7 @@ class Filter(commands.Cog):
             message = await self.clean_up(ctx, text, "filtered")
             if not message:
                 return
-            self.filters[ctx.guild.id]["filtered"].append(text)
+            self.filters[ctx.guild.id]["filtered"].append(text.lower())
             await self.propagate_new_guild_filter(ctx.guild)
             await DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter added!", desc=message)
         else:
@@ -166,6 +167,7 @@ class Filter(commands.Cog):
         This will only add the phrase if it will have an effect.
         Staff role needed.
         """
+        text = text.lower()
         if not await self.bot.is_staff(ctx.message):
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
@@ -193,6 +195,7 @@ class Filter(commands.Cog):
         """
         Method to allow removal of a phrase from either list. Saves almost-duplicate code.
         """
+        text = text.lower()
         if not await self.bot.is_staff(ctx.message):
             await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
@@ -213,6 +216,7 @@ class Filter(commands.Cog):
         """
         Allows removing a filtered phrase. Staff role needed.
         """
+        text = text.lower()
         remove = [a for a in self.filters[ctx.guild.id]["ignored"]]
         for phrase in self.filters[ctx.guild.id]["ignored"]:
             for phrasee in self.filters[ctx.guild.id]["filtered"]:
@@ -221,9 +225,9 @@ class Filter(commands.Cog):
 
         for removal in remove:
             del self.filters[ctx.guild.id]["ignored"][self.filters[ctx.guild.id]["ignored"].index(removal)]
-        msg = '*\n•  *'.join(remove)
-        msg += "*" if not msg.endswith("*") else ""
-        await self.generic_remove(ctx, text, "filtered", desc=f"Removed some redundant phrases from the ignored list too:\n\n•  *{msg}")
+
+        msg = '\n'.join([f"•  *{word}*" for word in remove]) if remove else ""
+        await self.generic_remove(ctx, text, "filtered", desc=f"Removed some redundant phrases from the ignored list too:\n\n{msg}")
 
     @filter.command()
     @commands.guild_only()
@@ -231,7 +235,7 @@ class Filter(commands.Cog):
         """
         Allows removing a phrase ignored by the filter. Staff role needed.
         """
-        await self.generic_remove(ctx, text, "ignored")
+        await self.generic_remove(ctx, text.lower(), "ignored")
 
 
     async def list_generic(self, ctx, key, spoiler=True):
@@ -242,7 +246,7 @@ class Filter(commands.Cog):
             return  # get ignored
 
         msg_content = ("\n".join([f"• ||{word}||" if spoiler else word for word in self.filters[ctx.guild.id][key]])) if self.filters[ctx.guild.id][key] else "Nothing to show here!"
-        await DefaultEmbedResponses.information_embed(self.bot, ctx, f"{ctx.guild.name} {key} phrases list", desc = msg_content)
+        await DefaultEmbedResponses.information_embed(self.bot, ctx, f"{ctx.guild.name} {key} phrases list", desc=msg_content)
 
     @filter.command(name="list")
     @commands.guild_only()
