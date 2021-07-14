@@ -118,7 +118,7 @@ class TriviaSession:
             if not self.running: return
             await self.channel.send(random.choice(RESPONSES["positive"]).format(response.author.display_name))
             self.increment_score(response.author)
-        except asyncio.futures.TimeoutError:
+        except asyncio.TimeoutError:
             # Incorrect answer
             if self.question_number != current_question_number: return # The question has been skipped, score already incremented and another question asked - do nothing
             if not self.running: return # The trivia has been stopped mid-question - do nothing
