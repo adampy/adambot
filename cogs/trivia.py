@@ -85,6 +85,7 @@ class TriviaSession:
         Method that begins the trivia session
         """
         self.running = True
+        self.question_number = 0
         self.started_at = datetime.utcnow()
         self.bot.loop.create_task(self.ask_next_question())
 
