@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from discord import Embed, Colour, Status
-from .utils import time_str, get_spaced_member, CODE_URL, SPAMPING_PERMS, send_text_file, in_private_server
 import re
 from datetime import datetime, timedelta
 import time
@@ -28,7 +27,7 @@ class Member(commands.Cog):
     async def uptime(self, ctx):
         """View how long the bot has been running for"""
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
-        time_string = time_str(seconds)
+        time_string = self.bot.time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
 
 # -----------------------LIST------------------------------
@@ -76,7 +75,7 @@ class Member(commands.Cog):
             new_message += f"\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** user{'' if len(message) == 0 else 's'} with this role."
             
             if len(new_message) > 2000:
-                await send_text_file(new_message, ctx.channel, "roles", "txt")
+                await self.bot.send_text_file(new_message, ctx.channel, "roles", "txt")
             else:
                 await ctx.send(new_message)
                 
@@ -180,7 +179,7 @@ class Member(commands.Cog):
     @commands.command()
     async def spamping(self, ctx, amount, user: discord.Member, *message):
         """For annoying certain people"""
-        if in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
+        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
             await ctx.message.delete()
             try:
                 iterations = int(amount)
@@ -195,7 +194,7 @@ class Member(commands.Cog):
     @commands.command()
     async def ghostping(self, ctx, amount, user: discord.Member):
         """For sending a ghostping to annoy certain people"""
-        if in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
+        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
             await ctx.message.delete()
             for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
                 for i in range(int(amount)):
@@ -239,7 +238,7 @@ class Member(commands.Cog):
         if len(args) == 0:
             user = author
         else:
-            user = await get_spaced_member(ctx, self.bot, *args)
+            user = await self.bot.get_spaced_member(ctx, self.bot, *args)
             if user is None:
                 await ctx.send(embed=Embed(title="Userinfo",
                                            description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**',
@@ -334,7 +333,7 @@ class Member(commands.Cog):
             await ctx.send(f'```{p}remind <sentence...> -t <time>```')
             return
 
-        str_tp = time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
+        str_tp = self.bot.time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
         str_reason = "*Reminder:* " + (reason if reason else "(Not specified)")
         reminder = "*When:* " + str_tp + " ago\n" + str_reason
 
@@ -423,7 +422,7 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     async def code(self, ctx):
-        await ctx.send(f"Adam-Bot code can be found here: {CODE_URL}")
+        await ctx.send(f"Adam-Bot code can be found here: {self.bot.CODE_URL}")
 
 
 def setup(bot):

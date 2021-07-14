@@ -2,7 +2,6 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 from discord.utils import get
-from .utils import CHANNELS, DefaultEmbedResponses
 import re
 import asyncio
 import datetime # For handling lurker_kick
@@ -82,7 +81,7 @@ class WaitingRoom(commands.Cog):
         Using `verify` shows the specified help message, it's just a dummy to allow the aliases
         """
         if not await self.bot.is_staff(ctx) or ctx.guild.id != 445194262947037185:
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if ctx.invoked_with == "verify" or not ctx.invoked_with:
@@ -104,12 +103,12 @@ class WaitingRoom(commands.Cog):
         await ctx.send(f"{member.mention} has been verified!")
         if not pre_existing_roles: # If the user hadn't already been verified
             get_role_channel = self.bot.get_channel(854148889409617920) # Get role channel
-            await self.bot.get_channel(CHANNELS["general"]).send(f'Welcome {member.mention} to the server :wave: Take a look in {get_role_channel.mention} for additional roles!') # TODO: GCSE9-1 specific - sort it out!
+            await get(ctx.guild.channels, name="general").send(f'Welcome {member.mention} to the server :wave: Take a look in {get_role_channel.mention} for additional roles!') # TODO: GCSE9-1 specific - sort it out!
 
     @commands.group(aliases=['lurker'])
     async def lurkers(self, ctx):
         if not await self.bot.is_staff(ctx) or ctx.guild.id != 445194262947037185:
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if ctx.invoked_subcommand is None:
@@ -161,7 +160,7 @@ class WaitingRoom(commands.Cog):
         # days is specifically "7" as default and not 7 since if you specify an integer it barfs if you supply a non-int value
         """Command that kicks people without a role, and joined 7 or more days ago."""
         if not await self.bot.is_staff(ctx) or ctx.guild.id != 445194262947037185:
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
         
         def check(m):

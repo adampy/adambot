@@ -1,6 +1,5 @@
 ﻿import discord
 from discord.ext import commands
-from .utils import Todo, send_image_file
 import asyncio
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -26,13 +25,13 @@ class Demographics(commands.Cog):
 
             now = datetime.utcnow()
             midnight = datetime(now.year, now.month, now.day, 23, 59, 59)  # Midnight of the current day
-            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", Todo.DEMOGRAPHIC_SAMPLE, midnight, demographic_role_id)  # Place the role reference in the member_id field.
+            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", self.bot.Todo.DEMOGRAPHIC_SAMPLE, midnight, demographic_role_id)  # Place the role reference in the member_id field.
 
     async def _require_sample(self, role: discord.Role):
         """Adds a TODO saying that a sample is required ASAP."""
         async with self.bot.pool.acquire() as connection:
             demographic_role_id = await connection.fetchval("SELECT id from demographic_roles WHERE role_id = $1", role.id)
-            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", Todo.DEMOGRAPHIC_SAMPLE, datetime.utcnow(), demographic_role_id)  # Placing the role reference in the member_id field.
+            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", self.bot.Todo.DEMOGRAPHIC_SAMPLE, datetime.utcnow(), demographic_role_id)  # Placing the role reference in the member_id field.
 
     async def _remove_role(self, role: discord.Role):
         """Removes a role from the demographic todo table - all samples are also removed upon this action."""
@@ -237,7 +236,7 @@ class Demographics(commands.Cog):
         ax.fmt_xdata = DateFormatter('% Y-% m-% d % H:% M:% S') 
         fig.autofmt_xdate()
 
-        await send_image_file(fig, ctx.channel, "demographics-data")
+        await self.bot.send_image_file(fig, ctx.channel, "demographics-data")
 
 
 def setup(bot):

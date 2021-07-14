@@ -1,6 +1,5 @@
 from discord.ext import commands
 from enum import Enum
-from .utils import DefaultEmbedResponses, EmbedPages, PageTypes
 import copy
 
 class Validation(Enum):
@@ -36,7 +35,7 @@ class Config(commands.Cog):
     async def config(self, ctx):
         """View the current configuration settings of the guild"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if ctx.invoked_subcommand is None: # User is staff and no subcommand => send embed
@@ -64,8 +63,8 @@ class Config(commands.Cog):
             
             p = config_dict["prefix"]
             desc = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{p}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{p}config set qotd_limit 2`"
-            embed = EmbedPages(
-                PageTypes.CONFIG,
+            embed = self.bot.EmbedPages(
+                self.bot.PageTypes.CONFIG,
                 data,
                 f":tools:  {ctx.guild.name} ({ctx.guild.id}) configuration",
                 ctx.author.colour,
@@ -85,21 +84,21 @@ class Config(commands.Cog):
     async def set(self, ctx, key = None, *, value = None):  # consume then you don't have to wrap phrases in quotes
         """Sets a configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if not key:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "You must specify a key to set!")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "You must specify a key to set!")
             return
 
         if not value:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "You must specify a value to set the key to!")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "You must specify a value to set the key to!")
             return
 
 
         key = key.lower()
         if key not in self.CONFIG.keys():
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")
             return
 
         validation_type = self.CONFIG[key][0]
@@ -108,68 +107,68 @@ class Config(commands.Cog):
                 role = await commands.RoleConverter().convert(ctx, value)
                 value = role
             except commands.errors.RoleNotFound:
-                await DefaultEmbedResponses.error_embed(self.bot, ctx, "That role cannot be found!")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That role cannot be found!")
                 return
             
         elif validation_type == Validation.Channel:
             try:
                 channel = await commands.TextChannelConverter().convert(ctx, value)
                 if not channel.permissions_for(ctx.guild.me).send_messages:
-                    await DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have send message permissions in that channel!")
+                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have send message permissions in that channel!")
                     return
                 value = channel
             except commands.errors.ChannelNotFound:
-                await DefaultEmbedResponses.error_embed(self.bot, ctx, "That channel cannot be found!")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That channel cannot be found!")
                 return
             
         elif validation_type == Validation.Integer:
             if not value.isdigit():
-                await DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"Please give me an integer")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"Please give me an integer")
                 return
             value = int(value)
         
         elif validation_type == Validation.String:
             if len(value) >= 1000:
-                await DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"The string provided needs to be less than 1000 characters")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"The string provided needs to be less than 1000 characters")
                 return
 
         # At this point, the input is valid and can be changed
         if validation_type == Validation.Channel or validation_type == Validation.Role:
             self.bot.configs[ctx.guild.id][key] = value.id
             await self.bot.propagate_config(ctx.guild.id)
-            await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value.mention}"') # Value is either a TextChannel or Role
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value.mention}"') # Value is either a TextChannel or Role
         else:
             self.bot.configs[ctx.guild.id][key] = value
             await self.bot.propagate_config(ctx.guild.id)
-            await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value}"')
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value}"')
 
     @config.command(pass_context = True)
     @commands.guild_only()
     async def remove(self, ctx, key):
         """Removes a configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         key = key.lower()
         if key not in self.CONFIG.keys():
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")
             return
 
         if key == "prefix":
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "The prefix cannot be removed")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "The prefix cannot be removed")
             return
 
         self.bot.configs[ctx.guild.id][key] = None
         await self.bot.propagate_config(ctx.guild.id)
-        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f"It has been changed to ***N/A***")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f"It has been changed to ***N/A***")
 
     @config.command(pass_context = True)
     @commands.guild_only()
     async def current(self, ctx, key = None):
         """Shows the current configuration variable"""
         if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if not key:
@@ -179,17 +178,17 @@ class Config(commands.Cog):
             config_dict = self.bot.configs[ctx.guild.id]
             key = key.lower()
             if key not in self.CONFIG.keys():
-                await DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")
                 return
 
             if self.CONFIG[key][0] == Validation.Channel:
                 current = ctx.guild.get_channel(config_dict[key])
-                await DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of {key}",  current.mention if current else "***N/A***")
+                await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of {key}",  current.mention if current else "***N/A***")
             elif self.CONFIG[key][0] == Validation.Role:
                 current = ctx.guild.get_role(config_dict[key])
-                await DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of {key}",  current.mention if current else "***N/A***")
+                await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of {key}",  current.mention if current else "***N/A***")
             else:
-                await DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of {key}",  config_dict[key] if config_dict[key] else "***N/A***")
+                await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of {key}",  config_dict[key] if config_dict[key] else "***N/A***")
 
     @commands.command(pass_context = True)
     @commands.guild_only()
@@ -198,10 +197,10 @@ class Config(commands.Cog):
         await self.bot.add_config(ctx.guild.id)
         if new_prefix is None:
             prefix = self.bot.configs[ctx.guild.id]["prefix"]
-            await DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of prefix",  prefix)
+            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of prefix",  prefix)
         else:
             if not (ctx.author.guild_permissions.administrator or await self.bot.is_staff(ctx)):
-                await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+                await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             else:
                 await ctx.invoke(self.bot.get_command("config set"), "prefix", new_prefix)
 

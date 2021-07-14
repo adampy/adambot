@@ -3,7 +3,6 @@ import datetime
 from discord import Embed, Colour
 from random import choice
 from math import inf
-from .utils import EmbedPages, PageTypes
 
 
 class QuestionOTD(commands.Cog):
@@ -82,8 +81,8 @@ class QuestionOTD(commands.Cog):
             qotds = await connection.fetch('SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id', ctx.guild.id)
 
         if len(qotds) > 0:
-            embed = EmbedPages(
-                PageTypes.QOTD,
+            embed = self.bot.EmbedPages(
+                self.bot.PageTypes.QOTD,
                 qotds,
                 f"{ctx.guild.name}'s QOTDs",
                 Colour.from_rgb(177, 252, 129),
