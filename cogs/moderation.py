@@ -3,7 +3,6 @@ from discord import Embed, Colour
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.utils import get
-from .utils import is_dev
 from datetime import datetime, timedelta
 
 
@@ -81,8 +80,10 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True, name="close", aliases = ["die"])
     @commands.guild_only()
-    @is_dev()
     async def botclose(self, ctx):
+        if not self.bot.is_dev(ctx):
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
         await self.bot.close(ctx)
 
     # -----------------------PURGE------------------------------

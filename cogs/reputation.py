@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-#from discord.ext.commands import MemberConverter, UserConverter
 from discord import Embed, Colour
 import matplotlib.pyplot as plt
 
