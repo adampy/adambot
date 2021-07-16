@@ -6,7 +6,6 @@ import csv
 import random
 import asyncio
 from datetime import datetime
-from .utils import DefaultEmbedResponses
 
 TRIVIAS = [
     'cars',
@@ -176,7 +175,7 @@ class Trivia(commands.Cog):
         desc = ""
         for trivia in TRIVIAS:
             desc += "• " + trivia + ("" if trivia == TRIVIAS[-1] else "\n")
-        await DefaultEmbedResponses.information_embed(self.bot, ctx, "Avaliable trivias", desc = desc)
+        await self.bot.self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Avaliable trivias", desc = desc)
 
     @trivia.command(pass_context=True)
     async def start(self, ctx, trivia = None):
@@ -187,14 +186,14 @@ class Trivia(commands.Cog):
         trivia_channel_id = config["trivia_channel"]
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if session and session.running: # TriviaSession.stop() cannot remove from this dict, only change self.running, so we only need to check that
-            await DefaultEmbedResponses.information_embed(self.bot, ctx, "Trivia game already happening", desc="Please wait until the current trivia is over before starting a new one")
+            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Trivia game already happening", desc="Please wait until the current trivia is over before starting a new one")
             return
         if trivia_channel_id is None:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, f"{ctx.guild.name} does not have a trivia channel set!")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"{ctx.guild.name} does not have a trivia channel set!")
             return
         if trivia is None or trivia not in TRIVIAS:
             p = config["prefix"]
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, f"You must choose a trivia from `{p}trivia list`", desc="(Trivia names are case-sensitive)")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"You must choose a trivia from `{p}trivia list`", desc="(Trivia names are case-sensitive)")
             return
 
         trivia_channel = self.bot.get_channel(trivia_channel_id)
@@ -209,7 +208,7 @@ class Trivia(commands.Cog):
         """
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:
-            await DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
+            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
             return
         await session.stop(ctx.author)
         del self.trivia_sessions[ctx.guild.id] # Delete it from dict, and memory
@@ -220,18 +219,18 @@ class Trivia(commands.Cog):
         Command that allows staff to see the correct answer
         """
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:
-            await DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
+            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
             return
         
         desc = ""
         for ans in session.answers:
             desc += "• " + ans + ("" if ans == session.answers[-1] else "\n")
-        await DefaultEmbedResponses.information_embed(self.bot, ctx, f"Answers to: '{session.question}'", desc=desc)
+        await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Answers to: '{session.question}'", desc=desc)
 
     @trivia.command()
     async def skip(self, ctx):
@@ -240,7 +239,7 @@ class Trivia(commands.Cog):
         """
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:
-            await DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
+            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
             return
         session.increment_score(self.bot.user)
         await session.ask_next_question()
@@ -252,7 +251,7 @@ class Trivia(commands.Cog):
         """
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:
-            await DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
+            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "There is no trivia game in progress")
             return
         await session.trivia_end_leaderboard(reset=False)
 

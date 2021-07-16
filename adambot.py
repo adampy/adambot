@@ -50,7 +50,7 @@ class AdamBot(Bot):
             kwargs["command_prefix"] = when_mentioned_or(command_prefix)
         
         super().__init__(*args, **kwargs)
-        self.__dict__.update(utils.__dict__)
+        self.__dict__.update(utils.__dict__) # Bring all of utils into the bot - prevents referencing utils in cogs
 
         self.global_prefix = command_prefix # Stores the global prefix, or None if not set / using guild specific one
         self.configs = {} # Used to store configuration for guilds
