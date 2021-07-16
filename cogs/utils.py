@@ -127,7 +127,6 @@ class EmbedPages:
         """Edits the message to the current self.embed and updates self.message"""
         await self.message.edit(embed=self.embed)
 
-
 class PageTypes:
     QOTD = 0
     WARN = 1
@@ -140,7 +139,6 @@ class Todo:
     DEMOGRAPHIC_SAMPLE = 3
     ONE_OFF_DEMOGRAPHIC_SAMPLE = 4
 
-
 class EmojiEnum:
     MIN_BUTTON = '\U000023ee'
     MAX_BUTTON = '\U000023ed'
@@ -149,33 +147,8 @@ class EmojiEnum:
     BUTTON = '\U00002b55'
     CLOSE = '\N{CROSS MARK}'
 
-
-class Permissions:
-    ROLE_ID = {
-               "Administrator": 445195157151809536,
-               "Head Mod": 445195341310984203,
-               "Moderator": 445195365625364490,
-               "Assistant": 445195413343961092,
-               "Trial-Assistant": 667872197091786793,
-               "Staff": 445195535901655041,
-               "Adam-Bot Developer": 740681121863303279,
-               "Member": 445196497777197056,
-               "Priv": 593791836209020928,
-               "Announcements": 619243003202109470,
-    }
-
-    ADMIN = [ROLE_ID['Administrator'], ROLE_ID['Priv']]
-    MOD = ADMIN + [ROLE_ID['Head Mod'], ROLE_ID['Moderator']]
-    DEV = MOD + [ROLE_ID['Adam-Bot Developer']]  # put here specifically so non-dev assistants can't mess with stuff
-    ASSISTANT = MOD + [ROLE_ID['Assistant']]
-    TRIALASSISTANT = ASSISTANT + [ROLE_ID['Trial-Assistant']]
-    STAFF = TRIALASSISTANT + [ROLE_ID['Staff']]
-    MEMBERS = TRIALASSISTANT + [ROLE_ID['Member']]
-
-
 CHANNELS = {
-    "general": 445199175244709898,
-    "trivia": 498617494693478402,
+    "general": 445199175244709898
 }
 
 SPAMPING_PERMS = [
