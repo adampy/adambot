@@ -116,8 +116,8 @@ class AdamBot(Bot):
     def load_cogs(self):
         """Procedure that loads all the cogs, listed in `self.COGS`"""
         for cog in self.COGS:
-            if cog == "trivia" and self.LOCAL_HOST:  # Don't load trivia if running locally
-                continue
+            #if cog == "trivia" and self.LOCAL_HOST:  # Don't load trivia if running locally
+            #    continue
             self.load_extension(f'cogs.{cog}')
             print(f"Loaded: {cog}")
 
@@ -305,7 +305,7 @@ class AdamBot(Bot):
 
     async def is_staff(self, ctx):
         """
-        Method that checks if a user is staff in their guild or not
+        Method that checks if a user is staff in their guild or not. `ctx` may be `discord.Message` or `discord.ext.commands.Context`
         """
         try:
             staff_role_id = self.configs[ctx.guild.id]["staff_role"]

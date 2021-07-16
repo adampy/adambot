@@ -26,7 +26,8 @@ class Config(commands.Cog):
             "prefix": [Validation.String, "The prefix the bot uses, default is '-'"],
             "rep_award_banned": [Validation.Role, "The role that blocks people giving reputation"],
             "rep_receive_banned": [Validation.Role, "The role that blocks people receiving reputation"],
-            "jail_role": [Validation.Role, "The role that puts people into jail"]
+            "jail_role": [Validation.Role, "The role that puts people into jail"],
+            "trivia_channel": [Validation.Channel, "Where trivias get played"]
         }
 
     # COMMANDS
@@ -50,7 +51,6 @@ class Config(commands.Cog):
                 if key not in data.keys():
                     continue # This clause ensures that variables, e.g. "bruhs", that are in the DB but not in self.CONFIG, do not appear
                 
-                name = f"{str(key)} ({data[key][1]})" # Config name that appears on the embed
                 if data[key][0] == Validation.Channel:
                     channel = ctx.guild.get_channel(config_dict[key])
                     data[key].append(f"{channel.mention} ({config_dict[key]})" if channel else "*N/A*")
