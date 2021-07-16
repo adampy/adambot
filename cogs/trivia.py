@@ -175,7 +175,7 @@ class Trivia(commands.Cog):
         desc = ""
         for trivia in TRIVIAS:
             desc += "• " + trivia + ("" if trivia == TRIVIAS[-1] else "\n")
-        await self.bot.self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Avaliable trivias", desc = desc)
+        await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Avaliable trivias", desc = desc)
 
     @trivia.command(pass_context=True)
     async def start(self, ctx, trivia = None):
