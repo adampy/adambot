@@ -50,7 +50,7 @@ class AdamBot(Bot):
             kwargs["command_prefix"] = when_mentioned_or(command_prefix)
         
         super().__init__(*args, **kwargs)
-        self.__dict__.update(utils.__dict__)
+        self.__dict__.update(utils.__dict__) # Bring all of utils into the bot - prevents referencing utils in cogs
 
         self.global_prefix = command_prefix # Stores the global prefix, or None if not set / using guild specific one
         self.configs = {} # Used to store configuration for guilds
@@ -116,8 +116,8 @@ class AdamBot(Bot):
     def load_cogs(self):
         """Procedure that loads all the cogs, listed in `self.COGS`"""
         for cog in self.COGS:
-            if cog == "trivia" and self.LOCAL_HOST:  # Don't load trivia if running locally
-                continue
+            #if cog == "trivia" and self.LOCAL_HOST:  # Don't load trivia if running locally
+            #    continue
             self.load_extension(f'cogs.{cog}')
             print(f"Loaded: {cog}")
 
@@ -305,7 +305,7 @@ class AdamBot(Bot):
 
     async def is_staff(self, ctx):
         """
-        Method that checks if a user is staff in their guild or not
+        Method that checks if a user is staff in their guild or not. `ctx` may be `discord.Message` or `discord.ext.commands.Context`
         """
         try:
             staff_role_id = self.configs[ctx.guild.id]["staff_role"]
