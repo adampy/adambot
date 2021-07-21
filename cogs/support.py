@@ -2,7 +2,6 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 import asyncio
-from .utils import starts_with_any
 
 #support
 	    #id SERIAL PRIMARY KEY,
@@ -177,7 +176,7 @@ class Support(commands.Cog):
             # If support requested
             connection = await self.support_manager.in_connections(message.author)  # Holds connection data or False if a connection is not open
 
-            if not connection and starts_with_any(message.content.lower(), ['support start', 'support begin']):
+            if not connection and self.bot.starts_with_any(message.content.lower(), ['support start', 'support begin']):
                 # Start a new connection
                 try: # Try clause gets a valid guild_id
                     guild_id = int(message.content.split(' ')[2])
@@ -212,7 +211,7 @@ class Support(commands.Cog):
                 connection = await self.support_manager.create(message.author.id, guild_id) # This method handles the embed making the staff aware of the ticket
                 await message.author.send(f'Your ticket, **ID: {connection.id}**, has been sent. Staff have been altered to your ticket and will be with you shortly!')
             
-            if starts_with_any(message.content.lower(), ['support end', 'support close', 'support finish']) and connection:
+            if self.bot.starts_with_any(message.content.lower(), ['support end', 'support close', 'support finish']) and connection:
                 if connection.member_id == message.author.id: # Member sending
                     if connection.staff_id != 0:
                         await connection.staff.send('The ticket was closed by the member.')

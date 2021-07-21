@@ -1,7 +1,6 @@
 import discord
 from discord import Colour
 from discord.ext import commands
-from .utils import EmbedPages, PageTypes
 
 class Warnings(commands.Cog):
     def __init__(self, bot):
@@ -14,8 +13,8 @@ class Warnings(commands.Cog):
             warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) AND guild_id = $2 ORDER BY id;', member.id, ctx.guild.id)
 
         if len(warns) > 0:
-            embed = EmbedPages(
-                PageTypes.WARN,
+            embed = self.bot.EmbedPages(
+                self.bot.PageTypes.WARN,
                 warns,
                 f"{member.display_name}'s warnings",
                 Colour.from_rgb(177,252,129),
@@ -68,8 +67,8 @@ class Warnings(commands.Cog):
                     warns = await connection.fetch('SELECT * FROM warn WHERE guild_id = $1 ORDER BY id;', ctx.guild.id)
 
                 if len(warns) > 0:
-                    embed = EmbedPages(
-                        PageTypes.WARN,
+                    embed = self.bot.EmbedPages(
+                        self.bot.PageTypes.WARN,
                         warns,
                         f"{ctx.guild.name if not member else member.display_name}'s warnings",
                         Colour.from_rgb(177,252,129),

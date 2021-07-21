@@ -3,7 +3,6 @@ from discord import Embed, Colour
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.utils import get
-from .utils import Todo, is_dev, DefaultEmbedResponses
 from datetime import datetime, timedelta
 
 
@@ -81,8 +80,10 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True, name="close", aliases = ["die"])
     @commands.guild_only()
-    @is_dev()
     async def botclose(self, ctx):
+        if not self.bot.is_dev(ctx):
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
         await self.bot.close(ctx)
 
     # -----------------------PURGE------------------------------
@@ -209,7 +210,7 @@ Kick members perm needed"""
                 if invite.inviter.id == member.id:
                     await ctx.invoke(self.bot.get_command("revokeinvite"), invite_code=invite.code)
             if timeperiod:
-                await self.timer(Todo.UNBAN, timeperiod, member.id)
+                await self.timer(self.bot.Todo.UNBAN, timeperiod, member.id)
             if not member:
                 not_found.append(member_)
                 if not massban:
@@ -329,7 +330,7 @@ Manage roles perm needed."""
             reason = parsed_args["reason"]
 
             if timeperiod:
-                await self.timer(Todo.UNMUTE, timeperiod, member.id)
+                await self.timer(self.bot.Todo.UNMUTE, timeperiod, member.id)
         await member.add_roles(role, reason=reason if reason else f'No reason - muted by {ctx.author.name}')
         await ctx.send(f':ok_hand: **{member}** has been muted')
         # 'you are muted ' + timestring
@@ -408,12 +409,12 @@ Manage roles perm needed."""
 Manage roles perm needed."""
         role_id = self.bot.configs[ctx.guild.id]["jail_role"]
         if role_id is None:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
             return
 
         role = ctx.guild.get_role(role_id)
         await member.add_roles(role)
-        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{member.display_name} has been jailed.")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{member.display_name} has been jailed.")
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles = True)
@@ -422,12 +423,12 @@ Manage roles perm needed."""
 Manage roles perm needed."""
         role_id = self.bot.configs[ctx.guild.id]["jail_role"]
         if role_id is None:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
             return
         
         role = get(member.guild.roles, name='Jail')
         await member.remove_roles(role)
-        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{member.display_name} has been unjailed.")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{member.display_name} has been unjailed.")
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles = True)

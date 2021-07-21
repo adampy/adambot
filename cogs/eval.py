@@ -1,8 +1,6 @@
 import os
 import inspect
 from discord.ext import commands
-from .utils import send_text_file, is_dev
-
 
 class Eval(commands.Cog):
 
@@ -17,12 +15,14 @@ class Eval(commands.Cog):
         return chunks
 
     @commands.command(name="eval", pass_context=True)
-    @is_dev()
     async def evaluate(self, ctx, *, command=""):  # command is kwarg to stop it flooding the console when no input is provided
         """
         Allows evaluating strings of code (intended for testing).
         If something doesn't output correctly try wrapping in str()
         """
+        if not self.bot.is_dev(ctx):
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
         try:
             output = eval(command)
             if inspect.isawaitable(output):
@@ -54,14 +54,18 @@ class Eval(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    @is_dev()
     async def sql(self, ctx):
+        if not self.bot.is_dev(ctx):
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
         if ctx.invoked_subcommand is None:
             await ctx.send('```-help sql```')
 
     @sql.command(pass_context = True)
-    @is_dev()
     async def execute(self, ctx, *command):
+        if not self.bot.is_dev(ctx):
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
         async with self.bot.pool.acquire() as connection:
             try:
                 await connection.execute(' '.join(command))
@@ -69,8 +73,10 @@ class Eval(commands.Cog):
                 await ctx.send(f"EXCEPTION: {e}")
 
     @sql.command(pass_context = True)
-    @is_dev()
     async def fetch(self, ctx, *command):
+        if not self.bot.is_dev(ctx):
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
         async with self.bot.pool.acquire() as connection:
             try:
                 records = await connection.fetch(' '.join(command))
@@ -80,7 +86,7 @@ class Eval(commands.Cog):
                     if i != len(records) - 1:
                         final_str += "\n"
 
-                await send_text_file(final_str, ctx.channel, "query")
+                await self.bot.send_text_file(final_str, ctx.channel, "query")
             except Exception as e:
                 await ctx.send(f"EXCEPTION: {e}")
 

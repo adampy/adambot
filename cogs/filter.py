@@ -3,7 +3,6 @@ from discord.ext import commands
 import asyncio
 import ast  # using ast for literal_eval, stops code injection
 import asyncpg
-from .utils import DefaultEmbedResponses
 
 class Filter(commands.Cog):
     def __init__(self, bot):
@@ -123,7 +122,7 @@ class Filter(commands.Cog):
             return  # get ignored
         disp_text = f"||{text}||" if spoiler else text
         if True in [phrase in text for phrase in self.filters[ctx.guild.id][key]]:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "Redundant phrase wasn't added!", desc=f"{disp_text} wasn't added to the {key} list since it contains another phrase that has already been added")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Redundant phrase wasn't added!", desc=f"{disp_text} wasn't added to the {key} list since it contains another phrase that has already been added")
             return
         check = [text in phrase for phrase in self.filters[ctx.guild.id][key]]  # de-duplicate
         removed = []
@@ -146,7 +145,7 @@ class Filter(commands.Cog):
         """
         text = text.lower()
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if text not in self.filters[ctx.guild.id]["filtered"]:
@@ -155,9 +154,9 @@ class Filter(commands.Cog):
                 return
             self.filters[ctx.guild.id]["filtered"].append(text.lower())
             await self.propagate_new_guild_filter(ctx.guild)
-            await DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter added!", desc=message)
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter added!", desc=message)
         else:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "That's already in the filtered list!")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That's already in the filtered list!")
 
     @filter.command()
     @commands.guild_only()
@@ -169,7 +168,7 @@ class Filter(commands.Cog):
         """
         text = text.lower()
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if text not in self.filters[ctx.guild.id]["ignored"]:
@@ -178,18 +177,18 @@ class Filter(commands.Cog):
                 return
 
             if True not in [phrase in text for phrase in self.filters[ctx.guild.id]["filtered"]]:
-                await DefaultEmbedResponses.error_embed(self.bot, ctx, "Didn't add redundant phrase to ignored list", desc="The phrase wasn't added since it would have no effect, as it has no filtered phrases within it")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Didn't add redundant phrase to ignored list", desc="The phrase wasn't added since it would have no effect, as it has no filtered phrases within it")
                 return
 
             if True in [phrase==text for phrase in self.filters[ctx.guild.id]["filtered"]]:
-                await DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't add that phrase to the ignored list", desc="A phrase cannot be both in the filtered list and the ignored list at the same time!")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't add that phrase to the ignored list", desc="A phrase cannot be both in the filtered list and the ignored list at the same time!")
                 return
 
             self.filters[ctx.guild.id]["ignored"].append(text)
             await self.propagate_new_guild_filter(ctx.guild)
-            await DefaultEmbedResponses.success_embed(self.bot, ctx, "Phrase added to ignored list!", desc=message)
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Phrase added to ignored list!", desc=message)
         else:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "That's already in the ignored list!")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That's already in the ignored list!")
 
     async def generic_remove(self, ctx, text, key, desc=""):
         """
@@ -197,18 +196,18 @@ class Filter(commands.Cog):
         """
         text = text.lower()
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
         if key not in ["filtered", "ignored"]:
             return  # get ignored
 
         if text not in self.filters[ctx.guild.id][key]:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, f"No such thing is in the {key} list!", desc)
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"No such thing is in the {key} list!", desc)
 
         else:
             del self.filters[ctx.guild.id][key][self.filters[ctx.guild.id][key].index(text)]
             await self.propagate_new_guild_filter(ctx.guild)
-            await DefaultEmbedResponses.success_embed(self.bot, ctx, f"Phrase removed from {key} list!", desc)
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"Phrase removed from {key} list!", desc)
 
     @filter.command()
     @commands.guild_only()
@@ -240,13 +239,13 @@ class Filter(commands.Cog):
 
     async def list_generic(self, ctx, key, spoiler=True):
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
         if key not in ["filtered", "ignored"]:
             return  # get ignored
 
         msg_content = ("\n".join([f"• ||{word}||" if spoiler else word for word in self.filters[ctx.guild.id][key]])) if self.filters[ctx.guild.id][key] else "Nothing to show here!"
-        await DefaultEmbedResponses.information_embed(self.bot, ctx, f"{ctx.guild.name} {key} phrases list", desc=msg_content)
+        await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"{ctx.guild.name} {key} phrases list", desc=msg_content)
 
     @filter.command(name="list")
     @commands.guild_only()
@@ -272,12 +271,12 @@ class Filter(commands.Cog):
         Allows clearing the list of filtered and ignored phrases for the guild. Staff role needed.
         """
         if not await self.bot.is_staff(ctx.message):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         self.filters[ctx.guild.id] = {"filtered":[], "ignored":[]}
         await self.propagate_new_guild_filter(ctx.guild)
-        await DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter cleared!", desc = f"The filter for **{ctx.guild.name}** has been cleared!")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter cleared!", desc = f"The filter for **{ctx.guild.name}** has been cleared!")
 
 def setup(bot):
     bot.add_cog(Filter(bot))

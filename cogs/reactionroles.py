@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from .utils import DefaultEmbedResponses, INFORMATION_BLUE
 import re
 
 class ReactionRoles(commands.Cog):
@@ -79,11 +78,11 @@ class ReactionRoles(commands.Cog):
         
         """
         if not await self.bot.is_staff(ctx):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         if not ctx.me.guild_permissions.manage_roles:
-            await DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have manage-role permissions!", desc="I need these permissions to create the reaction role.")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have manage-role permissions!", desc="I need these permissions to create the reaction role.")
             return
 
         message_id = ctx.message.reference.message_id
@@ -95,7 +94,7 @@ class ReactionRoles(commands.Cog):
             # If here, emoji is either a standard emoji, or a custom one from another guild
             match = re.match(r'<(a?):([a-zA-Z0-9\_]{1,32}):([0-9]{15,20})>$', emoji) # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
             if match:
-                await DefaultEmbedResponses.error_embed(self.bot, ctx, "You cannot add a reaction of a custom emoji from a different server!")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "You cannot add a reaction of a custom emoji from a different server!")
                 return
             custom_emoji = False
 
@@ -110,7 +109,7 @@ class ReactionRoles(commands.Cog):
         # Add reaction
         message = await ctx.channel.fetch_message(message_id)
         await message.add_reaction(emoji)
-        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"Reaction role added to that message!", desc=f"{emoji} {'inversly' if inverse else ''} links to {role.mention}")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"Reaction role added to that message!", desc=f"{emoji} {'inversly' if inverse else ''} links to {role.mention}")
 
     @rr.command()
     @commands.guild_only()
@@ -119,7 +118,7 @@ class ReactionRoles(commands.Cog):
         Removes an emoji and a corresponding role from the replied message
         """
         if not await self.bot.is_staff(ctx):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         message_id = ctx.message.reference.message_id
@@ -138,7 +137,7 @@ class ReactionRoles(commands.Cog):
 
         message = await ctx.channel.fetch_message(message_id)
         await message.clear_reaction(emoji)
-        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"{emoji} is no longer a reaction role on that message!")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{emoji} is no longer a reaction role on that message!")
 
     @rr.command()
     @commands.guild_only()
@@ -147,7 +146,7 @@ class ReactionRoles(commands.Cog):
         Removes all the reaction roles from the replied message
         """
         if not await self.bot.is_staff(ctx):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
             
         message_id = ctx.message.reference.message_id
@@ -156,7 +155,7 @@ class ReactionRoles(commands.Cog):
         
         message = await ctx.channel.fetch_message(message_id)
         await message.clear_reactions()
-        await DefaultEmbedResponses.success_embed(self.bot, ctx, f"The message is no longer a reaction role message!")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"The message is no longer a reaction role message!")
 
     @rr.command(name="list")
     @commands.guild_only()
@@ -165,13 +164,13 @@ class ReactionRoles(commands.Cog):
         Shows all the current reaction roles in the guild
         """
         if not await self.bot.is_staff(ctx):
-            await DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
         async with self.bot.pool.acquire() as connection:
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)
 
-        embed = discord.Embed(title = f':information_source: {ctx.guild.name} reaction roles', color = INFORMATION_BLUE)
+        embed = discord.Embed(title = f':information_source: {ctx.guild.name} reaction roles', color = self.bot.INFORMATION_BLUE)
         embed.set_footer(text = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url = ctx.author.avatar_url)
         
         message_reactions = {} # ID -> str (to put in embed)

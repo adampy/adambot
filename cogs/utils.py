@@ -165,10 +165,9 @@ DEVS = [
 
 CODE_URL = "https://github.com/adampy/adambot"
 
-def is_dev():
-    async def predicate(ctx):
-        return ctx.author.id in DEVS
-    return commands.check(predicate)
+def is_dev(ctx):
+    return ctx.author.id in DEVS
+
 
 async def send_image_file(fig, channel, filename, extension = "png"):
     """Send data to a channel with filename `filename`"""
