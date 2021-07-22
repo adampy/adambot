@@ -101,9 +101,10 @@ class WaitingRoom(commands.Cog):
         name = self.YEARS[ctx.invoked_with]
         await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=name)])
         await ctx.send(f"{member.mention} has been verified!")
-        if not pre_existing_roles: # If the user hadn't already been verified
+        if not pre_existing_roles and ctx.guild.id == 445194262947037185: # If the user hadn't already been verified
+            # this needs to be configurable
             get_role_channel = self.bot.get_channel(854148889409617920) # Get role channel
-            await get(ctx.guild.channels, name="general").send(f'Welcome {member.mention} to the server :wave: Take a look in {get_role_channel.mention} for additional roles!') # TODO: GCSE9-1 specific - sort it out!
+            await get(ctx.guild.channels, id=445199175244709898).send(f'Welcome {member.mention} to the server :wave: Take a look in {get_role_channel.mention} for additional roles!') # TODO: GCSE9-1 specific - sort it out!
 
     @commands.group(aliases=['lurker'])
     async def lurkers(self, ctx):
