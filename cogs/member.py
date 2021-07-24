@@ -18,10 +18,7 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     async def ping(self, ctx):
-        """Gets a ping time by measuring time to send & edit a message"""
-        start = time.time()
-        out = await ctx.message.channel.send("Pong! (N/A)")
-        await out.edit(content="Pong! (" + str(round(1000 * (time.time() - start), 1)) + " milliseconds)")
+        await ctx.send(f"Pong! ({round(self.bot.latency * 1000)} ms)")
 
     @commands.command(pass_context=True)
     async def uptime(self, ctx):
@@ -29,55 +26,6 @@ class Member(commands.Cog):
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
-
-# -----------------------LIST------------------------------
-
-    @commands.command(pass_context=True)
-    @commands.guild_only()
-    async def list(self, ctx, *args):
-        """Gives you a list of all the people with a certain role."""
-        # if role not entered
-        if len(args) <= 0:
-            await ctx.send(':x: Please **specify** a **role**')
-            return
-
-        # gets the roles that it could be
-        role_name = ' '.join(args)
-        possible_roles = []
-        for role in ctx.message.guild.roles:
-            if role_name.lower() == role.name.lower():
-                possible_roles.clear()  # Removes bug
-                possible_roles.append(role)
-                break
-            elif role_name.lower() in role.name.lower():
-                possible_roles.append(role)
-
-        # narrows it down to 1 role and gets the role id
-        if len(possible_roles) == 0:
-            await ctx.send(':x: That role does not exist')
-        elif len(possible_roles) > 1:
-            new_message = 'Multiple roles found. Please try again by entering one of the following roles.\n```'
-            new_message = new_message + '\n'.join([role.name for role in possible_roles]) + '```'
-            await ctx.send(new_message)
-            return
-        else:  # when successful
-            role = possible_roles[0]
-            message = []
-            people = []
-            # gets all members with that role
-            for member in ctx.message.guild.members:
-                for search_role in member.roles:
-                    if search_role == role:
-                        people.append(member)
-                        message.append(f'`{member.id}` **{member.name}**')
-                        break
-            new_message = '\n'.join(message)
-            new_message += f"\n------------------------------------\n:white_check_mark: I found **{str(len(message))}** user{'' if len(message) == 0 else 's'} with this role."
-            
-            if len(new_message) > 2000:
-                await self.bot.send_text_file(new_message, ctx.channel, "roles", "txt")
-            else:
-                await ctx.send(new_message)
                 
 # -----------------------QUOTE------------------------------
 

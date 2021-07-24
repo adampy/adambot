@@ -50,7 +50,7 @@ class AdamBot(Bot):
             kwargs["command_prefix"] = when_mentioned_or(command_prefix)
         
         super().__init__(*args, **kwargs)
-        self.__dict__.update(utils.__dict__) # Bring all of utils into the bot - prevents referencing utils in cogs
+        self.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
 
         self.global_prefix = command_prefix # Stores the global prefix, or None if not set / using guild specific one
         self.configs = {} # Used to store configuration for guilds
@@ -161,6 +161,10 @@ class AdamBot(Bot):
             last_active_list.remove(message.author)
         last_active_list.insert(0, message.author)
         await self.process_commands(message)
+
+    async def on_command_error(self, ctx, error):
+        if not hasattr(ctx.cog, "on_command_error"): # don't re-raise if ext handling
+            raise error  # re-raise error so cogs can mess around but not block every single error. Does duplicate traceback but error tracebacks are a bloody mess anyway
 
     async def on_reaction_add(self, reaction, user):
         """Subroutine used to control EmbedPages stored within self.pages"""
@@ -347,6 +351,7 @@ if __name__ == "__main__":
                  'config',
                  'filter',
                  'reactionroles',
+                 'role'
                  ] # Make this dynamic?
     bot = AdamBot(local_host, cog_names, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
     # bot.remove_command("help")

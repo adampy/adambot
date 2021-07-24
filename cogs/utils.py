@@ -32,6 +32,8 @@ class EmbedPages:
         if self.page_type == PageTypes.REP:
             self.data = [x for x in self.data if self.channel.guild.get_member(x[0]) is not None]
             page_length = 10
+        elif self.page_type == PageTypes.ROLE_LIST:
+            page_length = 10
         else:
             page_length = 5
         self.top_limit = ceil(len(self.data)/page_length)
@@ -86,6 +88,9 @@ class EmbedPages:
                 name = f"• {str(config_key)} ({config_option[1]})" # Config name that appears on the embed
                 self.embed.add_field(name=name, value=config_option[2], inline=False)
 
+            elif self.page_type == PageTypes.ROLE_LIST:
+                self.embed.add_field(name=self.data[i].name, value=self.data[i].mention, inline=False)
+
     async def previous_page(self, *args):
         """Moves the embed to the previous page"""
         if self.page_num != 1: # Cannot go to previous page if already on first page
@@ -127,17 +132,20 @@ class EmbedPages:
         """Edits the message to the current self.embed and updates self.message"""
         await self.message.edit(embed=self.embed)
 
+
 class PageTypes:
     QOTD = 0
     WARN = 1
     REP = 2
     CONFIG = 3
+    ROLE_LIST = 4
 
 class Todo:
     UNMUTE = 1
     UNBAN = 2
     DEMOGRAPHIC_SAMPLE = 3
     ONE_OFF_DEMOGRAPHIC_SAMPLE = 4
+
 
 class EmojiEnum:
     MIN_BUTTON = '\U000023ee'
