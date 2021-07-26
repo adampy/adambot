@@ -18,7 +18,6 @@ class Logging(commands.Cog):
         for guild in self.guilds:
             self.invites[guild.id] = await self.get_all_invites(guild)
 
-
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         self.invites[guild.id] = await self.get_all_invites(guild)
@@ -76,6 +75,9 @@ class Logging(commands.Cog):
         Same issue with on_message_delete
         """
         if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
+            return
+        
+        if before.author.id == self.bot.user.id: # Stops logging message updates, e.g. updating a counter TODO: Does this need to be a config variable?
             return
 
         channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
