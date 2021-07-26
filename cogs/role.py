@@ -73,24 +73,25 @@ class Role(commands.Cog):
         Attempts to find roles within a guild that are closest to the 'role' provided.
         """
 
-        try:
-            return [await commands.RoleConverter().convert(ctx, role)]
-        except commands.RoleNotFound:
-            pass
-
         possible = []
+        equals = []
         for guild_role in ctx.guild.roles[1:]:
             if role.lower() in guild_role.name.lower() or role == str(guild_role.id):
                 possible.append(guild_role)
+                if role.lower() == guild_role.name.lower():
+                    equals.append(guild_role)
+
+        if equals:
+            possible = equals  # solves the whole problem of typing "moderator" and it not realising you want "Moderator" and asking you if you meant Moderator or Head Moderator
 
         if len(possible) > 1 and verbosity > 0:
-            new_message = 'Multiple roles found. Please try again by entering one of the following roles.\n```'
-            new_message = new_message + '\n'.join([role.name + (f" (Role ID: {role.id})" if [a_role.name for a_role in possible].count(role.name) > 1 else "") for role in possible]) + '```'
-            await ctx.send(new_message)
+            await ctx.send(possible)
+            title = 'Multiple roles found. Please try again by entering one of the following roles.'
+            desc = '\n'.join([f"•  {role.name}" + (f" (Role ID: {role.id})" if [a_role.name.lower() for a_role in possible].count(role.name.lower()) > 1 else "") for role in possible])
+            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, title, desc=desc)
 
         elif len(possible) == 0 and verbosity > 1:
             raise commands.RoleNotFound(role)
-
 
         return possible
 
