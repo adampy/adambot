@@ -294,7 +294,7 @@ class Member(commands.Cog):
 
 # -----------------------AVATAR------------------------------
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases = ["pfp"])
     async def avatar(self, ctx, member: discord.User = None):
         if not member:
             member = ctx.author
