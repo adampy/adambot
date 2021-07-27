@@ -9,6 +9,12 @@ from discord import Embed, errors
       - More role manipulation?
 """
 
+"""
+    long_op - use this in command decorators in this cog to specify that it should be concurrently limited (BucketType is p/guild as of rn)
+    
+    Perhaps do this as a global standard in the bot at some point?
+"""
+
 class Verbosity: # Using enum.Enum means that '>' and '<' operations cannot be performed, e.g. Verbosity.ALL > Verbosity.MINIMAL
     SILENT = 0
     MINIMAL = 1
@@ -154,6 +160,14 @@ class Role(commands.Cog):
 
     # --- COMMANDS ---
 
+    @commands.command(enabled=False, hidden=True)
+    @commands.max_concurrency(1, per=commands.BucketType.guild)
+    async def concurr_dummy(self, ctx):
+        """
+        Hack of the century
+        """
+        self.concurr_dummy.update(enabled=False, hidden=True)  # not even the FBI can find me!
+
     @commands.group()
     @commands.guild_only()
     async def role(self, ctx):
@@ -171,6 +185,9 @@ class Role(commands.Cog):
 
         if ctx.subcommand_passed not in subcommands:
             await ctx.send_help(ctx.command)
+
+        elif ctx.invoked_subcommand.__original_kwargs__.get("long_op", False):  # only execute if you actually know a command is being invoked, else None
+            ctx.invoked_subcommand._max_concurrency = self.concurr_dummy._max_concurrency  # hack of the decade. also, no getter available for Command object so shut up PyCharm
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -191,8 +208,19 @@ class Role(commands.Cog):
 
             elif isinstance(error, commands.MissingRequiredArgument):
                 await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Usage", desc=ctx.command.help)
+            elif isinstance(error, commands.MaxConcurrencyReached):
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "There's already a large roles operation in progress!",
+                                                                 desc="""
+                                                                        **Why are you seeing this?**
+                                                                        
+                                                                        Some of the operations can take a while and use a lot of resources.
+                                                                        Some of them have the potential to screw up your server if conflicts happen.
+                                                                        
+                                                                        So for the sake of everyone's sanity, these types of operations are limited to **one per server** at any given time.
+                                                                        
+                                                                        *Please wait for the current operation to finish before trying again.*
+                                                                 """)
             else:
-
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"An internal error occurred unexpectedly", desc="Contact the bot owner if this persists.")
                 raise error
         else:
@@ -369,6 +397,8 @@ class Role(commands.Cog):
         await self.checked_role_change(ctx, role[0], member, "remove")
 
     @role.command(
+        long_op = True,
+
         brief="role swap <from> <to> - Shift members from one role to another",
 
         help=
@@ -446,6 +476,8 @@ class Role(commands.Cog):
                                                                                                        + ("" if already_got_dest_role == 0 else f" ({already_got_dest_role} already had {swap_to.mention})"))
 
     @role.command(
+        long_op = True,
+
         brief="role removeall <role> - Remove a role from all members who have it",
 
         help=
@@ -501,6 +533,8 @@ class Role(commands.Cog):
                                                                                                        + ("" if fail == 0 else f" ({fail} already had {role.mention} removed, but not by the bot)"))
 
     @role.command(
+        long_op = True,
+
         brief="role addall <with> <add> - Adds role to members with another role",
 
         help=
@@ -571,6 +605,8 @@ class Role(commands.Cog):
                                                                                                        + ("" if fail == 0 else f" ({fail} already had {add_role.mention})"))
 
     @role.command(
+        long_op = True,
+
         brief="role clear <member> - Removes all of a member's removeable roles",
 
         help=
