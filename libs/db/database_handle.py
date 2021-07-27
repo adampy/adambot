@@ -16,7 +16,11 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             muted_role BIGINT,
             mod_log_channel BIGINT,
             prefix VARCHAR(1023) DEFAULT '-',
-            bruhs INT DEFAULT 0
+            bruhs INT DEFAULT 0,
+            rep_award_banned BIGINT,
+            rep_receive_banned BIGINT,
+            jail_role BIGINT,
+            trivia_channel BIGINT
         )""") # bruhs counts how many bruh moments a guild has had
 
         # Filter table
