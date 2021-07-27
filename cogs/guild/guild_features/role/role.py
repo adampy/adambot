@@ -160,13 +160,6 @@ class Role(commands.Cog):
 
     # --- COMMANDS ---
 
-    @commands.command()
-    async def test(self, ctx, *, new_alias=None):
-        if new_alias:
-            ctx.bot.all_commands[new_alias] = ctx.command
-            await ctx.reply(f"Added {new_alias} as a new alias!")
-        await ctx.reply("hi!")
-
     @commands.command(enabled=False, hidden=True)
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def concurr_dummy(self, ctx):
