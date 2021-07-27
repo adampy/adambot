@@ -2,6 +2,7 @@ import time
 start_time = time.time()
 import discord
 from discord.ext.commands import Bot, when_mentioned_or, when_mentioned
+from discord.ext import commands
 from discord.utils import get
 import asyncio
 import time
@@ -9,13 +10,12 @@ import os
 from datetime import datetime, timedelta
 from csv import reader
 import asyncpg
-import cogs.utils as utils
-from cogs.utils import EmojiEnum, Todo
+import libs.misc.utils as utils
+from libs.misc.utils import EmojiEnum, Todo
 import pytz
 from tzlocal import get_localzone
 import argparse
-#import sys
-import database_handle
+import libs.db.database_handle  as database_handle  # not strictly a lib rn but hopefully will be in the future
 
 def get_credentials(filename):
     """Command that checks if a credentials file is available. If it is it puts the vars into environ and returns True, else returns False"""
@@ -336,22 +336,48 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--token", nargs="?", default=None)  # can change token on the fly/keep env clean
     parser.add_argument("-c", "--connections", nargs="?", default=10) # DB pool max_size (how many concurrent connections the pool can have)
     args = parser.parse_args()
-    cog_names = ['member',
-                 'moderation',
-                 'questionotd',
-                 'waitingroom',
-                 'support',
-                 'reputation',
-                 'trivia',
-                 'demographics',
-                 'spotify',
-                 'warnings',
-                 'logging',
-                 'eval',
-                 'config',
-                 'filter',
-                 'reactionroles',
-                 'role'
-                 ] # Make this dynamic?
+
+
+    """
+    Some kind of JSON tree structure would be *really* handy to replace this in the future.
+    
+    Also may have it as a list to point to separate cog *configs* which can then specify where in the directory to load from.
+    """
+    G = "guild"  # else guild appears so many times I want to scream
+    GF = "guild_features"
+    MF = "member_features"  # no, not *that* mf
+    MOD = "moderation"
+
+    cog_names = [
+                #NOTE: These are in structure order
+
+                #dev
+
+                'dev.eval',
+
+                #guild.guild_features
+
+                f'{G}.{GF}.config.config',
+                f'{G}.{GF}.demographics.demographics',
+                f'{G}.{GF}.logging.logging', # perhaps move to moderation?
+                f'{G}.{GF}.{MOD}.filter',
+                f'{G}.{GF}.{MOD}.{MOD}',
+                f'{G}.{GF}.{MOD}.waitingroom', # not 100% sure this is in the best place
+                f'{G}.{GF}.{MOD}.warnings',
+                f'{G}.{GF}.role.reactionroles',
+                f'{G}.{GF}.role.role',
+
+                #guild.guild_member_features
+
+                f'{G}.{MF}.qotd.qotd',
+                f'{G}.{MF}.reputation.reputation',
+                f'{G}.{MF}.support.support',
+                f'{G}.{MF}.trivia.trivia',
+
+                #member
+
+                f'member.member',
+                f'member.spotify'
+    ]
     bot = AdamBot(local_host, cog_names, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
     # bot.remove_command("help")

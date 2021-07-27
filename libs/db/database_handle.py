@@ -16,17 +16,13 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             muted_role BIGINT,
             mod_log_channel BIGINT,
             prefix VARCHAR(1023) DEFAULT '-',
-            bruhs INT DEFAULT 0,
-            rep_award_banned BIGINT,
-            rep_receive_banned BIGINT,
-            jail_role BIGINT,
-            trivia_channel BIGINT
+            bruhs INT DEFAULT 0
         )""") # bruhs counts how many bruh moments a guild has had
 
-        # Censor table
-        await connection.execute("""CREATE TABLE IF NOT EXISTS censor(
+        # Filter table
+        await connection.execute("""CREATE TABLE IF NOT EXISTS filter(
             guild_id BIGINT PRIMARY KEY,
-            censors TEXT
+            filters TEXT
         )""")
 
         # QOTD table

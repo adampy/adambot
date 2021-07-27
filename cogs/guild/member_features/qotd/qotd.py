@@ -5,7 +5,7 @@ from random import choice
 from math import inf
 
 
-class QuestionOTD(commands.Cog):
+class QOTD(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -175,4 +175,4 @@ class QuestionOTD(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(QuestionOTD(bot))
+    bot.add_cog(QOTD(bot))
