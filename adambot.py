@@ -152,23 +152,23 @@ class AdamBot(Bot):
         """Procedure that loads all the cogs, from tree in config file"""
 
         if "cogs" not in self.internal_config:
-            print("No cogs loaded since none were specified.")
+            print("[X]    No cogs loaded since none were specified.")
             return
 
         cog_config = pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[0]  # flatten
         for key in cog_config:
-            if key.endswith("<files>") and type(cog_config[key]) is list:  # random validation checks yay
+            if type(cog_config[key]) is list:  # random validation checks yay
                 for filename in cog_config[key]:
                     if type(filename) is str:
                         try:
-                            self.load_extension(f"cogs.{key[:-7]}{filename}")
-                            print(f'\nSuccessfully loaded {f"cogs.{key[:-7]}{filename}"}')
+                            self.load_extension(f"cogs.{key}.{filename}")
+                            print(f'\n[+]    {f"cogs.{key}.{filename}"}')
                         except Exception as e:
-                            print(f"\n\n\n{cog} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name}: {e}\n\n\n")
+                            print(f"\n\n\n[-]   {cog} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name}: {e}\n\n\n")
                     else:
-                        print(f"Ignoring cogs.{key}[{filename}] since it isn't text")
+                        print(f"[X]    Ignoring cogs.{key}[{filename}] since it isn't text")
             else:
-                print(f"Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
+                print(f"[X]    Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
 
 
     def correct_time(self, conv_time=None, timezone_="system"):

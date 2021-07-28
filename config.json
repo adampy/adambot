@@ -1,80 +1,60 @@
 {
   "cogs": {
-	"dev": {
-	  "<files>": [
-		"eval"
-	  ]
-	},
+
+	"dev": [
+	  "eval"
+	],
 
 	"guild": {
 	  "guild_features": {
-		"config": {
-		  "<files>": [
-			"config"
-		  ]
-		},
+		"config": [
+		  "config"
+		],
 
-		"demographics": {
-		  "<files>": [
-			"demographics"
-		  ]
-		},
 
-		"logging": {
-		  "<files>": [
-			"logging"
-		  ]
-		},
+		"demographics": [
+		  "demographics"
+		],
 
-		"moderation": {
-		  "<files>": [
-			"filter",
-			"moderation",
-			"waitingroom",
-			"warnings"
-		  ]
-		},
+		"logging": [
+		  "logging"
+		],
 
-		"role": {
-		  "<files>": [
-			"reactionroles",
-			"role"
-		  ]
-		}
+		"moderation": [
+		  "filter",
+		  "moderation",
+		  "waitingroom",
+		  "warnings"
+		],
+
+		"role": [
+		  "reactionroles",
+		  "role"
+		]
 	  },
 
 	  "member_features": {
-		"qotd": {
-		  "<files>": [
-			"qotd"
-		  ]
-		},
+		"qotd": [
+		  "qotd"
+		],
 
-		"reputation": {
-		  "<files>": [
-			"reputation"
-		  ]
-		},
+		"reputation": [
+		  "reputation"
+		],
 
-		"support": {
-		  "<files>": [
-			"support"
-		  ]
-		},
+		"support": [
+		  "support"
+		],
 
-		"trivia": {
-		  "<files>": [
-			"trivia"
-		  ]
-		}
+		"trivia": [
+		  "trivia"
+		]
 	  }
 	},
 
-	"member": {
-	  "<files>": [
-		"member",
-		"spotify"
-	  ]
-	}
+	"member": [
+	  "member",
+	  "spotify"
+	]
   }
 }
