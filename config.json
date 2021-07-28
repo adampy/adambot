@@ -1,6 +1,7 @@
 {
   "token": "",
   "database_url": "",
+  "global_prefix": "-",
 
   "cogs": {
 

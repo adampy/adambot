@@ -21,23 +21,24 @@ import libs.db.database_handle  as database_handle  # not strictly a lib rn but 
 
 
 class AdamBot(Bot):
-    @classmethod # Does not depend on self - can be called as AdamBot._determine_prefix
-    async def _determine_prefix(cls, bot, message):
+
+    async def determine_prefix(self, bot, message):  # bot is a required argument but also pointless since each AdamBot object isn't going to be trying to handle *other* AdamBot objects' prefixes
         """Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used"""
-        try:
-            guild_prefix = bot.configs[message.guild.id]["prefix"]
-            return when_mentioned_or(guild_prefix)(bot, message)
-        except KeyError:
-            return when_mentioned(bot, message) # Config tables aren't loaded yet, temporarily set to mentions only
+        watch_prefixes = [self.configs.get(message.guild.id, {}).get("prefix", None), self.internal_config.get("global_prefix", None)]
+        if watch_prefixes != [None]*len(watch_prefixes):
+            return when_mentioned_or(*tuple([prefix for prefix in watch_prefixes if type(prefix) is str]))(self, message)  # internal conf prefix or guild conf prefix can be used
+        else:
+            return when_mentioned(self, message) # Config tables aren't loaded yet or internal config doesn't specify another prefix, temporarily set to mentions only
 
     async def get_used_prefixes(self, message):
         """Gets the prefixes that can be used to invoke a command in the guild where the message is from"""
         return self.command_prefix(self, message) if self.global_prefix else await self.command_prefix(self, message) # If global is used, no need to use await
 
     def __init__(self, start_time, config_path="config.json", command_prefix=None, *args, **kwargs):
+        self.internal_config = self.load_internal_config(config_path)
         if not command_prefix:
             # Respond to guild specific pings, and mentions
-            kwargs["command_prefix"] = AdamBot._determine_prefix
+            kwargs["command_prefix"] = self.determine_prefix
         else:
             # Respond to the global prefix, and mentions
             kwargs["command_prefix"] = when_mentioned_or(command_prefix)
@@ -47,7 +48,6 @@ class AdamBot(Bot):
 
         self.global_prefix = command_prefix # Stores the global prefix, or None if not set / using guild specific one
         self.configs = {} # Used to store configuration for guilds
-        self.internal_config = self.load_internal_config(config_path)
         self.flag_handler = self.flags()
         # Hopefully can eventually move these out to some sort of config system
         self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
