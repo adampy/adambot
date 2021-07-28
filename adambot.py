@@ -19,15 +19,6 @@ import json
 import argparse
 import libs.db.database_handle  as database_handle  # not strictly a lib rn but hopefully will be in the future
 
-def get_credentials(filename):
-    """Command that checks if a credentials file is available. If it is it puts the vars into environ and returns True, else returns False"""
-    try:
-        with open(filename) as f:
-            for credential in reader(f):
-                os.environ[credential[0]] = credential[1]
-        return True
-    except FileNotFoundError:
-        return False
 
 class AdamBot(Bot):
     @classmethod # Does not depend on self - can be called as AdamBot._determine_prefix
@@ -43,8 +34,8 @@ class AdamBot(Bot):
         """Gets the prefixes that can be used to invoke a command in the guild where the message is from"""
         return self.command_prefix(self, message) if self.global_prefix else await self.command_prefix(self, message) # If global is used, no need to use await
 
-    def __init__(self, local, start_time, config_path="config.json", command_prefix=None, *args, **kwargs):
-        if command_prefix is None:
+    def __init__(self, start_time, config_path="config.json", command_prefix=None, *args, **kwargs):
+        if not command_prefix:
             # Respond to guild specific pings, and mentions
             kwargs["command_prefix"] = AdamBot._determine_prefix
         else:
@@ -61,22 +52,19 @@ class AdamBot(Bot):
         # Hopefully can eventually move these out to some sort of config system
         self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
         self.flag_handler.set_flag("reason", {"flag": "r"})
-        self.token = kwargs.get("token", None)
         self.connections = kwargs.get("connections", 10) # Max DB pool connections
         self.online = False # Start at False, changes to True once fully initialised
-        self.LOCAL_HOST = local
-        self.DB = os.environ.get('DATABASE_URL')
+        self.LOCAL_HOST = False if os.environ.get("REMOTE", None) else True
+        self.DB = os.environ.get('DATABASE_URL') if not type(self.internal_config.get("database_url", None)) is str else self.internal_config["database_url"]
         self.pages = []  # List of active pages that can be used
         self.last_active = {}  # easiest to put here for now, may move to a cog later
         self.timezone = get_localzone()
-        #self.timezone = pytz.timezone(
-        #    'UTC')  # change as required, perhaps have some config for it? also perhaps detect from sys
         self.display_timezone = pytz.timezone('Europe/London')
         self.ts_format = '%A %d/%m/%Y %H:%M:%S'
         self.start_time = start_time
         self._init_time = time.time()
         print(f"BOT INITIALISED {self._init_time - start_time} seconds")
-        self.start_up()
+        self.start_up(kwargs)  # kwargs passed here specifically to prevent leak of sensitive stuff passed in
 
     async def close(self, ctx=None):  # ctx = None because this is also called upon CTRL+C in command line
         """Procedure that closes down AdamBot, using the standard client.close() command, as well as some database handling methods."""
@@ -129,7 +117,7 @@ class AdamBot(Bot):
 
         return config
 
-    def start_up(self):
+    def start_up(self, kwargs):
         """Command that starts AdamBot, is run in AdamBot.__init__"""
         print("Loading cogs...")
         self.load_cogs()
@@ -139,8 +127,12 @@ class AdamBot(Bot):
         self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=self.connections))
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
         print(f'Bot fully setup!\nDB took {time.time() - self.cog_load} seconds to connect to ({time.time() - self.start_time} seconds total)')
-        token = os.environ.get('TOKEN') if not self.token else self.token
         print("Logging into Discord...")
+        token = os.environ.get('TOKEN', None) if not type(self.internal_config.get('token', None)) is str else self.internal_config['token']
+        token = token if token else kwargs.get("token", None)
+        if not token:
+            print("No token provided!")
+            return
         try:
             self.run(token)
         except Exception as e:
@@ -368,18 +360,11 @@ class AdamBot(Bot):
             return False  # prevents daft spam before bot is ready with configs
 
 if __name__ == "__main__":
-    local_host = get_credentials('credentials.csv')
-
     intents = discord.Intents.default()
-    intents.members = True
-    intents.presences = True
-    intents.reactions = True
-    intents.typing = True
-    intents.dm_messages = True
-    intents.guilds = True
+    for intent in ["members", "presences", "reactions", "typing", "dm_messages", "guilds"]:
+        intents.__setattr__(intent, True)
 
     parser = argparse.ArgumentParser()
-    #args = sys.argv[1:]
     # todo: make this more customisable
     
     parser.add_argument("-p", "--prefix", nargs="?", default=None)
@@ -387,5 +372,4 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--connections", nargs="?", default=10) # DB pool max_size (how many concurrent connections the pool can have)
     args = parser.parse_args()
 
-    bot = AdamBot(local_host, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
-    # bot.remove_command("help")
+    bot = AdamBot(start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix

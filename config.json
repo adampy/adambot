@@ -1,4 +1,7 @@
 {
+  "token": "",
+  "database_url": "",
+
   "cogs": {
 
 	"dev": [
