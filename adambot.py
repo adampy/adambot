@@ -14,6 +14,8 @@ import libs.misc.utils as utils
 from libs.misc.utils import EmojiEnum, Todo
 import pytz
 from tzlocal import get_localzone
+import pandas
+import json
 import argparse
 import libs.db.database_handle  as database_handle  # not strictly a lib rn but hopefully will be in the future
 
@@ -41,7 +43,7 @@ class AdamBot(Bot):
         """Gets the prefixes that can be used to invoke a command in the guild where the message is from"""
         return self.command_prefix(self, message) if self.global_prefix else await self.command_prefix(self, message) # If global is used, no need to use await
 
-    def __init__(self, local, cogs, start_time, command_prefix=None, *args, **kwargs):
+    def __init__(self, local, start_time, config_path="config.json", command_prefix=None, *args, **kwargs):
         if command_prefix is None:
             # Respond to guild specific pings, and mentions
             kwargs["command_prefix"] = AdamBot._determine_prefix
@@ -54,6 +56,7 @@ class AdamBot(Bot):
 
         self.global_prefix = command_prefix # Stores the global prefix, or None if not set / using guild specific one
         self.configs = {} # Used to store configuration for guilds
+        self.internal_config = self.load_internal_config(config_path)
         self.flag_handler = self.flags()
         # Hopefully can eventually move these out to some sort of config system
         self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
@@ -61,7 +64,6 @@ class AdamBot(Bot):
         self.token = kwargs.get("token", None)
         self.connections = kwargs.get("connections", 10) # Max DB pool connections
         self.online = False # Start at False, changes to True once fully initialised
-        self.COGS = cogs
         self.LOCAL_HOST = local
         self.DB = os.environ.get('DATABASE_URL')
         self.pages = []  # List of active pages that can be used
@@ -94,12 +96,45 @@ class AdamBot(Bot):
         time.sleep(1)  # stops bs RuntimeError spam at the end
         print(f"Bot closed after {time.time() - self.start_time} seconds")
 
+    def load_internal_config(self, config_path):
+        """
+        Loads bot's internal config from specified location.
+
+        Perhaps in the future have a "default" config generated e.g. with all cogs auto-detected, rather than it being specifically included in the repo?
+        """
+
+        config = None
+        try:
+            config_file = open(config_path)
+        except Exception as e:
+            error_msg = f"Config is inaccessible! See the error below for more details\n{type(e).__name__}: {e}"
+            if not os.environ.get("remote", None):
+                input(f"{error_msg}\n\nPress enter to exit.")
+            else:
+                print(error_msg)
+            exit()
+
+        try:
+            config = json.loads(config_file.read())
+        except json.decoder.JSONDecodeError as e:
+            error_msg = f"The JSON in the config is invalid! See the error below for more details\n{type(e).__name__}: {e}"
+            if not os.environ.get("remote", None):
+                input(f"{error_msg}\n\nPress enter to exit.")
+            else:
+                print(error_msg)
+        finally:
+            config_file.close()
+            if not config:
+                exit()
+
+        return config
+
     def start_up(self):
         """Command that starts AdamBot, is run in AdamBot.__init__"""
         print("Loading cogs...")
         self.load_cogs()
         self.cog_load = time.time()
-        print(f"Loaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
+        print(f"\nLoaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
         print("Creating DB pool...")
         self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(self.DB + "?sslmode=require", max_size=self.connections))
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
@@ -114,12 +149,27 @@ class AdamBot(Bot):
             # overridden close cleans this up neatly
 
     def load_cogs(self):
-        """Procedure that loads all the cogs, listed in `self.COGS`"""
-        for cog in self.COGS:
-            #if cog == "trivia" and self.LOCAL_HOST:  # Don't load trivia if running locally
-            #    continue
-            self.load_extension(f'cogs.{cog}')
-            print(f"Loaded: {cog}")
+        """Procedure that loads all the cogs, from tree in config file"""
+
+        if "cogs" not in self.internal_config:
+            print("No cogs loaded since none were specified.")
+            return
+
+        cog_config = pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[0]  # flatten
+        for key in cog_config:
+            if key.endswith("<files>") and type(cog_config[key]) is list:  # random validation checks yay
+                for filename in cog_config[key]:
+                    if type(filename) is str:
+                        try:
+                            self.load_extension(f"cogs.{key[:-7]}{filename}")
+                            print(f'\nSuccessfully loaded {f"cogs.{key[:-7]}{filename}"}')
+                        except Exception as e:
+                            print(f"\n\n\n{cog} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name}: {e}\n\n\n")
+                    else:
+                        print(f"Ignoring cogs.{key}[{filename}] since it isn't text")
+            else:
+                print(f"Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
+
 
     def correct_time(self, conv_time=None, timezone_="system"):
         if not conv_time:
@@ -337,47 +387,5 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--connections", nargs="?", default=10) # DB pool max_size (how many concurrent connections the pool can have)
     args = parser.parse_args()
 
-
-    """
-    Some kind of JSON tree structure would be *really* handy to replace this in the future.
-    
-    Also may have it as a list to point to separate cog *configs* which can then specify where in the directory to load from.
-    """
-    G = "guild"  # else guild appears so many times I want to scream
-    GF = "guild_features"
-    MF = "member_features"  # no, not *that* mf
-    MOD = "moderation"
-
-    cog_names = [
-                #NOTE: These are in structure order
-
-                #dev
-
-                'dev.eval',
-
-                #guild.guild_features
-
-                f'{G}.{GF}.config.config',
-                f'{G}.{GF}.demographics.demographics',
-                f'{G}.{GF}.logging.logging', # perhaps move to moderation?
-                f'{G}.{GF}.{MOD}.filter',
-                f'{G}.{GF}.{MOD}.{MOD}',
-                f'{G}.{GF}.{MOD}.waitingroom', # not 100% sure this is in the best place
-                f'{G}.{GF}.{MOD}.warnings',
-                f'{G}.{GF}.role.reactionroles',
-                f'{G}.{GF}.role.role',
-
-                #guild.guild_member_features
-
-                f'{G}.{MF}.qotd.qotd',
-                f'{G}.{MF}.reputation.reputation',
-                f'{G}.{MF}.support.support',
-                f'{G}.{MF}.trivia.trivia',
-
-                #member
-
-                f'member.member',
-                f'member.spotify'
-    ]
-    bot = AdamBot(local_host, cog_names, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
+    bot = AdamBot(local_host, start_time, token=args.token, connections=args.connections, intents=intents, command_prefix=args.prefix) # If the prefix given == None use the guild ones, otherwise use the given prefix
     # bot.remove_command("help")

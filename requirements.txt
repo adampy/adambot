@@ -4,3 +4,4 @@ asyncpg
 matplotlib
 pytz
 tzlocal
+pandas
