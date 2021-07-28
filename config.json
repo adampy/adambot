@@ -1,80 +1,80 @@
 {
-	"cogs": {
-		"dev": {
-			"<files>": [
-				"eval"
-			]
+  "cogs": {
+	"dev": {
+	  "<files>": [
+		"eval"
+	  ]
+	},
+
+	"guild": {
+	  "guild_features": {
+		"config": {
+		  "<files>": [
+			"config"
+		  ]
 		},
 
-		"guild": {
-			"guild_features": {
-				"config": {
-					"<files>": [
-						"config"
-					]
-				},
-
-				"demographics": {
-					"<files>": [
-						"demographics"
-					]
-				},
-
-				"logging": {
-					"<files>": [
-						"logging"
-					]
-				},
-
-				"moderation": {
-					"<files>": [
-						"filter",
-						"moderation",
-						"waitingroom",
-						"warnings"
-					]
-				},
-
-				"role": {
-					"<files>": [
-						"reactionroles",
-						"role"
-					]
-				}
-			},
-
-			"member_features": {
-				"qotd": {
-					"<files>": [
-						"qotd"
-					]
-				},
-
-				"reputation": {
-					"<files>": [
-						"reputation"
-					]
-				},
-
-				"support": {
-					"<files>": [
-						"support"
-					]
-				},
-
-				"trivia": {
-					"<files>": [
-						"trivia"
-					]
-				}
-			}
+		"demographics": {
+		  "<files>": [
+			"demographics"
+		  ]
 		},
 
-		"member": {
-			"<files>": [
-				"member",
-				"spotify"
-			]
+		"logging": {
+		  "<files>": [
+			"logging"
+		  ]
+		},
+
+		"moderation": {
+		  "<files>": [
+			"filter",
+			"moderation",
+			"waitingroom",
+			"warnings"
+		  ]
+		},
+
+		"role": {
+		  "<files>": [
+			"reactionroles",
+			"role"
+		  ]
 		}
+	  },
+
+	  "member_features": {
+		"qotd": {
+		  "<files>": [
+			"qotd"
+		  ]
+		},
+
+		"reputation": {
+		  "<files>": [
+			"reputation"
+		  ]
+		},
+
+		"support": {
+		  "<files>": [
+			"support"
+		  ]
+		},
+
+		"trivia": {
+		  "<files>": [
+			"trivia"
+		  ]
+		}
+	  }
+	},
+
+	"member": {
+	  "<files>": [
+		"member",
+		"spotify"
+	  ]
 	}
+  }
 }
