@@ -32,7 +32,8 @@ class AdamBot(Bot):
 
     async def get_used_prefixes(self, message):
         """Gets the prefixes that can be used to invoke a command in the guild where the message is from"""
-        return self.command_prefix(self, message) if self.global_prefix else await self.command_prefix(self, message) # If global is used, no need to use await
+        guild_prefix = await self.get_config_key(message, "prefix")
+        return [prefix for prefix in [self.user.mention, self.global_prefix if self.global_prefix else None, guild_prefix if guild_prefix else None] if type(prefix) is str]
 
     def __init__(self, start_time, config_path="config.json", command_prefix=None, *args, **kwargs):
         self.internal_config = self.load_internal_config(config_path)
@@ -46,8 +47,7 @@ class AdamBot(Bot):
         super().__init__(*args, **kwargs)
         self.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
 
-        self.global_prefix = command_prefix # Stores the global prefix, or None if not set / using guild specific one
-        self.configs = {} # Used to store configuration for guilds
+        self.global_prefix = self.internal_config.get("global_prefix", None) # Stores the global prefix, or None if not set / using guild specific one
         self.flag_handler = self.flags()
         # Hopefully can eventually move these out to some sort of config system
         self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
@@ -120,6 +120,7 @@ class AdamBot(Bot):
     def start_up(self, kwargs):
         """Command that starts AdamBot, is run in AdamBot.__init__"""
         print("Loading cogs...")
+        self.load_core_cogs()
         self.load_cogs()
         self.cog_load = time.time()
         print(f"\nLoaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
@@ -140,6 +141,23 @@ class AdamBot(Bot):
             print(f"The error was {type(e).__name__}: {e}")
             # overridden close cleans this up neatly
 
+    def load_core_cogs(self):
+        """
+        Non-negotiable.
+        """
+        cogs = ["core.config.config"]
+        for cog in cogs:
+            try:
+                self.load_extension(cog)
+                print(f'\n[+]    {cog}')
+            except Exception as e:
+                error_msg = f"\n\n\n[-]   {cog} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n"
+                if not os.environ.get("remote", None):
+                    input(f"{error_msg}\n\nPress enter to exit.")
+                else:
+                    print(error_msg)
+                exit()
+
     def load_cogs(self):
         """Procedure that loads all the cogs, from tree in config file"""
 
@@ -156,7 +174,7 @@ class AdamBot(Bot):
                             self.load_extension(f"cogs.{key}.{filename}")
                             print(f'\n[+]    {f"cogs.{key}.{filename}"}')
                         except Exception as e:
-                            print(f"\n\n\n[-]   {cog} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name}: {e}\n\n\n")
+                            print(f"\n\n\n[-]   cogs.{key}.{filename} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
                     else:
                         print(f"[X]    Ignoring cogs.{key}[{filename}] since it isn't text")
             else:
@@ -180,17 +198,16 @@ class AdamBot(Bot):
                                    status=discord.Status.online)
         self.online = True
 
-        await self.add_all_guild_configs()
         await self.execute_todos()
 
-    async def add_all_guild_configs(self):
-        """Adds configs to all guilds - executed on startup"""
-        for guild in self.guilds:
-            await self.add_config(guild.id)
+    async def update_config(self, ctx, key, value):  # stub
+        pass
 
-    async def on_guild_join(self, guild):
-        """Adds configs to a certain guild - executed upon joining a new guild"""
-        await self.add_config(guild.id)
+    async def get_config_key(self, ctx, key): #stub
+        pass
+
+    async def is_staff(self, ctx): # stub for sanity
+        return False  # assume no until proven otherwise
    
     async def on_message(self, message):
         """Event that has checks that stop bots from executing commands"""
@@ -304,60 +321,6 @@ class AdamBot(Bot):
                 await asyncio.sleep(5)  # workaround for task crashing when connection temporarily drops with db
 
             await asyncio.sleep(5)
-
-
-    # General configuration workflow:
-    # 1) Make any edits directly to bot.configs[guild.id]
-    # 2) Call bot.propagate_config(guild.id) which propagates any edits to the DB
-
-    async def add_config(self, guild_id):
-        """
-        Method that gets the configuraton for a guild and puts it into self.configs dictionary (with the guild ID as the key). The data
-        is stored in the `config` table. If no configuration is found, a new record is made and a blank configuration dict.
-        """
-        if guild_id not in self.configs: # This check (to see if a DB call is needed) is okay because any updates made will be directly made to self.configs (before DB propagation) TODO: Perhaps limit number of items in this
-            async with self.pool.acquire() as connection:
-                record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id)
-                if not record:
-                    try:
-                        await connection.execute("INSERT INTO config (guild_id) VALUES ($1);", guild_id)
-                    except asyncpg.exceptions.UniqueViolationError: # config already exists
-                        pass
-                    finally:
-                        record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id) # Fetch configuration record
-
-            keys = list(record.keys())[1:]
-            values = list(record.values())[1:] # Include all keys and values apart from the first one (guild_id)
-            self.configs[guild_id] = dict(zip(keys, values)) # Turns the record into a dictionary (column name = key, value = value)
-
-    async def propagate_config(self, guild_id):
-        """
-        Method that sends the config data stored in self.configs and propagates them to the DB.
-        """
-        data = self.configs[guild_id]
-        length = len(data.keys())
-        
-        # Make SQL
-        sql_part = ""
-        keys = list(data) # List of the keys (current column names in the database)
-        for i in range(length):
-            sql_part += f"{keys[i]} = (${i + 1})" # For each key, add "{nth key_name} = $n+1"
-            if i != length - 1:
-                sql_part += ", " # If not the last element, add a ", "
-
-        sql = f"UPDATE config SET {sql_part} WHERE guild_id = {guild_id};"
-        async with self.pool.acquire() as connection:
-            await connection.execute(sql, *data.values())
-
-    async def is_staff(self, ctx):
-        """
-        Method that checks if a user is staff in their guild or not. `ctx` may be `discord.Message` or `discord.ext.commands.Context`
-        """
-        try:
-            staff_role_id = self.configs[ctx.guild.id]["staff_role"]
-            return staff_role_id in [y.id for y in ctx.author.roles]
-        except Exception:  # usually ends up being a KeyError. would be neater if all that's relevant can be caught instead
-            return False  # prevents daft spam before bot is ready with configs
 
 if __name__ == "__main__":
     intents = discord.Intents.default()

@@ -81,9 +81,8 @@ class Member(commands.Cog):
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
 
-        if 'bruh' in message.content.lower() and not message.author.bot and not message.content.startswith('-'):
-            self.bot.configs[message.guild.id]["bruhs"] += 1
-            await self.bot.propagate_config(message.guild.id)
+        if 'bruh' in message.content.lower() and not message.author.bot and not True in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
+            await self.bot.update_config(message, "bruhs", await self.bot.get_config_key(message, "bruhs") + 1)
         return
 
     @commands.command(aliases=['bruh'])
@@ -92,7 +91,7 @@ class Member(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             global_bruhs = await connection.fetchval("SELECT SUM(bruhs) FROM config;")
         
-        guild_bruhs = self.bot.configs[ctx.guild.id]["bruhs"]
+        guild_bruhs = await self.bot.get_config_key(ctx, "bruhs")
         await ctx.send(f'•**Global** bruh moments: **{global_bruhs}**\n•**{ctx.guild.name}** bruh moments: **{guild_bruhs}**')
 
     @commands.command()
