@@ -167,8 +167,7 @@ class Trivia(commands.Cog):
     async def trivia(self, ctx):
         """Trivia module"""
         if ctx.invoked_subcommand is None:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}trivia list```')
+            await ctx.send(f'```{ctx.prefix}trivia list```')
 
     @trivia.command()
     async def list(self, ctx):
@@ -192,8 +191,7 @@ class Trivia(commands.Cog):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"{ctx.guild.name} does not have a trivia channel set!")
             return
         if trivia is None or trivia not in TRIVIAS:
-            p = config["prefix"]
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"You must choose a trivia from `{p}trivia list`", desc="(Trivia names are case-sensitive)")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"You must choose a trivia from `{ctx.prefix}trivia list`", desc="(Trivia names are case-sensitive)")
             return
 
         trivia_channel = self.bot.get_channel(trivia_channel_id)

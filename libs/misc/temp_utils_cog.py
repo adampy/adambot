@@ -13,7 +13,7 @@ class Utils(commands.Cog):
         self.bot = bot
         self.bot.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
 
-        self.bot.pages = []
+        self.pages = []
         self.bot.flag_handler = self.bot.flags()
         self.bot.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.bot.flag_methods.str_time_to_seconds})
         self.bot.flag_handler.set_flag("reason", {"flag": "r"})

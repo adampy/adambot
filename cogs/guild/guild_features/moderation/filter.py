@@ -107,8 +107,7 @@ class Filter(commands.Cog):
     @commands.guild_only()
     async def filter(self, ctx):
         if not ctx.invoked_subcommand:
-            prefixes = await self.bot.get_used_prefixes(ctx.message) # TODO: Is there a nicer way to get the prefix, if not change all previous occasions of getting the prefix to this
-            await ctx.reply(f"Type `{prefixes[2]}help filter` to get info!")
+            await ctx.reply(f"Type `{ctx.prefix}help filter` to get info!")
 
 
     async def clean_up(self, ctx, text, key, spoiler=True):

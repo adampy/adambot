@@ -23,8 +23,7 @@ class QOTD(commands.Cog):
     @commands.group()
     async def qotd(self, ctx):
         if ctx.invoked_subcommand is None:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}qotd submit <question>```')
+            await ctx.send(f'```{ctx.prefix}qotd submit <question>```')
 
     @qotd.command(pass_context=True)
     @commands.guild_only()
@@ -35,8 +34,7 @@ class QOTD(commands.Cog):
             await ctx.send('Question over **255** characters, please **shorten** before trying the command again.')
             return
         if not args:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}qotd submit <question>```')
+            await ctx.send(f'```{ctx.prefix}qotd submit <question>```')
             return
 
         member = ctx.author.id

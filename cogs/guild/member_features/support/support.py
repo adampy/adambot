@@ -96,8 +96,7 @@ class SupportConnectionManager:
             embed = Embed(title='New Ticket', color=Colour.from_rgb(0,0,255))
             embed.add_field(name='ID', value=f"{new_connection.id}", inline=True)
 
-            p = self.bot.configs[guild_id]["prefix"]
-            await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `{p}support accept {new_connection.id}` to accept it.", embed=embed)
+            await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `{ctx.prefix}support accept {new_connection.id}` to accept it.", embed=embed)
         return new_connection
 
     async def get(self, id = -1, guild_id = -1):
@@ -257,8 +256,7 @@ class Support(commands.Cog):
     async def support(self, ctx):
         """Support module"""
         if ctx.invoked_subcommand is None:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}help support``` for more commands. If you want to open a ticket type ```{p}support start```')
+            await ctx.send(f'```{ctx.prefix}help support``` for more commands. If you want to open a ticket type ```{ctx.prefix}support start```')
 
     @support.command(pass_context=True)
     @commands.guild_only()

@@ -210,8 +210,7 @@ class Demographics(commands.Cog):
             message += f"\n•**{n}** {role.name}"
 
 
-        p = self.bot.configs[ctx.guild.id]["prefix"]
-        message += f"\n*Note: do `{p}demographics chart` to view change in demographics over time!*"
+        message += f"\n*Note: do `{ctx.prefix}demographics chart` to view change in demographics over time!*"
         await ctx.send(message)
 
     @demographics.command(pass_context=True)

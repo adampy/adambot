@@ -66,8 +66,7 @@ class ReactionRoles(commands.Cog):
         Reaction role command group
         """
         if ctx.invoked_subcommand is None:
-            prefixes = await self.bot.get_used_prefixes()
-            await ctx.send(f"Use ```{prefixes[2]}rr add``` in a reply to a message to add a reaction role to it.")
+            await ctx.send(f"Use ```{ctx.prefix}rr add``` in a reply to a message to add a reaction role to it.")
             return
 
     @rr.command()

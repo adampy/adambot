@@ -65,18 +65,14 @@ class Reputation(commands.Cog):
     async def rep(self, ctx):
         """Reputation module"""
         subcommands = []
-        #award_commands = ["award"] + [alias for alias in self.rep.get_command("award").aliases]
         for command in self.rep.walk_commands():
             subcommands.append(command.name)
             for alias in command.aliases:
                 subcommands.append(alias)
 
-        p = self.bot.configs[ctx.guild.id]["prefix"]
         if ctx.subcommand_passed not in subcommands:
-            args = ctx.message.content.replace(f"{p}rep", "").strip()
+            args = ctx.message.content.replace(f"{ctx.prefix}rep", "").strip()
             await ctx.invoke(self.rep.get_command("award"), args)
-        #if ctx.subcommand_passed in award_commands:
-        #    await ctx.send(f"*You can now use {p}rep user rather than needing {p}rep award!*")
             
     @rep.error
     async def rep_error(self, ctx, error):
@@ -97,9 +93,8 @@ class Reputation(commands.Cog):
             if args_:
                 failed.add_field(name="Requested user", value=args_)
 
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{p}rep Member_Name`\nor\n`{p}rep @Member`\n'
-                             f'Pro tip: If e.g. fred roberto was recently active you can type `{p}rep fred`\n\nTo see the other available rep commands type `{p}help rep`', inline=False)
+            failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{ctx.prefix}rep Member_Name`\nor\n`{ctx.prefix}rep @Member`\n'
+                             f'Pro tip: If e.g. fred roberto was recently active you can type `{ctx.prefix}rep fred`\n\nTo see the other available rep commands type `{ctx.prefix}help rep`', inline=False)
             failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
                     self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
             await ctx.send(embed=failed)
@@ -107,7 +102,6 @@ class Reputation(commands.Cog):
         nick = user.display_name
 
         if ctx.author != user and not user.bot:  # Check prevents self-rep and that receiver is not a bot
-            title = ""
             award_banned_role = ctx.guild.get_role(self.bot.configs[ctx.guild.id]["rep_award_banned"])
             receive_banned_role = ctx.guild.get_role(self.bot.configs[ctx.guild.id]["rep_receive_banned"])
             award_banned = award_banned_role in ctx.author.roles
@@ -153,8 +147,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def reset(self, ctx):
         if ctx.invoked_subcommand is None:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}rep reset all```')
+            await ctx.send(f'```{ctx.prefix}rep reset all```')
 
     # TODO: Remove this fully in the future?
     # @reset.command()

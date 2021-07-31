@@ -43,9 +43,7 @@ class Member(commands.Cog):
         try:
             msg = await channel.fetch_message(messageid)
         except Exception:
-
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}quote <message_id> [channel_id]```')
+            await ctx.send(f'```{ctx.prefix}quote <message_id> [channel_id]```')
             return
 
         user = msg.author
@@ -276,8 +274,7 @@ class Member(commands.Cog):
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
         if not args or not timeperiod:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}remind <sentence...> -t <time>```')
+            await ctx.send(f'```{ctx.prefix}remind <sentence...> -t <time>```')
             return
 
         str_tp = self.bot.time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
