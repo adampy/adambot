@@ -43,7 +43,8 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             id SERIAL PRIMARY KEY,
             todo_id INT,
             todo_time TIMESTAMPTZ,
-            member_id BIGINT
+            member_id BIGINT,
+            guild_id BIGINT
         )""")
 
         # Support table

@@ -210,7 +210,7 @@ Kick members perm needed"""
                 if invite.inviter.id == member.id:
                     await ctx.invoke(self.bot.get_command("revokeinvite"), invite_code=invite.code)
             if timeperiod:
-                await self.timer(self.bot.Todo.UNBAN, timeperiod, member.id)
+                await self.timer(self.bot.Todo.UNBAN, timeperiod, member.id, guild.id)
             if not member:
                 not_found.append(member_)
                 if not massban:

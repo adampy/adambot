@@ -145,7 +145,11 @@ class AdamBot(Bot):
         """
         Non-negotiable.
         """
-        cogs = ["core.config.config"]
+        cogs = [
+            "core.config.config",
+            "core.todo.todo"
+        ]
+
         for cog in cogs:
             try:
                 self.load_extension(cog)
@@ -197,8 +201,6 @@ class AdamBot(Bot):
         await self.change_presence(activity=discord.Game(name=f'Type `help` for help'),
                                    status=discord.Status.online)
         self.online = True
-
-        await self.execute_todos()
 
     async def update_config(self, ctx, key, value):  # stub
         pass
@@ -253,74 +255,7 @@ class AdamBot(Bot):
                 del page
                 break
 
-    async def execute_todos(self):
-        """The loop that continually checks the DB for todos.
-            The todo table looks like:
-	            id SERIAL PRIMARY KEY,
-	            todo_id int,
-	            todo_time timestamptz,
-	            member_id bigint
-                member_id may not always be a member ID, and can sometimes be a FK to demographic_roles.id"""
 
-        while self.online:
-            try:
-                async with self.pool.acquire() as connection:
-                    todos = await connection.fetch('SELECT * FROM todo WHERE todo_time <= now()')
-                    for todo in todos:
-                        try:
-                            if todo[1] == Todo.UNMUTE:
-                                member = get(self.get_all_members(), id=todo[3])
-                                await member.remove_roles(get(member.guild.roles, name='Muted'), reason='Auto unmuted')
-                                await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
-
-                            elif todo[1] == Todo.UNBAN:
-                                user = await self.fetch_user(todo[3])
-                                guild = self.get_guild(445194262947037185)
-                                await guild.unban(user, reason='Auto unbanned')
-                                await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
-
-                            elif todo[1] == Todo.DEMOGRAPHIC_SAMPLE or todo[1] == Todo.ONE_OFF_DEMOGRAPHIC_SAMPLE:
-                                demographic_role_id = todo[3]
-                                results = await connection.fetch(
-                                    "SELECT role_id, guild_id, sample_rate FROM demographic_roles WHERE id = $1",
-                                    demographic_role_id)
-                                guild = self.get_guild(results[0][1])
-                                role_id = results[0][0]
-                                sample_rate = results[0][2]
-                                n = len([x for x in guild.members if role_id in [y.id for y in x.roles]])
-                                await connection.execute(
-                                    "INSERT INTO demographic_samples (n, role_reference) VALUES ($1, $2)", n,
-                                    demographic_role_id)
-                                await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
-
-                                if todo[1] == Todo.DEMOGRAPHIC_SAMPLE:  # IF NOT A ONE OFF SAMPLE, PERFORM IT AGAIN
-                                    await connection.execute(
-                                        "INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)",
-                                        Todo.DEMOGRAPHIC_SAMPLE, datetime.utcnow() + timedelta(days=sample_rate),
-                                        demographic_role_id)
-
-                        except Exception as e:
-                            print(f'{type(e).__name__}: {e}')
-                            await connection.execute('DELETE FROM todo WHERE id = ($1)', todo[0])
-
-                    reminds = await connection.fetch('SELECT * FROM remind WHERE reminder_time <= now()')
-                    for remind in reminds:
-                        try:
-                            member = self.get_user(remind[1])
-                            message = f'You told me to remind you about this:\n{remind[3]}'
-                            try:
-                                await member.send(message)
-                            except discord.Forbidden:
-                                channel = self.get_channel(remind[5]) # Get the channel it was invoked from
-                                await channel.send(member.mention + ", " + message)
-                            finally:
-                                await connection.execute('DELETE FROM remind WHERE id = ($1)', remind[0])
-                        except Exception as e:
-                            print(f'REMIND: {type(e).__name__}: {e}')
-            except (OSError, asyncpg.exceptions.ConnectionDoesNotExistError):
-                await asyncio.sleep(5)  # workaround for task crashing when connection temporarily drops with db
-
-            await asyncio.sleep(5)
 
 if __name__ == "__main__":
     intents = discord.Intents.default()
