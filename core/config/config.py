@@ -49,8 +49,9 @@ class Config(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         await self.add_all_guild_configs()
-        self.bot.update_config = self.update_config  #ref to stub in main bot
+        self.bot.update_config = self.update_config
         self.bot.get_config_key = self.get_config_key
+        self.bot.is_staff = self.is_staff
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
