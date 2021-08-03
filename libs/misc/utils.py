@@ -140,12 +140,6 @@ class PageTypes:
     CONFIG = 3
     ROLE_LIST = 4
 
-class Todo:
-    UNMUTE = 1
-    UNBAN = 2
-    DEMOGRAPHIC_SAMPLE = 3
-    ONE_OFF_DEMOGRAPHIC_SAMPLE = 4
-
 
 class EmojiEnum:
     MIN_BUTTON = '\U000023ee'

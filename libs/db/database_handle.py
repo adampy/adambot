@@ -38,11 +38,11 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             guild_id BIGINT NOT NULL
         )""")
 
-        # Todo table
-        await connection.execute("""CREATE TABLE IF NOT EXISTS todo(
+        # Tasks table
+        await connection.execute("""CREATE TABLE IF NOT EXISTS tasks(
             id SERIAL PRIMARY KEY,
-            todo_id INT,
-            todo_time TIMESTAMPTZ,
+            task_name VARCHAR(255) NOT NULL,
+            task_time TIMESTAMPTZ,
             member_id BIGINT,
             guild_id BIGINT
         )""")
@@ -56,16 +56,6 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             started_at TIMESTAMPTZ
         )""")
 
-        # Remind table
-        await connection.execute("""CREATE TABLE IF NOT EXISTS remind(
-            id SERIAL PRIMARY KEY,
-            member_id BIGINT,
-            staff_id BIGINT,
-            warned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-            reason VARCHAR(255),
-            channel_id BIGINT
-        )""")
-
         # Warn table
         await connection.execute("""CREATE TABLE IF NOT EXISTS warn(
             id SERIAL PRIMARY KEY,
@@ -74,6 +64,16 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             warned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
             reason VARCHAR(255),
             guild_id BIGINT
+        )""")
+
+        # Remind table
+        await connection.execute("""CREATE TABLE IF NOT EXISTS remind(
+            id SERIAL PRIMARY KEY,
+            member_id BIGINT,
+            reminder_time TIMESTAMPTZ,
+            reminder VARCHAR(255),
+            created_at TIMESTAMPTZ,
+            channel_id BIGINT
         )""")
 
         # Rep table

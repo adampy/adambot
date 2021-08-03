@@ -126,7 +126,7 @@ class AdamBot(Bot):
         """
         cogs = [
             "core.config.config",
-            "core.todo.todo",
+            "core.tasks.tasks",
             "libs.misc.temp_utils_cog"  # as the name suggests, this is temporary, will be moved/split up at some point, just not right now
         ]
 

@@ -10,6 +10,14 @@ class Member(commands.Cog):
         self.bot = bot
 
 # -----------------------MISC------------------------------
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.bot.tasks.register_task_type("reminder", self.handle_remind, needs_extra_columns={
+            "member_id": "bigint",
+            "channel_id": "bigint",
+            "guild_id": "bigint",
+            "reason": "varchar(255)"})
+
 
     @commands.command(pass_context=True)
     async def host(self, ctx):
@@ -250,6 +258,17 @@ class Member(commands.Cog):
         await ctx.send(embed=data)
 
 # -----------------------REMIND------------------------------
+    async def handle_remind(self, data):
+        try:
+            member = self.bot.get_user(data["member_id"])
+            message = f'You told me to remind you about this:\n{data["reason"]}'
+            try:
+                await member.send(message)
+            except discord.Forbidden:
+                channel = self.bot.get_channel(data["channel_id"])
+                await channel.send(f"{member.mention}, {message}")
+        except Exception as e:
+            print(f'REMIND: {type(e).__name__}: {e}')
 
     @commands.command(pass_context=True, aliases=['rm', 'remindme'])
     @commands.guild_only()
@@ -258,16 +277,7 @@ class Member(commands.Cog):
         Command that is executed when a user wants to be reminded of something.
         If the members DMs are closed, the reminder is sent in the channel the command
         was invoked in.
-        """ 
-        async def write(self_write, reminder_write, seconds, ctx):
-            """Writes to remind table with the time to remind (e.g. remind('...', 120, <member_id>) would mean '...' is reminded out in 120 seconds for <member_id>)"""
-            timestamp = datetime.utcnow()
-            new_timestamp = timestamp + timedelta(seconds=seconds)
-            async with self_write.bot.pool.acquire() as connection:
-                await connection.execute('INSERT INTO remind (member_id, reminder, reminder_time, channel_id) VALUES ($1, $2, $3, $4)',
-                                         ctx.author.id, reminder_write, new_timestamp, ctx.channel.id)
-
-        """Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1"""
+        """
         timeperiod = ''
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
@@ -283,8 +293,12 @@ class Member(commands.Cog):
 
         if len(reminder) >= 256:
             await ctx.send('Please shorten your reminder to under 256 characters.')
+            return
 
-        await write(self, reminder, timeperiod, ctx)
+        await self.bot.tasks.submit_task("reminder", datetime.utcnow() + timedelta(seconds=timeperiod),
+                                         {"member_id": ctx.author.id, "channel_id": ctx.channel.id,
+                                          "guild_id": ctx.guild.id, "reason": reminder})
+
         await ctx.send(
             f":ok_hand: You'll be reminded in {str_tp} via a DM! (or in this channel if your DMs are closed)")
 

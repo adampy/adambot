@@ -1,7 +1,7 @@
 ﻿import discord
 from discord.ext import commands
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 
@@ -10,6 +10,27 @@ class Demographics(commands.Cog):
     """Tracks the change in specific roles"""
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.bot.tasks.register_task_type("demographic_sample", self.handle_demographic_sample, needs_extra_columns={"demographic_role_id": "bigint"})
+
+    async def handle_demographic_sample(self, data):
+        async with self.bot.pool.acquire() as connection:
+            demographic_role_id = data["demographic_role_id"]
+            results = await connection.fetch(
+                "SELECT role_id, guild_id, sample_rate FROM demographic_roles WHERE id = $1",
+                demographic_role_id)
+            guild = self.bot.get_guild(results[0][1])
+            role_id = results[0][0]
+            sample_rate = results[0][2]
+            n = len([x for x in guild.members if role_id in [y.id for y in x.roles]])
+            await connection.execute(
+                "INSERT INTO demographic_samples (n, role_reference) VALUES ($1, $2)", n,
+                demographic_role_id)
+
+            if data["task_name"] == "demographic_sample":  # IF NOT A ONE OFF SAMPLE, PERFORM IT AGAIN
+                await self.bot.tasks.submit_task("demographic_sample", datetime.utcnow() + timedelta(days=sample_rate), extra_columns={"demographic_role_id": demographic_role_id})
 
     async def _get_roles(self, guild: discord.Guild):
         """Returns all the role IDs that are tracked for a given `guild`."""
@@ -25,20 +46,20 @@ class Demographics(commands.Cog):
 
             now = datetime.utcnow()
             midnight = datetime(now.year, now.month, now.day, 23, 59, 59)  # Midnight of the current day
-            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", self.bot.Todo.DEMOGRAPHIC_SAMPLE, midnight, demographic_role_id)  # Place the role reference in the member_id field.
+            await self.bot.tasks.submit_task("demographic_sample", midnight, extra_columns={"demographic_role_id": demographic_role_id})
 
     async def _require_sample(self, role: discord.Role):
         """Adds a TODO saying that a sample is required ASAP."""
         async with self.bot.pool.acquire() as connection:
             demographic_role_id = await connection.fetchval("SELECT id from demographic_roles WHERE role_id = $1", role.id)
-            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", self.bot.Todo.DEMOGRAPHIC_SAMPLE, datetime.utcnow(), demographic_role_id)  # Placing the role reference in the member_id field.
+            await self.bot.tasks.submit_task("demographic_sample", datetime.utcnow(), extra_columns={"demographic_role_id": demographic_role_id})
 
     async def _remove_role(self, role: discord.Role):
         """Removes a role from the demographic todo table - all samples are also removed upon this action."""
         async with self.bot.pool.acquire() as connection:
             demographic_role_id = await connection.fetchval("SELECT id FROM demographic_roles WHERE role_id = $1;", role.id)
             await connection.execute("DELETE FROM demographic_roles WHERE role_id = $1;", role.id)
-            await connection.execute("DELETE FROM todo WHERE member_id = $1", demographic_role_id)
+            await connection.execute("DELETE FROM tasks WHERE demographic_role_id = $1", demographic_role_id)
 
     async def _role_error(self, ctx, error):
         """Executes on addrole.error and removerole.error."""
@@ -162,7 +183,7 @@ class Demographics(commands.Cog):
                 await ctx.send("Unknown response - operation cancelled.")
             return  # return here means return does not need to be placed inside each condition
 
-        if role.id not in await guild_tracked_roles:
+        if role.id not in guild_tracked_roles:
             await ctx.send("This role is not currently being tracked!")
             return
 

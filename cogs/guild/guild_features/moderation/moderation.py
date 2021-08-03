@@ -10,6 +10,11 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.bot.tasks.register_task_type("unmute", self.handle_unmute)
+        await self.bot.tasks.register_task_type("unban", self.handle_unban)
+
     async def get_member_obj(self, ctx, member):
         """
         Attempts to get user/member object from mention/user ID.
@@ -23,7 +28,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             print(e)
             try:  # assumes id
-                member = member.replace("<@!", "").replace(">", "")
+                member = str(member).replace("<@!", "").replace(">", "")
                 # fix for funny issue with mentioning users that aren't guild members
                 member = await self.bot.fetch_user(member)
                 # gets object from id, seems to work for users not in the server
@@ -39,14 +44,6 @@ class Moderation(commands.Cog):
         except discord.errors.NotFound:
             return False
         return True
-
-    async def timer(self, todo, seconds, member_id):
-        """Writes to todo table with the time to perform the given todo (e.g. timer(4, 120) would mean 4 is carried out in 120 seconds)"""
-        timestamp = datetime.utcnow()
-        new_timestamp = timestamp + timedelta(seconds=seconds)
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute('INSERT INTO todo (todo_id, todo_time, member_id) values ($1, $2, $3)', todo,
-                                     new_timestamp, member_id)
 
     async def advance_user(self, ctx: commands.Context, member: discord.Member, print=False): # TODO: This is GCSE9-1 specific
         roles = [y.name for y in member.roles]
@@ -210,7 +207,7 @@ Kick members perm needed"""
                 if invite.inviter.id == member.id:
                     await ctx.invoke(self.bot.get_command("revokeinvite"), invite_code=invite.code)
             if timeperiod:
-                await self.timer(self.bot.Todo.UNBAN, timeperiod, member.id, guild.id)
+                await self.bot.tasks.submit_task("unban", datetime.utcnow() + timedelta(seconds=timeperiod), extra_columns={"member_id": member.id, "guild_id": ctx.guild.id})
             if not member:
                 not_found.append(member_)
                 if not massban:
@@ -259,6 +256,32 @@ Kick members perm needed"""
                                        )
                                )
 
+
+    async def handle_unban(self, data, reason: str="", author: str="", ctx=None):
+        try:
+            user = self.bot.get_user(data["member_id"])
+            if not user and ctx:
+                user, in_guild = await self.get_member_obj(ctx, data["member_id"])
+                if not user:
+                    return
+            guild = self.bot.get_guild(data["guild_id"])
+            await guild.unban(user, reason=reason)
+            channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+            if channel_id is None:
+                return
+            channel = self.bot.get_channel(channel_id)
+
+            embed = Embed(title='Unban', color=Colour.from_rgb(76, 176, 80))
+            embed.add_field(name='User', value=f'{user.mention} ({user.id})')
+            embed.add_field(name='Moderator', value=str(self.bot.user if not author else author))
+            embed.add_field(name='Reason', value=reason)
+            embed.set_thumbnail(url=user.avatar_url)
+            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+            await channel.send(embed=embed)
+        except Exception as e:
+            print(e)
+            pass  # go away!
+
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
     async def unban(self, ctx, member, *, args=""):
@@ -270,7 +293,7 @@ Kick members perm needed"""
             reason = parsed_args["reason"]
 
         member, in_guild = await self.get_member_obj(ctx, member)
-        if not member:
+        if member is None:
             await ctx.send("Couldn't find that user!")
             return
 
@@ -278,21 +301,8 @@ Kick members perm needed"""
             await ctx.send(f'{member.mention} is not already banned.')
             return
 
-        await ctx.guild.unban(member, reason=reason)
+        await self.handle_unban({"member_id": member.id, "guild_id": ctx.guild.id}, reason=reason, author=ctx.author, ctx=ctx)
         await ctx.send(f'{member.mention} has been unbanned!')
-
-        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
-        if channel_id is None:
-            return
-        channel = self.bot.get_channel(channel_id)
-
-        embed = Embed(title='Unban', color=Colour.from_rgb(76, 176, 80))
-        embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
-        embed.add_field(name='Moderator', value=str(ctx.author))
-        embed.add_field(name='Reason', value=reason)
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await channel.send(embed=embed)
 
     # -----------------------MUTES------------------------------
 
@@ -330,7 +340,8 @@ Manage roles perm needed."""
             reason = parsed_args["reason"]
 
             if timeperiod:
-                await self.timer(self.bot.Todo.UNMUTE, timeperiod, member.id)
+                await ctx.reply("Registered a scheduled unmute")
+                await self.bot.tasks.submit_task("unmute", datetime.utcnow() + timedelta(seconds=timeperiod), extra_columns={"member_id": member.id, "guild_id": member.guild.id})
         await member.add_roles(role, reason=reason if reason else f'No reason - muted by {ctx.author.name}')
         await ctx.send(f':ok_hand: **{member}** has been muted')
         # 'you are muted ' + timestring
@@ -364,19 +375,28 @@ Manage roles perm needed."""
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
+    async def handle_unmute(self, data, reason: str=""):
+        try:
+            guild = self.bot.get_guild(data["guild_id"])
+            member = guild.get_member(data["member_id"])
+            role = get(guild.roles, id=self.bot.configs[guild.id]["muted_role"])
+            await member.remove_roles(role, reason=reason)
+        except Exception:
+            pass # whatever
+
+
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles = True)
     async def unmute(self, ctx, member: discord.Member, *, args=""):
         """Removes Muted role from a given user.
 Manage roles perm needed."""
-        reason = None
+        reason = ""
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"]
+        reason = reason if reason else f'No reason - unmuted by {ctx.author.name}'
 
-        role = get(member.guild.roles, id=self.bot.configs[member.guild.id]["muted_role"])
-        await member.remove_roles(role,
-                                  reason=reason if reason else f'No reason - unmuted by {ctx.author.name}')
+        await self.handle_unmute({"member_id": member.id, "guild_id": member.guild.id}, reason=reason)
         await ctx.send(f':ok_hand: **{member}** has been unmuted')
 
     # -----------------------SLOWMODE------------------------------
