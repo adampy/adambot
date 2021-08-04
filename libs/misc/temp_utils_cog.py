@@ -13,7 +13,7 @@ class Utils(commands.Cog):
         self.bot = bot
         self.bot.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
 
-        self.pages = []
+        self.bot.pages = [] #self.pages = []
         self.bot.flag_handler = self.bot.flags()
         self.bot.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.bot.flag_methods.str_time_to_seconds})
         self.bot.flag_handler.set_flag("reason", {"flag": "r"})
@@ -24,7 +24,7 @@ class Utils(commands.Cog):
     async def on_reaction_add(self, reaction, user):
         """Subroutine used to control EmbedPages stored within self.pages"""
         if not user.bot:
-            for page in self.pages:
+            for page in self.bot.pages:#self.pages:
                 if reaction.message == page.message and user == page.initiator:
                     # Do stuff
                     if reaction.emoji == self.bot.EmojiEnum.LEFT_ARROW:
@@ -45,7 +45,7 @@ class Utils(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         """Event that ensures that memory is freed up once a message containing an embed page is deleted."""
-        for page in self.pages:
+        for page in self.bot.pages:#self.pages:
             if message == page.message:
                 del page
                 break

@@ -35,7 +35,8 @@ TRIVIAS = [
 ]
 
 SETTINGS = {
-    'question_duration':20
+    'question_duration':20,
+    'ignored_questions_before_timeout':5
 }
 
 RESPONSES = {
@@ -63,6 +64,8 @@ class TriviaSession:
         self.started_at = None # Stores a datetime of when the trivia was started
         self.scores = {} # MemberID -> Score
         self.running = False # Stores the state of the game, this is used when the `trivia stop` command is used mid-game
+        self.attempts_at_current_question = 0
+        self.ignored_questions = 0 # Number of questions where no single answer was received
         self.load_trivia_data()
 
     def load_trivia_data(self):
@@ -104,29 +107,40 @@ class TriviaSession:
         await self.channel.send(f"**Question number {self.question_number}**!\n\n{self.question}")
         
         def check(m):
+            valid_attempt = not m.author.bot and m.channel == self.channel
+            if valid_attempt: self.attempts_at_current_question += 1
             return (
-                not m.author.bot
-                and m.channel == self.channel
+                valid_attempt
                 and True in [answer.lower() in m.content.lower() for answer in self.answers] # List contains True or False for each answer depending on if its present in the response
                 and self.question_number == current_question_number # Ensures that the question numbers are the same, if they aren't the same the question as been skipped
             )
 
         try:
+            self.attempts_at_current_question = 0
             response = await self.bot.wait_for("message", check=check, timeout = SETTINGS["question_duration"])
             # Correct answer
-            if not self.running: return
+            if not self.running:
+                return
             await self.channel.send(random.choice(RESPONSES["positive"]).format(response.author.display_name))
             self.increment_score(response.author)
         except asyncio.TimeoutError:
             # Incorrect answer
-            if self.question_number != current_question_number: return # The question has been skipped, score already incremented and another question asked - do nothing
-            if not self.running: return # The trivia has been stopped mid-question - do nothing
+            if self.question_number != current_question_number:
+                return # The question has been skipped, score already incremented and another question asked - do nothing
+            if not self.running:
+                return # The trivia has been stopped mid-question - do nothing
+            if self.attempts_at_current_question == 0:
+                self.ignored_questions += 1 # Add to ignored counter
             await self.channel.send(random.choice(RESPONSES["negative"]).format(self.answers[0].lower()))
             self.increment_score(self.bot.user)
         finally:
             # Move onto next question if not finished
-            if self.question_number != current_question_number: return # The question has been skipped, score already incremented and another question asked - do nothing
-            if self.running: self.bot.loop.create_task(self.ask_next_question()) # Adding to self.bot.loop prevents stack overflow errors
+            if self.question_number != current_question_number:
+                return # The question has been skipped, score already incremented and another question asked - do nothing
+            if self.ignored_questions >= SETTINGS["ignored_questions_before_timeout"]:
+                await self.trivia_end_leaderboard(msg_content = "Trivia session timed out :sob:") # If enough questions have been ignored, end the trivia
+            if self.running:
+                self.bot.loop.create_task(self.ask_next_question()) # Adding to self.bot.loop prevents stack overflow errors
 
     def increment_score(self, user: discord.User):
         """
@@ -135,7 +149,7 @@ class TriviaSession:
         before = self.scores.get(user.id, 0) # Default 0 if no key found
         self.scores[user.id] = before + 1
 
-    async def trivia_end_leaderboard(self, member:discord.Member = None, reset=True):
+    async def trivia_end_leaderboard(self, member:discord.Member = None, reset=True, msg_content = ""):
         """
         Method that displays a current, or finishing (if `reset` is True), leaderboard for the current trivia session. This method also sets `self.running` = `not reset`.
         """
@@ -149,7 +163,7 @@ class TriviaSession:
             embed.add_field(name=name, value=f'{round(self.scores[member_id]*100/total_score, 1)}% ({self.scores[member_id]})', inline=True)
         if reset:
             embed.set_footer(text=f'This trivia took {(datetime.utcnow()-self.started_at).seconds} seconds to complete.')
-        await self.channel.send(embed=embed)
+        await self.channel.send(msg_content, embed=embed)
 
     async def stop(self, invoker: discord.Member):
         """
