@@ -2,6 +2,7 @@ from discord.ext import commands
 from enum import Enum
 import copy
 import asyncpg
+import asyncio
 
 class Validation(Enum):
     Channel = 1     # Is a channel that the bot can read/write in
@@ -48,6 +49,9 @@ class Config(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        while not self.bot.online:
+            await asyncio.sleep(1)  # Wait else DB won't be available
+
         await self.add_all_guild_configs()
         self.bot.update_config = self.update_config
         self.bot.get_config_key = self.get_config_key

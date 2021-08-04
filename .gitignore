@@ -7,5 +7,4 @@
 /database.txt
 /.vs
 /.vscode
-/cogs/__pycache__
-/__pycache__
+__pycache__
