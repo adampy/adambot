@@ -5,6 +5,7 @@ import re
 from datetime import datetime, timedelta
 import time
 
+
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -18,10 +19,12 @@ class Member(commands.Cog):
             "guild_id": "bigint",
             "reason": "varchar(255)"})
 
-
     @commands.command(pass_context=True)
     async def host(self, ctx):
-        """Check if the bot is currently hosted locally or remotely"""
+        """
+        Check if the bot is currently hosted locally or remotely
+        """
+
         await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
 
     @commands.command(pass_context=True)
@@ -38,15 +41,10 @@ class Member(commands.Cog):
 # -----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
-    async def quote(self, ctx, messageid, channelid=None):
-        """Quote a message to remember it."""
-        if channelid is not None:
-            try:
-                channel = self.bot.get_channel(int(channelid))
-            except ValueError:
-                await ctx.send('Please use a channel id instead of words.')
-        else:
-            channel = ctx.message.channel
+    async def quote(self, ctx, messageid, channel: discord.TextChannel):
+        """
+        Quote a message to remember it.
+        """
 
         try:
             msg = await channel.fetch_message(messageid)
@@ -56,7 +54,7 @@ class Member(commands.Cog):
 
         user = msg.author
         image = None
-        repl = re.compile(r"/(\[.+?\])(\(.+?\))/")
+        repl = re.compile(r"/(\[.+?)(\(.+?\))/")
         edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ''
 
         content = re.sub(repl, r"\1​\2", msg.content)
@@ -65,7 +63,7 @@ class Member(commands.Cog):
             image = msg.attachments[0]['url']
 
         embed = Embed(title="Quote link",
-                      url=f"https://discordapp.com/channels/{channelid}/{messageid}",
+                      url=f"https://discordapp.com/channels/{channel.id}/{messageid}",
                       color=user.color,
                       timestamp=msg.created_at)
 
@@ -87,7 +85,7 @@ class Member(commands.Cog):
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
 
-        if 'bruh' in message.content.lower() and not message.author.bot and not True in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
+        if 'bruh' in message.content.lower() and not message.author.bot and True not in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
             await self.bot.update_config(message, "bruhs", await self.bot.get_config_key(message, "bruhs") + 1)
         return
 
@@ -102,7 +100,10 @@ class Member(commands.Cog):
 
     @commands.command()
     async def cool(self, ctx, *message):
-        """MaKe YoUr MeSsAgE cOoL"""
+        """
+        MaKe YoUr MeSsAgE cOoL
+        """
+
         text = ' '.join(message)
         new = ""
         uppercase = True
@@ -131,8 +132,11 @@ class Member(commands.Cog):
 
     @commands.command()
     async def spamping(self, ctx, amount, user: discord.Member, *message):
-        """For annoying certain people"""
-        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
+        """
+        For annoying certain people
+        """
+
+        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator:  # Only allow command if in private server or admin
             await ctx.message.delete()
             try:
                 iterations = int(amount)
@@ -146,8 +150,11 @@ class Member(commands.Cog):
 
     @commands.command()
     async def ghostping(self, ctx, amount, user: discord.Member):
-        """For sending a ghostping to annoy certain people"""
-        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
+        """
+        For sending a ghostping to annoy certain people
+        """
+
+        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator:  # Only allow command if in private server or admin
             await ctx.message.delete()
             for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
                 for i in range(int(amount)):
@@ -159,13 +166,16 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def serverinfo(self, ctx):
-        """Information about the server."""
+        """
+        Information about the server.
+        """
+
         guild = ctx.message.guild
-        time = guild.created_at
-        time_since = datetime.utcnow() - time
+        time_ = guild.created_at
+        time_since = datetime.utcnow() - time_
 
         join = Embed(title=f'**__{str(guild)}__**',
-                     description=f"Created at {self.bot.correct_time(time).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
+                     description=f"Created at {self.bot.correct_time(time_).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
                      value='Server Name', color=Colour.from_rgb(21, 125, 224))
         join.set_thumbnail(url=guild.icon_url)
 
@@ -184,7 +194,10 @@ class Member(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def userinfo(self, ctx, *args):
-        """Information about you or a user"""
+        """
+        Information about you or a user
+        """
+
         author = ctx.author
         guild = ctx.guild
 
@@ -278,6 +291,7 @@ class Member(commands.Cog):
         If the members DMs are closed, the reminder is sent in the channel the command
         was invoked in.
         """
+
         timeperiod = ''
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
@@ -304,7 +318,7 @@ class Member(commands.Cog):
 
 # -----------------------AVATAR------------------------------
 
-    @commands.command(pass_context=True, aliases = ["pfp"])
+    @commands.command(pass_context=True, aliases=["pfp"])
     async def avatar(self, ctx, member: discord.User = None):
         if not member:
             member = ctx.author
@@ -341,19 +355,19 @@ class Member(commands.Cog):
             string = f'{hour}AM'
         rn = self.bot.correct_time()
         if which == "GCSE":
-            time = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0)
+            time_ = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0)
         else:
-            time = datetime(year=2021, month=8, day=10, hour=hour, minute=0, second=0)
-        embed = Embed(title=f"Countdown until {which} results day at {string} (on {time.day}/{time.month}/{time.year})",
+            time_ = datetime(year=2021, month=8, day=10, hour=hour, minute=0, second=0)
+        embed = Embed(title=f"Countdown until {which} results day at {string} (on {time_.day}/{time_.month}/{time_.year})",
                       color=Colour.from_rgb(148, 0, 211))
-        time = time.replace(tzinfo=self.bot.display_timezone)
-        if rn > time:
+        time_ = time_.replace(tzinfo=self.bot.display_timezone)
+        if rn > time_:
             embed.description = "Results have already been released!"
         else:
-            time = time - rn
-            m, s = divmod(time.seconds, 60)
+            time_ = time_ - rn
+            m, s = divmod(time_.seconds, 60)
             h, m = divmod(m, 60)
-            embed.description = f"{time.days} days {h} hours {m} minutes {s} seconds remaining"
+            embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining"
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
                     self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
         embed.set_thumbnail(url=ctx.guild.icon_url)
@@ -366,17 +380,6 @@ class Member(commands.Cog):
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
                     self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
-        #time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
-        #        datetime.utcnow() + timedelta(hours=1))  # as above
-#
- #       m, s = divmod(time.seconds, 60)
-  #      h, m = divmod(m, 60)
-
-        #await ctx.send(f'''Until CS Paper 1 (the first GCSE exam) is
-#**{time.days}** days
-#**{h}** hours
-#**{m}** minutes
-#**{s}** seconds''')
 
     @commands.command(pass_context=True)
     async def code(self, ctx):

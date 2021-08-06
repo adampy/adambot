@@ -4,17 +4,19 @@ import copy
 import asyncpg
 import asyncio
 
+
 class Validation(Enum):
     Channel = 1     # Is a channel that the bot can read/write in
     Role = 2        # Is a valid role
     Integer = 3     # Is a valid integer
     String = 4      # String less than 2000 chars
 
+
 class Config(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.configs = {}
-        self.CONFIG = { # Stores each column of the config table, the type of validation it is, and a short description of how its used - the embed follows the same order as this
+        self.CONFIG = {  # Stores each column of the config table, the type of validation it is, and a short description of how its used - the embed follows the same order as this
             "welcome_channel": [Validation.Channel, "Where the welcome message is sent"],
             "welcome_msg": [Validation.String, "What is sent when someone new joins (<user> tags the new user)"],
             "support_log_channel": [Validation.Channel, "Where the logs from the support module go"],
@@ -59,7 +61,10 @@ class Config(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        """Adds configs to a certain guild - executed upon joining a new guild"""
+        """
+        Adds configs to a certain guild - executed upon joining a new guild
+        """
+
         await self.add_config(guild.id)
 
         # General configuration workflow:
@@ -71,6 +76,7 @@ class Config(commands.Cog):
         Method that gets the configuraton for a guild and puts it into self.bot.configs dictionary (with the guild ID as the key). The data
         is stored in the `config` table. If no configuration is found, a new record is made and a blank configuration dict.
         """
+
         if guild_id not in self.bot.configs:  # This check (to see if a DB call is needed) is okay because any updates made will be directly made to self.bot.configs (before DB propagation) TODO: Perhaps limit number of items in this
             async with self.bot.pool.acquire() as connection:
                 record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;", guild_id)
@@ -101,6 +107,7 @@ class Config(commands.Cog):
         Method that sends the config data stored in self.bot.configs and propagates them to the DB.
         Should only be called internally ideally.
         """
+
         data = self.bot.configs[guild_id]
         length = len(data.keys())
 
@@ -116,9 +123,6 @@ class Config(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             await connection.execute(sql, *data.values())
 
-
-
-
     # COMMANDS
     @commands.command()
     @commands.guild_only()
@@ -128,21 +132,27 @@ class Config(commands.Cog):
     @commands.group()
     @commands.guild_only()
     async def config(self, ctx):
-        """View the current configuration settings of the guild"""
+        """
+        View the current configuration settings of the guild
+        """
+
         if not (ctx.author.guild_permissions.administrator or await self.is_staff(ctx)):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
-        if ctx.invoked_subcommand is None: # User is staff and no subcommand => send embed
-            # To get the config options
-            # 1. Copy self.CONFIG into a new variable
-            # 2. Foreach config option, append the option to the list under the specific option's key (this is the embed value)
-            # 3. Pass the dict into EmbedPages for formatting
+        if ctx.invoked_subcommand is None:  # User is staff and no subcommand => send embed
+            """
+             To get the config options
+             1. Copy self.CONFIG into a new variable
+             2. Foreach config option, append the option to the list under the specific option's key (this is the embed value)
+             3. Pass the dict into EmbedPages for formatting
+            """
+
             data = copy.deepcopy(self.CONFIG)
             config_dict = self.bot.configs[ctx.guild.id]
             for key in config_dict.keys():
                 if key not in data.keys():
-                    continue # This clause ensures that variables, e.g. "bruhs", that are in the DB but not in self.CONFIG, do not appear
+                    continue  # This clause ensures that variables, e.g. "bruhs", that are in the DB but not in self.CONFIG, do not appear
                 
                 if data[key][0] == Validation.Channel:
                     channel = ctx.guild.get_channel(config_dict[key])
@@ -166,17 +176,20 @@ class Config(commands.Cog):
                 ctx.author,
                 ctx.channel,
                 desc=desc,
-                thumbnail_url = ctx.guild.icon_url,
-                icon_url = ctx.author.avatar_url,
-                footer = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
+                thumbnail_url=ctx.guild.icon_url,
+                icon_url=ctx.author.avatar_url,
+                footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
             )
-            await embed.set_page(1) # Default first page
+            await embed.set_page(1)  # Default first page
             await embed.send()
 
     @config.command(pass_context=True)
     @commands.guild_only()
-    async def set(self, ctx, key = None, *, value = None):  # consume then you don't have to wrap phrases in quotes
-        """Sets a configuration variable"""
+    async def set(self, ctx, key=None, *, value=None):  # consume then you don't have to wrap phrases in quotes
+        """
+        Sets a configuration variable
+        """
+
         if not (ctx.author.guild_permissions.administrator or await self.is_staff(ctx)):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
@@ -188,7 +201,6 @@ class Config(commands.Cog):
         if not value:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "You must specify a value to set the key to!")
             return
-
 
         key = key.lower()
         if key not in self.CONFIG.keys():
@@ -230,16 +242,19 @@ class Config(commands.Cog):
         if validation_type == Validation.Channel or validation_type == Validation.Role:
             self.bot.configs[ctx.guild.id][key] = value.id
             await self.propagate_config(ctx.guild.id)
-            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value.mention}"') # Value is either a TextChannel or Role
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value.mention}"')  # Value is either a TextChannel or Role
         else:
             self.bot.configs[ctx.guild.id][key] = value
             await self.propagate_config(ctx.guild.id)
             await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value}"')
 
-    @config.command(pass_context = True)
+    @config.command(pass_context=True)
     @commands.guild_only()
     async def remove(self, ctx, key):
-        """Removes a configuration variable"""
+        """
+        Removes a configuration variable
+        """
+
         if not (ctx.author.guild_permissions.administrator or await self.is_staff(ctx)):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
@@ -257,10 +272,13 @@ class Config(commands.Cog):
         await self.propagate_config(ctx.guild.id)
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f"It has been changed to ***N/A***")
 
-    @config.command(pass_context = True)
+    @config.command(pass_context=True)
     @commands.guild_only()
-    async def current(self, ctx, key = None):
-        """Shows the current configuration variable"""
+    async def current(self, ctx, key=None):
+        """
+        Shows the current configuration variable
+        """
+
         if not (ctx.author.guild_permissions.administrator or await self.is_staff(ctx)):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
@@ -284,11 +302,15 @@ class Config(commands.Cog):
             else:
                 await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of {key}",  config_dict[key] if config_dict[key] else "***N/A***")
 
-    @commands.command(pass_context = True)
+    @commands.command(pass_context=True)
     @commands.guild_only()
-    async def prefix(self, ctx, new_prefix = None):
-        """View the current prefix or change it"""
+    async def prefix(self, ctx, new_prefix=None):
+        """
+        View the current prefix or change it
+        """
+
         await self.add_config(ctx.guild.id)
+
         if new_prefix is None:
             prefix = self.bot.configs[ctx.guild.id]["prefix"]
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of prefix",  prefix)
@@ -298,14 +320,18 @@ class Config(commands.Cog):
             else:
                 await ctx.invoke(self.bot.get_command("config set"), "prefix", new_prefix)
 
-    @commands.command(pass_context = True)
+    @commands.command(pass_context=True)
     @commands.guild_only()
     async def staffcmd(self, ctx):
-        """Tests whether the staff role is set up correctly"""
+        """
+        Tests whether the staff role is set up correctly
+        """
+
         if await self.is_staff(ctx):  # can just use self ref
             await ctx.send("Hello staff member!")
         else:
             await ctx.send("You are not staff!")
+
 
 def setup(bot):
     bot.add_cog(Config(bot))

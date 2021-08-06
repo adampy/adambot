@@ -1,9 +1,10 @@
-## Adapted from Hodor's private bot
+# Adapted from Hodor's private bot
 
 from discord.ext import commands
 from discord import Embed, Colour
 
-class spotify(commands.Cog):
+
+class Spotify(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -33,7 +34,7 @@ class spotify(commands.Cog):
             return
         duration = spotify_activity.duration.seconds
         minutes = duration//60
-        seconds = duration%60
+        seconds = duration % 60
         if seconds < 10:
             seconds = "0" + str(seconds)
         song_start = self.bot.correct_time(spotify_activity.start).strftime("%H:%M:%S")
@@ -55,4 +56,4 @@ class spotify(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(spotify(bot))
+    bot.add_cog(Spotify(bot))

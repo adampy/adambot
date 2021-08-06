@@ -5,6 +5,7 @@ import datetime
 import random
 import ast
 
+
 class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -18,8 +19,9 @@ class Tasks(commands.Cog):
 
         await self.execute_tasks()
 
-
-    async def register_task_type(self, task_name: str, handling_method, delete_task: bool=True, needs_extra_columns={"member_id":"bigint", "guild_id":"bigint"}):  # expose to bot object
+    async def register_task_type(self, task_name: str, handling_method, delete_task: bool = True, needs_extra_columns=None):  # expose to bot object
+        if needs_extra_columns is None:
+            needs_extra_columns = {"member_id": "bigint", "guild_id": "bigint"}
         while not self.bot.online:
             await asyncio.sleep(1)  # wait else DB won't be available
 
@@ -58,7 +60,7 @@ class Tasks(commands.Cog):
     async def regtest(self, ctx, name, *, extra_columns):
         extra_columns = ast.literal_eval(extra_columns)
         await self.register_task_type(name, self.test_task, needs_extra_columns=extra_columns)
-        await ctx.reply(f"Registed {name} with test_task object")
+        await ctx.reply(f"Registered {name} with test_task object")
 
     @commands.command()
     @commands.guild_only()
@@ -97,6 +99,7 @@ class Tasks(commands.Cog):
                 await asyncio.sleep(1)  # workaround for task crashing when connection temporarily drops with db
 
             await asyncio.sleep(1)
+
 
 def setup(bot):
     bot.add_cog(Tasks(bot))

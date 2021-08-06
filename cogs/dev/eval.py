@@ -2,12 +2,14 @@ import os
 import inspect
 from discord.ext import commands
 
+
 class Eval(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
 
-    def split_2000(self, text):
+    @staticmethod
+    def split_2000(text):
         chunks = []
         while len(text) > 0:
             chunks.append(text[:2000])
@@ -20,6 +22,7 @@ class Eval(commands.Cog):
         Allows evaluating strings of code (intended for testing).
         If something doesn't output correctly try wrapping in str()
         """
+
         if not self.bot.is_dev(ctx):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
@@ -61,7 +64,7 @@ class Eval(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send('```-help sql```')
 
-    @sql.command(pass_context = True)
+    @sql.command(pass_context=True)
     async def execute(self, ctx, *command):
         if not self.bot.is_dev(ctx):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
@@ -72,7 +75,7 @@ class Eval(commands.Cog):
             except Exception as e:
                 await ctx.send(f"EXCEPTION: {e}")
 
-    @sql.command(pass_context = True)
+    @sql.command(pass_context=True)
     async def fetch(self, ctx, *command):
         if not self.bot.is_dev(ctx):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
