@@ -10,7 +10,7 @@ class Reputation(commands.Cog):
 
     async def get_leaderboard(self, ctx):
         async with self.bot.pool.acquire() as connection:
-            leaderboard = await connection.fetch('SELECT * FROM rep WHERE guild_id = $1 ORDER BY reps DESC', ctx.guild.id)
+            leaderboard = await connection.fetch('SELECT member_id, reps FROM rep WHERE guild_id = $1 ORDER BY reps DESC', ctx.guild.id)
 
         if len(leaderboard) == 0:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"There aren't any reputation points in {ctx.guild.name} yet! ")
@@ -267,7 +267,7 @@ class Reputation(commands.Cog):
         rep = None
         lb_pos = None
         async with self.bot.pool.acquire() as connection:
-            all_rep = await connection.fetch("SELECT * FROM rep WHERE guild_id = $1 ORDER by reps DESC;", ctx.guild.id)
+            all_rep = await connection.fetch("SELECT member_id, reps FROM rep WHERE guild_id = $1 ORDER by reps DESC;", ctx.guild.id)
             all_rep = [x for x in all_rep if ctx.channel.guild.get_member(x[0]) is not None]
             member_record = next((x for x in all_rep if x[0] == user.id), None)
             if member_record:  # If the user actually has reps

@@ -328,6 +328,9 @@ class Moderation(commands.Cog):
         """
 
         role = get(member.guild.roles, id=self.bot.configs[member.guild.id]["muted_role"])
+        if not role:
+            await ctx.send(":x: No muted role has been set!")
+            return
         if role in member.roles:
             await ctx.send(f":x: **{member}** is already muted! Unmute them and mute them again to change their mute")
             return
