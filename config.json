@@ -15,7 +15,6 @@
 		  "config"
 		],
 
-
 		"demographics": [
 		  "demographics"
 		],
@@ -34,6 +33,10 @@
 		"role": [
 		  "reactionroles",
 		  "role"
+		],
+
+		"starboard": [
+			"starboard"
 		]
 	  },
 

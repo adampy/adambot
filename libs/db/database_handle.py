@@ -113,3 +113,25 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             emoji TEXT,
             emoji_id BIGINT
         )""") # TODO: Normalise this table to 3NF?
+
+        # Starboard table
+        await connection.execute("""CREATE TABLE IF NOT EXISTS starboard(
+            channel_id BIGINT PRIMARY KEY,
+            guild_id BIGINT NOT NULL,
+            emoji TEXT,
+            emoji_id BIGINT,
+            minimum_stars INT NOT NULL,
+            embed_colour VARCHAR(7),
+            allow_self_star BOOL
+        )""")
+
+        # Starboard entry table
+        await connection.execute("""CREATE TABLE IF NOT EXISTS starboard_entry(
+            message_id BIGINT NOT NULL,
+            starboard_channel_id BIGINT NOT NULL,
+            bot_message_id BIGINT NOT NULL,
+            CONSTRAINT fk_starboard_reference 
+                    FOREIGN KEY (starboard_channel_id)
+                        REFERENCES starboard(channel_id)
+                        ON DELETE CASCADE
+        )""")

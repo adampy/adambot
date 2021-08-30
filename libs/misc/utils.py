@@ -97,6 +97,18 @@ class EmbedPages:
             elif self.page_type == PageTypes.ROLE_LIST:
                 self.embed.add_field(name=self.data[i].name, value=self.data[i].mention, inline=False)
 
+            elif self.page_type == PageTypes.STARBOARD_LIST:
+                starboard = self.data[i]
+                channel = self.bot.get_channel(starboard["channel_id"])
+                custom_emoji = self.bot.get_emoji(starboard["emoji_id"]) if starboard["emoji_id"] else None
+                colour = starboard["embed_colour"] if starboard["embed_colour"] else "#" + "".join([str(hex(component)).replace("0x", "").upper() for component in self.bot.GOLDEN_YELLOW.to_rgb()])
+                
+                sub_fields = f"• Minimum stars: {starboard['minimum_stars']}\n" # Add star subfield
+                sub_fields += "• Emoji: " + (starboard["emoji"] if starboard["emoji"] else f"<:{custom_emoji.name}:{custom_emoji.id}>") # Add either the standard emoji, or the custom one
+                sub_fields += "\n• Colour: " + colour
+                sub_fields += "\n• Allow self starring (author can star their own message): " + str(starboard["allow_self_star"])
+                self.embed.add_field(name=f"#{channel.name}", value=sub_fields, inline=False)
+
     async def previous_page(self):
         """
         Moves the embed to the previous page
@@ -163,6 +175,7 @@ class PageTypes:
     REP = 2
     CONFIG = 3
     ROLE_LIST = 4
+    STARBOARD_LIST = 5
 
 
 class EmojiEnum:
@@ -172,7 +185,8 @@ class EmojiEnum:
     RIGHT_ARROW = '\U000025b6'
     BUTTON = '\U00002b55'
     CLOSE = '\N{CROSS MARK}'
-
+    TRUE = '\U00002705'
+    FALSE = '\N{CROSS MARK}'
 
 CHANNELS = {
     "general": 445199175244709898
@@ -470,55 +484,72 @@ def starts_with_any(string, possible_starts):
 ERROR_RED = Colour.from_rgb(255, 7, 58)
 SUCCESS_GREEN = Colour.from_rgb(57, 255, 20)
 INFORMATION_BLUE = Colour.from_rgb(32, 141, 177)
-
+GOLDEN_YELLOW = Colour.from_rgb(252, 172, 66)
 
 # EMBED RESPONSES
 class DefaultEmbedResponses:
     @staticmethod
-    async def invalid_perms(bot, ctx, thumbnail_url=""):
+    async def invalid_perms(bot, ctx, thumbnail_url="", bare = False):
         """
         Internal procedure that is executed when a user has invalid perms
         """
 
         embed = Embed(title=f':x: You do not have permissions to do that!', description="You are but a weakling.",
                       color=ERROR_RED)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-            bot.ts_format), icon_url=ctx.author.avatar_url)
-
-        if thumbnail_url:
-            embed.set_thumbnail(url=thumbnail_url)
-
-        await ctx.reply(embed=embed)
+        if not bare:
+            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=ctx.author.avatar_url)
+            if thumbnail_url:
+                embed.set_thumbnail(url=thumbnail_url)
+        response = await ctx.reply(embed=embed)
+        return response
 
     @staticmethod
-    async def error_embed(bot, ctx, title, desc="", thumbnail_url=""):
+    async def error_embed(bot, ctx, title, desc="", thumbnail_url="", bare = False):
         embed = Embed(title=f':x: {title}', description=desc, color=ERROR_RED)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-            bot.ts_format), icon_url=ctx.author.avatar_url)
-        if thumbnail_url:
-            embed.set_thumbnail(url=thumbnail_url)
-        await ctx.reply(embed=embed)
+        if not bare:
+            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=ctx.author.avatar_url)
+            if thumbnail_url:
+                embed.set_thumbnail(url=thumbnail_url)
+        response = await ctx.reply(embed=embed)
+        return response
 
     @staticmethod
-    async def success_embed(bot, ctx, title, desc="", thumbnail_url=""):
+    async def success_embed(bot, ctx, title, desc="", thumbnail_url="", bare = False):
         embed = Embed(title=f':white_check_mark: {title}', description=desc, color=SUCCESS_GREEN)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-            bot.ts_format), icon_url=ctx.author.avatar_url)
-        if thumbnail_url:
-            embed.set_thumbnail(url=thumbnail_url)
-        await ctx.reply(embed=embed)
+        if not bare:
+            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
+              bot.ts_format), icon_url=ctx.author.avatar_url)
+            if thumbnail_url:
+                embed.set_thumbnail(url=thumbnail_url)
+        response = await ctx.reply(embed=embed)
+        return response
 
     @staticmethod
-    async def information_embed(bot, ctx, title, desc="", thumbnail_url=""):
+    async def information_embed(bot, ctx, title, desc="", thumbnail_url="", bare = False):
         embed = Embed(title=f':information_source: {title}', description=desc, color=INFORMATION_BLUE)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-            bot.ts_format), icon_url=ctx.author.avatar_url)
-        if thumbnail_url:
-            embed.set_thumbnail(url=thumbnail_url)
-        await ctx.reply(embed=embed)
+        if not bare:
+            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
+             bot.ts_format), icon_url=ctx.author.avatar_url)
+            if thumbnail_url:
+               embed.set_thumbnail(url=thumbnail_url)
+        response = await ctx.reply(embed=embed)
+        return response
+
+    @staticmethod
+    async def question_embed(bot, ctx, title, desc="", thumbnail_url="", bare = False):
+        embed = Embed(title=f':grey_question: {title}', description=desc, color=INFORMATION_BLUE)
+        if not bare:
+            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
+             bot.ts_format), icon_url=ctx.author.avatar_url)
+            if thumbnail_url:
+               embed.set_thumbnail(url=thumbnail_url)
+        response = await ctx.reply(embed=embed)
+        return response
 
 
-def correct_time(conv_time=None, timezone_="system", display_timezone=pytz.timezone('Europe/London')):
+def correct_time(conv_time=None, timezone_="Europe/London", display_timezone=pytz.timezone('Europe/London')):
     if not conv_time:
         conv_time = datetime.now()
     tz_obj = get_localzone() if timezone_ == "system" else pytz.timezone(timezone_)
