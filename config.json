@@ -11,6 +11,10 @@
 
 	"guild": {
 	  "guild_features": {
+		"actions": [
+		  "actions"
+		],
+		
 		"config": [
 		  "config"
 		],

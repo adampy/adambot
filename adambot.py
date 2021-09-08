@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 from discord.ext.commands import Bot, when_mentioned_or, when_mentioned
 import asyncpg
 import time
@@ -12,9 +13,12 @@ import libs.db.database_handle as database_handle  # not strictly a lib rn but h
 start_time = time.time()
 
 
-class AdamBot(Bot):
 
-    async def determine_prefix(self, bot, message):
+class AdamBot(Bot):
+    async def get_context(self, message, *, cls=commands.Context):
+        return await super().get_context(message, cls=cls) if cls else None
+
+    async def determine_prefix(self, bot, message: discord.Message) -> when_mentioned_or:
         """
         Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used
         'bot' is a required argument but also pointless since each AdamBot object isn't going to be trying to handle *other* AdamBot objects' prefixes
@@ -32,10 +36,13 @@ class AdamBot(Bot):
         Gets the prefixes that can be used to invoke a command in the guild where the message is from
         """
 
+        if not hasattr(self, "get_config_key"):
+            return []  # config cog not loaded yet
+
         guild_prefix = await self.get_config_key(message, "prefix")
         return [prefix for prefix in [self.user.mention, self.global_prefix if self.global_prefix else None, guild_prefix if guild_prefix else None] if type(prefix) is str]
 
-    def __init__(self, start_time, config_path="config.json", command_prefix=None, *args, **kwargs):
+    def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args, **kwargs):
         self.internal_config = self.load_internal_config(config_path)
         kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
 
@@ -54,7 +61,7 @@ class AdamBot(Bot):
         print(f"BOT INITIALISED {self._init_time - start_time} seconds")
         self.start_up(kwargs)  # kwargs passed here specifically to prevent leak of sensitive stuff passed in
 
-    async def close(self, ctx=None):  # ctx = None because this is also called upon CTRL+C in command line
+    async def close(self, ctx: commands.Context = None) -> None:  # ctx = None because this is also called upon CTRL+C in command line
         """
         Procedure that closes down AdamBot, using the standard client.close() command, as well as some database handling methods.
         """
@@ -76,7 +83,7 @@ class AdamBot(Bot):
         print(f"Bot closed after {time.time() - self.start_time} seconds")
 
     @staticmethod
-    def load_internal_config(config_path):
+    def load_internal_config(config_path: str) -> dict:
         """
         Loads bot's internal config from specified location.
 
@@ -98,7 +105,7 @@ class AdamBot(Bot):
         config_file.close()
         return config
 
-    def start_up(self, kwargs):
+    def start_up(self, kwargs: dict) -> None:
         """
         Command that starts AdamBot, is run in AdamBot.__init__
         """
@@ -131,7 +138,7 @@ class AdamBot(Bot):
         except Exception as e:
             print(f"Something went wrong handling the token!\nThe error was {type(e).__name__}: {e}")  # overridden close cleans this up neatly
 
-    def load_core_cogs(self):
+    def load_core_cogs(self) -> None:
         """
         Non-negotiable.
         """
@@ -154,7 +161,7 @@ class AdamBot(Bot):
                     f"\n\n\n[-]   {cog} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
                 exit()
 
-    def load_cogs(self):
+    def load_cogs(self) -> None:
         """
         Procedure that loads all the cogs, from tree in config file
         """
@@ -178,14 +185,14 @@ class AdamBot(Bot):
             else:
                 print(f"[X]    Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         await database_handle.create_tables_if_not_exists(self.pool)  # Makes tables if they do not exist
         self.login_time = time.time()
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
         await self.change_presence(activity=discord.Game(name=f'In {len(self.guilds)} servers | Type `help` for help'), status=discord.Status.online)
         self.online = True
 
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: commands.Context, error) -> None:
         if not hasattr(ctx.cog, "on_command_error"):  # don't re-raise if ext handling
             raise error  # re-raise error so cogs can mess around but not block every single error. Does duplicate traceback but error tracebacks are a bloody mess anyway
 

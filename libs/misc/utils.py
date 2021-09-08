@@ -187,6 +187,8 @@ class EmojiEnum:
     CLOSE = '\N{CROSS MARK}'
     TRUE = '\U00002705'
     FALSE = '\N{CROSS MARK}'
+    RECYCLE = '\U0000267b'
+    SPEAKING = '\U0001F5E3'
 
 CHANNELS = {
     "general": 445199175244709898

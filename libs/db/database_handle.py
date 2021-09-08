@@ -135,3 +135,11 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
                         REFERENCES starboard(channel_id)
                         ON DELETE CASCADE
         )""")
+
+        # Actions table
+        await connection.execute("""CREATE TABLE IF NOT EXISTS actions(
+            id SERIAL PRIMARY KEY,
+            guild_id BIGINT NOT NULL,
+            action_name VARCHAR(255),
+            action TEXT
+        )""")
