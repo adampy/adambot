@@ -30,7 +30,7 @@ def is_staff(func):
 
 def is_dev(func):
     """
-    Decorator that allows the command to only be executed by staff role or admin perms.
+    Decorator that allows the command to only be executed by developers.
     This needs to be placed underneath the @command.command() decorator, and can only be used for commands in a cog
 
     Usage:
