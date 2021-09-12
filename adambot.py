@@ -189,7 +189,7 @@ class AdamBot(Bot):
         await database_handle.create_tables_if_not_exists(self.pool)  # Makes tables if they do not exist
         self.login_time = time.time()
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
-        await self.change_presence(activity=discord.Game(name=f'In {len(self.guilds)} servers | Type `help` for help'), status=discord.Status.online)
+        await self.change_presence(activity=discord.Game(name=f'in {len(self.guilds)} servers | Type `help` for help'), status=discord.Status.online)
         self.online = True
 
     async def on_command_error(self, ctx: commands.Context, error) -> None:
