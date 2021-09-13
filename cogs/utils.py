@@ -414,7 +414,7 @@ class DefaultEmbedResponses:
     @staticmethod
     async def invalid_perms(bot, ctx, thumbnail_url = ""):
         """Internal procedure that is executed when a user has invalid perms"""
-        embed = Embed(title = f':x: You do not have permissions to do that!', description = "You are but a weakling.", color = ERROR_RED)
+        embed = Embed(title = f':x: You do not have permissions to do that!', description = "Only people with permissions (usually staff) can use this command!", color = ERROR_RED)
         embed.set_footer(text = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(bot.ts_format), icon_url = ctx.author.avatar_url)
         if thumbnail_url: embed.set_thumbnail(url = thumbnail_url)
         await ctx.reply(embed = embed)
