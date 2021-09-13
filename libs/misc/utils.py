@@ -177,7 +177,6 @@ class PageTypes:
     ROLE_LIST = 4
     STARBOARD_LIST = 5
 
-
 class EmojiEnum:
     MIN_BUTTON = '\U000023ee'
     MAX_BUTTON = '\U000023ed'
@@ -189,10 +188,6 @@ class EmojiEnum:
     FALSE = '\N{CROSS MARK}'
     RECYCLE = '\U0000267b'
     SPEAKING = '\U0001F5E3'
-
-CHANNELS = {
-    "general": 445199175244709898
-}
 
 SPAMPING_PERMS = [
     394978551985602571,  # Adam C
@@ -207,11 +202,6 @@ DEVS = [
 ]
 
 CODE_URL = "https://github.com/adampy/adambot"
-
-
-def is_dev(ctx):
-    return ctx.author.id in DEVS
-
 
 async def send_image_file(fig, channel, filename, extension="png"):
     """
