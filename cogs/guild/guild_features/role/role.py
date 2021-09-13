@@ -266,8 +266,8 @@ class Role(commands.Cog):
         embed.add_field(name="Mentionable", value=role.mentionable)
         embed.add_field(name="Colour", value=role.colour)
         embed.add_field(name="Role ID", value=role.id)
-        embed.set_thumbnail(url=ctx.guild.icon_url)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+        embed.set_thumbnail(url=ctx.guild.icon.url)
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
 
         await ctx.send(embed=embed)
 
@@ -294,8 +294,8 @@ class Role(commands.Cog):
             self.bot,
             ctx.author,
             ctx.channel,
-            thumbnail_url=ctx.guild.icon_url,
-            icon_url=ctx.author.avatar_url,
+            thumbnail_url=ctx.guild.icon.url,
+            icon_url=ctx.author.avatar.url,
             footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
         )
 

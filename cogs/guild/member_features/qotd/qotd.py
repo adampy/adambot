@@ -90,8 +90,8 @@ class QOTD(commands.Cog):
                 self.bot,
                 ctx.author,
                 ctx.channel,
-                thumbnail_url=ctx.guild.icon_url,
-                icon_url=ctx.author.avatar_url,
+                thumbnail_url=ctx.guild.icon.url,
+                icon_url=ctx.author.avatar.url,
                 footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
             )
             await embed.set_page(int(page_num))

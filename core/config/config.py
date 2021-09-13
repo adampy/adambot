@@ -176,8 +176,8 @@ class Config(commands.Cog):
                 ctx.author,
                 ctx.channel,
                 desc=desc,
-                thumbnail_url=ctx.guild.icon_url,
-                icon_url=ctx.author.avatar_url,
+                thumbnail_url=ctx.guild.icon.url,
+                icon_url=ctx.author.avatar.url,
                 footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
             )
             await embed.set_page(1)  # Default first page

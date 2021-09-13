@@ -24,8 +24,8 @@ class Reputation(commands.Cog):
             self.bot,
             ctx.author,
             ctx.channel,
-            thumbnail_url=ctx.guild.icon_url,
-            icon_url=ctx.author.avatar_url,
+            thumbnail_url=ctx.guild.icon.url,
+            icon_url=ctx.author.avatar.url,
             footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
         )
         await embed.set_page(1)  # Default first page
@@ -102,7 +102,7 @@ class Reputation(commands.Cog):
 
             failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{ctx.prefix}rep Member_Name`\nor\n`{ctx.prefix}rep @Member`\n'
                              f'Pro tip: If e.g. fred roberto was recently active you can type `{ctx.prefix}rep fred`\n\nTo see the other available rep commands type `{ctx.prefix}help rep`', inline=False)
-            failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+            failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
 
             await ctx.send(embed=failed)
             return
@@ -121,7 +121,7 @@ class Reputation(commands.Cog):
 
             if award:
                 reps = await self.modify_rep(user, 1)
-                await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick} received a reputation point!", desc=f"{user.mention} now has {reps} reputation points!", thumbnail_url=user.avatar_url)
+                await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick} received a reputation point!", desc=f"{user.mention} now has {reps} reputation points!", thumbnail_url=user.avatar.url)
 
                 # Log rep
                 channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
@@ -137,11 +137,11 @@ class Reputation(commands.Cog):
                 await channel.send(embed=embed)
 
             else:  # Rep cannot be given
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, title, desc="Contact a member of staff if you think you are seeing this by mistake.", thumbnail_url=user.avatar_url)
-                # user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, title, desc="Contact a member of staff if you think you are seeing this by mistake.", thumbnail_url=user.avatar.url)
+                # user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
         else:
             desc = "The bot overlords do not accept puny humans' rewards" if user.bot else "You cannot rep yourself, cheating bugger."
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"Failed to award a reputation point to {nick}", desc=desc, thumbnail_url=user.avatar_url)
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"Failed to award a reputation point to {nick}", desc=desc, thumbnail_url=user.avatar.url)
 
     @rep.command(aliases=['lb'])
     @commands.guild_only()
@@ -196,7 +196,7 @@ class Reputation(commands.Cog):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The reputation points must be a number!")
             return
         new_reps = await self.set_rep(user.id, ctx.guild.id, int(rep))
-        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{user.display_name}'s reputation points have been changed!", desc=f"{user.display_name} now has {new_reps} reputation points!", thumbnail_url=user.avatar_url)
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{user.display_name}'s reputation points have been changed!", desc=f"{user.display_name} now has {new_reps} reputation points!", thumbnail_url=user.avatar.url)
 
         channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
         if channel_id is None:
@@ -287,8 +287,8 @@ class Reputation(commands.Cog):
         # could change to user.colour at some point, I prefer the purple for now though
         embed.add_field(name='Rep points', value=rep)
         embed.add_field(name='Leaderboard position', value=self.bot.ordinal(lb_pos) if lb_pos else 'Nowhere :(')
-        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+        embed.set_thumbnail(url=user.avatar.url)
         await ctx.send(embed=embed)
 
     @rep.command()

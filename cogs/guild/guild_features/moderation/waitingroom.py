@@ -216,7 +216,7 @@ class WaitingRoom(commands.Cog):
         embed.add_field(name='Members', value=str(len(members)))
         embed.add_field(name='Reason', value='Auto-kicked from the -lurkers kick command')
         embed.add_field(name='Initiator', value=ctx.author.mention)
-        embed.set_thumbnail(url=ctx.author.avatar_url)
+        embed.set_thumbnail(url=ctx.author.avatar.url)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 

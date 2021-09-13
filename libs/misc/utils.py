@@ -490,7 +490,7 @@ class DefaultEmbedResponses:
                       color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=ctx.author.avatar_url)
+                bot.ts_format), icon_url=ctx.author.avatar.url)
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -501,7 +501,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':x: {title}', description=desc, color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=ctx.author.avatar_url)
+                bot.ts_format), icon_url=ctx.author.avatar.url)
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -512,7 +512,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':white_check_mark: {title}', description=desc, color=SUCCESS_GREEN)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-              bot.ts_format), icon_url=ctx.author.avatar_url)
+              bot.ts_format), icon_url=ctx.author.avatar.url)
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -523,7 +523,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':information_source: {title}', description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=ctx.author.avatar_url)
+             bot.ts_format), icon_url=ctx.author.avatar.url)
             if thumbnail_url:
                embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -534,7 +534,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':grey_question: {title}', description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=ctx.author.avatar_url)
+             bot.ts_format), icon_url=ctx.author.avatar.url)
             if thumbnail_url:
                embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -543,6 +543,7 @@ class DefaultEmbedResponses:
 
 def correct_time(conv_time=None, timezone_="Europe/London", display_timezone=pytz.timezone('Europe/London')):
     if not conv_time:
-        conv_time = datetime.now()
+        conv_time = datetime.utcnow()
     tz_obj = get_localzone() if timezone_ == "system" else pytz.timezone(timezone_)
-    return tz_obj.localize(conv_time).astimezone(display_timezone)
+    #return tz_obj.localize(conv_time).astimezone(display_timezone)
+    return conv_time

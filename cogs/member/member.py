@@ -69,7 +69,7 @@ class Member(commands.Cog):
 
         if image:
             embed.set_image(url=image)
-        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=user.avatar_url)
+        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=user.avatar.url)
         embed.description = f"❝ {content} ❞" + edited
         await ctx.send(embed=embed)
 
@@ -177,7 +177,7 @@ class Member(commands.Cog):
         join = Embed(title=f'**__{str(guild)}__**',
                      description=f"Created at {self.bot.correct_time(time_).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
                      value='Server Name', color=Colour.from_rgb(21, 125, 224))
-        join.set_thumbnail(url=guild.icon_url)
+        join.set_thumbnail(url=guild.icon.url)
 
         join.add_field(name='Region', value=str(guild.region))
         join.add_field(name='Users Online',
@@ -262,9 +262,8 @@ class Member(commands.Cog):
         name = f"{user} ~ {user.display_name}"
 
         if user.avatar:
-            avatar = user.avatar_url_as(static_format="png")
-            data.set_author(name=name, icon_url=avatar)
-            data.set_thumbnail(url=avatar)
+            data.set_author(name=name, icon_url=user.avatar.url)
+            data.set_thumbnail(url=user.avatar.url)
         else:
             data.set_author(name=name)
 
@@ -323,7 +322,7 @@ class Member(commands.Cog):
         if not member:
             member = ctx.author
 
-        await ctx.send(member.avatar_url)
+        await ctx.send(member.avatar.url)
 
 # -----------------------COUNTDOWNS------------------------------
 
@@ -369,8 +368,8 @@ class Member(commands.Cog):
             h, m = divmod(m, 60)
             embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining"
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
-        embed.set_thumbnail(url=ctx.guild.icon_url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+        embed.set_thumbnail(url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True, aliases=["exams", "alevels"])
@@ -378,7 +377,7 @@ class Member(commands.Cog):
         embed = Embed(title="Information on UK exams",  color=Colour.from_rgb(148, 0, 211),
                       description="UK exams are not going ahead this year and have instead been replaced by teacher assessments!")
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)

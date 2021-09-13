@@ -17,7 +17,7 @@ class Starboard(commands.Cog):
         Turns the message into an Embed that can be sent in the starboard channel
         """
         embed = discord.Embed(title=f"{stars} {emoji} (in #{message.channel.name})", color=color if color else self.bot.GOLDEN_YELLOW, description=message.content)
-        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
         if message.embeds:
             embedded_data = message.embeds[0]
             if embedded_data.type == 'image' and not self.is_url_spoiler(message.content, embedded_data.url):
@@ -258,8 +258,8 @@ class Starboard(commands.Cog):
             self.bot,
             ctx.author,
             ctx.channel,
-            thumbnail_url=ctx.guild.icon_url,
-            icon_url=ctx.author.avatar_url,
+            thumbnail_url=ctx.guild.icon.url,
+            icon_url=ctx.author.avatar.url,
             footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format),
         )
 

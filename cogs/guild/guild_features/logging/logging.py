@@ -3,6 +3,23 @@ from discord.ext import commands
 from discord import Embed, Colour
 from discord.utils import get
 
+def getdeepattr(obj, dotted_attr):
+    """
+    Custom utility function that provides the same functionality as `getattr()` but it allows dotted attributes, e.g. `getdeepattr(member, "avatar.url")`
+    """
+    for child in dotted_attr.split("."):
+        obj = getattr(obj, child)
+    return obj
+
+def hasdeepattr(obj, dotted_attr):
+    """
+    Custom utility function that provides the same functionality as `hasattr()` but it allows dotted attributes, e.g. `hasdeepattr(member, "avatar.url")`
+    """
+    try:
+        getdeepattr(obj, dotted_attr)
+        return True
+    except AttributeError:
+        return False
 
 class Logging(commands.Cog):
     def __init__(self, bot):
@@ -134,7 +151,7 @@ class Logging(commands.Cog):
         Handler that returns the old avatar for thumbnail usage and the new avatar for the embed image
         """
 
-        return {"thumbnail_url": before.avatar_url, "image": after.avatar_url, "description": ":arrow_right: Old Avatar\n:arrow_down: New Avatar"}
+        return {"thumbnail_url": before.avatar.url, "image": after.avatar.url, "description": ":arrow_right: Old Avatar\n:arrow_down: New Avatar"}
 
     @staticmethod
     async def disp_name_handler(before, after):
@@ -176,7 +193,7 @@ class Logging(commands.Cog):
                           "custom_handler": self.embed_role_comparison
                           },
 
-                         {"name": "avatar_url",
+                         {"name": "avatar.url",
                           "display_name": "Avatar",
                           "colour": user_updated_colour,
                           "custom_handler": self.avatar_handler
@@ -198,15 +215,16 @@ class Logging(commands.Cog):
 
         for prop in watched_props:
             thumbnail_set = False
-            if hasattr(before, prop["name"]) and hasattr(after, prop["name"]):  # user objects don't have all the same properties as member objects
 
-                if getattr(before, prop["name"]) != getattr(after, prop["name"]):
+            if hasdeepattr(before, prop["name"]) and hasdeepattr(after, prop["name"]):  # user objects don't have all the same properties as member objects
+
+                if getdeepattr(before, prop["name"]) != getdeepattr(after, prop["name"]):
                     log = Embed(title=f':information_source: {prop["display_name"]} Updated', color=prop["colour"])
                     log.add_field(name='User', value=f'{after} ({after.id})', inline=True)
 
                     if not prop["custom_handler"]:
-                        log.add_field(name=f'Old {prop["display_name"].lower()}', value=getattr(before, prop["name"]))
-                        log.add_field(name=f'New {prop["display_name"].lower()}', value=getattr(after, prop["name"]))
+                        log.add_field(name=f'Old {prop["display_name"].lower()}', value=getdeepattr(before, prop["name"]))
+                        log.add_field(name=f'New {prop["display_name"].lower()}', value=getdeepattr(after, prop["name"]))
 
                     else:
                         """
@@ -230,7 +248,7 @@ class Logging(commands.Cog):
                             continue
 
                     if not thumbnail_set:
-                        log.set_thumbnail(url=after.avatar_url)
+                        log.set_thumbnail(url=after.avatar.url)
                     log.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
                     # Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
@@ -287,7 +305,7 @@ class Logging(commands.Cog):
         roles_str = roles_str[:len(roles_str) - 2]
 
         member_left.add_field(name="Roles", value=roles_str if member.roles[1:] else "None", inline=False)
-        member_left.set_thumbnail(url=member.avatar_url)
+        member_left.set_thumbnail(url=member.avatar.url)
         member_left.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=member_left)
 
@@ -323,7 +341,7 @@ class Logging(commands.Cog):
             if len(updated_invites) == 1:
                 invite_log.set_author(
                     name=f"{updated_invites[0].inviter} ~ {updated_invites[0].inviter.display_name}" if updated_invites[0].inviter else f"{guild.name} ~ Vanity URL",
-                    icon_url=updated_invites[0].inviter.avatar_url if hasattr(updated_invites[0].inviter, 'avatar_url') else guild.icon_url)
+                    icon_url=updated_invites[0].inviter.avatar.url if hasattr(updated_invites[0].inviter.avatar, 'url') else guild.icon.url)
 
                 invite_log.description = ":arrow_up: Inviter Avatar\n:arrow_right: Member Avatar"
             else:
@@ -348,7 +366,7 @@ class Logging(commands.Cog):
             if not updated_invites:
                 invite_log.add_field(name="Invite used", value="Undetected")
 
-            invite_log.set_thumbnail(url=member.avatar_url)
+            invite_log.set_thumbnail(url=member.avatar.url)
             if (invite_log.to_dict() not in self.previous_inv_log_embeds) or not updated_invites:  # limits log spam e.g. if connection drops
 
                 if possible_joins_missed or len(updated_invites) != 1:
@@ -366,7 +384,7 @@ class Logging(commands.Cog):
         member_join.add_field(name="User", value=f"{member} ({member.id})\n | {member.mention}")
         member_join.add_field(name="Created",
                               value=self.bot.correct_time(member.created_at).strftime(self.bot.ts_format))
-        member_join.set_thumbnail(url=member.avatar_url)
+        member_join.set_thumbnail(url=member.avatar.url)
         member_join.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=member_join)
 
