@@ -15,17 +15,20 @@ from discord import Embed, errors
     Perhaps do this as a global standard in the bot at some point?
 """
 
-class Verbosity: # Using enum.Enum means that '>' and '<' operations cannot be performed, e.g. Verbosity.ALL > Verbosity.MINIMAL
+
+class Verbosity:  # Using enum.Enum means that '>' and '<' operations cannot be performed, e.g. Verbosity.ALL > Verbosity.MINIMAL
     SILENT = 0
     MINIMAL = 1
     ALL = 2
 
-class CheckedRoleChangeResult: # Used for the results of the `Role.checked_role_change()` func
+
+class CheckedRoleChangeResult:  # Used for the results of the `Role.checked_role_change()` func
     SUCCESS = 0
     FAILURE = 1
-    MISSING_ROLE = 1.1 # TODO: Would it be better to change these to integers??
+    MISSING_ROLE = 1.1  # TODO: Would it be better to change these to integers??
     HAS_ROLE = 1.2
     CRITICAL_ERROR = 2
+
 
 class Role(commands.Cog):
     def __init__(self, bot):
@@ -65,7 +68,7 @@ class Role(commands.Cog):
 
         return possible
 
-    async def manage_roles_check(self, ctx, action, role: discord.Role=None, verbosity=Verbosity.ALL, error_title="default"):  # verbose toggle e.g. in multi-role changes
+    async def manage_roles_check(self, ctx, action, role: discord.Role = None, verbosity=Verbosity.ALL, error_title="default"):  # verbose toggle e.g. in multi-role changes
         """
         Error checking to see if whatever action can be performed.
 
@@ -100,7 +103,7 @@ class Role(commands.Cog):
                 return 1
         return 0
 
-    async def checked_role_change(self, ctx, role: discord.Role, member: discord.Member, action: str, tracker: discord.Message=None, part_of_more=False, single_output=True):
+    async def checked_role_change(self, ctx, role: discord.Role, member: discord.Member, action: str, tracker: discord.Message = None, part_of_more=False, single_output=True):
         """
         Returns:
             0: Everything fine
@@ -115,9 +118,9 @@ class Role(commands.Cog):
             return
 
         verb = "added" if action == "add" else "removed"
-        reason=f"Requested by {ctx.author}"
+        reason = f"Requested by {ctx.author}"
         check = await self.manage_roles_check(ctx, action, role=role, error_title="Operation aborted!" if part_of_more else "default")
-        return_check = CheckedRoleChangeResult.SUCCESS if check == 0 else CheckedRoleChangeResult.CRITICAL_ERROR # This variable gets returned
+        return_check = CheckedRoleChangeResult.SUCCESS if check == 0 else CheckedRoleChangeResult.CRITICAL_ERROR  # This variable gets returned
         if check == 0:
             try:
                 if action == "remove":
@@ -166,6 +169,7 @@ class Role(commands.Cog):
         """
         Hack of the century
         """
+
         self.concurr_dummy.update(enabled=False, hidden=True)  # not even the FBI can find me!
 
     @commands.group()
@@ -235,8 +239,8 @@ class Role(commands.Cog):
     @role.command(
         brief="role info <role> - Display role info",
 
-        help =
-        """
+        help="""
+        
             role info <role>
             
             <role> can be: @role, role_id or role name
@@ -248,6 +252,7 @@ class Role(commands.Cog):
         Displays various details about a specified role.
         Works with a role mention, role name or role ID.
         """
+
         role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
         if len(role) > 1:
             return
@@ -255,22 +260,14 @@ class Role(commands.Cog):
 
         embed = Embed(title=f"Role info ~ {role.name}", colour=role.colour)
         embed.add_field(name="Created at", value=self.bot.correct_time(role.created_at))
-
         embed.add_field(name="Members", value=len(role.members))
-
         embed.add_field(name="Position", value=role.position)
-
         embed.add_field(name="Displays separately", value=role.hoist)
-
         embed.add_field(name="Mentionable", value=role.mentionable)
-
         embed.add_field(name="Colour", value=role.colour)
-
         embed.add_field(name="Role ID", value=role.id)
-
-        embed.set_thumbnail(url=ctx.guild.icon_url)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format),
-                         icon_url=ctx.author.avatar_url)
+        embed.set_thumbnail(url=ctx.guild.icon.url)
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
 
         await ctx.send(embed=embed)
 
@@ -278,8 +275,8 @@ class Role(commands.Cog):
         name="list",
         brief="role list - lists all the roles on the server currently",
 
-        help=
-        """
+        help="""
+        
             role list
         """
     )
@@ -297,20 +294,19 @@ class Role(commands.Cog):
             self.bot,
             ctx.author,
             ctx.channel,
-            thumbnail_url=ctx.guild.icon_url,
-            icon_url=ctx.author.avatar_url,
+            thumbnail_url=ctx.guild.icon.url,
+            icon_url=ctx.author.avatar.url,
             footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
         )
 
         await embed.set_page(1)
         await embed.send()
 
-
     @role.command(
         brief="role members <role> - List all members with a role",
 
-        help=
-        """
+        help="""
+
             role members <role>
             
             <role> can be: @role, role_id or role name
@@ -361,15 +357,15 @@ class Role(commands.Cog):
         NOTE: Names have to be case-sensitive and without spaces currently.
         """
 
-        if not (ctx.author.guild_permissions.manage_roles or await self.bot.is_staff(ctx)):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+        if ctx.author.guild_permissions.manage_roles or await self.bot.is_staff(ctx):
+            role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
+            if len(role) > 1:
+                return
+
+            await self.checked_role_change(ctx, role[0], member, "add")
             return
 
-        role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
-        if len(role) > 1:
-            return
-
-        await self.checked_role_change(ctx, role[0], member, "add")
+        await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
 
     @role.command(
         brief="role remove <role> <member> - Remove a role from a member",
@@ -397,12 +393,12 @@ class Role(commands.Cog):
         await self.checked_role_change(ctx, role[0], member, "remove")
 
     @role.command(
-        long_op = True,
+        long_op=True,
 
         brief="role swap <from> <to> - Shift members from one role to another",
 
-        help=
-        """
+        help="""
+        
             __**Staff role required**__
             
             role swap <role to swap from> <role to swap to>
@@ -476,12 +472,12 @@ class Role(commands.Cog):
                                                                                                        + ("" if already_got_dest_role == 0 else f" ({already_got_dest_role} already had {swap_to.mention})"))
 
     @role.command(
-        long_op = True,
+        long_op=True,
 
         brief="role removeall <role> - Remove a role from all members who have it",
 
-        help=
-        """
+        help="""
+        
             __**Staff role required**__
             
             role removeall <role>
@@ -510,35 +506,35 @@ class Role(commands.Cog):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
-        if not len(role.members):
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Nothing to do!", desc="Nobody has this role!")
+        if len(role.members):
+            members = role.members
+            tracker = await ctx.reply(f"Removed role from **0/{len(members)}** members")
+            done = 0
+            fail = 0
+            for member in members:
+                result = await self.checked_role_change(ctx, role, member, "remove", tracker=tracker, part_of_more=True)
+                if result == CheckedRoleChangeResult.SUCCESS:
+                    done += 1
+                    await tracker.edit(content=f"Removed role from **{done}/{len(members)}** members")
+                elif result == CheckedRoleChangeResult.CRITICAL_ERROR:
+                    return
+                elif result == CheckedRoleChangeResult.MISSING_ROLE:
+                    fail += 1
+            await tracker.delete()
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Operation completed!", desc=f"Successfully removed {role.mention} from **{done}** members"
+                                                                                                           + ("" if done == len(members) else f" ({len(members) - done} failed)")
+                                                                                                           + ("" if fail == 0 else f" ({fail} already had {role.mention} removed, but not by the bot)"))
             return
 
-        members = role.members
-        tracker = await ctx.reply(f"Removed role from **0/{len(members)}** members")
-        done = 0
-        fail = 0
-        for member in members:
-            result = await self.checked_role_change(ctx, role, member, "remove", tracker=tracker, part_of_more=True)
-            if result == CheckedRoleChangeResult.SUCCESS:
-                done += 1
-                await tracker.edit(content=f"Removed role from **{done}/{len(members)}** members")
-            elif result == CheckedRoleChangeResult.CRITICAL_ERROR:
-                return
-            elif result == CheckedRoleChangeResult.MISSING_ROLE:
-                fail += 1
-        await tracker.delete()
-        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Operation completed!", desc=f"Successfully removed {role.mention} from **{done}** members"
-                                                                                                       + ("" if done == len(members) else f" ({len(members) - done} failed)")
-                                                                                                       + ("" if fail == 0 else f" ({fail} already had {role.mention} removed, but not by the bot)"))
+        await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Nothing to do!", desc="Nobody has this role!")
 
     @role.command(
-        long_op = True,
+        long_op=True,
 
         brief="role addall <with> <add> - Adds role to members with another role",
 
-        help=
-        """
+        help="""
+        
             __**Staff role required**__
             
             role addall <with role> <role to add>
@@ -605,12 +601,12 @@ class Role(commands.Cog):
                                                                                                        + ("" if fail == 0 else f" ({fail} already had {add_role.mention})"))
 
     @role.command(
-        long_op = True,
+        long_op=True,
 
         brief="role clear <member> - Removes all of a member's removeable roles",
 
-        help=
-        """
+        help="""
+        
             __**Staff role required**__
         
             role clear <member>
@@ -645,13 +641,12 @@ class Role(commands.Cog):
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "No roles were removed!", desc=f"{member.mention} already has no roles!")
             return
 
-
         fail = []
 
         roles = member.roles[1:]
         for i in range(len(roles)):
             try:
-                if await self.manage_roles_check(ctx, "remove", role=roles[i], verbosity=Verbosity.SILENT) == 0: # Then no errors will occur
+                if await self.manage_roles_check(ctx, "remove", role=roles[i], verbosity=Verbosity.SILENT) == 0:  # Then no errors will occur
                     await member.remove_roles(roles[i], reason=f"Requested by {ctx.author}")
                 else:
                     fail.append(roles[i].name)

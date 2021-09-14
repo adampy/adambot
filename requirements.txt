@@ -1,6 +1,8 @@
-discord.py
+git+git://github.com/Rapptz/discord.py.git
 requests
 asyncpg
 matplotlib
 pytz
 tzlocal
+pandas
+emoji

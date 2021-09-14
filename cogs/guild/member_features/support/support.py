@@ -3,30 +3,38 @@ from discord import Embed, Colour
 from discord.ext import commands
 import asyncio
 
-#support
-	    #id SERIAL PRIMARY KEY,
-	    #member_id bigint,
-	    #staff_id bigint,
-	    #started_at timestamptz,
-        #guild_id bigint
+"""
+support
+
+id SERIAL PRIMARY KEY,
+member_id bigint,
+staff_id bigint,
+started_at timestamptz,
+guild_id bigint
+"""
+
 
 class MessageOrigin:
     MEMBER = 0
     STAFF = 1
 
+
 class SupportConnection:
-    def __init__(self, id, member_id, staff_id, started_at, guild_id):
-        self.id = id
+    def __init__(self, id_, member_id, staff_id, started_at, guild_id):
+        self.id = id_
         self.member_id = member_id
         self.staff_id = staff_id
         self.started_at = started_at
         self.guild_id = guild_id
 
     @classmethod
-    async def create(cls, bot: commands.Bot, id, member_id, staff_id, started_at, guild_id = 0):
-        """Classmethod that allows async code to be executed, and therefore the staff and user objects
-        to be obtained from the bot."""
-        self = SupportConnection(id, member_id, staff_id, started_at, guild_id)
+    async def create(cls, bot: commands.Bot, id_, member_id, staff_id, started_at, guild_id=0):
+        """
+        Class method that allows async code to be executed, and therefore the staff and user objects
+        to be obtained from the bot.
+        """
+
+        self = SupportConnection(id_, member_id, staff_id, started_at, guild_id)
         self.bot = bot
         if member_id != 0:
             self.member = bot.get_user(member_id)
@@ -37,15 +45,18 @@ class SupportConnection:
         return self
 
     async def log_message(self, msg_type: MessageOrigin, message: discord.Message):
-        """Method that should be executed when a new message is sent through a support ticket. `message`
-        refers to the actual message object sent and `msg_type` should be of the MessageOrigin type."""
+        """
+        Method that should be executed when a new message is sent through a support ticket. `message`
+        refers to the actual message object sent and `msg_type` should be of the MessageOrigin type.
+        """
+
         channel_id = self.bot.configs[self.guild.id]["support_log_channel"]
         if channel_id is not None:
             channel = self.bot.get_channel(self.bot.configs[self.guild.id]["support_log_channel"])
             if channel is None:
                 return
 
-            embed = Embed(title='Message Sent', color=Colour.from_rgb(177,252,129))
+            embed = Embed(title='Message Sent', color=Colour.from_rgb(177, 252, 129))
             embed.add_field(name="ID", value=f"{self.id}", inline=True)
             if msg_type == MessageOrigin.MEMBER:
                 embed.add_field(name='Author', value=f'Member', inline=True)
@@ -56,11 +67,15 @@ class SupportConnection:
             await channel.send(embed=embed)
 
     async def accept(self, staff: discord.User):
-        """Method that executes when a staff member has accepted the support ticket that handles the database and objects but nothing else"""
-        async with self.bot.pool.acquire() as connection: #TODO: Handle when a staff already has a ticket open
+        """
+        Method that executes when a staff member has accepted the support ticket that handles the database and objects but nothing else
+        """
+
+        async with self.bot.pool.acquire() as connection:  # TODO: Handle when a staff already has a ticket open
             await connection.execute('UPDATE support SET staff_id = $1, started_at = now() WHERE id = $2', staff.id, self.id)
         self.staff_id = staff.id
         self.staff = staff
+
 
 class SupportConnectionManager:
     def __init__(self, bot: commands.Bot):
@@ -68,7 +83,10 @@ class SupportConnectionManager:
         self.bot = bot
 
     async def refresh_connections(self):
-        """Background task running approx. every 5 seconds to refresh the current list of connections."""
+        """
+        Background task running approx. every 5 seconds to refresh the current list of connections.
+        """
+
         while self.bot.online:
             try:
                 self.connections = await self.get()
@@ -77,8 +95,10 @@ class SupportConnectionManager:
                 print(e)
 
     async def create(self, author_id, guild_id):
-        """Creates a new connection in the database, alerts staff to it, and returns the new connection object."""
-        new_connection = None
+        """
+        Creates a new connection in the database, alerts staff to it, and returns the new connection object.
+        """
+
         async with self.bot.pool.acquire() as connection:
             await connection.execute("INSERT INTO support (member_id, staff_id, guild_id) VALUES ($1, $2, $3);", author_id, 0, guild_id)
             ticket_id = await connection.fetchval("SELECT MAX(id) FROM support")
@@ -88,31 +108,33 @@ class SupportConnectionManager:
         if channel_id is not None:
             guild = self.bot.get_guild(guild_id)
             staff_id = self.bot.configs[guild_id]["staff_role"]
-            staff = guild.get_role(staff_id) #TODO: HANDLES FOR WHEN EITHER A ROLE OR CHANNEL GET REMOVED AND NOT CHANGED IN THE CONFIG
+            staff = guild.get_role(staff_id)  # TODO: HANDLES FOR WHEN EITHER A ROLE OR CHANNEL GET REMOVED AND NOT CHANGED IN THE CONFIG
             channel = self.bot.get_channel(channel_id)
-            if channel is None or staff is None: # If channel or staff removed
+            if channel is None or staff is None:  # If channel or staff removed
                 return
         
-            embed = Embed(title='New Ticket', color=Colour.from_rgb(0,0,255))
+            embed = Embed(title='New Ticket', color=Colour.from_rgb(0, 0, 255))
             embed.add_field(name='ID', value=f"{new_connection.id}", inline=True)
 
-            p = self.bot.configs[guild_id]["prefix"]
-            await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `{p}support accept {new_connection.id}` to accept it.", embed=embed)
+            await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `support accept {new_connection.id}` to accept it.", embed=embed)
         return new_connection
 
-    async def get(self, id = -1, guild_id = -1):
-        """Returns connections from the database, whether they are open or not, or a support connection via ID. This method returns False
-        if a support ticket is now found when searching by ID, else it returns a list of SupportConnection"""
-        if id != -1: # Return based on ID
+    async def get(self, id_=-1, guild_id=-1):
+        """
+        Returns connections from the database, whether they are open or not, or a support connection via ID. This method returns False
+        if a support ticket is now found when searching by ID, else it returns a list of SupportConnection
+        """
+
+        if id_ != -1:  # Return based on ID
             async with self.bot.pool.acquire() as connection:
-                records = await connection.fetch("SELECT * FROM support WHERE id = $1", id)
+                records = await connection.fetch("SELECT * FROM support WHERE id = $1", id_)
                 if len(records) == 0:
                     return False
                 args = records[0]
                 support_connection = await SupportConnection.create(self.bot, *args)
                 return support_connection
             
-        elif guild_id != -1: # Return based on guild
+        elif guild_id != -1:  # Return based on guild
             async with self.bot.pool.acquire() as connection:
                 records = await connection.fetch("SELECT * FROM support WHERE guild_id = $1", guild_id)
             
@@ -122,8 +144,7 @@ class SupportConnectionManager:
                 records[i] = new_connection
             return records
 
-        else: # Return all connections from the database
-            connections = []
+        else:  # Return all connections from the database
             async with self.bot.pool.acquire() as connection:
                 connections = await connection.fetch("SELECT * FROM support")
             
@@ -134,7 +155,10 @@ class SupportConnectionManager:
             return connections
 
     async def in_connections(self, member: discord.Member):
-        """Checks if a connection already exists with the user, if it does returns connection data or returns False if not."""
+        """
+        Checks if a connection already exists with the user, if it does returns connection data or returns False if not.
+        """
+
         self.connections = await self.get()
         for con in self.connections:
             if con.member_id == member.id or con.staff_id == member.id:
@@ -142,8 +166,11 @@ class SupportConnectionManager:
         return False
 
     async def remove(self, connection: SupportConnection, staff: discord.User = None):
-        """Method that removes the support connection from the database and logs in support-logs. This method assumes
-        that the connection DOES exist. If staff is not None then staff closed the ticket, otherwise it was member."""
+        """
+        Method that removes the support connection from the database and logs in support-logs. This method assumes
+        that the connection DOES exist. If staff is not None then staff closed the ticket, otherwise it was member.
+        """
+
         async with self.bot.pool.acquire() as db_connection:
             await db_connection.execute("DELETE FROM support WHERE id = $1", connection.id)
 
@@ -152,7 +179,7 @@ class SupportConnectionManager:
             channel = self.bot.get_channel(channel_id)
             if channel is None:
                 return
-            embed = Embed(title='Ticket Ended', color=Colour.from_rgb(255,0,0))
+            embed = Embed(title='Ticket Ended', color=Colour.from_rgb(255, 0, 0))
             embed.add_field(name='ID', value=connection.id, inline=True)
             if staff is not None:
                 embed.add_field(name='Initiator', value=f"Staff: {staff.display_name}", inline=True)
@@ -160,6 +187,7 @@ class SupportConnectionManager:
                 embed.add_field(name='Initiator', value="Member", inline=True)
 
             await channel.send(embed=embed)
+
 
 class Support(commands.Cog):
     def __init__(self, bot):
@@ -178,9 +206,9 @@ class Support(commands.Cog):
 
             if not connection and self.bot.starts_with_any(message.content.lower(), ['support start', 'support begin']):
                 # Start a new connection
-                try: # Try clause gets a valid guild_id
+                try:  # Try clause gets a valid guild_id
                     guild_id = int(message.content.split(' ')[2])
-                    if not guild_id in [g.id for g in self.bot.guilds]:
+                    if guild_id not in [g.id for g in self.bot.guilds]:
                         await message.author.send(f"That is not a guild I know of, to get a list of guilds type `support start`")
                         return
                 except ValueError:
@@ -197,7 +225,7 @@ class Support(commands.Cog):
                     await message.author.send(output)
                     return
 
-                connection = await self.support_manager.in_connections(message.author) # Holds connection data or False if a connection is not open
+                connection = await self.support_manager.in_connections(message.author)  # Holds connection data or False if a connection is not open
                 if connection:
                     await message.author.send(f"You already have a support ticket open in **{connection.guild.name}** and you cannot open another one until this one is closed")
                     return
@@ -205,14 +233,14 @@ class Support(commands.Cog):
                 # Check if guild has support module set up
                 log_channel_id = self.bot.configs[guild_id]["support_log_channel"]
                 if not log_channel_id:
-                    await message.author.send(f"**{self.bot.get_guild(guild_id).name}** has not set up the support module :sob:") # This prevents any connections being made at all
+                    await message.author.send(f"**{self.bot.get_guild(guild_id).name}** has not set up the support module :sob:")  # This prevents any connections being made at all
                     return
 
-                connection = await self.support_manager.create(message.author.id, guild_id) # This method handles the embed making the staff aware of the ticket
-                await message.author.send(f'Your ticket, **ID: {connection.id}**, has been sent. Staff have been altered to your ticket and will be with you shortly!')
+                connection = await self.support_manager.create(message.author.id, guild_id)  # This method handles the embed making the staff aware of the ticket
+                await message.author.send(f'Your ticket, **ID: {connection.id}**, has been sent. Staff have been alerted to your ticket and will be with you shortly!')
             
             if self.bot.starts_with_any(message.content.lower(), ['support end', 'support close', 'support finish']) and connection:
-                if connection.member_id == message.author.id: # Member sending
+                if connection.member_id == message.author.id:  # Member sending
                     if connection.staff_id != 0:
                         await connection.staff.send('The ticket was closed by the member.')
                     await self.support_manager.remove(connection)
@@ -239,7 +267,10 @@ class Support(commands.Cog):
 
     @commands.Cog.listener()
     async def on_typing(self, channel, user, when):
-        """A handle for typing events between DMs, so that the typing presence can go through the DMs via the bot."""
+        """
+        A handle for typing events between DMs, so that the typing presence can go through the DMs via the bot.
+        """
+
         if not isinstance(channel, discord.DMChannel):
             return
 
@@ -255,15 +286,20 @@ class Support(commands.Cog):
 
     @commands.group()
     async def support(self, ctx):
-        """Support module"""
+        """
+        Support module
+        """
+
         if ctx.invoked_subcommand is None:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}help support``` for more commands. If you want to open a ticket type ```{p}support start```')
+            await ctx.send(f'```{ctx.prefix}help support``` for more commands. If you want to open a ticket type ```{ctx.prefix}support start```')
 
     @support.command(pass_context=True)
     @commands.guild_only()
     async def accept(self, ctx, ticket):
-        """Accepts a support ticket"""
+        """
+        Accepts a support ticket
+        """
+
         if not await self.bot.is_staff(ctx):
             await ctx.send("You do not have permissions to accept a support ticket")
             return
@@ -279,7 +315,7 @@ class Support(commands.Cog):
             await ctx.author.send(f"You are already part of a support ticket in **{in_connection.guild.name}**. You need to close that one before accepting another")
             return
 
-        connection = await self.support_manager.get(id = ticket)
+        connection = await self.support_manager.get(id_=ticket)
         if not connection:
             await ctx.send("This ticket ID does not exist!")
             return
@@ -288,7 +324,6 @@ class Support(commands.Cog):
             return
         if connection.member_id == ctx.author.id:
             await ctx.send('You cannot open a support ticket with yourself.')
-            #await db_connection.execute('DELETE FROM support WHERE id = ($1)', ticket)
             return
 
         await connection.accept(ctx.author)
@@ -297,7 +332,7 @@ class Support(commands.Cog):
 
         channel_id = self.bot.configs[ctx.guild.id]["support_log_channel"]
         if channel_id is not None:
-            embed = Embed(color=Colour.from_rgb(0,0,255))
+            embed = Embed(color=Colour.from_rgb(0, 0, 255))
             embed.add_field(name='Staff Connected', value=f"ID: {connection.id}", inline=False)
 
             channel = self.bot.get_channel(channel_id)
@@ -308,30 +343,34 @@ class Support(commands.Cog):
     @support.command(pass_context=True)
     @commands.guild_only()
     async def connections(self, ctx):
-        """Shows all current support connections with member info redacted"""
+        """
+        Shows all current support connections with member info redacted
+        """
+
         if not await self.bot.is_staff(ctx):
             await ctx.send("You do not have permissions to view support tickets")
             return
 
         current = []
         waiting = []
-        NEWLINE = "\n"
+        newline = "\n"
         
-        tickets = await self.support_manager.get(guild_id = ctx.guild.id)
+        tickets = await self.support_manager.get(guild_id=ctx.guild.id)
         for ticket in tickets:
             if ticket.staff_id != 0:
                 if ticket.started_at:
                     date = ticket.started_at.strftime('%H:%M on %d/%m/%y')
                 else:
                     date = "Not yet accepted."
-                current.append(f"ID: {ticket.id}{NEWLINE}Member ID: ***REDACTED***{NEWLINE}Staff: {ticket.staff}{NEWLINE}Started at: {date}{NEWLINE}")
+                current.append(f"ID: {ticket.id}{newline}Member ID: ***REDACTED***{newline}Staff: {ticket.staff}{newline}Started at: {date}{newline}")
             else:
-                waiting.append(f"ID: {ticket.id}{NEWLINE}Member ID: ***REDACTED***{NEWLINE}")
+                waiting.append(f"ID: {ticket.id}{newline}Member ID: ***REDACTED***{newline}")
 
-        x = NEWLINE.join(current)
-        y = NEWLINE.join(waiting)
-        string = f"__**Current connections**__{NEWLINE}{x}{NEWLINE}__**Waiting connections**__{NEWLINE}{y}"
+        x = newline.join(current)
+        y = newline.join(waiting)
+        string = f"__**Current connections**__{newline}{x}{newline}__**Waiting connections**__{newline}{y}"
         await ctx.send(string)
+
 
 def setup(bot):
     bot.add_cog(Support(bot))

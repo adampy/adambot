@@ -1,50 +1,89 @@
 ﻿import discord
 from discord.ext import commands
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 
 
 class Demographics(commands.Cog):
-    """Tracks the change in specific roles"""
+    """
+    Tracks the change in specific roles
+    """
+
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.bot.tasks.register_task_type("demographic_sample", self.handle_demographic_sample, needs_extra_columns={"demographic_role_id": "bigint"})
+
+    async def handle_demographic_sample(self, data):
+        async with self.bot.pool.acquire() as connection:
+            demographic_role_id = data["demographic_role_id"]
+            results = await connection.fetch("SELECT role_id, guild_id, sample_rate FROM demographic_roles WHERE id = $1", demographic_role_id)
+
+            guild = self.bot.get_guild(results[0][1])
+            role_id = results[0][0]
+            sample_rate = results[0][2]
+            n = len([x for x in guild.members if role_id in [y.id for y in x.roles]])
+
+            await connection.execute("INSERT INTO demographic_samples (n, role_reference) VALUES ($1, $2)", n, demographic_role_id)
+
+            if data["task_name"] == "demographic_sample":  # IF NOT A ONE OFF SAMPLE, PERFORM IT AGAIN
+                await self.bot.tasks.submit_task("demographic_sample", datetime.utcnow() + timedelta(days=sample_rate), extra_columns={"demographic_role_id": demographic_role_id})
+
     async def _get_roles(self, guild: discord.Guild):
-        """Returns all the role IDs that are tracked for a given `guild`."""
+        """
+        Returns all the role IDs that are tracked for a given `guild`.
+        """
+
         async with self.bot.pool.acquire() as connection:
             roles = await connection.fetch("SELECT role_id FROM demographic_roles WHERE guild_id = $1;", guild.id)  # Returns a list of Record type
         return [x["role_id"] for x in roles]
 
     async def _add_role(self, role: discord.Role, sample_rate):
-        """Adds a role to the demographic todo table such that it gets sampled regularly."""
+        """
+        Adds a role to the demographic todo table such that it gets sampled regularly.
+        """
+
         async with self.bot.pool.acquire() as connection:
             await connection.execute("INSERT INTO demographic_roles (sample_rate, guild_id, role_id) VALUES ($1, $2, $3);", sample_rate, role.guild.id, role.id)
             demographic_role_id = await connection.fetchval("SELECT MAX(id) FROM demographic_roles;")
 
             now = datetime.utcnow()
             midnight = datetime(now.year, now.month, now.day, 23, 59, 59)  # Midnight of the current day
-            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", self.bot.Todo.DEMOGRAPHIC_SAMPLE, midnight, demographic_role_id)  # Place the role reference in the member_id field.
+            await self.bot.tasks.submit_task("demographic_sample", midnight, extra_columns={"demographic_role_id": demographic_role_id})
 
     async def _require_sample(self, role: discord.Role):
-        """Adds a TODO saying that a sample is required ASAP."""
+        """
+        Adds a TODO saying that a sample is required ASAP.
+        """
+
         async with self.bot.pool.acquire() as connection:
             demographic_role_id = await connection.fetchval("SELECT id from demographic_roles WHERE role_id = $1", role.id)
-            await connection.execute("INSERT INTO todo (todo_id, todo_time, member_id) VALUES ($1, $2, $3)", self.bot.Todo.DEMOGRAPHIC_SAMPLE, datetime.utcnow(), demographic_role_id)  # Placing the role reference in the member_id field.
+            await self.bot.tasks.submit_task("demographic_sample", datetime.utcnow(), extra_columns={"demographic_role_id": demographic_role_id})
 
     async def _remove_role(self, role: discord.Role):
-        """Removes a role from the demographic todo table - all samples are also removed upon this action."""
+        """
+        Removes a role from the demographic todo table - all samples are also removed upon this action.
+        """
+
         async with self.bot.pool.acquire() as connection:
             demographic_role_id = await connection.fetchval("SELECT id FROM demographic_roles WHERE role_id = $1;", role.id)
             await connection.execute("DELETE FROM demographic_roles WHERE role_id = $1;", role.id)
-            await connection.execute("DELETE FROM todo WHERE member_id = $1", demographic_role_id)
+            await connection.execute("DELETE FROM tasks WHERE demographic_role_id = $1", demographic_role_id)
 
-    async def _role_error(self, ctx, error):
-        """Executes on addrole.error and removerole.error."""
+    @staticmethod
+    async def _role_error(ctx, error):
+        """
+        Executes on addrole.error and removerole.error.
+        """
+
         if isinstance(error, commands.RoleNotFound):
             await ctx.send("Role not found!")
             return
+
         else:
             await ctx.send("Oops, that's not possible.")
             print(error)
@@ -61,7 +100,10 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     async def viewroles(self, ctx):
-        """Gets all the roles that are tracked in a guild."""
+        """
+        Gets all the roles that are tracked in a guild.
+        """
+
         if not await self.bot.is_staff(ctx):
             await ctx.send("You need the staff role to do this :sob:")
             return
@@ -73,8 +115,11 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     async def addrole(self, ctx, role: discord.Role, sample_rate: int = 1):
-        """Adds a role to the server's demographic samples.
-        `sample_rate` shows how many days are inbetween each sample, and by default is 1."""
+        """
+        Adds a role to the server's demographic samples.
+        `sample_rate` shows how many days are in between each sample, and by default is 1.
+        """
+
         if not await self.bot.is_staff(ctx):
             await ctx.send("You need the staff role to do this :sob:")
             return
@@ -105,7 +150,10 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     async def removerole(self, ctx, role: discord.Role):
-        """Gets all the roles that are tracked in a guild."""
+        """
+        Gets all the roles that are tracked in a guild.
+        """
+
         if not await self.bot.is_staff(ctx):
             await ctx.send("You need the staff role to do this :sob:")
             return
@@ -134,7 +182,10 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     async def takesample(self, ctx, role: discord.Role = None):
-        """Adds a TODO saying that a sample is required ASAP. If `role` == None then all guild demographics are sampled."""
+        """
+        Adds a TODO saying that a sample is required ASAP. If `role` == None then all guild demographics are sampled.
+        """
+
         if not await self.bot.is_staff(ctx):
             await ctx.send("You need the staff role to do this :sob:")
             return
@@ -162,7 +213,7 @@ class Demographics(commands.Cog):
                 await ctx.send("Unknown response - operation cancelled.")
             return  # return here means return does not need to be placed inside each condition
 
-        if role.id not in await guild_tracked_roles:
+        if role.id not in guild_tracked_roles:
             await ctx.send("This role is not currently being tracked!")
             return
 
@@ -172,13 +223,16 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     async def removeallsamples(self, ctx):
-        """Removes all samples from the `demographic_samples` table."""
+        """
+        Removes all samples from the `demographic_samples` table.
+        """
+
         if not await self.bot.is_staff(ctx):
             await ctx.send("You need the staff role to do this :sob:")
             return
 
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE FROM demographic_samples WHERE role_reference IN (SELECT id FROM demographic_roles WHERE guild_id = $1);", ctx.guild.id) # Removes samples for that guild
+            await connection.execute("DELETE FROM demographic_samples WHERE role_reference IN (SELECT id FROM demographic_roles WHERE guild_id = $1);", ctx.guild.id)  # Removes samples for that guild
         await ctx.send("All samples have been deleted. :sob:")
 
     # Error handlers
@@ -206,12 +260,10 @@ class Demographics(commands.Cog):
             n = len(role.members)
             if double_newline:
                 message += "\n"
-                double_newline = False # Adds an extra new line on the first iteration
+                double_newline = False  # Adds an extra new line on the first iteration
             message += f"\n•**{n}** {role.name}"
 
-
-        p = self.bot.configs[ctx.guild.id]["prefix"]
-        message += f"\n*Note: do `{p}demographics chart` to view change in demographics over time!*"
+        message += f"\n*Note: do `{ctx.prefix}demographics chart` to view change in demographics over time!*"
         await ctx.send(message)
 
     @demographics.command(pass_context=True)
@@ -227,7 +279,7 @@ class Demographics(commands.Cog):
                 role = ctx.guild.get_role(role[0])
                 rgb_scaled_tuple = tuple(x/255 for x in role.color.to_rgb())  # Scale 0-255 integers down to 0-1 floats
 
-                ax.plot([x[0] for x in data], [x[1] for x in data], 'b-o', linewidth=1, markersize=2, color=rgb_scaled_tuple, label=role.name)
+                ax.plot([x[0] for x in data], [x[1] for x in data], linewidth=1, markersize=2, color=rgb_scaled_tuple, label=role.name)
 
         ax.set(xlabel='Time', ylabel='Frequency', title=f"{ctx.guild.name}'s  demographics ({ctx.guild.member_count} members)")
         ax.grid()

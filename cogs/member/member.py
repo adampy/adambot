@@ -5,15 +5,26 @@ import re
 from datetime import datetime, timedelta
 import time
 
+
 class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
 # -----------------------MISC------------------------------
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.bot.tasks.register_task_type("reminder", self.handle_remind, needs_extra_columns={
+            "member_id": "bigint",
+            "channel_id": "bigint",
+            "guild_id": "bigint",
+            "reason": "varchar(255)"})
 
     @commands.command(pass_context=True)
     async def host(self, ctx):
-        """Check if the bot is currently hosted locally or remotely"""
+        """
+        Check if the bot is currently hosted locally or remotely
+        """
+
         await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
 
     @commands.command(pass_context=True)
@@ -30,27 +41,20 @@ class Member(commands.Cog):
 # -----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
-    async def quote(self, ctx, messageid, channelid=None):
-        """Quote a message to remember it."""
-        if channelid is not None:
-            try:
-                channel = self.bot.get_channel(int(channelid))
-            except ValueError:
-                await ctx.send('Please use a channel id instead of words.')
-        else:
-            channel = ctx.message.channel
+    async def quote(self, ctx, messageid, channel: discord.TextChannel):
+        """
+        Quote a message to remember it.
+        """
 
         try:
             msg = await channel.fetch_message(messageid)
         except Exception:
-
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}quote <message_id> [channel_id]```')
+            await ctx.send(f'```{ctx.prefix}quote <message_id> [channel_id]```')
             return
 
         user = msg.author
         image = None
-        repl = re.compile(r"/(\[.+?\])(\(.+?\))/")
+        repl = re.compile(r"/(\[.+?)(\(.+?\))/")
         edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ''
 
         content = re.sub(repl, r"\1​\2", msg.content)
@@ -59,13 +63,13 @@ class Member(commands.Cog):
             image = msg.attachments[0]['url']
 
         embed = Embed(title="Quote link",
-                      url=f"https://discordapp.com/channels/{channelid}/{messageid}",
+                      url=f"https://discordapp.com/channels/{channel.id}/{messageid}",
                       color=user.color,
                       timestamp=msg.created_at)
 
         if image:
             embed.set_image(url=image)
-        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=user.avatar_url)
+        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=user.avatar.url)
         embed.description = f"❝ {content} ❞" + edited
         await ctx.send(embed=embed)
 
@@ -81,9 +85,8 @@ class Member(commands.Cog):
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
 
-        if 'bruh' in message.content.lower() and not message.author.bot and not message.content.startswith('-'):
-            self.bot.configs[message.guild.id]["bruhs"] += 1
-            await self.bot.propagate_config(message.guild.id)
+        if 'bruh' in message.content.lower() and not message.author.bot and True not in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
+            await self.bot.update_config(message, "bruhs", await self.bot.get_config_key(message, "bruhs") + 1)
         return
 
     @commands.command(aliases=['bruh'])
@@ -92,12 +95,15 @@ class Member(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             global_bruhs = await connection.fetchval("SELECT SUM(bruhs) FROM config;")
         
-        guild_bruhs = self.bot.configs[ctx.guild.id]["bruhs"]
+        guild_bruhs = await self.bot.get_config_key(ctx, "bruhs")
         await ctx.send(f'•**Global** bruh moments: **{global_bruhs}**\n•**{ctx.guild.name}** bruh moments: **{guild_bruhs}**')
 
     @commands.command()
     async def cool(self, ctx, *message):
-        """MaKe YoUr MeSsAgE cOoL"""
+        """
+        MaKe YoUr MeSsAgE cOoL
+        """
+
         text = ' '.join(message)
         new = ""
         uppercase = True
@@ -126,8 +132,11 @@ class Member(commands.Cog):
 
     @commands.command()
     async def spamping(self, ctx, amount, user: discord.Member, *message):
-        """For annoying certain people"""
-        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
+        """
+        For annoying certain people
+        """
+
+        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator:  # Only allow command if in private server or admin
             await ctx.message.delete()
             try:
                 iterations = int(amount)
@@ -141,8 +150,11 @@ class Member(commands.Cog):
 
     @commands.command()
     async def ghostping(self, ctx, amount, user: discord.Member):
-        """For sending a ghostping to annoy certain people"""
-        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator: # Only allow command if in private server or admin
+        """
+        For sending a ghostping to annoy certain people
+        """
+
+        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator:  # Only allow command if in private server or admin
             await ctx.message.delete()
             for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
                 for i in range(int(amount)):
@@ -154,15 +166,18 @@ class Member(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def serverinfo(self, ctx):
-        """Information about the server."""
+        """
+        Information about the server.
+        """
+
         guild = ctx.message.guild
-        time = guild.created_at
-        time_since = datetime.utcnow() - time
+        time_ = guild.created_at
+        time_since = datetime.utcnow() - time_
 
         join = Embed(title=f'**__{str(guild)}__**',
-                     description=f"Created at {self.bot.correct_time(time).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
+                     description=f"Created at {self.bot.correct_time(time_).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
                      value='Server Name', color=Colour.from_rgb(21, 125, 224))
-        join.set_thumbnail(url=guild.icon_url)
+        join.set_thumbnail(url=guild.icon.url)
 
         join.add_field(name='Region', value=str(guild.region))
         join.add_field(name='Users Online',
@@ -179,7 +194,10 @@ class Member(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def userinfo(self, ctx, *args):
-        """Information about you or a user"""
+        """
+        Information about you or a user
+        """
+
         author = ctx.author
         guild = ctx.guild
 
@@ -244,15 +262,25 @@ class Member(commands.Cog):
         name = f"{user} ~ {user.display_name}"
 
         if user.avatar:
-            avatar = user.avatar_url_as(static_format="png")
-            data.set_author(name=name, icon_url=avatar)
-            data.set_thumbnail(url=avatar)
+            data.set_author(name=name, icon_url=user.avatar.url)
+            data.set_thumbnail(url=user.avatar.url)
         else:
             data.set_author(name=name)
 
         await ctx.send(embed=data)
 
 # -----------------------REMIND------------------------------
+    async def handle_remind(self, data):
+        try:
+            member = self.bot.get_user(data["member_id"])
+            message = f'You told me to remind you about this:\n{data["reason"]}'
+            try:
+                await member.send(message)
+            except discord.Forbidden:
+                channel = self.bot.get_channel(data["channel_id"])
+                await channel.send(f"{member.mention}, {message}")
+        except Exception as e:
+            print(f'REMIND: {type(e).__name__}: {e}')
 
     @commands.command(pass_context=True, aliases=['rm', 'remindme'])
     @commands.guild_only()
@@ -261,24 +289,15 @@ class Member(commands.Cog):
         Command that is executed when a user wants to be reminded of something.
         If the members DMs are closed, the reminder is sent in the channel the command
         was invoked in.
-        """ 
-        async def write(self_write, reminder_write, seconds, ctx):
-            """Writes to remind table with the time to remind (e.g. remind('...', 120, <member_id>) would mean '...' is reminded out in 120 seconds for <member_id>)"""
-            timestamp = datetime.utcnow()
-            new_timestamp = timestamp + timedelta(seconds=seconds)
-            async with self_write.bot.pool.acquire() as connection:
-                await connection.execute('INSERT INTO remind (member_id, reminder, reminder_time, channel_id) VALUES ($1, $2, $3, $4)',
-                                         ctx.author.id, reminder_write, new_timestamp, ctx.channel.id)
+        """
 
-        """Given the args tuple (from *args) and returns timeperiod in index position 0 and reason in index position 1"""
         timeperiod = ''
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
         if not args or not timeperiod:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}remind <sentence...> -t <time>```')
+            await ctx.send(f'```{ctx.prefix}remind <sentence...> -t <time>```')
             return
 
         str_tp = self.bot.time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
@@ -287,19 +306,23 @@ class Member(commands.Cog):
 
         if len(reminder) >= 256:
             await ctx.send('Please shorten your reminder to under 256 characters.')
+            return
 
-        await write(self, reminder, timeperiod, ctx)
+        await self.bot.tasks.submit_task("reminder", datetime.utcnow() + timedelta(seconds=timeperiod),
+                                         {"member_id": ctx.author.id, "channel_id": ctx.channel.id,
+                                          "guild_id": ctx.guild.id, "reason": reminder})
+
         await ctx.send(
             f":ok_hand: You'll be reminded in {str_tp} via a DM! (or in this channel if your DMs are closed)")
 
 # -----------------------AVATAR------------------------------
 
-    @commands.command(pass_context=True, aliases = ["pfp"])
+    @commands.command(pass_context=True, aliases=["pfp"])
     async def avatar(self, ctx, member: discord.User = None):
         if not member:
             member = ctx.author
 
-        await ctx.send(member.avatar_url)
+        await ctx.send(member.avatar.url)
 
 # -----------------------COUNTDOWNS------------------------------
 
@@ -331,22 +354,22 @@ class Member(commands.Cog):
             string = f'{hour}AM'
         rn = self.bot.correct_time()
         if which == "GCSE":
-            time = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0)
+            time_ = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0)
         else:
-            time = datetime(year=2021, month=8, day=10, hour=hour, minute=0, second=0)
-        embed = Embed(title=f"Countdown until {which} results day at {string} (on {time.day}/{time.month}/{time.year})",
+            time_ = datetime(year=2021, month=8, day=10, hour=hour, minute=0, second=0)
+        embed = Embed(title=f"Countdown until {which} results day at {string} (on {time_.day}/{time_.month}/{time_.year})",
                       color=Colour.from_rgb(148, 0, 211))
-        time = time.replace(tzinfo=self.bot.display_timezone)
-        if rn > time:
+        time_ = time_.replace(tzinfo=self.bot.display_timezone)
+        if rn > time_:
             embed.description = "Results have already been released!"
         else:
-            time = time - rn
-            m, s = divmod(time.seconds, 60)
+            time_ = time_ - rn
+            m, s = divmod(time_.seconds, 60)
             h, m = divmod(m, 60)
-            embed.description = f"{time.days} days {h} hours {m} minutes {s} seconds remaining"
+            embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining"
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
-        embed.set_thumbnail(url=ctx.guild.icon_url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+        embed.set_thumbnail(url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True, aliases=["exams", "alevels"])
@@ -354,19 +377,8 @@ class Member(commands.Cog):
         embed = Embed(title="Information on UK exams",  color=Colour.from_rgb(148, 0, 211),
                       description="UK exams are not going ahead this year and have instead been replaced by teacher assessments!")
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
         await ctx.send(embed=embed)
-        #time = datetime(year=2021, month=5, day=10, hour=9, minute=0, second=0) - (
-        #        datetime.utcnow() + timedelta(hours=1))  # as above
-#
- #       m, s = divmod(time.seconds, 60)
-  #      h, m = divmod(m, 60)
-
-        #await ctx.send(f'''Until CS Paper 1 (the first GCSE exam) is
-#**{time.days}** days
-#**{h}** hours
-#**{m}** minutes
-#**{s}** seconds''')
 
     @commands.command(pass_context=True)
     async def code(self, ctx):

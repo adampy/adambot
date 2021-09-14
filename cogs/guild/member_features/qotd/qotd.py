@@ -5,7 +5,7 @@ from random import choice
 from math import inf
 
 
-class QuestionOTD(commands.Cog):
+class QOTD(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -13,6 +13,7 @@ class QuestionOTD(commands.Cog):
         """
         Method that returns true if the ctx.author has either a staff or QOTD role
         """
+
         qotd_role_id = self.bot.configs[ctx.guild.id]["qotd_role"]
         staff_role_id = self.bot.configs[ctx.guild.id]["staff_role"]
         for role in ctx.author.roles:
@@ -23,20 +24,21 @@ class QuestionOTD(commands.Cog):
     @commands.group()
     async def qotd(self, ctx):
         if ctx.invoked_subcommand is None:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}qotd submit <question>```')
+            await ctx.send(f'```{ctx.prefix}qotd submit <question>```')
 
     @qotd.command(pass_context=True)
     @commands.guild_only()
     async def submit(self, ctx, *args):
-        """Submit a QOTD"""
+        """
+        Submit a QOTD
+        """
+
         qotd = ' '.join(args)
         if len(qotd) > 255:
             await ctx.send('Question over **255** characters, please **shorten** before trying the command again.')
             return
         if not args:
-            p = self.bot.configs[ctx.guild.id]["prefix"]
-            await ctx.send(f'```{p}qotd submit <question>```')
+            await ctx.send(f'```{ctx.prefix}qotd submit <question>```')
             return
 
         member = ctx.author.id
@@ -45,12 +47,11 @@ class QuestionOTD(commands.Cog):
         today = datetime.datetime.utcnow().date()
         today_date = datetime.datetime(today.year, today.month, today.day)
         async with self.bot.pool.acquire() as connection:
-            submitted_today = await connection.fetch(
-                'SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2) AND guild_id = $3', member, today_date, ctx.guild.id)
+            submitted_today = await connection.fetch('SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2) AND guild_id = $3', member, today_date, ctx.guild.id)
             
             limit = self.bot.configs[ctx.guild.id]["qotd_limit"]
-            if limit is None or limit == 0: # Account for a limit set to 0 and a non-changed limit
-                limit = inf # math.inf
+            if limit is None or limit == 0:  # Account for a limit set to 0 and a non-changed limit
+                limit = inf  # math.inf
 
             if len(submitted_today) >= limit and not is_staff:  # Staff bypass
                 await ctx.send(f'You can only submit {limit} QOTD per day - this is to prevent spam.')
@@ -58,10 +59,10 @@ class QuestionOTD(commands.Cog):
                 await connection.execute('INSERT INTO qotd (question, submitted_by, guild_id) VALUES ($1, $2, $3)', qotd, member, ctx.guild.id)
                 qotd_id = await connection.fetchval("SELECT MAX(id) FROM qotd WHERE guild_id = $1", ctx.guild.id)
                 await ctx.message.delete()
-                await ctx.send(f':thumbsup: Thank you for submitting your QOTD. Your QOTD ID is **{qotd_id}**.', delete_after = 20)
+                await ctx.send(f':thumbsup: Thank you for submitting your QOTD. Your QOTD ID is **{qotd_id}**.', delete_after=20)
 
                 mod_log_channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
-                if mod_log_channel_id != None:
+                if mod_log_channel_id is not None:
                     mod_log = self.bot.get_channel(mod_log_channel_id)
                     embed = Embed(title=':grey_question: QOTD Submitted', color=Colour.from_rgb(177, 252, 129))
                     embed.add_field(name='ID', value=qotd_id)
@@ -89,14 +90,14 @@ class QuestionOTD(commands.Cog):
                 self.bot,
                 ctx.author,
                 ctx.channel,
-                thumbnail_url = ctx.guild.icon_url,
-                icon_url = ctx.author.avatar_url,
-                footer = f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
+                thumbnail_url=ctx.guild.icon.url,
+                icon_url=ctx.author.avatar.url,
+                footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
             )
             await embed.set_page(int(page_num))
             await embed.send()
         else:
-            await ctx.send("No QOTD have been submitted in thie guild before.")
+            await ctx.send("No QOTD have been submitted in this guild before.")
 
     @qotd.command(pass_context=True, aliases=['remove'])
     @commands.guild_only()
@@ -112,7 +113,7 @@ class QuestionOTD(commands.Cog):
                     await ctx.send(f'QOTD ID **{question_id}** has been deleted.')
 
                     mod_log_channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
-                    if mod_log_channel_id != None:
+                    if mod_log_channel_id is not None:
                         mod_log = self.bot.get_channel(mod_log_channel_id)
                         embed = Embed(title=':grey_question: QOTD Deleted', color=Colour.from_rgb(177, 252, 129))
                         embed.add_field(name='ID', value=question_id)
@@ -143,9 +144,9 @@ class QuestionOTD(commands.Cog):
                 questions = await connection.fetch('SELECT * FROM qotd WHERE guild_id = $1', ctx.guild.id)
             else:
                 questions = await connection.fetch('SELECT * FROM qotd WHERE id = $1 AND guild_id = $2', int(question_id), ctx.guild.id)
-            if not questions: # If no questions are returned
+            if not questions:  # If no questions are returned
                 if question_id.lower() == "random":
-                    await ctx.send("No QOTD have been submitted in thie guild before.")
+                    await ctx.send("No QOTD have been submitted in this guild before.")
                 else:
                     await ctx.send(f'Question with ID {question_id} not found. Please try again.')
                 return
@@ -163,7 +164,7 @@ class QuestionOTD(commands.Cog):
         await qotd_channel.send(message)
 
         mod_log_channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
-        if mod_log_channel_id != None:
+        if mod_log_channel_id is not None:
             mod_log = self.bot.get_channel(mod_log_channel_id)
             embed = Embed(title=':grey_question: QOTD Picked', color=Colour.from_rgb(177, 252, 129))
             embed.add_field(name='ID', value=question_data[0])
@@ -175,4 +176,4 @@ class QuestionOTD(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(QuestionOTD(bot))
+    bot.add_cog(QOTD(bot))

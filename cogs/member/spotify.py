@@ -1,9 +1,10 @@
-## Adapted from Hodor's private bot
+# Adapted from Hodor's private bot
 
 from discord.ext import commands
 from discord import Embed, Colour
 
-class spotify(commands.Cog):
+
+class Spotify(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -16,7 +17,7 @@ class spotify(commands.Cog):
             if user is None:
                 fail_embed = Embed(title="Spotify info", description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**', color=Colour.from_rgb(255, 7, 58))
                 fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                        self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+                        self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
                 await ctx.send(embed=fail_embed)
                 return
 
@@ -28,12 +29,12 @@ class spotify(commands.Cog):
         if spotify_activity is None:
             fail_embed = Embed(title=f"Spotify info for {user}", description="The user isn't currently listening to Spotify\n*(note that this can't be detected unless Spotify is visible on the status)*", colour=user.colour)
             fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
             await ctx.message.channel.send(embed=fail_embed)
             return
         duration = spotify_activity.duration.seconds
         minutes = duration//60
-        seconds = duration%60
+        seconds = duration % 60
         if seconds < 10:
             seconds = "0" + str(seconds)
         song_start = self.bot.correct_time(spotify_activity.start).strftime("%H:%M:%S")
@@ -48,11 +49,11 @@ class spotify(commands.Cog):
         embed.add_field(name="Party ID (Premium Only)", value=f"{spotify_activity.party_id}")
         embed.add_field(name="Song's Spotify Link", value=f"https://open.spotify.com/track/{spotify_activity.track_id}", inline=False)
         embed.set_thumbnail(url=spotify_activity.album_cover_url)
-        embed.set_author(name=f"{user}", icon_url=user.avatar_url)
+        embed.set_author(name=f"{user}", icon_url=user.avatar.url)
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar_url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
         await ctx.message.channel.send(embed=embed)
 
 
 def setup(bot):
-    bot.add_cog(spotify(bot))
+    bot.add_cog(Spotify(bot))
