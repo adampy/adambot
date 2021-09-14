@@ -71,7 +71,7 @@ class WaitingRoom(commands.Cog):
                 await ctx.invoke(self.bot.get_command("lurker kick"), days)
                 return
 
-        phrase = " ".join(phrase) if phrase else config_phrase
+        phrase = " ".join(phrase) if phrase else config_phrase if config_phrase else ""
         if ctx.invoked_subcommand is None:
             members = [x for x in ctx.guild.members if len(x.roles) <= 1]  # Only the everyone role
             message = ""
@@ -117,7 +117,7 @@ class WaitingRoom(commands.Cog):
                 await question.edit(content="Unknown response, therefore no DMs have been sent to lurkers :ok_hand:")
 
             if show_tip:
-                await ctx.send(f"""To save time, you can provide a default message to be displayed on the lurker command, i.e. you don't need to type out the phrase each time.
+                await ctx.send(f"""{ctx.author.mention} To save time, you can provide a default message to be displayed on the lurker command, i.e. you don't need to type out the phrase each time.
 You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
 
     @lurkers.command(pass_context=True, name="kick")  # Name parameter defines the name of the command the user will use
@@ -135,8 +135,7 @@ You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
             await ctx.send("Specify a whole, non-zero number of days!")
             return
         days = int(days)
-        time_ago = datetime.datetime.now() - datetime.timedelta(days=days)
-        # NOTE THAT x.joined_at will be in the timezone of the system by default, so no messing around needed here
+        time_ago = datetime.datetime.now(ctx.author.joined_at.tzinfo) - datetime.timedelta(days=days)
         members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < time_ago]  # Members with only the everyone role and more than 7 days ago
         if len(members) == 0:
             await ctx.send(f"There are no lurkers to kick that have been here {days} days or longer!")
