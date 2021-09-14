@@ -130,11 +130,20 @@ class Actions(commands.Cog):
 
         await self.load_actions()
 
-    @commands.command()  # todo: probs an idea to make this into a command Group at some point
-    async def delete_action(self, ctx: commands.Context, name: str = ""):
+    @commands.group()
+    @commands.guild_only()
+    async def action(self, ctx):
+        """
+        Do `help action` for more info
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send(f"```{ctx.prefix}help action```")
+
+    @action.command(name="delete", aliases=["remove"])
+    @commands.guild_only()
+    async def delete_action(self, ctx: commands.Context, name: str = ""): # Actual deleting is handled by remove_action
         """
         Command to delete actions
-        Actual deleting is handled by remove_action
 
         Staff role required
         """
@@ -153,8 +162,9 @@ class Actions(commands.Cog):
             await self.remove_action(ctx.guild.id, name)
             await ctx.send(embed=Embed(title="Successfully deleted action!", description=f"{name} has been removed!", colour=self.bot.SUCCESS_GREEN))
 
-    @commands.command()
-    async def list_actions(self, ctx: commands.Context):
+    @action.command(name="list", aliases=["show"])
+    @commands.guild_only()
+    async def list_action(self, ctx: commands.Context):
         """
         Fetches a list of actions for the context guild
         """
@@ -227,7 +237,7 @@ class Actions(commands.Cog):
         del self.bot.all_commands[name]
         del self.base_action_handler.aliases[self.base_action_handler.aliases.index(name)]
 
-    @commands.command()
+    @commands.command(hidden=True) # Hidden to prevent people accessing
     async def base_action_handler(self, ctx: commands.Context, *args):
         """
         Method that serves as a "base command" for actions.
@@ -398,7 +408,8 @@ class Actions(commands.Cog):
                 else:
                     await ctx.send(content)
 
-    @commands.command()
+    @action.command(name="create", aliases=["make"])
+    @commands.guild_only()
     async def create_action(self, ctx: commands.Context):  # split this up?
         """
         A command that attempts to provide a user-friendly way of creating actions
@@ -444,8 +455,8 @@ class Actions(commands.Cog):
 
             try:
                 done, pending = await asyncio.wait([
-                    self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=30),
-                    self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE], hi), timeout=30)
+                    self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=300),
+                    self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE], hi), timeout=300)
                 ], return_when=asyncio.FIRST_COMPLETED)
 
                 result = done.pop().result()
@@ -547,8 +558,8 @@ class Actions(commands.Cog):
 
                         try:
                             done, pending = await asyncio.wait([
-                                self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=30),
-                                self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.RECYCLE], message), timeout=30)
+                                self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=300),
+                                self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.RECYCLE], message), timeout=300)
                             ], return_when=asyncio.FIRST_COMPLETED)
 
                             result_ = done.pop().result()
@@ -637,8 +648,8 @@ class Actions(commands.Cog):
 
                             try:
                                 done, pending = await asyncio.wait([
-                                    self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=30),
-                                    self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.SPEAKING], output), timeout=30)
+                                    self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=300),
+                                    self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.SPEAKING], output), timeout=300)
                                 ], return_when=asyncio.FIRST_COMPLETED)
 
                                 result_ = done.pop().result()
