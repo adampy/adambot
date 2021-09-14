@@ -2,7 +2,6 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 from discord.utils import get
-import re
 import asyncio
 import datetime
 
@@ -13,42 +12,21 @@ class WaitingRoom(commands.Cog):
         self.welcome_message = ""
         self.welcome_channel = None
     
-    async def get_parsed_welcome_message(self, welcome_msg, new_user: discord.User, guild: discord.Guild):
+    async def get_parsed_welcome_message(self, welcome_msg, new_user: discord.User):
         """
         Method that gets the parsed welcome message, with channel and role mentions.
         """
 
-        to_send = welcome_msg
-        to_send = to_send.replace("<user>", new_user.mention)
-        
-        while True:
-            channel_regex = re.search(r'(?<=C).+?', to_send)
-            if not channel_regex:
-                break
-            match = channel_regex.group(0)
-            channel = await self.bot.fetch_channel(int(match))
-            to_send = to_send.replace(f"C<{match}>", channel.mention)
-        
-        while True:
-            role_regex = re.search(r'(?<=R).+?', to_send)
-            if not role_regex:
-                break
-            match = role_regex.group(0)
-            role = guild.get_role(int(match))
-            to_send = to_send.replace(f"R<{match}>", role.mention)
-
-        return to_send
+        return welcome_msg.replace("<user>", new_user.mention)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        guild = member.guild
-
-        config = self.bot.configs[guild.id]
+        config = self.bot.configs[member.guild.id]
         raw_msg = config["welcome_msg"]
         channel_id = config["welcome_channel"]
 
         if raw_msg and channel_id:
-            message = await self.get_parsed_welcome_message(raw_msg, member, guild)
+            message = await self.get_parsed_welcome_message(raw_msg, member)
             channel = self.bot.get_channel(channel_id)
             await channel.send(message)
 
@@ -70,67 +48,49 @@ class WaitingRoom(commands.Cog):
             await ctx.send("A welcome message has not been set.")
             return
             
-        msg = await self.get_parsed_welcome_message(msg, to_ping or ctx.author, ctx.guild)  # to_ping or author means the author unless to_ping is provided.
+        msg = await self.get_parsed_welcome_message(msg, to_ping or ctx.author)  # to_ping or author means the author unless to_ping is provided.
         await ctx.send(msg)
 
-    # -----YEAR COMMANDS-----
-
-    YEARS = {"y9": "Y9", "y10": "Y10", "y11": "Y11", "postgcse": "Post-GCSE", "mature": "Mature Student"}  # dict of command aliases:role names, perhaps move to cogs.utils?
-
-    @commands.command(pass_context=True, aliases=[*YEARS], help="Verifies members into the server. Use e.g. -y9 to verify members")
-    async def verify(self, ctx, member: discord.Member = None):
-        """
-        When a Year role is specified, the specified user is given that role.
-        This is done by looking up the alias used in the YEARS dictionary to get the corresponding role
-        Using `verify` shows the specified help message, it's just a dummy to allow the aliases
-        """
-
-        if not await self.bot.is_staff(ctx) or ctx.guild.id != 445194262947037185:
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
-
-        if ctx.invoked_with == "verify" or not ctx.invoked_with:
-            await ctx.send(f"```{self.verify.help}```")
-            return
-
-        if not member:
-            if not ctx.message.reference:
-                await ctx.send("Specify a user to verify!")
-                return
-            ref = await ctx.fetch_message(ctx.message.reference.message_id)
-            member = ref.author
-
-        year_roles = [get(member.guild.roles, name=self.YEARS[role]) for role in self.YEARS]
-        pre_existing_roles = [r for r in year_roles if r in member.roles]
-        await member.remove_roles(*year_roles)
-        name = self.YEARS[ctx.invoked_with]
-        await member.add_roles(*[get(member.guild.roles, name="Members"), get(member.guild.roles, name=name)])
-        await ctx.send(f"{member.mention} has been verified!")
-        if not pre_existing_roles and ctx.guild.id == 445194262947037185:  # If the user hadn't already been verified
-            # this needs to be configurable
-            get_role_channel = self.bot.get_channel(854148889409617920)  # Get role channel
-            await get(ctx.guild.channels, id=445199175244709898).send(f'Welcome {member.mention} to the server :wave: Take a look in {get_role_channel.mention} for additional roles!')  # TODO: GCSE9-1 specific - sort it out!
+    # -----LURKERS-----
 
     @commands.group(aliases=['lurker'])
-    async def lurkers(self, ctx):
-        if not await self.bot.is_staff(ctx) or ctx.guild.id != 445194262947037185:
+    async def lurkers(self, ctx, *phrase):
+        """
+        Ping all the people without a role so you can grab their attention. Optional, first argument is `message` is the phrase you want to send to lurkers.
+        """
+        if not await self.bot.is_staff(ctx):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
+        # Get default phrase if there is one, but the one given in the command overrides the config one
+        config_phrase = self.bot.configs[ctx.guild.id]["lurker_phrase"]
+        show_tip = False
+        if phrase: # Handle subcommand
+            # If phrase is given and a default hasn't yet been set, show a tip on setting defaults
+            show_tip = True if config_phrase is None else False
+            if phrase[0] == "kick":
+                try:
+                    days = phrase[1]
+                except IndexError:
+                    days = "7"
+                await ctx.invoke(self.bot.get_command("lurker kick"), days)
+                return
+
+        phrase = " ".join(phrase) if phrase else config_phrase
         if ctx.invoked_subcommand is None:
             members = [x for x in ctx.guild.members if len(x.roles) <= 1]  # Only the everyone role
             message = ""
             for member in members:
-                if len(message) + len(member.mention) + len(' please tell us your year to be verified into the server!') >= 2000:
-                    await ctx.send(message + ' please tell us your year to be verified into the server!')
+                if len(message + member.mention) >= 2000:
+                    await ctx.send(message + " " + phrase)
                     message = ""
-                else:
-                    message += member.mention
+                
+                message += member.mention
             
             if message != "":  # There is still members to be mentioned
-                await ctx.send(message + ' please tell us your year to be verified into the server!')
+                await ctx.send(message + " " + phrase)
 
-            question = await ctx.send("Do you want me to send DMs to all lurkers, to try and get them to join? (Type either 'yes' or 'no')")
+            question = await ctx.send("Do you want me to send DMs to all lurkers? (Type either 'yes' or 'no')")
 
             def check(m):
                 return m.author == ctx.author and m.channel == ctx.channel
@@ -147,7 +107,7 @@ class WaitingRoom(commands.Cog):
                     await question.edit(content=f"DMs have been sent to {i}/{len(members)} lurkers :ok_hand:")
 
                     try:
-                        await member.send(f"If you are wanting to join the {ctx.guild.name} server then please tell us your year in the waiting room. Thanks!")
+                        await member.send(f"**{ctx.guild.name}**: {phrase}")
                     except discord.Forbidden:  # Catches if DMs are closed
                         pass
                     except discord.HTTPException:
@@ -161,6 +121,10 @@ class WaitingRoom(commands.Cog):
             else:
                 await question.edit(content="Unknown response, therefore no DMs have been sent to lurkers :ok_hand:")
 
+            if show_tip:
+                await ctx.send(f"""To save time, you can provide a default message to be displayed on the lurker command, i.e. you don't need to type out the phrase each time. 
+You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
+
     @lurkers.command(pass_context=True, name="kick")  # Name parameter defines the name of the command the user will use
     @commands.guild_only()
     async def lurker_kick(self, ctx, days="7"):
@@ -169,7 +133,7 @@ class WaitingRoom(commands.Cog):
         Command that kicks people without a role, and joined 7 or more days ago.
         """
 
-        if not await self.bot.is_staff(ctx) or ctx.guild.id != 445194262947037185:
+        if not await self.bot.is_staff(ctx):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
         

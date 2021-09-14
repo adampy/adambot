@@ -31,7 +31,8 @@ class Config(commands.Cog):
             "rep_award_banned": [Validation.Role, "The role that blocks people giving reputation"],
             "rep_receive_banned": [Validation.Role, "The role that blocks people receiving reputation"],
             "jail_role": [Validation.Role, "The role that puts people into jail"],
-            "trivia_channel": [Validation.Channel, "Where trivias get played"]
+            "trivia_channel": [Validation.Channel, "Where trivias get played"],
+            "lurker_phrase": [Validation.String, "The default phrase when using the lurker command"]
         }
 
     async def add_all_guild_configs(self):

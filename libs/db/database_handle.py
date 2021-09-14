@@ -21,7 +21,8 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             rep_receive_banned BIGINT,
             jail_role BIGINT,
             trivia_channel BIGINT,
-            invite_log_channel BIGINT
+            invite_log_channel BIGINT,
+            lurker_phrase VARCHAR(1023)
         )""") # bruhs counts how many bruh moments a guild has had
 
         # Filter table
