@@ -102,7 +102,7 @@ class QOTD(commands.Cog):
     @qotd.command(pass_context=True, aliases=['remove'])
     @commands.guild_only()
     async def delete(self, ctx, *question_ids):
-        if not await self.has_qotd_perms(ctx):
+        if not await self.has_qotd_perms(ctx): # TODO: Perhaps a `is_qotd` decorator is needed for completeness
             await ctx.send("You do not have permissions to delete a QOTD :sob:")
             return
             

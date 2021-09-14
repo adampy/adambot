@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import re
-
+from libs.misc.decorators import is_staff
 
 class ReactionRoles(commands.Cog):
     def __init__(self, bot):
@@ -79,14 +79,11 @@ class ReactionRoles(commands.Cog):
 
     @rr.command()
     @commands.guild_only()
+    @is_staff
     async def add(self, ctx, emoji, role: discord.Role, inverse=None):
         """
         Adds an emoji and a corresponding role to the replied message. If the `inverse` argument == "true" the role is removed upon reaction add and vice versa.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if not ctx.me.guild_permissions.manage_roles:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have manage-role permissions!", desc="I need these permissions to create the reaction role.")
@@ -120,14 +117,11 @@ class ReactionRoles(commands.Cog):
 
     @rr.command()
     @commands.guild_only()
+    @is_staff
     async def remove(self, ctx, emoji):
         """
         Removes an emoji and a corresponding role from the replied message
         """
-
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         message_id = ctx.message.reference.message_id
         # Check if custom emoji
@@ -149,15 +143,12 @@ class ReactionRoles(commands.Cog):
 
     @rr.command()
     @commands.guild_only()
+    @is_staff
     async def delete(self, ctx):
         """
         Removes all the reaction roles from the replied message
         """
 
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
-            
         message_id = ctx.message.reference.message_id
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE FROM reaction_roles WHERE message_id = $1;", message_id)
@@ -168,14 +159,11 @@ class ReactionRoles(commands.Cog):
 
     @rr.command(name="list")
     @commands.guild_only()
+    @is_staff
     async def showreactionroles(self, ctx):
         """
         Shows all the current reaction roles in the guild
         """
-
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         async with self.bot.pool.acquire() as connection:
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)

@@ -4,6 +4,7 @@ import asyncio
 import re
 from typing import Union # Used for type hinting
 from emoji import get_emoji_regexp
+from libs.misc.decorators import is_staff
 
 class Starboard(commands.Cog):
     def __init__(self, bot):
@@ -241,14 +242,12 @@ class Starboard(commands.Cog):
 
     @starboard.command()
     @commands.guild_only()
+    @is_staff
     async def view(self, ctx):
         """
         View all of the starboards in the current guild
         """
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
-
+        
         starboards = await self._get_starboards(ctx.guild.id)
         embed = self.bot.EmbedPages(
             self.bot.PageTypes.STARBOARD_LIST,
@@ -268,14 +267,12 @@ class Starboard(commands.Cog):
 
     @starboard.command()
     @commands.guild_only()
+    @is_staff
     async def create(self, ctx):
         """
         Start the set up for the creation of a starboard
         """
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
-
+        
         try:
             while True: # Get the channel
                 await self.bot.DefaultEmbedResponses.question_embed(self.bot, ctx, "1. Starboard channel?", desc="Starboard setup started. To continue with the setup you need to provide me with a few things. If you want to cancel the setup type 'cancel' (there is a 60 second timeout on each question).")
@@ -351,14 +348,12 @@ class Starboard(commands.Cog):
     
     @starboard.command()
     @commands.guild_only()
+    @is_staff
     async def edit(self, ctx, channel: discord.TextChannel, option, value):
         """
         Edit a starboard setup. `option` can either be "minimum", "emoji", "colour"/"color"/"embed_colour", or "self_star"
         """
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
-
+        
         option = option.lower()
         starboard = await self._try_get_starboard(channel.id)
         if not starboard:
@@ -417,14 +412,12 @@ class Starboard(commands.Cog):
 
     @starboard.command()
     @commands.guild_only()
+    @is_staff
     async def delete(self, ctx, channel: discord.TextChannel):
         """
         Delete a starboard setup and all its entries from the bot
         """
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
-
+        
         starboard = await self._try_get_starboard(channel.id)
         if not starboard:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Starboard does not exist")

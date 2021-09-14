@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import Embed, Colour
 import matplotlib.pyplot as plt
-
+from libs.misc.decorators import is_staff
 
 class Reputation(commands.Cog):
     def __init__(self, bot):
@@ -183,14 +183,11 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
+    @is_staff
     async def set(self, ctx, user: discord.User, rep):
         """
         Sets a specific members reps to a given value.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if not rep.isdigit():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The reputation points must be a number!")
@@ -211,14 +208,11 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
+    @is_staff
     async def hardset(self, ctx, user_id, rep):
         """
         Sets a specific member's reps to a given value via their ID.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if not user_id.isdigit():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The user's ID must be a valid ID!")

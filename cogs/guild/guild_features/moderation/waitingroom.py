@@ -1,9 +1,9 @@
 import discord
 from discord import Embed, Colour
 from discord.ext import commands
-from discord.utils import get
 import asyncio
 import datetime
+from libs.misc.decorators import is_staff
 
 
 class WaitingRoom(commands.Cog):
@@ -34,14 +34,11 @@ class WaitingRoom(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def testwelcome(self, ctx, to_ping: discord.User = None):
         """
         Command that returns the welcome message, and pretends the command invoker is the new user.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to test the welcome message.")
-            return
 
         msg = self.bot.configs[ctx.guild.id]["welcome_msg"]
         if msg is None:
@@ -54,14 +51,12 @@ class WaitingRoom(commands.Cog):
     # -----LURKERS-----
 
     @commands.group(aliases=['lurker'])
+    @is_staff
     async def lurkers(self, ctx, *phrase):
         """
         Ping all the people without a role so you can grab their attention. Optional, first argument is `message` is the phrase you want to send to lurkers.
         """
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
-
+        
         # Get default phrase if there is one, but the one given in the command overrides the config one
         config_phrase = self.bot.configs[ctx.guild.id]["lurker_phrase"]
         show_tip = False
@@ -122,21 +117,18 @@ class WaitingRoom(commands.Cog):
                 await question.edit(content="Unknown response, therefore no DMs have been sent to lurkers :ok_hand:")
 
             if show_tip:
-                await ctx.send(f"""To save time, you can provide a default message to be displayed on the lurker command, i.e. you don't need to type out the phrase each time. 
+                await ctx.send(f"""To save time, you can provide a default message to be displayed on the lurker command, i.e. you don't need to type out the phrase each time.
 You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
 
     @lurkers.command(pass_context=True, name="kick")  # Name parameter defines the name of the command the user will use
     @commands.guild_only()
+    @is_staff
     async def lurker_kick(self, ctx, days="7"):
         # days is specifically "7" as default and not 7 since if you specify an integer it barfs if you supply a non-int value
         """
         Command that kicks people without a role, and joined 7 or more days ago.
         """
 
-        if not await self.bot.is_staff(ctx):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
-        
         def check(m):
             return m.channel == ctx.channel and m.author == ctx.author
         if not days.isnumeric():

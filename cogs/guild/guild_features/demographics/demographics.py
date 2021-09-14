@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
+from libs.misc.decorators import is_staff
 
 
 class Demographics(commands.Cog):
@@ -99,14 +100,11 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def viewroles(self, ctx):
         """
         Gets all the roles that are tracked in a guild.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You need the staff role to do this :sob:")
-            return
 
         role_ids = await self._get_roles(ctx.guild)
         roles = [ctx.guild.get_role(x).name for x in role_ids]
@@ -114,15 +112,12 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def addrole(self, ctx, role: discord.Role, sample_rate: int = 1):
         """
         Adds a role to the server's demographic samples.
         `sample_rate` shows how many days are in between each sample, and by default is 1.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You need the staff role to do this :sob:")
-            return
 
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
@@ -149,14 +144,11 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def removerole(self, ctx, role: discord.Role):
         """
         Gets all the roles that are tracked in a guild.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You need the staff role to do this :sob:")
-            return
 
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
@@ -181,14 +173,11 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def takesample(self, ctx, role: discord.Role = None):
         """
         Adds a TODO saying that a sample is required ASAP. If `role` == None then all guild demographics are sampled.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You need the staff role to do this :sob:")
-            return
 
         guild_tracked_roles = await self._get_roles(ctx.guild)
         if not role:
@@ -222,14 +211,11 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def removeallsamples(self, ctx):
         """
         Removes all samples from the `demographic_samples` table.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You need the staff role to do this :sob:")
-            return
 
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE FROM demographic_samples WHERE role_reference IN (SELECT id FROM demographic_roles WHERE guild_id = $1);", ctx.guild.id)  # Removes samples for that guild

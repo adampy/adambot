@@ -19,7 +19,7 @@ def is_staff(func):
         while not cog.bot.online:
             await asyncio.sleep(1)  # Wait else DB won't be available
         staff_role_id = cog.bot.configs[ctx.guild.id]["staff_role"]
-        if staff_role_id in [y.id for y in ctx.author.roles] or ctx.author.administrator:
+        if staff_role_id in [y.id for y in ctx.author.roles] or ctx.author.guild_permissions.administrator:
             return await func(cog, ctx, *args, **kwargs)
         else:
             return await DefaultEmbedResponses.invalid_perms(cog.bot, ctx)

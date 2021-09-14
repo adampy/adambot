@@ -6,6 +6,7 @@ import csv
 import random
 import asyncio
 from datetime import datetime
+from libs.misc.utils import is_staff
 
 TRIVIAS = [
     'cars',
@@ -240,14 +241,11 @@ class Trivia(commands.Cog):
         del self.trivia_sessions[ctx.guild.id]  # Delete it from dict, and memory
 
     @trivia.command(aliases=['answers', 'cheat'])
+    @is_staff
     async def answer(self, ctx):
         """
         Command that allows staff to see the correct answer
         """
-
-        if not await self.bot.is_staff(ctx.message):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if not session:

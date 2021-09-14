@@ -2,6 +2,7 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 import asyncio
+from libs.misc.decorators import is_staff
 
 """
 support
@@ -295,14 +296,11 @@ class Support(commands.Cog):
 
     @support.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def accept(self, ctx, ticket):
         """
         Accepts a support ticket
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to accept a support ticket")
-            return
 
         try:
             ticket = int(ticket)
@@ -342,14 +340,11 @@ class Support(commands.Cog):
 
     @support.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def connections(self, ctx):
         """
         Shows all current support connections with member info redacted
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to view support tickets")
-            return
 
         current = []
         waiting = []

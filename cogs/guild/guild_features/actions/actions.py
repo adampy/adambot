@@ -8,6 +8,7 @@ import inspect
 import asyncio
 import asyncpg
 import ast
+from libs.misc.decorators import is_staff
 
 
 class NoSendContext(commands.Context):
@@ -141,16 +142,13 @@ class Actions(commands.Cog):
 
     @action.command(name="delete", aliases=["remove"])
     @commands.guild_only()
+    @is_staff
     async def delete_action(self, ctx: commands.Context, name: str = ""): # Actual deleting is handled by remove_action
         """
         Command to delete actions
 
         Staff role required
         """
-
-        if not await self.bot.is_staff(ctx.message):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if not name:
             await ctx.send(embed=Embed(title="You need to provide an action name to be removed", colour=self.bot.ERROR_RED))  # move this to embed responses once timezone stuff is sorted
@@ -410,6 +408,7 @@ class Actions(commands.Cog):
 
     @action.command(name="create", aliases=["make"])
     @commands.guild_only()
+    @is_staff
     async def create_action(self, ctx: commands.Context):  # split this up?
         """
         A command that attempts to provide a user-friendly way of creating actions
@@ -420,10 +419,6 @@ class Actions(commands.Cog):
 
         Staff role required
         """
-
-        if not await self.bot.is_staff(ctx.message):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         action = {
             "commands": [],

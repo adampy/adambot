@@ -46,7 +46,7 @@ class Config(commands.Cog):
         """
         try:
             staff_role_id = self.bot.configs[ctx.guild.id]["staff_role"]
-            return staff_role_id in [y.id for y in ctx.author.roles]
+            return staff_role_id in [y.id for y in ctx.author.roles] or ctx.author.guild_permissions.administrator
         except Exception:  # usually ends up being a KeyError. would be neater if all that's relevant can be caught instead
             return False  # prevents daft spam before bot is ready with configs
 
@@ -58,7 +58,7 @@ class Config(commands.Cog):
         await self.add_all_guild_configs()
         self.bot.update_config = self.update_config
         self.bot.get_config_key = self.get_config_key
-        self.bot.is_staff = self.is_staff
+        self.bot.is_staff = self.is_staff # is_staff defined here
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

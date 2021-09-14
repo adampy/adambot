@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.utils import get
 from datetime import datetime, timedelta
-from libs.misc.decorators import is_dev
+from libs.misc.decorators import is_dev, is_staff
 
 
 class Moderation(commands.Cog):
@@ -465,17 +465,15 @@ class Moderation(commands.Cog):
     # -----------------------MISC------------------------------
 
     @commands.command()
+    @is_staff
     async def say(self, ctx, channel: discord.TextChannel, *, text):
         """
         Say a given string in a given channel
         Staff role needed.
         """
 
-        if await self.bot.is_staff(ctx):
-            await channel.send(text[5:] if text.startswith("/tts") else text,
-                               tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
-        else:
-            await ctx.send("You do not have permissions to do that :sob:")
+        await channel.send(text[5:] if text.startswith("/tts") else text,
+                            tts=text.startswith("/tts ") and channel.permissions_for(ctx.author).send_tts_messages)
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_guild=True)

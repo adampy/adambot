@@ -1,7 +1,7 @@
 import discord
 from discord import Colour
 from discord.ext import commands
-
+from libs.misc.decorators import is_staff
 
 class Warnings(commands.Cog):
     def __init__(self, bot):
@@ -35,14 +35,11 @@ class Warnings(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
+    @is_staff
     async def warn(self, ctx, member: discord.Member, *, reason=""):
         """
         Gives a member a warning, a reason is optional but recommended.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to warn.")
-            return
 
         parsed_args = self.bot.flag_handler.separate_args(reason, fetch=["reason"], blank_as_flag="reason")
         reason = parsed_args["reason"]
@@ -103,14 +100,11 @@ class Warnings(commands.Cog):
 
     @commands.command(pass_context=True, aliases=['warndelete'])
     @commands.guild_only()
+    @is_staff
     async def warnremove(self, ctx, *warnings):
         """
         Remove warnings with this command, can do `warnremove <warnID>` or `warnremove <warnID1> <warnID2> ... <warnIDn>`.
         """
-
-        if not await self.bot.is_staff(ctx):
-            await ctx.send("You do not have permissions to remove a warning.")
-            return
 
         if len(warnings) > 1:
             await ctx.send('One moment...')
