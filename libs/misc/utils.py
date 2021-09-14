@@ -486,7 +486,7 @@ class DefaultEmbedResponses:
         Internal procedure that is executed when a user has invalid perms
         """
 
-        embed = Embed(title=f':x: You do not have permissions to do that!', description="You are but a weakling.",
+        embed = Embed(title=f':x: You do not have permissions to do that!', description="Only people with permissions (usually staff) can use this command!",
                       color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
