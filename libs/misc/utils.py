@@ -189,12 +189,6 @@ class EmojiEnum:
     RECYCLE = '\U0000267b'
     SPEAKING = '\U0001F5E3'
 
-SPAMPING_PERMS = [
-    394978551985602571,  # Adam C
-    374144745829826572,  # Bxnana
-    420961337448071178,
-]
-
 DEVS = [
     394978551985602571,  # Adam C
     420961337448071178,  # Hodor
@@ -539,13 +533,6 @@ class DefaultEmbedResponses:
                embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
         return response
-
-
-def in_private_server(ctx):
-    """Returns True if ctx is from Adam private server, or spamping perms manually given"""
-    return (ctx.guild.id == 593788906646929439) or (ctx.author.id in SPAMPING_PERMS)  # in priv server or is adam
-
-
 
 def correct_time(conv_time=None, timezone_="Europe/London", display_timezone=pytz.timezone('Europe/London')):
     if not conv_time:

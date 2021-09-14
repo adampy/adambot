@@ -136,30 +136,40 @@ class Member(commands.Cog):
         For annoying certain people
         """
 
-        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator:  # Only allow command if in private server or admin
-            await ctx.message.delete()
-            try:
-                iterations = int(amount)
-            except Exception:
-                await ctx.send(f"Please use a number for the amount, not {amount}")
-                return
+        if not amount.isdigit() or (amount.isdigit() and int(amount) > 100):
+            await ctx.send("`amount` given must be an integer less than or equal to 100!")
+            return
 
+        if ctx.author.guild_permissions.administrator or self.bot.configs[ctx.guild.id]["spamping_access"]:  # Only allow command if in private server or admin
+            await ctx.message.delete()
             msg = ' '.join(message) + " " + user.mention
-            for i in range(iterations):
+            for i in range(int(amount)):
                 await ctx.send(msg)
+        else:
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
 
     @commands.command()
     async def ghostping(self, ctx, amount, user: discord.Member):
         """
         For sending a ghostping to annoy certain people
         """
+        
+        if not amount.isdigit() or (amount.isdigit() and int(amount) > 100):
+            await ctx.send("`amount` given must be an integer less than or equal to 100!")
+            return
 
-        if self.bot.in_private_server(ctx) or ctx.author.guild_permissions.administrator:  # Only allow command if in private server or admin
+        if ctx.author.guild_permissions.administrator or self.bot.configs[ctx.guild.id]["spamping_access"]:  # Only allow command if in private server or admin
             await ctx.message.delete()
             for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
                 for i in range(int(amount)):
-                    msg = await channel.send(user.mention)
-                    await msg.delete()
+                    try:
+                        msg = await channel.send(user.mention)
+                        await msg.delete()
+                    except discord.Forbidden:
+                        pass
+        else:
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+
 
 # -----------------------USER AND SERVER INFO------------------------------
 

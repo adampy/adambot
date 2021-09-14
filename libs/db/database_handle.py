@@ -22,7 +22,8 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
             jail_role BIGINT,
             trivia_channel BIGINT,
             invite_log_channel BIGINT,
-            lurker_phrase VARCHAR(1023)
+            lurker_phrase VARCHAR(1023),
+            spamping_access BOOLEAN DEFAULT false
         )""") # bruhs counts how many bruh moments a guild has had
 
         # Filter table

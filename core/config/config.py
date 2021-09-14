@@ -10,6 +10,7 @@ class Validation(Enum):
     Role = 2        # Is a valid role
     Integer = 3     # Is a valid integer
     String = 4      # String less than 2000 chars
+    Boolean = 5     # Is either a yes/no
 
 
 class Config(commands.Cog):
@@ -32,7 +33,8 @@ class Config(commands.Cog):
             "rep_receive_banned": [Validation.Role, "The role that blocks people receiving reputation"],
             "jail_role": [Validation.Role, "The role that puts people into jail"],
             "trivia_channel": [Validation.Channel, "Where trivias get played"],
-            "lurker_phrase": [Validation.String, "The default phrase when using the lurker command"]
+            "lurker_phrase": [Validation.String, "The default phrase when using the lurker command"],
+            "spamping_access": [Validation.Boolean, "Allow *ALL* users of a guild to access spamping/ghostping, default False"]
         }
 
     async def add_all_guild_configs(self):
@@ -164,7 +166,7 @@ class Config(commands.Cog):
                     data[key].append(f"{role.mention} ({config_dict[key]})" if role else "*N/A*")
                 
                 else:
-                    data[key].append(config_dict[key] if config_dict[key] else "*N/A*")
+                    data[key].append(config_dict[key] if config_dict[key] is not None else "*N/A*")
             
             p = config_dict["prefix"]
             desc = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{p}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{p}config set qotd_limit 2`"
@@ -237,6 +239,17 @@ class Config(commands.Cog):
         elif validation_type == Validation.String:
             if len(value) >= 1000:
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"The string provided needs to be less than 1000 characters")
+                return
+            
+        elif validation_type == Validation.Boolean:
+            positive = ["yes", "y", "true", "1", "allow"]
+            negative = ["no", "n", "0", "disallow", "false"]
+            if value.lower() in positive:
+                value = True
+            elif value.lower() in negative:
+                value = False
+            else:
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"The value provided for a boolean must be one of the following: `{'`, `'.join(valid)}`")
                 return
 
         # At this point, the input is valid and can be changed
