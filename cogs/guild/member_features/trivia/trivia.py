@@ -6,7 +6,7 @@ import csv
 import random
 import asyncio
 from datetime import datetime
-from libs.misc.utils import is_staff
+from libs.misc.decorators import is_staff
 
 TRIVIAS = [
     'cars',
