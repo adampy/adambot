@@ -17,6 +17,7 @@ class Config(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.configs = {}
+        self.bot.is_staff = self.is_staff  # is_staff defined here
         self.CONFIG = {  # Stores each column of the config table, the type of validation it is, and a short description of how its used - the embed follows the same order as this
             "welcome_channel": [Validation.Channel, "Where the welcome message is sent"],
             "welcome_msg": [Validation.String, "What is sent when someone new joins (<user> tags the new user)"],
@@ -60,7 +61,6 @@ class Config(commands.Cog):
         await self.add_all_guild_configs()
         self.bot.update_config = self.update_config
         self.bot.get_config_key = self.get_config_key
-        self.bot.is_staff = self.is_staff # is_staff defined here
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -249,7 +249,7 @@ class Config(commands.Cog):
             elif value.lower() in negative:
                 value = False
             else:
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"The value provided for a boolean must be one of the following: `{'`, `'.join(valid)}`")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"The value provided for a boolean must be one of the following: `{'`, `'.join(positive + negative)}`")
                 return
 
         # At this point, the input is valid and can be changed
