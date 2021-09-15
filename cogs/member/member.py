@@ -160,8 +160,8 @@ class Member(commands.Cog):
 
         if ctx.author.guild_permissions.administrator or await self.bot.get_config_key(ctx, "spamping_access"):  # Only allow command if in private server or admin
             await ctx.message.delete()
-            for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
-                for i in range(int(amount)):
+            for i in range(int(amount)):
+                for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
                     try:
                         msg = await channel.send(user.mention)
                         await msg.delete()
