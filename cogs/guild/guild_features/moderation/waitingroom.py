@@ -135,7 +135,7 @@ You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
             await ctx.send("Specify a whole, non-zero number of days!")
             return
         days = int(days)
-        time_ago = datetime.datetime.now(ctx.author.joined_at.tzinfo) - datetime.timedelta(days=days)
+        time_ago = discord.utils.utcnow() - datetime.timedelta(days=days)
         members = [x for x in ctx.guild.members if len(x.roles) <= 1 and x.joined_at < time_ago]  # Members with only the everyone role and more than 7 days ago
         if len(members) == 0:
             await ctx.send(f"There are no lurkers to kick that have been here {days} days or longer!")

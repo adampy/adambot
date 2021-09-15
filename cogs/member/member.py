@@ -182,11 +182,11 @@ class Member(commands.Cog):
 
         guild = ctx.message.guild
         time_ = guild.created_at
-        time_since = datetime.utcnow() - time_
+        time_since = discord.utils.utcnow() - time_
 
         join = Embed(title=f'**__{str(guild)}__**',
                      description=f"Created at {self.bot.correct_time(time_).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
-                     value='Server Name', color=Colour.from_rgb(21, 125, 224))
+                     color=Colour.from_rgb(21, 125, 224))
         join.set_thumbnail(url=guild.icon.url)
 
         join.add_field(name='Region', value=str(guild.region))

@@ -1,3 +1,4 @@
+import discord
 from discord import Embed, Colour, Message, File
 from discord.errors import HTTPException
 from discord.ext import commands
@@ -533,10 +534,3 @@ class DefaultEmbedResponses:
                embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
         return response
-
-def correct_time(conv_time=None, timezone_="Europe/London", display_timezone=pytz.timezone('Europe/London')):
-    if not conv_time:
-        conv_time = datetime.utcnow()
-    tz_obj = get_localzone() if timezone_ == "system" else pytz.timezone(timezone_)
-    #return tz_obj.localize(conv_time).astimezone(display_timezone)
-    return conv_time

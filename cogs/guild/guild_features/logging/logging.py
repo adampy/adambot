@@ -286,9 +286,10 @@ class Logging(commands.Cog):
 
         joined_at = member.joined_at
         if joined_at is not None:
-            rn = self.bot.correct_time()
-            a = self.bot.correct_time(joined_at,
-                                      timezone_="UTC")  # joined datetime is *always* in UTC for some annoying reason
+            rn = discord.utils.utcnow()
+
+            a = self.bot.correct_time(joined_at, timezone_="UTC")
+
             since_joined = (rn - a)
             since_str = ""
             props = ["weeks", "days", "hours", "minutes", "seconds", "milliseconds", "microseconds"]

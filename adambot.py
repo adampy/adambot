@@ -5,6 +5,8 @@ import asyncpg
 import time
 import os
 import pytz
+import datetime
+from tzlocal import get_localzone
 import pandas
 import json
 import argparse
@@ -55,6 +57,7 @@ class AdamBot(Bot):
         self.online = False  # Start at False, changes to True once fully initialised
         self.LOCAL_HOST = False if os.environ.get("REMOTE", None) else True
         self.display_timezone = pytz.timezone('Europe/London')
+        self.timezone = get_localzone()
         self.ts_format = '%A %d/%m/%Y %H:%M:%S'
         self.start_time = start_time
         self._init_time = time.time()
@@ -196,6 +199,18 @@ class AdamBot(Bot):
         if not hasattr(ctx.cog, "on_command_error"):  # don't re-raise if ext handling
             raise error  # re-raise error so cogs can mess around but not block every single error. Does duplicate traceback but error tracebacks are a bloody mess anyway
 
+    def correct_time(self, conv_time=None, timezone_="system"):
+        if not conv_time:
+            conv_time = datetime.datetime.now()
+        if timezone_ == "system" and conv_time.tzinfo is None:
+            tz_obj = self.timezone
+        elif conv_time.tzinfo is not None:
+            tz_obj = pytz.timezone(conv_time.tzinfo.tzname(conv_time))  # conv_time.tzinfo isn't a pytz.tzinfo object
+        else:
+            tz_obj = pytz.timezone(timezone_)
+
+
+        return tz_obj.localize(conv_time.replace(tzinfo=None)).astimezone(self.display_timezone)
 
 intents = discord.Intents.default()
 for intent in ["members", "presences", "reactions", "typing", "dm_messages", "guilds"]:
