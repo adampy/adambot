@@ -14,8 +14,8 @@ class QOTD(commands.Cog):
         Method that returns true if the ctx.author has either a staff or QOTD role
         """
 
-        qotd_role_id = self.bot.configs[ctx.guild.id]["qotd_role"]
-        staff_role_id = self.bot.configs[ctx.guild.id]["staff_role"]
+        qotd_role_id = await self.bot.get_config_key(ctx, "qotd_role")
+        staff_role_id = await self.bot.get_config_key(ctx, "staff_role")
         for role in ctx.author.roles:
             if role.id == qotd_role_id or role.id == staff_role_id:
                 return True
@@ -48,8 +48,8 @@ class QOTD(commands.Cog):
         today_date = datetime.datetime(today.year, today.month, today.day)
         async with self.bot.pool.acquire() as connection:
             submitted_today = await connection.fetch('SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2) AND guild_id = $3', member, today_date, ctx.guild.id)
-            
-            limit = self.bot.configs[ctx.guild.id]["qotd_limit"]
+
+            limit = await self.bot.get_config_key(ctx, "qotd_limit")
             if limit is None or limit == 0:  # Account for a limit set to 0 and a non-changed limit
                 limit = inf  # math.inf
 
@@ -61,7 +61,7 @@ class QOTD(commands.Cog):
                 await ctx.message.delete()
                 await ctx.send(f':thumbsup: Thank you for submitting your QOTD. Your QOTD ID is **{qotd_id}**.', delete_after=20)
 
-                mod_log_channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+                mod_log_channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
                 if mod_log_channel_id is not None:
                     mod_log = self.bot.get_channel(mod_log_channel_id)
                     embed = Embed(title=':grey_question: QOTD Submitted', color=Colour.from_rgb(177, 252, 129))
@@ -112,7 +112,7 @@ class QOTD(commands.Cog):
                     await connection.execute('DELETE FROM qotd WHERE id = ($1) AND guild_id = $2', int(question_id), ctx.guild.id)
                     await ctx.send(f'QOTD ID **{question_id}** has been deleted.')
 
-                    mod_log_channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+                    mod_log_channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
                     if mod_log_channel_id is not None:
                         mod_log = self.bot.get_channel(mod_log_channel_id)
                         embed = Embed(title=':grey_question: QOTD Deleted', color=Colour.from_rgb(177, 252, 129))
@@ -133,7 +133,7 @@ class QOTD(commands.Cog):
             await ctx.send("You do not have permissions to pick a QOTD :sob:")
             return
 
-        qotd_channel_id = self.bot.configs[ctx.guild.id]["qotd_channel"]
+        qotd_channel_id = await self.bot.get_config_key(ctx, "qotd_channel")
         if qotd_channel_id is None:
             await ctx.send("You cannot pick a QOTD because a QOTD channel has not been set :sob:")
             return
@@ -163,7 +163,7 @@ class QOTD(commands.Cog):
         await ctx.send(':ok_hand:')
         await qotd_channel.send(message)
 
-        mod_log_channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        mod_log_channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if mod_log_channel_id is not None:
             mod_log = self.bot.get_channel(mod_log_channel_id)
             embed = Embed(title=':grey_question: QOTD Picked', color=Colour.from_rgb(177, 252, 129))

@@ -209,8 +209,7 @@ class Trivia(commands.Cog):
         Command that starts a new trivia game in the currently set trivia channel
         """
 
-        config = self.bot.configs[ctx.guild.id]
-        trivia_channel_id = config["trivia_channel"]
+        trivia_channel_id = await self.bot.get_config_key(ctx, "trivia_channel")
         session = self.trivia_sessions.get(ctx.guild.id, None)
         if session and session.running:  # TriviaSession.stop() cannot remove from this dict, only change self.running, so we only need to check that
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Trivia game already happening", desc="Please wait until the current trivia is over before starting a new one")

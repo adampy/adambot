@@ -26,7 +26,7 @@ class AdamBot(Bot):
         'bot' is a required argument but also pointless since each AdamBot object isn't going to be trying to handle *other* AdamBot objects' prefixes
         """
 
-        watch_prefixes = [self.configs.get(message.guild.id, {}).get("prefix", None) if message.guild else None, self.global_prefix]
+        watch_prefixes = [await self.get_config_key(message, "prefix") if message.guild else None, self.global_prefix]
         if watch_prefixes != [None] * len(watch_prefixes):
             return when_mentioned_or(*tuple([prefix for prefix in watch_prefixes if type(prefix) is str]))(self, message)  # internal conf prefix or guild conf prefix can be used
         else:
@@ -211,6 +211,7 @@ class AdamBot(Bot):
 
 
         return tz_obj.localize(conv_time.replace(tzinfo=None)).astimezone(self.display_timezone)
+
 
 intents = discord.Intents.default()
 for intent in ["members", "presences", "reactions", "typing", "dm_messages", "guilds"]:

@@ -51,9 +51,9 @@ class SupportConnection:
         refers to the actual message object sent and `msg_type` should be of the MessageOrigin type.
         """
 
-        channel_id = self.bot.configs[self.guild.id]["support_log_channel"]
+        channel_id = await self.bot.get_config_key(self.guild, "support_log_channel")
         if channel_id is not None:
-            channel = self.bot.get_channel(self.bot.configs[self.guild.id]["support_log_channel"])
+            channel = self.bot.get_channel(channel_id)
             if channel is None:
                 return
 
@@ -79,7 +79,7 @@ class SupportConnection:
 
 
 class SupportConnectionManager:
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.connections: SupportConnection = []
         self.bot = bot
 
@@ -105,10 +105,10 @@ class SupportConnectionManager:
             ticket_id = await connection.fetchval("SELECT MAX(id) FROM support")
             new_connection = await SupportConnection.create(self.bot, ticket_id, author_id, 0, None, guild_id)  # Set started_at to None
 
-        channel_id = self.bot.configs[guild_id]["support_log_channel"]
+        guild = self.bot.get_guild(guild_id)
+        channel_id = await self.bot.get_config_key(guild, "support_log_channel")
         if channel_id is not None:
-            guild = self.bot.get_guild(guild_id)
-            staff_id = self.bot.configs[guild_id]["staff_role"]
+            staff_id = await self.bot.get_config_key(guild, "staff_role")
             staff = guild.get_role(staff_id)  # TODO: HANDLES FOR WHEN EITHER A ROLE OR CHANNEL GET REMOVED AND NOT CHANGED IN THE CONFIG
             channel = self.bot.get_channel(channel_id)
             if channel is None or staff is None:  # If channel or staff removed
@@ -175,7 +175,7 @@ class SupportConnectionManager:
         async with self.bot.pool.acquire() as db_connection:
             await db_connection.execute("DELETE FROM support WHERE id = $1", connection.id)
 
-        channel_id = self.bot.configs[connection.guild_id]["support_log_channel"]
+        channel_id = await self.bot.get_config_key(self.bot.get_guild(connection.guild_id), "support_log_channel")
         if channel_id is not None:
             channel = self.bot.get_channel(channel_id)
             if channel is None:
@@ -232,7 +232,7 @@ class Support(commands.Cog):
                     return
 
                 # Check if guild has support module set up
-                log_channel_id = self.bot.configs[guild_id]["support_log_channel"]
+                log_channel_id = await self.bot.get_config_key(self.bot.get_guild(guild_id), "support_log_channel")
                 if not log_channel_id:
                     await message.author.send(f"**{self.bot.get_guild(guild_id).name}** has not set up the support module :sob:")  # This prevents any connections being made at all
                     return
@@ -328,7 +328,7 @@ class Support(commands.Cog):
         await ctx.author.send('You are now connected anonymously with a member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)')
         await connection.member.send('You are now connected anonymously with a staff member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)')
 
-        channel_id = self.bot.configs[ctx.guild.id]["support_log_channel"]
+        channel_id = await self.bot.get_config_key(ctx, "support_log_channel")
         if channel_id is not None:
             embed = Embed(color=Colour.from_rgb(0, 0, 255))
             embed.add_field(name='Staff Connected', value=f"ID: {connection.id}", inline=False)

@@ -87,7 +87,7 @@ class Moderation(commands.Cog):
 
             await ctx.send(f"Purged **{len(deleted)}** messages!", delete_after=3)
 
-            channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+            channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
             if channel_id is None:
                 return
             channel = self.bot.get_channel(channel_id)
@@ -130,7 +130,7 @@ class Moderation(commands.Cog):
         await member.kick(reason=reason)
         await ctx.send(f'{member.mention} has been kicked :boot:')
 
-        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -220,7 +220,7 @@ class Moderation(commands.Cog):
             if not massban:
                 await ctx.send(f'{member.mention} has been banned.')
 
-            channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+            channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
             if channel_id is None:
                 return
             channel = self.bot.get_channel(channel_id)
@@ -255,7 +255,7 @@ class Moderation(commands.Cog):
                     return
             guild = self.bot.get_guild(data["guild_id"])
             await guild.unban(user, reason=reason)
-            channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+            channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
             if channel_id is None:
                 return
             channel = self.bot.get_channel(channel_id)
@@ -310,7 +310,7 @@ class Moderation(commands.Cog):
             return
 
         try:
-            muted_role = self.bot.configs[message.guild.id]["muted_role"]
+            muted_role = await self.bot.get_config_key(message, "muted_role")
             if muted_role is not None and muted_role in [role.id for role in message.author.roles]:
                 await message.delete()
         except discord.errors.NotFound:
@@ -326,7 +326,7 @@ class Moderation(commands.Cog):
         Manage roles perm needed.
         """
 
-        role = get(member.guild.roles, id=self.bot.configs[member.guild.id]["muted_role"])
+        role = get(member.guild.roles, id=await self.bot.get_config_key(member, "muted_role"))
         if not role:
             await ctx.send(":x: No muted role has been set!")
             return
@@ -361,7 +361,7 @@ class Moderation(commands.Cog):
         except discord.errors.Forbidden:
             print(f"NOTE: Could not DM {member.display_name} about their mute")
 
-        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -380,7 +380,7 @@ class Moderation(commands.Cog):
         try:
             guild = self.bot.get_guild(data["guild_id"])
             member = guild.get_member(data["member_id"])
-            role = get(guild.roles, id=self.bot.configs[guild.id]["muted_role"])
+            role = get(guild.roles, id=await self.bot.get_config_key(guild, "muted_role"))
             await member.remove_roles(role, reason=reason)
         except Exception:
             pass  # whatever
@@ -436,7 +436,7 @@ class Moderation(commands.Cog):
         Manage roles perm needed.
         """
 
-        role_id = self.bot.configs[ctx.guild.id]["jail_role"]
+        role_id = await self.bot.get_config_key(ctx, "jail_role")
         if role_id is None:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
             return
@@ -453,7 +453,7 @@ class Moderation(commands.Cog):
         Manage roles perm needed.
         """
 
-        role_id = self.bot.configs[ctx.guild.id]["jail_role"]
+        role_id = await self.bot.get_config_key(ctx, "jail_role")
         if role_id is None:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
             return

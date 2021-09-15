@@ -109,8 +109,8 @@ class Reputation(commands.Cog):
         nick = user.display_name
 
         if ctx.author != user and not user.bot:  # Check prevents self-rep and that receiver is not a bot
-            award_banned_role = ctx.guild.get_role(self.bot.configs[ctx.guild.id]["rep_award_banned"])
-            receive_banned_role = ctx.guild.get_role(self.bot.configs[ctx.guild.id]["rep_receive_banned"])
+            award_banned_role = ctx.guild.get_role(await self.bot.get_config_key(ctx, "rep_award_banned"))
+            receive_banned_role = ctx.guild.get_role(await self.bot.get_config_key(ctx, "rep_receive_banned"))
             award_banned = award_banned_role in ctx.author.roles
             receive_banned = receive_banned_role in user.roles
             award = not award_banned and not receive_banned
@@ -124,7 +124,7 @@ class Reputation(commands.Cog):
                 await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick} received a reputation point!", desc=f"{user.mention} now has {reps} reputation points!", thumbnail_url=user.avatar.url)
 
                 # Log rep
-                channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+                channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
                 if channel_id is None:
                     return
                 channel = self.bot.get_channel(channel_id)
@@ -171,7 +171,7 @@ class Reputation(commands.Cog):
 
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Reputation reset completed!", desc=f"All reputation points in {ctx.guild.name} have been removed")
 
-        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -195,7 +195,7 @@ class Reputation(commands.Cog):
         new_reps = await self.set_rep(user.id, ctx.guild.id, int(rep))
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{user.display_name}'s reputation points have been changed!", desc=f"{user.display_name} now has {new_reps} reputation points!", thumbnail_url=user.avatar.url)
 
-        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -232,7 +232,7 @@ class Reputation(commands.Cog):
         nick = user.display_name if user else user_id
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick}'s reputation points have been changed!", desc=f"{nick} now has {new_reps} reputation points!")
 
-        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)

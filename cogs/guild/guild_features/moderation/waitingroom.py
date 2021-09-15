@@ -21,9 +21,8 @@ class WaitingRoom(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        config = self.bot.configs[member.guild.id]
-        raw_msg = config["welcome_msg"]
-        channel_id = config["welcome_channel"]
+        raw_msg = await self.bot.get_config_key(member, "welcome_msg")
+        channel_id = await self.bot.get_config_key(member, "welcome_channel")
 
         if raw_msg and channel_id:
             message = await self.get_parsed_welcome_message(raw_msg, member)
@@ -40,7 +39,7 @@ class WaitingRoom(commands.Cog):
         Command that returns the welcome message, and pretends the command invoker is the new user.
         """
 
-        msg = self.bot.configs[ctx.guild.id]["welcome_msg"]
+        msg = await self.bot.get_config_key(ctx, "welcome_msg")
         if msg is None:
             await ctx.send("A welcome message has not been set.")
             return
@@ -58,7 +57,7 @@ class WaitingRoom(commands.Cog):
         """
         
         # Get default phrase if there is one, but the one given in the command overrides the config one
-        config_phrase = self.bot.configs[ctx.guild.id]["lurker_phrase"]
+        config_phrase = await self.bot.get_config_key(ctx, "lurker_phrase")
         show_tip = False
         if phrase: # Handle subcommand
             # If phrase is given and a default hasn't yet been set, show a tip on setting defaults
@@ -162,7 +161,7 @@ You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
         else:
             await question.edit(content="Unknown response, therefore no lurkers have been kicked :ok_hand:")
 
-        channel_id = self.bot.configs[ctx.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)

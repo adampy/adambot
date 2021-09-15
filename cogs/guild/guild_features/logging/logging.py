@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import Embed, Colour
 from discord.utils import get
 
+
 def getdeepattr(obj, dotted_attr):
     """
     Custom utility function that provides the same functionality as `getattr()` but it allows dotted attributes, e.g. `getdeepattr(member, "avatar.url")`
@@ -10,6 +11,7 @@ def getdeepattr(obj, dotted_attr):
     for child in dotted_attr.split("."):
         obj = getattr(obj, child)
     return obj
+
 
 def hasdeepattr(obj, dotted_attr):
     """
@@ -20,6 +22,7 @@ def hasdeepattr(obj, dotted_attr):
         return True
     except AttributeError:
         return False
+
 
 class Logging(commands.Cog):
     def __init__(self, bot):
@@ -46,7 +49,7 @@ class Logging(commands.Cog):
     async def on_message_delete(self, message):
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
 
-        channel_id = self.bot.configs[message.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(message, "mod_log_channel")
         if channel_id is None:
             return
 
@@ -74,13 +77,13 @@ class Logging(commands.Cog):
         """
         Logs bulk message deletes, such as those used in `purge` command
         """
+        msg_channel = self.bot.get_channel(payload.channel_id)
 
-        channel_id = self.bot.configs[payload.guild_id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(msg_channel, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
 
-        msg_channel = self.bot.get_channel(payload.channel_id)
         embed = Embed(title=':information_source: Bulk Message Deleted', color=Colour.from_rgb(172, 32, 31))
         embed.add_field(name='Count', value=f"{len(payload.message_ids)}", inline=True)
         embed.add_field(name='Channel', value=msg_channel.mention, inline=True)
@@ -98,7 +101,7 @@ class Logging(commands.Cog):
         if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
             return
 
-        channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(before, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -253,14 +256,14 @@ class Logging(commands.Cog):
 
                     # Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
                     if prop["display_name"] in ["Nickname", "Roles"]:
-                        channel_id = self.bot.configs[before.guild.id]["mod_log_channel"]
+                        channel_id = await self.bot.get_config_key(before, "mod_log_channel")
                         channel = self.bot.get_channel(channel_id)
                         await channel.send(embed=log)
 
                     else:
                         shared_guilds = [x for x in self.bot.guilds if after in x.members]
                         for guild in shared_guilds:
-                            channel_id = self.bot.configs[guild.id]["mod_log_channel"]
+                            channel_id = await self.bot.get_config_key(guild, "mod_log_channel")
 
                             if channel_id:
                                 channel = self.bot.get_channel(channel_id)
@@ -276,7 +279,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        channel_id = self.bot.configs[member.guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(member, "mod_log_channel")
         if channel_id is None:
             return
 
@@ -314,7 +317,7 @@ class Logging(commands.Cog):
     async def on_member_join(self, member):
         guild = member.guild
 
-        ichannel_id = self.bot.configs[guild.id]["invite_log_channel"]
+        ichannel_id = await self.bot.get_config_key(guild, "invite_log_channel")
         if ichannel_id is None:  # If invite channel not set
             return
         ichannel = self.bot.get_channel(ichannel_id)
@@ -376,7 +379,7 @@ class Logging(commands.Cog):
                 self.previous_inv_log_embeds.append(invite_log.to_dict())
                 await ichannel.send(embed=invite_log)
 
-        channel_id = self.bot.configs[guild.id]["mod_log_channel"]
+        channel_id = await self.bot.get_config_key(guild, "mod_log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)

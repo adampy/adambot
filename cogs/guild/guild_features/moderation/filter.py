@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from libs.misc.decorators import is_staff
 import asyncio
 import ast  # using ast for literal_eval, stops code injection
 import asyncpg
@@ -151,6 +152,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
+    @is_staff
     async def add(self, ctx, *, text):
         """
         Allows adding a filtered phrase for the guild. Staff role needed.
@@ -174,6 +176,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
+    @is_staff
     async def add_ignore(self, ctx, *, text):
         """
         Allows adding a phrase that will be ignored by the filter.
@@ -182,9 +185,6 @@ class Filter(commands.Cog):
         """
 
         text = text.lower()
-        if not await self.bot.is_staff(ctx.message):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if text not in self.filters[ctx.guild.id]["ignored"]:
             message = await self.clean_up(ctx, text, "ignored", spoiler=False)
@@ -211,9 +211,6 @@ class Filter(commands.Cog):
         """
 
         text = text.lower()
-        if not await self.bot.is_staff(ctx.message):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
         if key not in ["filtered", "ignored"]:
             return  # get ignored
 
@@ -227,6 +224,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
+    @is_staff
     async def remove(self, ctx, *, text):
         """
         Allows removing a filtered phrase. Staff role needed.
@@ -247,6 +245,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
+    @is_staff
     async def remove_ignore(self, ctx, *, text):
         """
         Allows removing a phrase ignored by the filter. Staff role needed.
@@ -255,9 +254,6 @@ class Filter(commands.Cog):
         await self.generic_remove(ctx, text.lower(), "ignored")
 
     async def list_generic(self, ctx, key, spoiler=True):
-        if not await self.bot.is_staff(ctx.message):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if key not in ["filtered", "ignored"]:
             return  # get ignored
@@ -267,6 +263,7 @@ class Filter(commands.Cog):
 
     @filter.command(name="list")
     @commands.guild_only()
+    @is_staff
     async def list_filter(self, ctx):
         """
         Lists filtered phrases for a guild. Staff role needed.
@@ -276,6 +273,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
+    @is_staff
     async def list_ignore(self, ctx):
         """
         Lists ignored phrases for a guild. Staff role needed.
@@ -285,14 +283,11 @@ class Filter(commands.Cog):
 
     @filter.command(name="clear")
     @commands.guild_only()
+    @is_staff
     async def clear_filter(self, ctx):
         """
         Allows clearing the list of filtered and ignored phrases for the guild. Staff role needed.
         """
-
-        if not await self.bot.is_staff(ctx.message):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         self.filters[ctx.guild.id] = {"filtered": [], "ignored": []}
         await self.propagate_new_guild_filter(ctx.guild)

@@ -140,7 +140,7 @@ class Member(commands.Cog):
             await ctx.send("`amount` given must be an integer less than or equal to 100!")
             return
 
-        if ctx.author.guild_permissions.administrator or self.bot.configs[ctx.guild.id]["spamping_access"]:  # Only allow command if in private server or admin
+        if ctx.author.guild_permissions.administrator or await self.bot.get_config_key(ctx, "spamping_access"):  # Only allow command if in private server or admin
             await ctx.message.delete()
             msg = ' '.join(message) + " " + user.mention
             for i in range(int(amount)):
@@ -158,7 +158,7 @@ class Member(commands.Cog):
             await ctx.send("`amount` given must be an integer less than or equal to 100!")
             return
 
-        if ctx.author.guild_permissions.administrator or self.bot.configs[ctx.guild.id]["spamping_access"]:  # Only allow command if in private server or admin
+        if ctx.author.guild_permissions.administrator or await self.bot.get_config_key(ctx, "spamping_access"):  # Only allow command if in private server or admin
             await ctx.message.delete()
             for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
                 for i in range(int(amount)):
