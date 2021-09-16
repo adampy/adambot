@@ -189,21 +189,33 @@ class Member(commands.Cog):
                      color=Colour.from_rgb(21, 125, 224))
         join.set_thumbnail(url=guild.icon.url)
 
-        join.add_field(name='Region', value=str(guild.region))
         join.add_field(name='Users Online',
                        value=f'{len([x for x in guild.members if x.status != Status.offline])}/{len(guild.members)}')
+        if ctx.guild.rules_channel:  # only community
+            join.add_field(name='Rules Channel', value=f'{ctx.guild.rules_channel.mention}')
         join.add_field(name='Text Channels', value=f'{len(guild.text_channels)}')
         join.add_field(name='Voice Channels', value=f'{len(guild.voice_channels)}')
+
         join.add_field(name='Roles', value=f'{len(guild.roles)}')
         join.add_field(name='Owner', value=f'{str(guild.owner)}')
-        join.set_footer(text=f'Server ID: {guild.id}')
+        join.add_field(name='Region', value=str(guild.region))
+        join.add_field(name='Server ID', value=f'{guild.id}')
+
+        join.add_field(name='Emoji slots filled', value=f'{len(ctx.guild.emojis)}/{ctx.guild.emoji_limit}')
+        join.add_field(name='Sticker slots filled', value=f'{len(ctx.guild.stickers)}/{ctx.guild.sticker_limit}')
+        join.add_field(name='Upload size limit', value=f'{guild.filesize_limit/1048576} MB')
+
+        join.add_field(name='Boost level', value=f'{ctx.guild.premium_tier} ({ctx.guild.premium_subscription_count} boosts, {len(ctx.guild.premium_subscribers)} boosters)')
+        join.add_field(name='Default Notification Level', value=f'{self.bot.make_readable(guild.default_notifications.name)}')
+        join.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
+                self.bot.ts_format), icon_url=ctx.author.avatar.url)
 
         await ctx.send(embed=join)
 
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
-    async def userinfo(self, ctx, *args):
+    async def userinfo(self, ctx, *, args=""):
         """
         Information about you or a user
         """
@@ -214,60 +226,95 @@ class Member(commands.Cog):
         if len(args) == 0:
             user = author
         else:
-            user = await self.bot.get_spaced_member(ctx, self.bot, *args)
+            user = await self.bot.get_spaced_member(ctx, self.bot, args)
+            args = args.replace("<", "").replace(">", "").replace("@", "").replace("!", "")
+            if user is None and args.isdigit():
+                user = await self.bot.fetch_user(int(args))  # allows getting some limited info about a user that isn't a member of the guild
             if user is None:
                 await ctx.send(embed=Embed(title="Userinfo",
                                            description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**',
                                            color=Colour.from_rgb(255, 7, 58)))
                 return
 
-        roles = user.roles[-1:0:-1]
-
-        joined_at = user.joined_at
-        since_created = (ctx.message.created_at - user.created_at).days
-
-        if joined_at is not None:
-            since_joined = (ctx.message.created_at - joined_at).days
-            user_joined = self.bot.correct_time(joined_at).strftime(self.bot.ts_format)
-        else:
-            since_joined = "?"
-            user_joined = "Unknown"
-        user_created = self.bot.correct_time(user.created_at).strftime(self.bot.ts_format)
-        voice_state = user.voice
-        member_number = (
-                sorted(guild.members, key=lambda m: m.joined_at or ctx.message.created_at).index(user)
-                + 1
-        )
-
-        created_on = f"{user_created}\n({since_created} days ago)"
-        joined_on = f"{user_joined}\n({since_joined} days ago)"
-        activity = f"Chilling in {user.status} status"
-
-        data = Embed(description=activity, colour=user.colour)
-        data.add_field(name="Joined Discord on", value=created_on)
-        data.add_field(name="Joined this server on", value=joined_on)
-        for activity in user.activities:
-            if isinstance(activity, discord.Spotify):
-                data.add_field(name="Listening to Spotify",
-                               value=f"{activity.title} by {activity.artist} on {activity.album}", inline=False)
-            elif isinstance(activity, discord.CustomActivity):
-                data.add_field(name="Custom Status", value=f"{activity.name}", inline=False)
+        is_member = isinstance(user, discord.Member)
+        if is_member:
+            statuses = ""
+            if user.desktop_status.name != "offline":
+                statuses += f"{getattr(self.bot.EmojiEnum, user.desktop_status.name.upper())} Desktop "
+            if user.web_status.name != "offline":
+                statuses += f"{getattr(self.bot.EmojiEnum, user.web_status.name.upper())} Web "
+            if user.mobile_status.name != "offline":
+                statuses += f"{getattr(self.bot.EmojiEnum, user.mobile_status.name.upper())} Mobile"
+            if not statuses:
+                statuses = "in offline status"
             else:
-                data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name}", inline=False)
-        if roles:
-            disp_roles = ', '.join([role.name for role in roles[:10]])
-            if len(roles) > 10:
-                disp_roles += f" (+{len(roles) - 10} roles)"
-            data.add_field(name="Roles", value=disp_roles, inline=False)
+                statuses = f"using {statuses}"
+
+            data = Embed(description=f"Chilling {statuses}" if is_member else "", colour=user.colour)
         else:
-            data.add_field(name="Roles", value="No roles currently!")
-        if voice_state and voice_state.channel:
-            data.add_field(
-                name="Current voice channel",
-                value=f"{voice_state.channel.mention} ID: {voice_state.channel.id}",
-                inline=False,
+            data = Embed(colour=user.colour)
+
+        data.add_field(name="User ID", value=f"{user.id}")
+        user_created = self.bot.correct_time(user.created_at).strftime(self.bot.ts_format)
+        since_created = (ctx.message.created_at - user.created_at).days
+        created_on = f"{user_created}\n({since_created} days ago)"
+        data.add_field(name="Joined Discord on", value=created_on)
+
+        if is_member:
+            roles = user.roles[-1:0:-1]
+
+            joined_at = user.joined_at
+
+            if joined_at is not None:
+                since_joined = (ctx.message.created_at - joined_at).days
+                user_joined = self.bot.correct_time(joined_at).strftime(self.bot.ts_format)
+
+            else:
+                since_joined = "?"
+                user_joined = "Unknown"
+
+            voice_state = user.voice
+
+            member_number = (
+                    sorted(guild.members, key=lambda m: m.joined_at or ctx.message.created_at).index(user)
+                    + 1
             )
-        data.set_footer(text=f"Member #{member_number} | User ID: {user.id}")
+
+            joined_on = f"{user_joined}\n({since_joined} days ago)"
+
+            data.add_field(name="Joined this server on", value=joined_on)
+            data.add_field(name="Position", value=f"#{member_number}/{len(guild.members)}")
+            for activity in user.activities:
+                if isinstance(activity, discord.Spotify):
+                    data.add_field(name="Listening to Spotify",
+                               value=f"{activity.title} by {activity.artist} on {activity.album} ({self.bot.time_str((discord.utils.utcnow() - activity.start).seconds)} elapsed)", inline=False)
+                elif isinstance(activity, discord.CustomActivity):
+                    data.add_field(name="Custom Status", value=f"{activity.name}", inline=False)
+                else:
+                    data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} ({self.bot.time_str((discord.utils.utcnow() - activity.start).seconds)} elapsed)\n{activity.details}", inline=False)
+            if roles:
+                disp_roles = ', '.join([role.name for role in roles[:10]])
+                if len(roles) > 10:
+                    disp_roles += f" (+{len(roles) - 10} roles)"
+                data.add_field(name="Roles", value=disp_roles, inline=False)
+            else:
+                data.add_field(name="Roles", value="No roles currently!")
+            if voice_state and voice_state.channel:
+                data.add_field(
+                    name="Current voice channel",
+                    value=f"{voice_state.channel.mention} ID: {voice_state.channel.id}",
+                    inline=False,
+                )
+
+        data.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
+                self.bot.ts_format), icon_url=ctx.author.avatar.url)
+        flags = user.public_flags.all()  # e.g. hypesquad stuff
+        if flags:
+            desc = []
+            for flag in flags:
+                desc.append(self.bot.make_readable(flag.name))
+            desc = ", ".join(desc)
+            data.add_field(name="Special flags", value=desc, inline=False)
 
         name = f"{user} ~ {user.display_name}"
 

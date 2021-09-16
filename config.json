@@ -4,7 +4,11 @@
   "global_prefix": "-",
 
   "cogs": {
-
+	
+	"bot": [
+	  "bot"
+	],
+	
 	"dev": [
 	  "eval"
 	],

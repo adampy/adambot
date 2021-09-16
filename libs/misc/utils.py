@@ -190,6 +190,12 @@ class EmojiEnum:
     RECYCLE = '\U0000267b'
     SPEAKING = '\U0001F5E3'
 
+    ONLINE = "\U0001F7E2"
+    IDLE = "\U0001F7E1"
+    DND = "\U0001F534"
+    OFFLINE = "\U000026AB"
+
+
 DEVS = [
     394978551985602571,  # Adam C
     420961337448071178,  # Hodor
@@ -267,6 +273,14 @@ async def get_spaced_member(ctx, bot, *args):
                                 break
 
     return user
+
+
+def make_readable(text: str) -> str:
+    """
+    Turns stuff like ANIMATED_ICON into Animated Icon
+    """
+
+    return " ".join([part[:1].upper() + part[1:] for part in text.lower().replace("_", " ").split()])
 
 
 def ordinal(n: int) -> str:
