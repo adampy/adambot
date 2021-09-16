@@ -33,7 +33,7 @@ class Logging(commands.Cog):
 
     @staticmethod
     async def get_all_invites(guild):
-        return await guild.invites() + [await guild.vanity_invite()] if "VANITY_URL" in guild.features else []
+        return await guild.invites() + ([await guild.vanity_invite()] if "VANITY_URL" in guild.features else [])
 
     @commands.Cog.listener()
     async def on_ready(self):
