@@ -159,9 +159,6 @@ class Filter(commands.Cog):
         """
 
         text = text.lower()
-        if not await self.bot.is_staff(ctx.message):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if text not in self.filters[ctx.guild.id]["filtered"]:
             message = await self.clean_up(ctx, text, "filtered")

@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 from discord import Embed, errors
+from libs.misc.decorators import is_staff
 
 """
     TODO:
@@ -347,6 +348,7 @@ class Role(commands.Cog):
         help=single_role_change_help
     )  # sorry we don't have a world-beating AI to beat these types of problems just yet
     @commands.guild_only()
+    @is_staff
     async def add(self, ctx, role, *, member: discord.Member):
         """
         Staff role required.
@@ -357,21 +359,18 @@ class Role(commands.Cog):
         NOTE: Names have to be case-sensitive and without spaces currently.
         """
 
-        if ctx.author.guild_permissions.manage_roles or await self.bot.is_staff(ctx):
-            role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
-            if len(role) > 1:
-                return
-
-            await self.checked_role_change(ctx, role[0], member, "add")
+        role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
+        if len(role) > 1:
             return
 
-        await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+        await self.checked_role_change(ctx, role[0], member, "add")
 
     @role.command(
         brief="role remove <role> <member> - Remove a role from a member",
         help=single_role_change_help.replace("add", "remove")
     )
     @commands.guild_only()
+    @is_staff
     async def remove(self, ctx, role, member: discord.Member):
         """
         Staff role required.
@@ -381,10 +380,6 @@ class Role(commands.Cog):
 
         NOTE: Names have to be case-sensitive and without spaces currently.
         """
-
-        if not (ctx.author.guild_permissions.manage_roles or await self.bot.is_staff(ctx)):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
         if len(role) > 1:
@@ -413,6 +408,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
+    @is_staff
     async def swap(self, ctx, swap_from, *, swap_to):
         """
         Staff role required.
@@ -432,10 +428,6 @@ class Role(commands.Cog):
         if len(swap_to) > 1:
             return
         swap_to = swap_to[0]
-
-        if not (ctx.author.guild_permissions.manage_roles or await self.bot.is_staff(ctx)):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if swap_from == swap_to:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Why would we do that then", desc="Try again with 2 different roles!")
@@ -488,6 +480,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
+    @is_staff
     async def removeall(self, ctx, *, role):
         """
         Staff role required.
@@ -501,10 +494,6 @@ class Role(commands.Cog):
         if len(role) > 1:
             return
         role = role[0]
-
-        if not (ctx.author.guild_permissions.manage_roles or await self.bot.is_staff(ctx)):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if len(role.members):
             members = role.members
@@ -547,6 +536,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
+    @is_staff
     async def addall(self, ctx, ref_role, *, add_role):
         """
         Staff role required.
@@ -568,10 +558,6 @@ class Role(commands.Cog):
         if len(add_role) > 1:
             return
         add_role = add_role[0]
-
-        if not (ctx.author.guild_permissions.manage_roles or await self.bot.is_staff(ctx)):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if ref_role == add_role:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Why would we do that then", desc="Try again with 2 different roles!")
@@ -619,6 +605,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
+    @is_staff
     async def clear(self, ctx, *, member: discord.Member):
         """
         Staff role required.
@@ -628,10 +615,6 @@ class Role(commands.Cog):
 
         NOTE: Names have to be case-sensitive currently.
         """
-
-        if not (ctx.author.guild_permissions.manage_roles or await self.bot.is_staff(ctx)):
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-            return
 
         if not ctx.me.guild_permissions.manage_roles:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't remove roles!", desc="Please give me **Manage Roles** permissions")
