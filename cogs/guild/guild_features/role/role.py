@@ -60,7 +60,6 @@ class Role(commands.Cog):
             possible = equals  # solves the whole problem of typing "moderator" and it not realising you want "Moderator" and asking you if you meant Moderator or Head Moderator
 
         if len(possible) > 1 and verbosity > Verbosity.SILENT:
-            await ctx.send(possible)
             title = 'Multiple roles found. Please try again by entering one of the following roles.'
             desc = '\n'.join([f"•  {role.name}" + (f" (Role ID: {role.id})" if [a_role.name.lower() for a_role in possible].count(role.name.lower()) > 1 else "") for role in possible])
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, title, desc=desc)
@@ -366,7 +365,6 @@ class Role(commands.Cog):
         """
 
         if type(role) is not discord.Role:  # no point wasting time if it's of the correct type already
-            await ctx.send("doing check")
 
             role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
 
