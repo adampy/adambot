@@ -10,6 +10,16 @@ import asyncpg
 import ast
 from libs.misc.decorators import is_staff
 from typing import Callable, Any
+import copy
+
+"""
+Potential TODOs:
+    - Allow embed outputs to be used in actions
+    - Potentially allow usage of ctx within outputs
+    - Conditional outputs? e.g. if user has a particular role already then no output saying they have the role
+    - Have a look into whether pre and post invoke hooks need to be manually invoked
+    - Tidy up some of the code if possible 
+"""
 
 
 class NoSendContext(commands.Context):
@@ -146,7 +156,7 @@ class Actions(commands.Cog):
     @is_staff
     async def delete_action(self, ctx: commands.Context, name: str = "") -> None:  # Actual deleting is handled by remove_action
         """
-        Command to delete actions
+        Command to delete an action for a guild
 
         Staff role required
         """
@@ -160,6 +170,30 @@ class Actions(commands.Cog):
         else:
             await self.remove_action(ctx.guild.id, name)
             await ctx.send(embed=Embed(title="Successfully deleted action!", description=f"{name} has been removed!", colour=self.bot.SUCCESS_GREEN))
+
+    @action.command()
+    @commands.guild_only()
+    @is_staff
+    async def deleteall(self, ctx: commands.Context) -> None:
+        """
+        Command to delete all actions for a guild
+
+        Staff role required
+        """
+
+        for action in list(self.actions[ctx.guild.id].keys()):
+            await self.remove_action(ctx.guild.id, action)
+
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"Successfully deleted all actions for {ctx.guild}")
+
+    @action.command()
+    @commands.guild_only()
+    @is_staff
+    async def raw(self, ctx: commands.Context, name: str) -> None:
+        if name not in self.actions[ctx.guild.id]:
+            await ctx.send(embed=Embed(title="Could not show data for the requested action", description="No action with the given name exists!", colour=self.bot.ERROR_RED))
+        else:
+            await ctx.send(f"```{self.actions[ctx.guild.id][name]}```")
 
     @action.command(name="list", aliases=["show"])
     @commands.guild_only()
@@ -200,7 +234,8 @@ class Actions(commands.Cog):
     async def register_action(self, guild_id: int, name: str, action: dict) -> None:
         """
         Method to register a given loaded action
-        This method ensures that the action is accessible from all the correct places, including aliases etc.
+        This method ensures that the action is accessible from all the correct places.
+        Registers aliases, to the internal bot dict, and as an alias to the base handler.
         """
 
         self.bot.all_commands["base_action_handler"].aliases.append(name)
@@ -222,6 +257,8 @@ class Actions(commands.Cog):
     async def remove_action(self, guild_id: int, name: str) -> None:
         """
         Method to remove a specified action
+
+        Removes it from internal tracker, removes aliases and removes it from the internal commands dict
         """
 
         if not name or name not in self.actions[guild_id]:
@@ -263,6 +300,7 @@ class Actions(commands.Cog):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
+        action = copy.deepcopy(action)
         clean_ctx = await self.bot.get_context(ctx.message, cls=NoSendContext)  # not entirely sure yet how to override ctx.message.channel without making all hell break loose
 
         arg_index = 0
