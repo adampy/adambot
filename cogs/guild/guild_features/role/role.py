@@ -1,3 +1,4 @@
+from typing import Union
 from discord.ext import commands
 import discord
 from discord import Embed, errors
@@ -32,12 +33,12 @@ class CheckedRoleChangeResult:  # Used for the results of the `Role.checked_role
 
 
 class Role(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     # --- UTILITY FUNCTIONS ---
 
-    async def find_closest_role(self, ctx, role, verbosity: Verbosity = Verbosity.SILENT):
+    async def find_closest_role(self, ctx: commands.Context, role: str, verbosity: Verbosity = Verbosity.SILENT) -> list[discord.Role]:
         """
         Verbosity:
           0: Silence
@@ -69,7 +70,7 @@ class Role(commands.Cog):
 
         return possible
 
-    async def manage_roles_check(self, ctx, action, role: discord.Role = None, verbosity=Verbosity.ALL, error_title="default"):  # verbose toggle e.g. in multi-role changes
+    async def manage_roles_check(self, ctx: commands.Context, action: str, role: discord.Role = None, verbosity=Verbosity.ALL, error_title="default") -> int:  # verbose toggle e.g. in multi-role changes
         """
         Error checking to see if whatever action can be performed.
 
@@ -104,7 +105,7 @@ class Role(commands.Cog):
                 return 1
         return 0
 
-    async def checked_role_change(self, ctx, role: discord.Role, member: discord.Member, action: str, tracker: discord.Message = None, part_of_more=False, single_output=True):
+    async def checked_role_change(self, ctx: commands.Context, role: discord.Role, member: discord.Member, action: str, tracker: discord.Message = None, part_of_more: bool = False, single_output: bool = True) -> Union[int, float]:
         """
         Returns:
             0: Everything fine
@@ -166,7 +167,7 @@ class Role(commands.Cog):
 
     @commands.command(enabled=False, hidden=True)
     @commands.max_concurrency(1, per=commands.BucketType.guild)
-    async def concurr_dummy(self, ctx):
+    async def concurr_dummy(self, ctx: commands.Context) -> None:
         """
         Hack of the century
         """
@@ -175,7 +176,7 @@ class Role(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    async def role(self, ctx):
+    async def role(self, ctx: commands.Context) -> None:
         """
         'role' command group definition.
         Checks if subcommand passed matches anything within the group.
@@ -195,7 +196,7 @@ class Role(commands.Cog):
             ctx.invoked_subcommand._max_concurrency = self.concurr_dummy._max_concurrency  # hack of the decade. also, no getter available for Command object so shut up PyCharm
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: commands.Context, error) -> None:
         """
         Error handler that checks for errors within this specific command group.
         Saves repeated error checks literally everywhere.
@@ -248,16 +249,18 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    async def info(self, ctx, *, role):
+    async def info(self, ctx: commands.Context, *, role: Union[discord.Role, str]) -> None:
         """
         Displays various details about a specified role.
         Works with a role mention, role name or role ID.
         """
 
-        role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
-        if len(role) > 1:
-            return
-        role = role[0]
+        if type(role) is not discord.Role:
+            role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
+            if len(role) > 1:
+                return
+
+            role = role[0]
 
         embed = Embed(title=f"Role info ~ {role.name}", colour=role.colour)
         embed.add_field(name="Created at", value=self.bot.correct_time(role.created_at))
@@ -282,7 +285,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    async def list_server_roles(self, ctx):
+    async def list_server_roles(self, ctx: commands.Context) -> None:
         """
         Lists all the roles on the server.
         """
@@ -314,19 +317,22 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    async def members(self, ctx, *, role_name):
+    async def members(self, ctx: commands.Context, *, role: Union[discord.Role, str]) -> None:
         """
         Lists all the members that have a specified role.
         Works with a role mention, role name or role ID.
         """
 
-        possible = await self.find_closest_role(ctx, role_name, verbosity=Verbosity.ALL)
+        if type(role) is not discord.Role:
+            possible = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
 
-        if len(possible) > 1:
-            return
+            if len(possible) > 1:
+                return
 
-        message = "\n".join([f'`{member.id}` **{member.name}**' for member in possible[0].members]) + \
-                  f"\n------------------------------------\n:white_check_mark: I found **{len(possible[0].members)}** member{'' if len(possible[0].members) == 1 else 's'} with the **{possible[0].name}** role."
+            role = possible[0]
+
+        message = "\n".join([f'`{member.id}` **{member.name}**' for member in role.members]) + \
+                  f"\n------------------------------------\n:white_check_mark: I found **{len(role.members)}** member{'' if len(role.members) == 1 else 's'} with the **{role.name}** role."
 
         await self.bot.send_text_file(message, ctx.channel, "roles", "txt") if len(message) > 2000 else await ctx.send(message)
 
@@ -349,7 +355,7 @@ class Role(commands.Cog):
     )  # sorry we don't have a world-beating AI to beat these types of problems just yet
     @commands.guild_only()
     @is_staff
-    async def add(self, ctx, role, *, member: discord.Member):
+    async def add(self, ctx: commands.Context, role: Union[discord.Role, str], *, member: discord.Member) -> None:
         """
         Staff role required.
         Add a specific role to a specified member.
@@ -359,11 +365,17 @@ class Role(commands.Cog):
         NOTE: Names have to be case-sensitive and without spaces currently.
         """
 
-        role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
-        if len(role) > 1:
-            return
+        if type(role) is not discord.Role:  # no point wasting time if it's of the correct type already
+            await ctx.send("doing check")
 
-        await self.checked_role_change(ctx, role[0], member, "add")
+            role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
+
+            if len(role) > 1:
+                return
+
+            role = role[0]
+
+        await self.checked_role_change(ctx, role, member, "add")
 
     @role.command(
         brief="role remove <role> <member> - Remove a role from a member",
@@ -371,7 +383,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def remove(self, ctx, role, member: discord.Member):
+    async def remove(self, ctx: commands.Context, role: Union[discord.Role, str], member: discord.Member) -> None:
         """
         Staff role required.
         Remove a specific role from a specified member.
@@ -381,11 +393,14 @@ class Role(commands.Cog):
         NOTE: Names have to be case-sensitive and without spaces currently.
         """
 
-        role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
-        if len(role) > 1:
-            return
+        if type(role) is not discord.Role:
+            role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
+            if len(role) > 1:
+                return
 
-        await self.checked_role_change(ctx, role[0], member, "remove")
+            role = role[0]
+
+        await self.checked_role_change(ctx, role, member, "remove")
 
     @role.command(
         long_op=True,
@@ -409,7 +424,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def swap(self, ctx, swap_from, *, swap_to):
+    async def swap(self, ctx: commands.Context, swap_from: Union[discord.Role, str], *, swap_to: Union[discord.Role, str]) -> None:
         """
         Staff role required.
         Allows shifting/swapping of roles.
@@ -419,15 +434,17 @@ class Role(commands.Cog):
 
         """
 
-        swap_from = await self.find_closest_role(ctx, swap_from, verbosity=Verbosity.ALL)
-        if len(swap_from) > 1:
-            return
-        swap_from = swap_from[0]
+        if type(swap_from) is not discord.Role:
+            swap_from = await self.find_closest_role(ctx, swap_from, verbosity=Verbosity.ALL)
+            if len(swap_from) > 1:
+                return
+            swap_from = swap_from[0]
 
-        swap_to = await self.find_closest_role(ctx, swap_to, verbosity=Verbosity.ALL)
-        if len(swap_to) > 1:
-            return
-        swap_to = swap_to[0]
+        if type(swap_to) is not discord.Role:
+            swap_to = await self.find_closest_role(ctx, swap_to, verbosity=Verbosity.ALL)
+            if len(swap_to) > 1:
+                return
+            swap_to = swap_to[0]
 
         if swap_from == swap_to:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Why would we do that then", desc="Try again with 2 different roles!")
@@ -481,7 +498,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def removeall(self, ctx, *, role):
+    async def removeall(self, ctx: commands.Context, *, role: Union[discord.Role, str]) -> None:
         """
         Staff role required.
         Allows removing a role from all members who have it.
@@ -490,10 +507,11 @@ class Role(commands.Cog):
 .
         """
 
-        role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
-        if len(role) > 1:
-            return
-        role = role[0]
+        if type(role) is not discord.Role:
+            role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
+            if len(role) > 1:
+                return
+            role = role[0]
 
         if len(role.members):
             members = role.members
@@ -537,7 +555,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def addall(self, ctx, ref_role, *, add_role):
+    async def addall(self, ctx: commands.Context, ref_role: Union[discord.Role, str], *, add_role: Union[discord.Role, str]) -> None:
         """
         Staff role required.
         Allows adding a role to all members who have another role.
@@ -549,15 +567,17 @@ class Role(commands.Cog):
         Example: role addall @A @B - this will add role B to all members that have role A
         """
 
-        ref_role = await self.find_closest_role(ctx, ref_role, verbosity=Verbosity.ALL)
-        if len(ref_role) > 1:
-            return
-        ref_role = ref_role[0]
+        if type(ref_role) is not discord.Role:
+            ref_role = await self.find_closest_role(ctx, ref_role, verbosity=Verbosity.ALL)
+            if len(ref_role) > 1:
+                return
+            ref_role = ref_role[0]
 
-        add_role = await self.find_closest_role(ctx, add_role, verbosity=Verbosity.ALL)
-        if len(add_role) > 1:
-            return
-        add_role = add_role[0]
+        if type(add_role) is not discord.Role:
+            add_role = await self.find_closest_role(ctx, add_role, verbosity=Verbosity.ALL)
+            if len(add_role) > 1:
+                return
+            add_role = add_role[0]
 
         if ref_role == add_role:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Why would we do that then", desc="Try again with 2 different roles!")
@@ -606,7 +626,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def clear(self, ctx, *, member: discord.Member):
+    async def clear(self, ctx: commands.Context, *, member: discord.Member) -> None:
         """
         Staff role required.
         Allows removing all roles from a user.

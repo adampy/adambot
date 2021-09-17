@@ -2,24 +2,23 @@ from discord.ext import commands
 import asyncio
 import asyncpg
 import datetime
-import random
-import ast
+from typing import Callable, Union
 
 
 class Tasks(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
         self.task_types = {}
         self.bot.tasks = self
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         while not self.bot.online:
             await asyncio.sleep(1)  # wait else DB won't be available
 
         await self.execute_tasks()
 
-    async def register_task_type(self, task_name: str, handling_method, delete_task: bool = True, needs_extra_columns=None):  # expose to bot object
+    async def register_task_type(self, task_name: str, handling_method: Callable, delete_task: bool = True, needs_extra_columns=None) -> None:  # expose to bot object
         if needs_extra_columns is None:
             needs_extra_columns = {"member_id": "bigint", "guild_id": "bigint"}
         while not self.bot.online:
@@ -39,7 +38,7 @@ class Tasks(commands.Cog):
             "extra_data": needs_extra_columns
         }
 
-    async def submit_task(self, task_name: str, timestamp, extra_columns: dict):
+    async def submit_task(self, task_name: str, timestamp: Union[str, datetime.datetime], extra_columns: dict) -> None:
         while not self.bot.online:
             await asyncio.sleep(1)  # wait else DB won't be available
 
@@ -52,25 +51,7 @@ class Tasks(commands.Cog):
             except Exception as e:
                 raise e
 
-    async def test_task(self, data):
-        await self.bot.get_channel(data["channel_id"]).send(data)
-
-    @commands.command()
-    @commands.guild_only()
-    async def regtest(self, ctx, name, *, extra_columns):
-        extra_columns = ast.literal_eval(extra_columns)
-        await self.register_task_type(name, self.test_task, needs_extra_columns=extra_columns)
-        await ctx.reply(f"Registered {name} with test_task object")
-
-    @commands.command()
-    @commands.guild_only()
-    async def subtest(self, ctx, name, *, data):
-        data = ast.literal_eval(data)
-        t = random.randint(5, 20)
-        await self.submit_task(ctx, name, datetime.datetime.utcnow() + datetime.timedelta(seconds=t), data)
-        await ctx.reply(f"Submitted new {name}, check DB for results, picked {t} seconds delay")
-
-    async def execute_tasks(self):
+    async def execute_tasks(self) -> None:
         """
         The loop that continually checks the DB for todos.
             The todo table looks like:
@@ -101,5 +82,5 @@ class Tasks(commands.Cog):
             await asyncio.sleep(1)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Tasks(bot))

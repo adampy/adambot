@@ -11,16 +11,17 @@ import pandas
 import json
 import argparse
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
+from typing import Union
 
 start_time = time.time()
 
 
 
 class AdamBot(Bot):
-    async def get_context(self, message, *, cls=commands.Context):
+    async def get_context(self, message: discord.Message, *, cls=commands.Context) -> commands.Context:
         return await super().get_context(message, cls=cls) if cls else None
 
-    async def determine_prefix(self, bot, message: discord.Message) -> when_mentioned_or:
+    async def determine_prefix(self, bot, message: discord.Message) -> Union[when_mentioned, when_mentioned_or]:
         """
         Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used
         'bot' is a required argument but also pointless since each AdamBot object isn't going to be trying to handle *other* AdamBot objects' prefixes
@@ -33,7 +34,7 @@ class AdamBot(Bot):
             # Config tables aren't loaded yet or internal config doesn't specify another prefix, temporarily set to mentions only
             return when_mentioned(self, message)
 
-    async def get_used_prefixes(self, message):
+    async def get_used_prefixes(self, message: discord.Message) -> list[str]:
         """
         Gets the prefixes that can be used to invoke a command in the guild where the message is from
         """
@@ -44,7 +45,7 @@ class AdamBot(Bot):
         guild_prefix = await self.get_config_key(message, "prefix")
         return [prefix for prefix in [self.user.mention, self.global_prefix if self.global_prefix else None, guild_prefix if guild_prefix else None] if type(prefix) is str]
 
-    def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args, **kwargs):
+    def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args, **kwargs) -> None:
         self.internal_config = self.load_internal_config(config_path)
         kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
 
@@ -199,7 +200,7 @@ class AdamBot(Bot):
         if not hasattr(ctx.cog, "on_command_error"):  # don't re-raise if ext handling
             raise error  # re-raise error so cogs can mess around but not block every single error. Does duplicate traceback but error tracebacks are a bloody mess anyway
 
-    def correct_time(self, conv_time=None, timezone_="system"):
+    def correct_time(self, conv_time: Union[datetime.datetime, None] = None, timezone_: str = "system") -> datetime.datetime:
         if not conv_time:
             conv_time = datetime.datetime.now()
         if timezone_ == "system" and conv_time.tzinfo is None:
@@ -208,7 +209,6 @@ class AdamBot(Bot):
             tz_obj = pytz.timezone(conv_time.tzinfo.tzname(conv_time))  # conv_time.tzinfo isn't a pytz.tzinfo object
         else:
             tz_obj = pytz.timezone(timezone_)
-
 
         return tz_obj.localize(conv_time.replace(tzinfo=None)).astimezone(self.display_timezone)
 

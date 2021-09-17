@@ -3,16 +3,15 @@ from discord import Embed, Colour, Message, File
 from discord.errors import HTTPException
 from discord.ext import commands
 from math import ceil
-from datetime import datetime, timedelta
+from datetime import timedelta
 from io import BytesIO, StringIO
 import asyncio
-import pytz
-from tzlocal import get_localzone
+from typing import Union
 
 
 class EmbedPages:
-    def __init__(self, page_type, data, title, colour: Colour, bot, initiator, channel, desc="", thumbnail_url="",
-                 footer="", icon_url=""):
+    def __init__(self, page_type: int, data: list, title: str, colour: Colour, bot, initiator: discord.Member, channel: discord.TextChannel, desc: str = "", thumbnail_url: str = "",
+                 footer: str = "", icon_url: str = "") -> None:
         self.bot = bot
         self.data = data
         self.title = title
@@ -32,7 +31,7 @@ class EmbedPages:
         self.icon_url = icon_url
         self.colour = colour
 
-    async def set_page(self, page_num: int):
+    async def set_page(self, page_num: int) -> None:
         """
         Changes the embed accordingly
         """
@@ -104,13 +103,13 @@ class EmbedPages:
                 custom_emoji = self.bot.get_emoji(starboard["emoji_id"]) if starboard["emoji_id"] else None
                 colour = starboard["embed_colour"] if starboard["embed_colour"] else "#" + "".join([str(hex(component)).replace("0x", "").upper() for component in self.bot.GOLDEN_YELLOW.to_rgb()])
                 
-                sub_fields = f"• Minimum stars: {starboard['minimum_stars']}\n" # Add star subfield
-                sub_fields += "• Emoji: " + (starboard["emoji"] if starboard["emoji"] else f"<:{custom_emoji.name}:{custom_emoji.id}>") # Add either the standard emoji, or the custom one
+                sub_fields = f"• Minimum stars: {starboard['minimum_stars']}\n"  # Add star subfield
+                sub_fields += "• Emoji: " + (starboard["emoji"] if starboard["emoji"] else f"<:{custom_emoji.name}:{custom_emoji.id}>")  # Add either the standard emoji, or the custom one
                 sub_fields += "\n• Colour: " + colour
                 sub_fields += "\n• Allow self starring (author can star their own message): " + str(starboard["allow_self_star"])
                 self.embed.add_field(name=f"#{channel.name}", value=sub_fields, inline=False)
 
-    async def previous_page(self):
+    async def previous_page(self) -> None:
         """
         Moves the embed to the previous page
         """
@@ -119,7 +118,7 @@ class EmbedPages:
             await self.set_page(self.page_num - 1)
             await self.edit()
 
-    async def next_page(self):
+    async def next_page(self) -> None:
         """
         Moves the embed to the next page
         """
@@ -128,7 +127,7 @@ class EmbedPages:
             await self.set_page(self.page_num + 1)
             await self.edit()
 
-    async def first_page(self):
+    async def first_page(self) -> None:
         """
         Moves the embed to the first page
         """
@@ -136,7 +135,7 @@ class EmbedPages:
         await self.set_page(1)
         await self.edit()
 
-    async def last_page(self):
+    async def last_page(self) -> None:
         """
         Moves the embed to the last page
         """
@@ -144,7 +143,7 @@ class EmbedPages:
         await self.set_page(self.top_limit)
         await self.edit()
 
-    async def send(self):
+    async def send(self) -> None:
         """
         Sends the embed message. The message is deleted after 300 seconds (5 minutes).
         """
@@ -162,7 +161,7 @@ class EmbedPages:
         except HTTPException:  # Removing reactions failed (perhaps message already deleted)
             pass
 
-    async def edit(self):
+    async def edit(self) -> None:
         """
         Edits the message to the current self.embed and updates self.message
         """
@@ -177,6 +176,7 @@ class PageTypes:
     CONFIG = 3
     ROLE_LIST = 4
     STARBOARD_LIST = 5
+
 
 class EmojiEnum:
     MIN_BUTTON = '\U000023ee'
@@ -204,7 +204,8 @@ DEVS = [
 
 CODE_URL = "https://github.com/adampy/adambot"
 
-async def send_image_file(fig, channel, filename, extension="png"):
+
+async def send_image_file(fig, channel: discord.TextChannel, filename: str, extension: str = "png") -> None:
     """
     Send data to a channel with filename `filename`
     """
@@ -215,7 +216,7 @@ async def send_image_file(fig, channel, filename, extension="png"):
     await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
 
-async def send_text_file(text, channel, filename, extension="txt"):
+async def send_text_file(text: str, channel: discord.TextChannel, filename: str, extension: str = "txt") -> None:
     """
     Send a text data to a channel with filename `filename`
     """
@@ -226,7 +227,7 @@ async def send_text_file(text, channel, filename, extension="txt"):
     await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
 
-async def get_spaced_member(ctx, bot, *args):
+async def get_spaced_member(ctx: commands.Context, bot, *args: Union[tuple[str], list[str], str]) -> Union[discord.Member, None]:
     """
     Moves hell on Earth to get a guild member object from a given string
     Makes use of last_active, a priority temp list that stores member objects of
@@ -308,11 +309,11 @@ TIME_UNITS = {
 
 
 class flag_methods:
-    def __init__(self):
+    def __init__(self) -> None:
         return
 
     @staticmethod
-    def str_time_to_seconds(string_):
+    def str_time_to_seconds(string_: str) -> int:
 
         # when not close to having a brain aneurysm, rewrite this
         # so it can convert up and down to any defined unit, not
@@ -341,13 +342,13 @@ class flag_methods:
 
 
 class flags:
-    def __init__(self):
+    def __init__(self) -> None:
         self.flag_prefix = "-"
         self.implemented_properties = ["flag", "post_parse_handler"]
         self.flags = {"": {"flag": "", "post_parse_handler": None}}
         self.inv_flags = {"": ""}
 
-    def set_flag(self, flag_name, flag_def):
+    def set_flag(self, flag_name: str, flag_def: dict) -> None:
         assert type(flag_def) is dict and "flag" in flag_def
         assert type(flag_def["flag"]) is str
         assert callable(flag_def.get("post_parse_handler")) or flag_def.get("post_parse_handler") is None
@@ -357,11 +358,11 @@ class flags:
         self.flags[flag_name] = flag_def
         self.inv_flags[flag_def["flag"]] = flag_name
 
-    def remove_flag(self, flag_name):
+    def remove_flag(self, flag_name: str) -> None:
         if flag_name in self.flags:
             del self.flags[flag_name]
 
-    def separate_args(self, args, fetch=None, has_cmd=False, blank_as_flag=None):
+    def separate_args(self, args, fetch: list[str] = [], has_cmd: bool = False, blank_as_flag: str = "") -> dict:
         # TODO:
         #   - Use getters for the flags at some point (not strictly necessary but OOP)
         #   - Tidy up if at all possible :P
@@ -411,7 +412,7 @@ class flags:
         return flag_dict  # YES IT HAS FINISHED! FINALLY!
 
 
-def time_arg(arg):  # rewrite
+def time_arg(arg: str) -> int:  # rewrite
     """
     Given a time argument gets the time in seconds
     """
@@ -434,7 +435,7 @@ def time_arg(arg):  # rewrite
     return total
 
 
-def time_str(seconds):  # rewrite before code police get dispatched
+def time_str(seconds: int) -> str:  # rewrite before code police get dispatched
     """
     Given a number of seconds returns the string version of the time
     Is outputted in a format that can be fed into time_arg
@@ -469,7 +470,7 @@ def time_str(seconds):  # rewrite before code police get dispatched
     return output.strip()
 
 
-def starts_with_any(string, possible_starts):
+def starts_with_any(string: str, possible_starts: list[str]) -> bool:
     """
     Given a string and a list of possible_starts, the function returns
     True if string starts with any of the starts in the possible starts.
@@ -488,9 +489,11 @@ INFORMATION_BLUE = Colour.from_rgb(32, 141, 177)
 GOLDEN_YELLOW = Colour.from_rgb(252, 172, 66)
 
 # EMBED RESPONSES
+
+
 class DefaultEmbedResponses:
     @staticmethod
-    async def invalid_perms(bot, ctx, thumbnail_url="", bare = False):
+    async def invalid_perms(bot, ctx: commands.Context, thumbnail_url: str = "", bare: bool = False) -> discord.Message:
         """
         Internal procedure that is executed when a user has invalid perms
         """
@@ -506,7 +509,7 @@ class DefaultEmbedResponses:
         return response
 
     @staticmethod
-    async def error_embed(bot, ctx, title, desc="", thumbnail_url="", bare = False):
+    async def error_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
         embed = Embed(title=f':x: {title}', description=desc, color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
@@ -517,7 +520,7 @@ class DefaultEmbedResponses:
         return response
 
     @staticmethod
-    async def success_embed(bot, ctx, title, desc="", thumbnail_url="", bare = False):
+    async def success_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
         embed = Embed(title=f':white_check_mark: {title}', description=desc, color=SUCCESS_GREEN)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
@@ -528,23 +531,23 @@ class DefaultEmbedResponses:
         return response
 
     @staticmethod
-    async def information_embed(bot, ctx, title, desc="", thumbnail_url="", bare = False):
+    async def information_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
         embed = Embed(title=f':information_source: {title}', description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
              bot.ts_format), icon_url=ctx.author.avatar.url)
             if thumbnail_url:
-               embed.set_thumbnail(url=thumbnail_url)
+                embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
         return response
 
     @staticmethod
-    async def question_embed(bot, ctx, title, desc="", thumbnail_url="", bare = False):
+    async def question_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
         embed = Embed(title=f':grey_question: {title}', description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
              bot.ts_format), icon_url=ctx.author.avatar.url)
             if thumbnail_url:
-               embed.set_thumbnail(url=thumbnail_url)
+                embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
         return response

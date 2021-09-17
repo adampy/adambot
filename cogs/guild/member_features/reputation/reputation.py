@@ -3,12 +3,14 @@ from discord.ext import commands
 from discord import Embed, Colour
 import matplotlib.pyplot as plt
 from libs.misc.decorators import is_staff
+from typing import Union
+
 
 class Reputation(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
-    async def get_leaderboard(self, ctx):
+    async def get_leaderboard(self, ctx: commands.Context) -> None:
         async with self.bot.pool.acquire() as connection:
             leaderboard = await connection.fetch('SELECT member_id, reps FROM rep WHERE guild_id = $1 ORDER BY reps DESC', ctx.guild.id)
 
@@ -31,7 +33,7 @@ class Reputation(commands.Cog):
         await embed.set_page(1)  # Default first page
         await embed.send()
 
-    async def modify_rep(self, member, change):
+    async def modify_rep(self, member: discord.Member, change: int) -> int:
         async with self.bot.pool.acquire() as connection:
             reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1) AND guild_id = $2", member.id, member.guild.id)
             if not reps:
@@ -42,11 +44,11 @@ class Reputation(commands.Cog):
 
         return reps if reps else change
     
-    async def clear_rep(self, user_id, guild_id):
+    async def clear_rep(self, user_id: int, guild_id: int) -> None:
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE FROM rep WHERE member_id = ($1) AND guild_id = $2", user_id, guild_id)
 
-    async def set_rep(self, user_id, guild_id, reps):
+    async def set_rep(self, user_id: int, guild_id: int, reps: int) -> int:
         async with self.bot.pool.acquire() as connection:
             if reps == 0:
                 await self.clear_rep(user_id, guild_id)
@@ -63,7 +65,7 @@ class Reputation(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    async def rep(self, ctx):
+    async def rep(self, ctx: commands.Context) -> None:
         """
         Reputation module
         """
@@ -79,7 +81,7 @@ class Reputation(commands.Cog):
             await ctx.invoke(self.rep.get_command("award"), args)
             
     @rep.error
-    async def rep_error(self, ctx, error):
+    async def rep_error(self, ctx: commands.Context, error) -> None:
         if isinstance(error, commands.CheckFailure):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"You cannot award reputation points in {ctx.guild.name}")
         else:
@@ -87,11 +89,12 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
-    async def award(self, ctx, *args):
+    async def award(self, ctx: commands.Context, *args: tuple[str]) -> None:
         """
         Gives the member a reputation point. Aliases are give and point
         """
 
+        # todo: sort this mess out
         args_ = " ".join(args)
         user = await self.bot.get_spaced_member(ctx, self.bot, *args) if args_ else None  # check so rep award doesn't silently fail when no string given
 
@@ -145,7 +148,7 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=['lb'])
     @commands.guild_only()
-    async def leaderboard(self, ctx):
+    async def leaderboard(self, ctx: commands.Context) -> None:
         """
         Displays the leaderboard of reputation points
         """
@@ -154,14 +157,14 @@ class Reputation(commands.Cog):
 
     @rep.group()
     @commands.guild_only()
-    async def reset(self, ctx):
+    async def reset(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             await ctx.send(f'```{ctx.prefix}rep reset all```')
 
     @reset.command(pass_context=True)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def all(self, ctx):
+    async def all(self, ctx: commands.Context) -> None:
         """
         Resets everyone's reps.
         """
@@ -184,7 +187,7 @@ class Reputation(commands.Cog):
     @rep.command()
     @commands.guild_only()
     @is_staff
-    async def set(self, ctx, user: discord.User, rep):
+    async def set(self, ctx: commands.Context, user: discord.User, rep: str) -> None:
         """
         Sets a specific members reps to a given value.
         """
@@ -209,7 +212,7 @@ class Reputation(commands.Cog):
     @rep.command()
     @commands.guild_only()
     @is_staff
-    async def hardset(self, ctx, user_id, rep):
+    async def hardset(self, ctx: commands.Context, user_id: str, rep: str) -> None:
         """
         Sets a specific member's reps to a given value via their ID.
         """
@@ -245,7 +248,7 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=["count"])
     @commands.guild_only()
-    async def check(self, ctx, *args):
+    async def check(self, ctx: commands.Context, *args: tuple[str]) -> None:
         """
         Checks a specific person reps, or your own if user is left blank
         """
@@ -287,7 +290,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    async def data(self, ctx):
+    async def data(self, ctx: commands.Context) -> None:
         async with self.bot.pool.acquire() as connection:
             vals = await connection.fetch("SELECT DISTINCT reps, COUNT(member_id) FROM rep WHERE reps > 0 AND guild_id = $1 GROUP BY reps ORDER BY reps", ctx.guild.id)
 
@@ -300,5 +303,5 @@ class Reputation(commands.Cog):
         await self.bot.send_image_file(fig, ctx.channel, "rep-data")
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Reputation(bot))

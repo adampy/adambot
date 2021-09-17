@@ -12,14 +12,14 @@ class Demographics(commands.Cog):
     Tracks the change in specific roles
     """
 
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         await self.bot.tasks.register_task_type("demographic_sample", self.handle_demographic_sample, needs_extra_columns={"demographic_role_id": "bigint"})
 
-    async def handle_demographic_sample(self, data):
+    async def handle_demographic_sample(self, data: dict) -> None:
         async with self.bot.pool.acquire() as connection:
             demographic_role_id = data["demographic_role_id"]
             results = await connection.fetch("SELECT role_id, guild_id, sample_rate FROM demographic_roles WHERE id = $1", demographic_role_id)
@@ -34,7 +34,7 @@ class Demographics(commands.Cog):
             if data["task_name"] == "demographic_sample":  # IF NOT A ONE OFF SAMPLE, PERFORM IT AGAIN
                 await self.bot.tasks.submit_task("demographic_sample", datetime.utcnow() + timedelta(days=sample_rate), extra_columns={"demographic_role_id": demographic_role_id})
 
-    async def _get_roles(self, guild: discord.Guild):
+    async def _get_roles(self, guild: discord.Guild) -> list[int]:
         """
         Returns all the role IDs that are tracked for a given `guild`.
         """
@@ -43,7 +43,7 @@ class Demographics(commands.Cog):
             roles = await connection.fetch("SELECT role_id FROM demographic_roles WHERE guild_id = $1;", guild.id)  # Returns a list of Record type
         return [x["role_id"] for x in roles]
 
-    async def _add_role(self, role: discord.Role, sample_rate):
+    async def _add_role(self, role: discord.Role, sample_rate: int) -> None:
         """
         Adds a role to the demographic todo table such that it gets sampled regularly.
         """
@@ -56,7 +56,7 @@ class Demographics(commands.Cog):
             midnight = datetime(now.year, now.month, now.day, 23, 59, 59)  # Midnight of the current day
             await self.bot.tasks.submit_task("demographic_sample", midnight, extra_columns={"demographic_role_id": demographic_role_id})
 
-    async def _require_sample(self, role: discord.Role):
+    async def _require_sample(self, role: discord.Role) -> None:
         """
         Adds a TODO saying that a sample is required ASAP.
         """
@@ -65,7 +65,7 @@ class Demographics(commands.Cog):
             demographic_role_id = await connection.fetchval("SELECT id from demographic_roles WHERE role_id = $1", role.id)
             await self.bot.tasks.submit_task("demographic_sample", datetime.utcnow(), extra_columns={"demographic_role_id": demographic_role_id})
 
-    async def _remove_role(self, role: discord.Role):
+    async def _remove_role(self, role: discord.Role) -> None:
         """
         Removes a role from the demographic todo table - all samples are also removed upon this action.
         """
@@ -76,7 +76,7 @@ class Demographics(commands.Cog):
             await connection.execute("DELETE FROM tasks WHERE demographic_role_id = $1", demographic_role_id)
 
     @staticmethod
-    async def _role_error(ctx, error):
+    async def _role_error(ctx: commands.Context, error) -> None:
         """
         Executes on addrole.error and removerole.error.
         """
@@ -93,7 +93,7 @@ class Demographics(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    async def demographics(self, ctx):
+    async def demographics(self, ctx: commands.Context) -> None:
         if not ctx.invoked_subcommand:
             await ctx.invoke(self.bot.get_command("demographics show"))  # Runs
             return
@@ -101,7 +101,7 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def viewroles(self, ctx):
+    async def viewroles(self, ctx: commands.Context) -> None:
         """
         Gets all the roles that are tracked in a guild.
         """
@@ -113,13 +113,13 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def addrole(self, ctx, role: discord.Role, sample_rate: int = 1):
+    async def addrole(self, ctx: commands.Context, role: discord.Role, sample_rate: int = 1) -> None:
         """
         Adds a role to the server's demographic samples.
         `sample_rate` shows how many days are in between each sample, and by default is 1.
         """
 
-        def check(m):
+        def check(m: discord.Message) -> bool:
             return m.author == ctx.author and m.channel == ctx.channel
 
         if role.id in await self._get_roles(ctx.guild):
@@ -140,17 +140,17 @@ class Demographics(commands.Cog):
         elif response.content.lower() == "no":
             await ctx.send(f"{role.name} has not been added. :sob:")
         else:
-            question.edit("Unknown response, please try again. :sob:")
+            await question.edit(content="Unknown response, please try again. :sob:")
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def removerole(self, ctx, role: discord.Role):
+    async def removerole(self, ctx: commands.Context, role: discord.Role) -> None:
         """
         Gets all the roles that are tracked in a guild.
         """
 
-        def check(m):
+        def check(m: discord.Message) -> bool:
             return m.author == ctx.author and m.channel == ctx.channel
 
         if role.id not in await self._get_roles(ctx.guild):
@@ -174,7 +174,7 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def takesample(self, ctx, role: discord.Role = None):
+    async def takesample(self, ctx: commands.Context, role: discord.Role = None) -> None:
         """
         Adds a TODO saying that a sample is required ASAP. If `role` == None then all guild demographics are sampled.
         """
@@ -182,7 +182,7 @@ class Demographics(commands.Cog):
         guild_tracked_roles = await self._get_roles(ctx.guild)
         if not role:
             # Take a sample of all roles
-            def check(m):
+            def check(m: discord.Message) -> bool:
                 return m.author == ctx.author and m.channel == ctx.channel
 
             question = await ctx.send(f"No role given, would you like to take a sample of all this guild's roles? (Type either 'yes' or 'no')")
@@ -212,7 +212,7 @@ class Demographics(commands.Cog):
     @demographics.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def removeallsamples(self, ctx):
+    async def removeallsamples(self, ctx: commands.Context) -> None:
         """
         Removes all samples from the `demographic_samples` table.
         """
@@ -223,20 +223,20 @@ class Demographics(commands.Cog):
 
     # Error handlers
     @addrole.error
-    async def addrole_error(self, ctx, error):
+    async def addrole_error(self, ctx: commands.Context, error) -> None:
         await self._role_error(ctx, error)
 
     @removerole.error
-    async def removerole_error(self, ctx, error):
+    async def removerole_error(self, ctx: commands.Context, error) -> None:
         await self._role_error(ctx, error)
 
     @takesample.error
-    async def takesample_error(self, ctx, error):
+    async def takesample_error(self, ctx: commands.Context, error) -> None:
         await self._role_error(ctx, error)
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
-    async def show(self, ctx):
+    async def show(self, ctx: commands.Context) -> None:
         """View server demographics."""  # DO NOT REMOVE THIS METHOD (if you plan on removing, remove dependency in demographics command group declaration)
         tracked_roles = [ctx.guild.get_role(r) for r in await self._get_roles(ctx.guild) if ctx.guild.get_role(r) is not None]
         message = f"There are a total of **{ctx.guild.member_count}** users in **{ctx.guild.name}**."
@@ -254,7 +254,7 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
-    async def chart(self, ctx):
+    async def chart(self, ctx: commands.Context) -> None:
         """View a guild's demographics over time"""
         fig, ax = plt.subplots()
         async with self.bot.pool.acquire() as connection:
@@ -277,5 +277,5 @@ class Demographics(commands.Cog):
         await self.bot.send_image_file(fig, ctx.channel, "demographics-data")
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Demographics(bot))

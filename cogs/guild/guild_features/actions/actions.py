@@ -9,6 +9,7 @@ import asyncio
 import asyncpg
 import ast
 from libs.misc.decorators import is_staff
+from typing import Callable, Any
 
 
 class NoSendContext(commands.Context):
@@ -21,17 +22,17 @@ class NoSendContext(commands.Context):
     which users are made aware of when attempting to create the action
     """
 
-    async def send(self, *args, **kwargs):
+    async def send(self, *args, **kwargs) -> None:
         return
 
-    async def reply(self, *args, **kwargs):  # override reply as well since e.g. stuff like DefaultEmbedResponses replies now
+    async def reply(self, *args, **kwargs) -> None:  # override reply as well since e.g. stuff like DefaultEmbedResponses replies now
         return
 
     class channel(discord.TextChannel):
-        async def send(self, *args, **kwargs):
+        async def send(self, *args, **kwargs) -> None:
             return
 
-        async def reply(self, *args, **kwargs):
+        async def reply(self, *args, **kwargs) -> None:
             return
 
 
@@ -44,19 +45,19 @@ class Checks:  # could also be possible to tidy the wait_for's up if they can be
     """
 
     @staticmethod
-    def generate_std_message_check(ctx: commands.Context):
+    def generate_std_message_check(ctx: commands.Context) -> Callable:
         """
         No, my code doesn't have AIDs
 
         This method generates a "standard" message check which checks that the context channel and author match an incoming message.
         """
 
-        def check(m: discord.Message):
+        def check(m: discord.Message) -> bool:
             return m.channel == ctx.channel and m.author == ctx.author
         return check
 
     @staticmethod
-    def generate_emoji_check(ctx: commands.Context, emoji_list: list = None, message: discord.Message = None):
+    def generate_emoji_check(ctx: commands.Context, emoji_list: list = None, message: discord.Message = None) -> Callable:
         """
         This methods generates a check function which can be used to check:
             - That a reaction is of an emoji in a given list
@@ -66,13 +67,13 @@ class Checks:  # could also be possible to tidy the wait_for's up if they can be
         if emoji_list is None:
             emoji_list = []  # pycharm likes to complain
 
-        def check2(r: discord.Reaction, a: discord.abc.User):
+        def check2(r: discord.Reaction, a: discord.abc.User) -> bool:
             return a == ctx.message.author and r.emoji in emoji_list if emoji_list else True and r.message == message if message is not None else True
 
         return check2
 
     @staticmethod
-    def generate_range_check(ctx: commands.Context, lower_: int, upper_: int):
+    def generate_range_check(ctx: commands.Context, lower_: int, upper_: int) -> Callable:
         """
         Method to generate a "range" check.
         Similar to a standard message check except there are extra conditions to be met:
@@ -81,8 +82,8 @@ class Checks:  # could also be possible to tidy the wait_for's up if they can be
 
         """
 
-        def range_check(lower: int, upper: int):
-            def check3(m: discord.Message):
+        def range_check(lower: int, upper: int) -> Callable:
+            def check3(m: discord.Message) -> bool:
                 check_ = m.channel == ctx.channel and m.author == ctx.author and m.content.isdigit()
                 if check_:
                     check_ = lower <= int(m.content) <= upper
@@ -95,11 +96,11 @@ class Checks:  # could also be possible to tidy the wait_for's up if they can be
 
 
 class Actions(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
         self.actions = {}
 
-    async def load_actions(self):
+    async def load_actions(self) -> None:
         """
         Method for loading actions
         Fetches the actions from the db and uses ast to evaluate them and add them to self.actions
@@ -125,7 +126,7 @@ class Actions(commands.Cog):
                 success = False
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         while not self.bot.online:
             await asyncio.sleep(1)
 
@@ -133,7 +134,7 @@ class Actions(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    async def action(self, ctx):
+    async def action(self, ctx: commands.Context) -> None:
         """
         Do `help action` for more info
         """
@@ -143,7 +144,7 @@ class Actions(commands.Cog):
     @action.command(name="delete", aliases=["remove"])
     @commands.guild_only()
     @is_staff
-    async def delete_action(self, ctx: commands.Context, name: str = ""): # Actual deleting is handled by remove_action
+    async def delete_action(self, ctx: commands.Context, name: str = "") -> None:  # Actual deleting is handled by remove_action
         """
         Command to delete actions
 
@@ -162,7 +163,7 @@ class Actions(commands.Cog):
 
     @action.command(name="list", aliases=["show"])
     @commands.guild_only()
-    async def list_action(self, ctx: commands.Context):
+    async def list_action(self, ctx: commands.Context) -> None:
         """
         Fetches a list of actions for the context guild
         """
@@ -170,7 +171,7 @@ class Actions(commands.Cog):
         await ctx.send(embed=Embed(title=f"{ctx.guild.name}'s actions", description="\n".join(self.actions[ctx.guild.id].keys()) if self.actions[ctx.guild.id] else "Nothing to show here!"))
 
     @staticmethod
-    async def try_conversion(ctx: commands.Context, value, annotation, name="value"):
+    async def try_conversion(ctx: commands.Context, value, annotation, name: str = "value") -> Any:
         """
         Method that makes use of ext.commands.run_converters in v2
 
@@ -184,7 +185,7 @@ class Actions(commands.Cog):
         return result
 
     @staticmethod
-    async def try_remove_reactions(message: discord.Message):
+    async def try_remove_reactions(message: discord.Message) -> None:
         """
         Method that tries to remove reactions from a given message.
 
@@ -196,7 +197,7 @@ class Actions(commands.Cog):
         except HTTPException:
             return
 
-    async def register_action(self, guild_id: int, name: str, action: dict):
+    async def register_action(self, guild_id: int, name: str, action: dict) -> None:
         """
         Method to register a given loaded action
         This method ensures that the action is accessible from all the correct places, including aliases etc.
@@ -206,7 +207,7 @@ class Actions(commands.Cog):
         self.actions[guild_id][name] = action
         self.bot.all_commands[name] = self.base_action_handler
 
-    async def propagate_action(self, ctx: commands.Context, name: str, action: dict):
+    async def propagate_action(self, ctx: commands.Context, name: str, action: dict) -> None:
         """
         Method to propagate a new action to the database
         """
@@ -218,7 +219,7 @@ class Actions(commands.Cog):
                 raise e
             await self.register_action(ctx.guild.id, name, action)
 
-    async def remove_action(self, guild_id: int, name: str):
+    async def remove_action(self, guild_id: int, name: str) -> None:
         """
         Method to remove a specified action
         """
@@ -235,8 +236,8 @@ class Actions(commands.Cog):
         del self.bot.all_commands[name]
         del self.base_action_handler.aliases[self.base_action_handler.aliases.index(name)]
 
-    @commands.command(hidden=True) # Hidden to prevent people accessing
-    async def base_action_handler(self, ctx: commands.Context, *args):
+    @commands.command(hidden=True)  # Hidden to prevent people accessing
+    async def base_action_handler(self, ctx: commands.Context, *args) -> None:
         """
         Method that serves as a "base command" for actions.
 
@@ -409,7 +410,7 @@ class Actions(commands.Cog):
     @action.command(name="create", aliases=["make"])
     @commands.guild_only()
     @is_staff
-    async def create_action(self, ctx: commands.Context):  # split this up?
+    async def create_action(self, ctx: commands.Context) -> None:  # split this up?
         """
         A command that attempts to provide a user-friendly way of creating actions
 
@@ -731,5 +732,5 @@ class Actions(commands.Cog):
             await ctx.send(embed=Embed(title="Added action successfully!", description=f"{name} has been added as a new action!"))
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Actions(bot))

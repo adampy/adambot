@@ -4,10 +4,10 @@ from discord.ext import commands
 from libs.misc.decorators import is_staff
 
 class Warnings(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
-    async def _warnlist_member(self, ctx, member, page_num=1):
+    async def _warnlist_member(self, ctx: commands.Context, member: discord.Member, page_num: int = 1) -> None:
         """
         Handles getting the warns for a specific member
         """
@@ -36,7 +36,7 @@ class Warnings(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def warn(self, ctx, member: discord.Member, *, reason=""):
+    async def warn(self, ctx: commands.Context, member: discord.Member, *, reason: str = "") -> None:
         """
         Gives a member a warning, a reason is optional but recommended.
         """
@@ -59,7 +59,7 @@ class Warnings(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
-    async def warns(self, ctx, member: discord.Member = None):
+    async def warns(self, ctx: commands.Context, member: discord.Member = None) -> None:
         """
         Shows a user their warnings, or shows staff members all/a single persons warnings
         """
@@ -101,7 +101,7 @@ class Warnings(commands.Cog):
     @commands.command(pass_context=True, aliases=['warndelete'])
     @commands.guild_only()
     @is_staff
-    async def warnremove(self, ctx, *warnings):
+    async def warnremove(self, ctx: commands.Context, *warnings: str) -> None:
         """
         Remove warnings with this command, can do `warnremove <warnID>` or `warnremove <warnID1> <warnID2> ... <warnIDn>`.
         """
@@ -111,7 +111,7 @@ class Warnings(commands.Cog):
 
         async with self.bot.pool.acquire() as connection:
             for warning in warnings:
-                try:
+                if warning.isdigit():
                     warning = int(warning)
                     existing_warnings = await connection.fetch("SELECT * FROM warn WHERE id = $1 AND guild_id = $2", warning, ctx.guild.id)
                     if len(existing_warnings) == 0:
@@ -121,13 +121,14 @@ class Warnings(commands.Cog):
                     await connection.execute('DELETE FROM warn WHERE id = ($1) AND guild_id = $2', warning, ctx.guild.id)
                     if len(warnings) == 1:
                         await ctx.send(f'Warning with ID {warning} has been deleted.')
-
-                except ValueError:
+                else:
                     await ctx.send(f'Error whilst deleting ID {warning}: give me a warning ID, not words!')
+
+
 
         if len(warnings) > 1:
             await ctx.send(f"The warning's have been deleted.")
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Warnings(bot))

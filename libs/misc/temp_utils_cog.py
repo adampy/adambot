@@ -9,7 +9,7 @@ utils will be getting rewritten/restructured as appropriate in the future, but t
 
 
 class Utils(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
         self.bot.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
 
@@ -20,14 +20,14 @@ class Utils(commands.Cog):
         self.bot.last_active = {}  # easiest to put here for now, may move to a cog later
 
     @commands.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
+    async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member) -> None:
         """
         Subroutine used to control EmbedPages stored within self.pages
         """
 
-        if not user.bot:
+        if not member.bot:
             for page in self.bot.pages:
-                if reaction.message == page.message and user == page.initiator:
+                if reaction.message == page.message and member == page.initiator:
                     # Do stuff
                     if reaction.emoji == self.bot.EmojiEnum.LEFT_ARROW:
                         await page.previous_page()
@@ -41,11 +41,11 @@ class Utils(commands.Cog):
                         await page.last_page()
 
                     if reaction.emoji != self.bot.EmojiEnum.CLOSE:  # Fixes errors that occur when deleting the embed above
-                        await reaction.message.remove_reaction(reaction.emoji, user)
+                        await reaction.message.remove_reaction(reaction.emoji, member)
                     break
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message):
+    async def on_message_delete(self, message: discord.Message) -> None:
         """
         Event that ensures that memory is freed up once a message containing an embed page is deleted.
         """
@@ -56,7 +56,7 @@ class Utils(commands.Cog):
                 break
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         """
         Event that has checks that stop bots from executing commands
         """
@@ -71,5 +71,5 @@ class Utils(commands.Cog):
         last_active_list.insert(0, message.author)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Utils(bot))

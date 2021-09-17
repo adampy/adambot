@@ -7,6 +7,8 @@ import random
 import asyncio
 from datetime import datetime
 from libs.misc.decorators import is_staff
+from typing import Union
+
 
 TRIVIAS = [
     'cars',
@@ -56,7 +58,7 @@ RESPONSES = {
 
 
 class TriviaSession:
-    def __init__(self, bot, channel, trivia_name):
+    def __init__(self, bot, channel: discord.TextChannel, trivia_name: str) -> None:
         self.bot = bot
         self.channel = channel
         self.trivia_name = trivia_name
@@ -70,7 +72,7 @@ class TriviaSession:
         self.ignored_questions = 0  # Number of questions where no single answer was received
         self.load_trivia_data()
 
-    def load_trivia_data(self):
+    def load_trivia_data(self) -> None:
         """
         Load trivia data for the trivia under `self.trivia_name` into `self.questions`
         """
@@ -85,7 +87,7 @@ class TriviaSession:
         except Exception as e:
             print(f'Error whilst loading {self.trivia_name}: {e}')
 
-    async def start_trivia(self):
+    async def start_trivia(self) -> None:
         """
         Method that begins the trivia session
         """
@@ -95,7 +97,7 @@ class TriviaSession:
         self.started_at = datetime.utcnow()
         self.bot.loop.create_task(self.ask_next_question())
 
-    async def ask_next_question(self):
+    async def ask_next_question(self) -> None:
         """
         Method that asks the next question
         """
@@ -111,7 +113,7 @@ class TriviaSession:
         self.questions.pop(rand_indx)
         await self.channel.send(f"**Question number {self.question_number}**!\n\n{self.question}")
         
-        def check(m):
+        def check(m: discord.Message) -> None:
             valid_attempt = not m.author.bot and m.channel == self.channel
             if valid_attempt:
                 self.attempts_at_current_question += 1
@@ -148,7 +150,7 @@ class TriviaSession:
             if self.running:
                 self.bot.loop.create_task(self.ask_next_question())  # Adding to self.bot.loop prevents stack overflow errors
 
-    def increment_score(self, user: discord.User):
+    def increment_score(self, user: discord.User) -> None:
         """
         Method that increments the score of a given `user` into the `self.scores` dict.
         """
@@ -156,7 +158,7 @@ class TriviaSession:
         before = self.scores.get(user.id, 0)  # Default 0 if no key found
         self.scores[user.id] = before + 1
 
-    async def trivia_end_leaderboard(self, member: discord.Member = None, reset=True, msg_content=""):
+    async def trivia_end_leaderboard(self, member: discord.Member = None, reset: bool = True, msg_content: str = "") -> None:
         """
         Method that displays a current, or finishing (if `reset` is True), leaderboard for the current trivia session. This method also sets `self.running` = `not reset`.
         """
@@ -173,7 +175,7 @@ class TriviaSession:
             embed.set_footer(text=f'This trivia took {(datetime.utcnow()-self.started_at).seconds} seconds to complete.')
         await self.channel.send(msg_content, embed=embed)
 
-    async def stop(self, invoker: discord.Member):
+    async def stop(self, invoker: discord.Member) -> None:
         """
         Method that stops the current trivia session, with the member who invoked the command being sent as the `invoker` parameter
         """
@@ -182,13 +184,13 @@ class TriviaSession:
 
 
 class Trivia(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
         self.trivia_sessions = {}
 
     @commands.group()
     @commands.guild_only()
-    async def trivia(self, ctx):
+    async def trivia(self, ctx: commands.Context) -> None:
         """
         Trivia module
         """
@@ -197,14 +199,14 @@ class Trivia(commands.Cog):
             await ctx.send(f'```{ctx.prefix}trivia list```')
 
     @trivia.command()
-    async def list(self, ctx):
+    async def list(self, ctx: commands.Context) -> None:
         desc = ""
         for trivia in TRIVIAS:
             desc += "• " + trivia + ("" if trivia == TRIVIAS[-1] else "\n")
         await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Available trivias", desc=desc)
 
     @trivia.command(pass_context=True)
-    async def start(self, ctx, trivia=None):
+    async def start(self, ctx: commands.Context, trivia: Union[str, None] = None) -> None:
         """
         Command that starts a new trivia game in the currently set trivia channel
         """
@@ -214,9 +216,11 @@ class Trivia(commands.Cog):
         if session and session.running:  # TriviaSession.stop() cannot remove from this dict, only change self.running, so we only need to check that
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Trivia game already happening", desc="Please wait until the current trivia is over before starting a new one")
             return
+
         if trivia_channel_id is None:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"{ctx.guild.name} does not have a trivia channel set!")
             return
+
         if trivia is None or trivia not in TRIVIAS:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"You must choose a trivia from `{ctx.prefix}trivia list`", desc="(Trivia names are case-sensitive)")
             return
@@ -227,7 +231,7 @@ class Trivia(commands.Cog):
         await session.start_trivia()
 
     @trivia.command(aliases=['finish', 'end'])
-    async def stop(self, ctx):
+    async def stop(self, ctx: commands.Context) -> None:
         """
         Command that stops a current trivia game
         """
@@ -241,7 +245,7 @@ class Trivia(commands.Cog):
 
     @trivia.command(aliases=['answers', 'cheat'])
     @is_staff
-    async def answer(self, ctx):
+    async def answer(self, ctx: commands.Context) -> None:
         """
         Command that allows staff to see the correct answer
         """
@@ -257,7 +261,7 @@ class Trivia(commands.Cog):
         await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Answers to: '{session.question}'", desc=desc)
 
     @trivia.command()
-    async def skip(self, ctx):
+    async def skip(self, ctx: commands.Context) -> None:
         """
         Command that skips a question - a point is given to the bot
         """
@@ -270,7 +274,7 @@ class Trivia(commands.Cog):
         await session.ask_next_question()
 
     @trivia.command(aliases=['lb'])
-    async def leaderboard(self, ctx):
+    async def leaderboard(self, ctx: commands.Context) -> None:
         """
         Command that shows the leaderboard for the current trivia game
         """
@@ -282,5 +286,5 @@ class Trivia(commands.Cog):
         await session.trivia_end_leaderboard(reset=False)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Trivia(bot))

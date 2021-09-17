@@ -7,12 +7,12 @@ import time
 
 
 class Member(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
 # -----------------------MISC------------------------------
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         await self.bot.tasks.register_task_type("reminder", self.handle_remind, needs_extra_columns={
             "member_id": "bigint",
             "channel_id": "bigint",
@@ -20,7 +20,7 @@ class Member(commands.Cog):
             "reason": "varchar(255)"})
 
     @commands.command(pass_context=True)
-    async def host(self, ctx):
+    async def host(self, ctx: commands.Context) -> None:
         """
         Check if the bot is currently hosted locally or remotely
         """
@@ -28,11 +28,11 @@ class Member(commands.Cog):
         await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
 
     @commands.command(pass_context=True)
-    async def ping(self, ctx):
+    async def ping(self, ctx: commands.Context) -> None:
         await ctx.send(f"Pong! ({round(self.bot.latency * 1000)} ms)")
 
     @commands.command(pass_context=True)
-    async def uptime(self, ctx):
+    async def uptime(self, ctx: commands.Context) -> None:
         """View how long the bot has been running for"""
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
@@ -41,7 +41,7 @@ class Member(commands.Cog):
 # -----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
-    async def quote(self, ctx, messageid, channel: discord.TextChannel):
+    async def quote(self, ctx: commands.Context, messageid: int, channel: discord.TextChannel) -> None:
         """
         Quote a message to remember it.
         """
@@ -81,7 +81,7 @@ class Member(commands.Cog):
 # -----------------------FUN------------------------------
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
 
@@ -90,7 +90,7 @@ class Member(commands.Cog):
         return
 
     @commands.command(aliases=['bruh'])
-    async def bruhs(self, ctx):
+    async def bruhs(self, ctx: commands.Context) -> None:
         """See how many bruh moments we've had"""
         async with self.bot.pool.acquire() as connection:
             global_bruhs = await connection.fetchval("SELECT SUM(bruhs) FROM config;")
@@ -99,12 +99,11 @@ class Member(commands.Cog):
         await ctx.send(f'•**Global** bruh moments: **{global_bruhs}**\n•**{ctx.guild.name}** bruh moments: **{guild_bruhs}**')
 
     @commands.command()
-    async def cool(self, ctx, *message):
+    async def cool(self, ctx: commands.Context, *, text: str) -> None:
         """
         MaKe YoUr MeSsAgE cOoL
         """
 
-        text = ' '.join(message)
         new = ""
         uppercase = True
         for index, letter in enumerate(text):
@@ -126,12 +125,12 @@ class Member(commands.Cog):
         await ctx.message.delete()
 
     @commands.command()
-    async def cringe(self, ctx):
+    async def cringe(self, ctx: commands.Context) -> None:
         await ctx.message.delete()
         await ctx.send('https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4')
 
     @commands.command()
-    async def spamping(self, ctx, amount, user: discord.Member, *message):
+    async def spamping(self, ctx: commands.Context, amount: str, user: discord.Member, *, message) -> None:
         """
         For annoying certain people
         """
@@ -142,14 +141,14 @@ class Member(commands.Cog):
 
         if ctx.author.guild_permissions.administrator or await self.bot.get_config_key(ctx, "spamping_access"):  # Only allow command if in private server or admin
             await ctx.message.delete()
-            msg = ' '.join(message) + " " + user.mention
+            msg = f"{message} {user.mention}"
             for i in range(int(amount)):
                 await ctx.send(msg)
         else:
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
 
     @commands.command()
-    async def ghostping(self, ctx, amount, user: discord.Member):
+    async def ghostping(self, ctx: commands.Context, amount: str, user: discord.Member) -> None:
         """
         For sending a ghostping to annoy certain people
         """
@@ -175,7 +174,7 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
-    async def serverinfo(self, ctx):
+    async def serverinfo(self, ctx: commands.Context) -> None:
         """
         Information about the server.
         """
@@ -215,7 +214,7 @@ class Member(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
-    async def userinfo(self, ctx, *, args=""):
+    async def userinfo(self, ctx: commands.Context, *, args: str = "") -> None:
         """
         Information about you or a user
         """
@@ -327,7 +326,7 @@ class Member(commands.Cog):
         await ctx.send(embed=data)
 
 # -----------------------REMIND------------------------------
-    async def handle_remind(self, data):
+    async def handle_remind(self, data: dict) -> None:
         try:
             member = self.bot.get_user(data["member_id"])
             message = f'You told me to remind you about this:\n{data["reason"]}'
@@ -341,7 +340,7 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True, aliases=['rm', 'remindme'])
     @commands.guild_only()
-    async def remind(self, ctx, *, args):
+    async def remind(self, ctx: commands.Context, *, args: str) -> None:
         """
         Command that is executed when a user wants to be reminded of something.
         If the members DMs are closed, the reminder is sent in the channel the command
@@ -375,7 +374,7 @@ class Member(commands.Cog):
 # -----------------------AVATAR------------------------------
 
     @commands.command(pass_context=True, aliases=["pfp"])
-    async def avatar(self, ctx, member: discord.User = None):
+    async def avatar(self, ctx: commands.Context, member: discord.User = None) -> None:
         if not member:
             member = ctx.author
 
@@ -384,7 +383,7 @@ class Member(commands.Cog):
 # -----------------------COUNTDOWNS------------------------------
 
     @commands.command(pass_context=True, aliases=['results', 'gcseresults', 'alevelresults'])
-    async def resultsday(self, ctx, hour=None):
+    async def resultsday(self, ctx: commands.Context, hour: str = "") -> None:
         if ctx.invoked_with in ["resultsday", "gcseresults", "results", None]:
             which = "GCSE"
         else:
@@ -430,7 +429,7 @@ class Member(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True, aliases=["exams", "alevels"])
-    async def gcses(self, ctx):
+    async def gcses(self, ctx: commands.Context) -> None:
         embed = Embed(title="Information on UK exams",  color=Colour.from_rgb(148, 0, 211),
                       description="UK exams are not going ahead this year and have instead been replaced by teacher assessments!")
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
@@ -438,9 +437,9 @@ class Member(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)
-    async def code(self, ctx):
+    async def code(self, ctx: commands.Context) -> None:
         await ctx.send(f"Adam-Bot code can be found here: {self.bot.CODE_URL}")
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Member(bot))

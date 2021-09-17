@@ -4,14 +4,15 @@ from libs.misc.decorators import is_staff
 import asyncio
 import ast  # using ast for literal_eval, stops code injection
 import asyncpg
+from typing import Union
 
 
 class Filter(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.filters = {}
         self.bot = bot
 
-    async def check_is_command(self, message):
+    async def check_is_command(self, message: discord.Message) -> bool:
         """
         Checks whether or not `message` is a valid filter command or not
         """
@@ -29,7 +30,7 @@ class Filter(commands.Cog):
 
         return is_command
 
-    async def load_filters(self, guild):
+    async def load_filters(self, guild: discord.Guild) -> None:
         """
         Method used to load filter data for all guilds into self.filters
         """
@@ -48,7 +49,7 @@ class Filter(commands.Cog):
                 else:
                     self.filters[guild.id] = prop
 
-    async def propagate_new_guild_filter(self, guild):
+    async def propagate_new_guild_filter(self, guild: discord.Guild) -> None:
         """
         Method used for pushing filter changes to the DB
         """
@@ -59,7 +60,7 @@ class Filter(commands.Cog):
     # ---LISTENERS---
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         # Maybe tweak this so the tables are only created on the fly as and when they are needed?
         success = False
         while not success:  # race condition for table to be created otherwise
@@ -73,7 +74,7 @@ class Filter(commands.Cog):
                 await asyncio.sleep(1)
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         """
         Handles messages that are being sent.
         """
@@ -84,7 +85,7 @@ class Filter(commands.Cog):
         await self.handle_message(message)
 
     @commands.Cog.listener()
-    async def on_message_edit(self, before, after):
+    async def on_message_edit(self, before: discord.Message, after: discord.Message) -> None:
         """
         Handles message edits for people trying to get around the filter.
         """
@@ -93,7 +94,7 @@ class Filter(commands.Cog):
             return  # sometimes barfs on startup
         await self.handle_message(after)
 
-    async def handle_message(self, message):
+    async def handle_message(self, message: discord.Message) -> None:
         """
         Checks whether a message should be removed.
         """
@@ -116,11 +117,11 @@ class Filter(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    async def filter(self, ctx):
+    async def filter(self, ctx: commands.Context) -> None:
         if not ctx.invoked_subcommand:
             await ctx.reply(f"Type `{ctx.prefix}help filter` to get info!")
 
-    async def clean_up(self, ctx, text, key, spoiler=True):
+    async def clean_up(self, ctx: commands.Context, text: str, key: str, spoiler: bool = True) -> Union[discord.Message, None]:
         """
         Strictly only cleans up one list. Cross-checks occur specifically within their own scopes.
         This makes sure space isn't wasted by adding random garbage to the filter that will already be in effect anyway
@@ -153,7 +154,7 @@ class Filter(commands.Cog):
     @filter.command()
     @commands.guild_only()
     @is_staff
-    async def add(self, ctx, *, text):
+    async def add(self, ctx: commands.Context, *, text: str) -> None:
         """
         Allows adding a filtered phrase for the guild. Staff role needed.
         """
@@ -174,7 +175,7 @@ class Filter(commands.Cog):
     @filter.command()
     @commands.guild_only()
     @is_staff
-    async def add_ignore(self, ctx, *, text):
+    async def add_ignore(self, ctx: commands.Context, *, text: str) -> None:
         """
         Allows adding a phrase that will be ignored by the filter.
         This will only add the phrase if it will have an effect.
@@ -202,7 +203,7 @@ class Filter(commands.Cog):
         else:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That's already in the ignored list!")
 
-    async def generic_remove(self, ctx, text, key, desc=""):
+    async def generic_remove(self, ctx: commands.Context, text: str, key: str, desc: str = "") -> None:
         """
         Method to allow removal of a phrase from either list. Saves almost-duplicate code.
         """
@@ -222,7 +223,7 @@ class Filter(commands.Cog):
     @filter.command()
     @commands.guild_only()
     @is_staff
-    async def remove(self, ctx, *, text):
+    async def remove(self, ctx: commands.Context, *, text: str) -> None:
         """
         Allows removing a filtered phrase. Staff role needed.
         """
@@ -243,14 +244,14 @@ class Filter(commands.Cog):
     @filter.command()
     @commands.guild_only()
     @is_staff
-    async def remove_ignore(self, ctx, *, text):
+    async def remove_ignore(self, ctx: commands.Context, *, text: str) -> None:
         """
         Allows removing a phrase ignored by the filter. Staff role needed.
         """
 
         await self.generic_remove(ctx, text.lower(), "ignored")
 
-    async def list_generic(self, ctx, key, spoiler=True):
+    async def list_generic(self, ctx: commands.Context, key: str, spoiler: bool = True) -> None:
 
         if key not in ["filtered", "ignored"]:
             return  # get ignored
@@ -261,7 +262,7 @@ class Filter(commands.Cog):
     @filter.command(name="list")
     @commands.guild_only()
     @is_staff
-    async def list_filter(self, ctx):
+    async def list_filter(self, ctx: commands.Context) -> None:
         """
         Lists filtered phrases for a guild. Staff role needed.
         """
@@ -271,7 +272,7 @@ class Filter(commands.Cog):
     @filter.command()
     @commands.guild_only()
     @is_staff
-    async def list_ignore(self, ctx):
+    async def list_ignore(self, ctx: commands.Context) -> None:
         """
         Lists ignored phrases for a guild. Staff role needed.
         """
@@ -281,7 +282,7 @@ class Filter(commands.Cog):
     @filter.command(name="clear")
     @commands.guild_only()
     @is_staff
-    async def clear_filter(self, ctx):
+    async def clear_filter(self, ctx: commands.Context) -> None:
         """
         Allows clearing the list of filtered and ignored phrases for the guild. Staff role needed.
         """
@@ -291,5 +292,5 @@ class Filter(commands.Cog):
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter cleared!", desc=f"The filter for **{ctx.guild.name}** has been cleared!")
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Filter(bot))

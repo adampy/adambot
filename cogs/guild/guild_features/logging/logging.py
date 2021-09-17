@@ -4,7 +4,7 @@ from discord import Embed, Colour
 from discord.utils import get
 
 
-def getdeepattr(obj, dotted_attr):
+def getdeepattr(obj: object, dotted_attr: str) -> object:
     """
     Custom utility function that provides the same functionality as `getattr()` but it allows dotted attributes, e.g. `getdeepattr(member, "avatar.url")`
     """
@@ -13,7 +13,7 @@ def getdeepattr(obj, dotted_attr):
     return obj
 
 
-def hasdeepattr(obj, dotted_attr):
+def hasdeepattr(obj: object, dotted_attr: str) -> object:
     """
     Custom utility function that provides the same functionality as `hasattr()` but it allows dotted attributes, e.g. `hasdeepattr(member, "avatar.url")`
     """
@@ -25,28 +25,28 @@ def hasdeepattr(obj, dotted_attr):
 
 
 class Logging(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
         self.previous_inv_log_embeds = []
         self.guilds = []
         self.invites = {}
 
     @staticmethod
-    async def get_all_invites(guild):
+    async def get_all_invites(guild: discord.Guild) -> list[discord.Invite]:
         return await guild.invites() + ([await guild.vanity_invite()] if "VANITY_URL" in guild.features else [])
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         self.guilds = self.bot.guilds
         for guild in self.guilds:
             self.invites[guild.id] = await self.get_all_invites(guild)
 
     @commands.Cog.listener()
-    async def on_guild_join(self, guild):
+    async def on_guild_join(self, guild: discord.Guild) -> None:
         self.invites[guild.id] = await self.get_all_invites(guild)
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message):
+    async def on_message_delete(self, message: discord.Message) -> None:
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
 
         channel_id = await self.bot.get_config_key(message, "mod_log_channel")
@@ -73,7 +73,7 @@ class Logging(commands.Cog):
             await channel.send(embed=reference)
 
     @commands.Cog.listener()
-    async def on_raw_bulk_message_delete(self, payload):
+    async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent) -> None:
         """
         Logs bulk message deletes, such as those used in `purge` command
         """
@@ -91,7 +91,7 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_message_edit(self, before, after):
+    async def on_message_edit(self, before: discord.Message, after: discord.Message) -> None:
         """
         Could perhaps switch to on_raw_message_edit in the future? bot will only log what it can detect
         based off its own caches
@@ -117,7 +117,7 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
 
     @staticmethod
-    async def role_comparison(before, after):
+    async def role_comparison(before: discord.Member, after: discord.Member) -> tuple[list[discord.Role], list[discord.Role]]:
         """
         Expects before and after as Member objects
         Returns roles a user has had removed, and those that have been added
@@ -130,7 +130,7 @@ class Logging(commands.Cog):
 
         return removed_roles, added_roles
 
-    async def embed_role_comparison(self, before, after):
+    async def embed_role_comparison(self, before: discord.Member, after: discord.Member) -> dict:
         """
         Expects before and after as Member objects
         Worth noting that this and role_comparison will be of more use if role change logging aggregation is ever possible
@@ -149,7 +149,7 @@ class Logging(commands.Cog):
         return props
 
     @staticmethod
-    async def avatar_handler(before, after):
+    async def avatar_handler(before: discord.Member, after: discord.Member) -> dict:
         """
         Handler that returns the old avatar for thumbnail usage and the new avatar for the embed image
         """
@@ -157,7 +157,7 @@ class Logging(commands.Cog):
         return {"thumbnail_url": before.avatar.url, "image": after.avatar.url, "description": ":arrow_right: Old Avatar\n:arrow_down: New Avatar"}
 
     @staticmethod
-    async def disp_name_handler(before, after):
+    async def disp_name_handler(before: discord.Member, after: discord.Member) -> dict:
         """
         This handler only exists to deduplicate logging.
         Duplicate logging would occur when a guild member has no nickname and changes their username
@@ -173,7 +173,7 @@ class Logging(commands.Cog):
     # for example, multiple role changes shouldn't spam the log channel
     # perhaps some weird stuff with task loops can do it??
 
-    async def prop_change_handler(self, before, after):
+    async def prop_change_handler(self, before: discord.Member, after: discord.Member) -> dict:
         """
         God handler which handles all the default logging embed behaviour
         Works for both member and user objects
@@ -270,15 +270,15 @@ class Logging(commands.Cog):
                                 await channel.send(embed=log)
 
     @commands.Cog.listener()
-    async def on_member_update(self, before, after):
+    async def on_member_update(self, before: discord.Member, after: discord.Member) -> None:
         await self.prop_change_handler(before, after)
 
     @commands.Cog.listener()
-    async def on_user_update(self, before, after):
+    async def on_user_update(self, before: discord.Member, after: discord.Member) -> None:
         await self.prop_change_handler(before, after)
 
     @commands.Cog.listener()
-    async def on_member_remove(self, member):
+    async def on_member_remove(self, member: discord.Member) -> None:
         channel_id = await self.bot.get_config_key(member, "mod_log_channel")
         if channel_id is None:
             return
@@ -314,7 +314,7 @@ class Logging(commands.Cog):
         await channel.send(embed=member_left)
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member: discord.Member) -> None:
         guild = member.guild
 
         ichannel_id = await self.bot.get_config_key(guild, "invite_log_channel")
@@ -393,5 +393,5 @@ class Logging(commands.Cog):
         await channel.send(embed=member_join)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Logging(bot))

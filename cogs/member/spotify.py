@@ -5,11 +5,11 @@ from discord import Embed, Colour
 
 
 class Spotify(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     @commands.command(name="spotify", aliases=["spotifyinfo"], pass_context=True)
-    async def spotify_info(self, ctx, *args):
+    async def spotify_info(self, ctx: commands.Context, *args: tuple[str]) -> None:
         if len(args) == 0:
             user = ctx.message.author
         else:
@@ -55,5 +55,5 @@ class Spotify(commands.Cog):
         await ctx.message.channel.send(embed=embed)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Spotify(bot))

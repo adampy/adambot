@@ -2,12 +2,13 @@ import discord
 from discord.ext import commands
 import re
 from libs.misc.decorators import is_staff
+from typing import Union
 
 class ReactionRoles(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
-    async def _get_roles(self, payload):
+    async def _get_roles(self, payload) -> list:
         """
         Returns a list of (discord.Role, bool) pairs for the given `payload`. bool refers to whether the reaction role gives or removes a role on reaction add.
         """
@@ -26,7 +27,7 @@ class ReactionRoles(commands.Cog):
         return to_return
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload) -> None:
         """
         Checks if the reaction was added onto a reaction role message, and if so it is handled
         """
@@ -46,7 +47,7 @@ class ReactionRoles(commands.Cog):
                 await member.remove_roles(role)
     
     @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
+    async def on_raw_reaction_remove(self, payload) -> None:
         """
         Checks if the reaction was removed from a reaction role message, and if so it is handled
         """
@@ -68,7 +69,7 @@ class ReactionRoles(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    async def rr(self, ctx):
+    async def rr(self, ctx: commands.Context) -> None:
         """
         Reaction role command group
         """
@@ -80,7 +81,7 @@ class ReactionRoles(commands.Cog):
     @rr.command()
     @commands.guild_only()
     @is_staff
-    async def add(self, ctx, emoji, role: discord.Role, inverse=None):
+    async def add(self, ctx: commands.Context, emoji: Union[discord.Emoji, str], role: discord.Role, inverse: str = None) -> None:
         """
         Adds an emoji and a corresponding role to the replied message. If the `inverse` argument == "true" the role is removed upon reaction add and vice versa.
         """
@@ -90,17 +91,20 @@ class ReactionRoles(commands.Cog):
             return
 
         message_id = ctx.message.reference.message_id
+
         # Check if custom emoji
-        try:
-            emoji = await commands.EmojiConverter().convert(ctx, emoji)
-            custom_emoji = True
-        except commands.errors.EmojiNotFound:
-            # If here, emoji is either a standard emoji, or a custom one from another guild
-            match = re.match(r'<(a?):([a-zA-Z0-9]{1,32}):([0-9]{15,20})>$', emoji)  # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
-            if match:
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "You cannot add a reaction of a custom emoji from a different server!")
-                return
-            custom_emoji = False
+        custom_emoji = False
+        if type(emoji) is not discord.Emoji:  # todo: check this will actually work
+            try:
+                emoji = await commands.EmojiConverter().convert(ctx, emoji)
+                custom_emoji = True
+            except commands.errors.EmojiNotFound:
+                # If here, emoji is either a standard emoji, or a custom one from another guild
+                match = re.match(r'<(a?):([a-zA-Z0-9]{1,32}):([0-9]{15,20})>$', emoji)  # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
+                if match:
+                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "You cannot add a reaction of a custom emoji from a different server!")
+                    return
+                custom_emoji = False
 
         # Add to DB
         inverse = True if inverse and inverse.lower() in ["yes", "y", "true"] else False
@@ -118,18 +122,20 @@ class ReactionRoles(commands.Cog):
     @rr.command()
     @commands.guild_only()
     @is_staff
-    async def remove(self, ctx, emoji):
+    async def remove(self, ctx: commands.Context, emoji: Union[discord.Emoji, str]) -> None:
         """
         Removes an emoji and a corresponding role from the replied message
         """
 
         message_id = ctx.message.reference.message_id
         # Check if custom emoji
-        try:
-            emoji = await commands.EmojiConverter().convert(ctx, emoji)
-            custom_emoji = True
-        except commands.errors.EmojiNotFound:
-            custom_emoji = False
+        custom_emoji = False
+        if type(emoji) is not discord.Emoji:
+            try:
+                emoji = await commands.EmojiConverter().convert(ctx, emoji)
+                custom_emoji = True
+            except commands.errors.EmojiNotFound:
+                custom_emoji = False
 
         async with self.bot.pool.acquire() as connection:
             if custom_emoji:
@@ -144,7 +150,7 @@ class ReactionRoles(commands.Cog):
     @rr.command()
     @commands.guild_only()
     @is_staff
-    async def delete(self, ctx):
+    async def delete(self, ctx: commands.Context) -> None:
         """
         Removes all the reaction roles from the replied message
         """
@@ -160,7 +166,7 @@ class ReactionRoles(commands.Cog):
     @rr.command(name="list")
     @commands.guild_only()
     @is_staff
-    async def showreactionroles(self, ctx):
+    async def showreactionroles(self, ctx: commands.Context) -> None:
         """
         Shows all the current reaction roles in the guild
         """
@@ -190,5 +196,5 @@ class ReactionRoles(commands.Cog):
         await ctx.reply(embed=embed)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(ReactionRoles(bot))

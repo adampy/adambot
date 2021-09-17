@@ -5,18 +5,19 @@ from discord.ext.commands import has_permissions
 from discord.utils import get
 from datetime import datetime, timedelta
 from libs.misc.decorators import is_dev, is_staff
+from typing import Union
 
 
 class Moderation(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         await self.bot.tasks.register_task_type("unmute", self.handle_unmute)
         await self.bot.tasks.register_task_type("unban", self.handle_unban)
 
-    async def get_member_obj(self, ctx, member):
+    async def get_member_obj(self, ctx: commands.Context, member: discord.Member) -> Union[list[discord.Member, bool], list[None, None]]:
         """
         Attempts to get user/member object from mention/user ID.
         Independent of whether the user is a member of a shared guild
@@ -39,7 +40,7 @@ class Moderation(commands.Cog):
         return member, in_guild
 
     @staticmethod
-    async def is_user_banned(ctx, user):
+    async def is_user_banned(ctx: commands.Context, user: discord.User) -> bool:
         try:
             await ctx.guild.fetch_ban(user)
         except discord.errors.NotFound:
@@ -51,7 +52,7 @@ class Moderation(commands.Cog):
     @commands.command(pass_context=True, name="close", aliases=["die", "yeet"])
     @commands.guild_only()
     @is_dev
-    async def botclose(self, ctx):
+    async def botclose(self, ctx: commands.Context) -> None:
         await self.bot.close(ctx)
 
     # -----------------------PURGE------------------------------
@@ -59,7 +60,7 @@ class Moderation(commands.Cog):
     @commands.command(pass_context=True)
     @commands.has_permissions(
         manage_messages=True)  # TODO: Perhaps make it possible to turn some commands, like purge, off
-    async def purge(self, ctx, limit='5', member: discord.Member = None):
+    async def purge(self, ctx: commands.Context, limit: str = '5', member: discord.Member = None) -> None:
         """
         Purges the channel.
         Usage: `purge 50`
@@ -104,7 +105,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True)
     @has_permissions(kick_members=True)
-    async def kick(self, ctx, member: discord.Member, *, args=""):
+    async def kick(self, ctx: commands.Context, member: discord.Member, *, args: str = "") -> None:
         """
         Kicks a given user.
         Kick members perm needed
@@ -146,7 +147,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True, aliases=["hackban", "massban"])
     @has_permissions(ban_members=True)
-    async def ban(self, ctx, member, *, args=""):
+    async def ban(self, ctx: commands.Context, member: discord.Member, *, args: str = "") -> None:
         """
         Bans a given user.
         Merged with previous command hackban
@@ -246,7 +247,7 @@ class Moderation(commands.Cog):
                                        )
                                )
 
-    async def handle_unban(self, data, reason: str = "", author: str = "", ctx=None):
+    async def handle_unban(self, data: dict, reason: str = "", author: str = "", ctx: commands.Context = None) -> None:
         try:
             user = self.bot.get_user(data["member_id"])
             if not user and ctx:
@@ -273,7 +274,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
-    async def unban(self, ctx, member, *, args=""):
+    async def unban(self, ctx: commands.Context, member: discord.Member, *, args: str = "") -> None:
         """
         Unbans a given user with the ID.
         Ban members perm needed.
@@ -300,7 +301,7 @@ class Moderation(commands.Cog):
     # -----------------------MUTES------------------------------
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         """
         Method to reinforce mutes in cases where Discord permissions cause problems
         Blameth discordeth foreth thiseth codeth
@@ -320,7 +321,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles=True)
-    async def mute(self, ctx, member: discord.Member, *, args=""):
+    async def mute(self, ctx: commands.Context, member: discord.Member, *, args: str = "") -> None:
         """
         Gives a given user the Muted role.
         Manage roles perm needed.
@@ -376,7 +377,7 @@ class Moderation(commands.Cog):
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    async def handle_unmute(self, data, reason: str = ""):
+    async def handle_unmute(self, data: dict, reason: str = "") -> None:
         try:
             guild = self.bot.get_guild(data["guild_id"])
             member = guild.get_member(data["member_id"])
@@ -387,7 +388,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles=True)
-    async def unmute(self, ctx, member: discord.Member, *, args=""):
+    async def unmute(self, ctx: commands.Context, member: discord.Member, *, args: str = "") -> None:
         """
         Removes Muted role from a given user.
         Manage roles perm needed.
@@ -405,7 +406,7 @@ class Moderation(commands.Cog):
     # -----------------------SLOWMODE------------------------------
 
     @commands.command(pass_context=True)
-    async def slowmode(self, ctx, time):
+    async def slowmode(self, ctx: commands.Context, time: str) -> None:
         """
         Adds slowmode in a specific channel. Time is given in seconds.
         """
@@ -414,7 +415,7 @@ class Moderation(commands.Cog):
             await ctx.send("You do not have permissions for that :sob:")
             return
 
-        try:
+        if time.isdigit():
             if int(time) <= 60:
                 await ctx.channel.edit(slowmode_delay=int(time))
                 if int(time) == 0:
@@ -423,14 +424,15 @@ class Moderation(commands.Cog):
                     await ctx.send(f':ok_hand: Slowmode of {time} seconds added.')
             else:
                 await ctx.send('You cannot add a slowmode greater than 60.')
-        except Exception as e:
-            print(e)
+
+        else:
+            await ctx.send('You must specify a whole number of seconds')
 
     # -----------------------JAIL & BANISH------------------------------
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles=True)
-    async def jail(self, ctx, member: discord.Member):
+    async def jail(self, ctx: commands.Context, member: discord.Member) -> None:
         """
         Lets a member view whatever channel has been set up with view channel perms for the Jail role.
         Manage roles perm needed.
@@ -447,7 +449,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_roles=True)
-    async def unjail(self, ctx, member: discord.Member):
+    async def unjail(self, ctx: commands.Context, member: discord.Member) -> None:
         """
         Removes the Jail role.
         Manage roles perm needed.
@@ -466,7 +468,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @is_staff
-    async def say(self, ctx, channel: discord.TextChannel, *, text):
+    async def say(self, ctx: commands.Context, channel: discord.TextChannel, *, text: str) -> None:
         """
         Say a given string in a given channel
         Staff role needed.
@@ -477,7 +479,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_guild=True)
-    async def revokeinvite(self, ctx, invite_code):
+    async def revokeinvite(self, ctx: commands.Context, invite_code: str) -> None:
         """
         Command that revokes an invite from a server
         """
@@ -493,5 +495,5 @@ class Moderation(commands.Cog):
             await ctx.send(f"Invite revoking failed: {e}")
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Moderation(bot))

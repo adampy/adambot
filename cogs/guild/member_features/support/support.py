@@ -3,6 +3,8 @@ from discord import Embed, Colour
 from discord.ext import commands
 import asyncio
 from libs.misc.decorators import is_staff
+from typing import Union
+import datetime
 
 """
 support
@@ -21,7 +23,7 @@ class MessageOrigin:
 
 
 class SupportConnection:
-    def __init__(self, id_, member_id, staff_id, started_at, guild_id):
+    def __init__(self, id_: int, member_id: int, staff_id: int, started_at, guild_id: int) -> None:
         self.id = id_
         self.member_id = member_id
         self.staff_id = staff_id
@@ -45,7 +47,7 @@ class SupportConnection:
             self.guild = bot.get_guild(guild_id)
         return self
 
-    async def log_message(self, msg_type: MessageOrigin, message: discord.Message):
+    async def log_message(self, msg_type: MessageOrigin, message: discord.Message) -> None:
         """
         Method that should be executed when a new message is sent through a support ticket. `message`
         refers to the actual message object sent and `msg_type` should be of the MessageOrigin type.
@@ -67,7 +69,7 @@ class SupportConnection:
             embed.add_field(name='Content', value=f'{message.content}', inline=False)
             await channel.send(embed=embed)
 
-    async def accept(self, staff: discord.User):
+    async def accept(self, staff: discord.User) -> None:
         """
         Method that executes when a staff member has accepted the support ticket that handles the database and objects but nothing else
         """
@@ -79,7 +81,7 @@ class SupportConnection:
 
 
 class SupportConnectionManager:
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.connections: SupportConnection = []
         self.bot = bot
 
@@ -95,7 +97,7 @@ class SupportConnectionManager:
             except Exception as e:
                 print(e)
 
-    async def create(self, author_id, guild_id):
+    async def create(self, author_id: id, guild_id: id) -> SupportConnection:
         """
         Creates a new connection in the database, alerts staff to it, and returns the new connection object.
         """
@@ -120,7 +122,7 @@ class SupportConnectionManager:
             await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `support accept {new_connection.id}` to accept it.", embed=embed)
         return new_connection
 
-    async def get(self, id_=-1, guild_id=-1):
+    async def get(self, id_: int = -1, guild_id: int = -1) -> Union[SupportConnection, list[SupportConnection]]:  # might need return type annotation checking
         """
         Returns connections from the database, whether they are open or not, or a support connection via ID. This method returns False
         if a support ticket is now found when searching by ID, else it returns a list of SupportConnection
@@ -155,7 +157,7 @@ class SupportConnectionManager:
                 connections[i] = new_connection
             return connections
 
-    async def in_connections(self, member: discord.Member):
+    async def in_connections(self, member: discord.Member) -> Union[SupportConnection, bool]:
         """
         Checks if a connection already exists with the user, if it does returns connection data or returns False if not.
         """
@@ -166,7 +168,7 @@ class SupportConnectionManager:
                 return con
         return False
 
-    async def remove(self, connection: SupportConnection, staff: discord.User = None):
+    async def remove(self, connection: SupportConnection, staff: discord.User = None) -> None:
         """
         Method that removes the support connection from the database and logs in support-logs. This method assumes
         that the connection DOES exist. If staff is not None then staff closed the ticket, otherwise it was member.
@@ -191,16 +193,16 @@ class SupportConnectionManager:
 
 
 class Support(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
         self.support_manager = SupportConnectionManager(self.bot)
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         self.bot.loop.create_task(self.support_manager.refresh_connections())
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.guild is None and not message.author.bot:  # Valid DM message
             # If support requested
             connection = await self.support_manager.in_connections(message.author)  # Holds connection data or False if a connection is not open
@@ -267,7 +269,7 @@ class Support(commands.Cog):
                             await connection.log_message(MessageOrigin.STAFF, message)
 
     @commands.Cog.listener()
-    async def on_typing(self, channel, user, when):
+    async def on_typing(self, channel: Union[discord.DMChannel, discord.TextChannel], user: discord.User, when: datetime.datetime) -> None:
         """
         A handle for typing events between DMs, so that the typing presence can go through the DMs via the bot.
         """
@@ -286,7 +288,7 @@ class Support(commands.Cog):
                 await conn.member.trigger_typing()
 
     @commands.group()
-    async def support(self, ctx):
+    async def support(self, ctx: commands.Context) -> None:
         """
         Support module
         """
@@ -297,7 +299,7 @@ class Support(commands.Cog):
     @support.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def accept(self, ctx, ticket):
+    async def accept(self, ctx: commands.Context, ticket: str) -> None:
         """
         Accepts a support ticket
         """
@@ -305,7 +307,7 @@ class Support(commands.Cog):
         try:
             ticket = int(ticket)
         except ValueError:
-            ctx.send('Ticket must be an integer.')
+            await ctx.send('Ticket must be an integer.')
             return
 
         in_connection = await self.support_manager.in_connections(ctx.author)
@@ -317,9 +319,11 @@ class Support(commands.Cog):
         if not connection:
             await ctx.send("This ticket ID does not exist!")
             return
+
         if connection.guild.id != ctx.guild.id:
             await ctx.send("You cannot accept support tickets from other guilds!")
             return
+
         if connection.member_id == ctx.author.id:
             await ctx.send('You cannot open a support ticket with yourself.')
             return
@@ -341,7 +345,7 @@ class Support(commands.Cog):
     @support.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def connections(self, ctx):
+    async def connections(self, ctx: commands.Context) -> None:
         """
         Shows all current support connections with member info redacted
         """
@@ -367,5 +371,5 @@ class Support(commands.Cog):
         await ctx.send(string)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Support(bot))

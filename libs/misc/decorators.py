@@ -1,8 +1,12 @@
 import asyncio
+import discord
+from discord.ext import commands
 from inspect import signature
 from .utils import DefaultEmbedResponses, DEVS
+from typing import Union, Callable, Any
 
-def is_staff(func):
+
+def is_staff(func: Callable) -> Callable:
     """
     Decorator that allows the command to only be executed by staff role or admin perms.
     This needs to be placed underneath the @command.command() decorator, and can only be used for commands in a cog
@@ -15,7 +19,8 @@ def is_staff(func):
         async def ping(self, ctx):
             await ctx.send("Pong!")
     """
-    async def decorator(cog, ctx, *args, **kwargs):
+
+    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Union[Any, discord.Message]:
         while not cog.bot.online:
             await asyncio.sleep(1)  # Wait else DB won't be available
 
@@ -29,7 +34,8 @@ def is_staff(func):
     decorator.__signature__ = signature(func)
     return decorator
 
-def is_dev(func):
+
+def is_dev(func: Callable) -> Callable:
     """
     Decorator that allows the command to only be executed by developers.
     This needs to be placed underneath the @command.command() decorator, and can only be used for commands in a cog
@@ -42,7 +48,8 @@ def is_dev(func):
         async def ping(self, ctx):
             await ctx.send("Pong!")
     """
-    async def decorator(cog, ctx, *args, **kwargs):
+
+    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Union[Any, discord.Message]:
         if ctx.author.id in DEVS:
             return await func(cog, ctx, *args, **kwargs)
         else:

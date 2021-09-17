@@ -4,7 +4,7 @@ from enum import Enum
 import copy
 import asyncpg
 import asyncio
-
+from typing import Any
 
 class Validation(Enum):
     Channel = 1     # Is a channel that the bot can read/write in
@@ -15,7 +15,7 @@ class Validation(Enum):
 
 
 class Config(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
         self.bot.configs = {}
         self.bot.is_staff = self.is_staff  # is_staff defined here
@@ -40,12 +40,12 @@ class Config(commands.Cog):
             "spamping_access": [Validation.Boolean, "Allow *ALL* users of a guild to access spamping/ghostping, default False"]
         }
 
-    async def add_all_guild_configs(self):
+    async def add_all_guild_configs(self) -> None:
         """Adds configs to all guilds - executed on startup"""
         for guild in self.bot.guilds:
             await self.add_config(guild.id)
 
-    async def is_staff(self, ctx):
+    async def is_staff(self, ctx: commands.Context) -> bool:
         """
         Method that checks if a user is staff in their guild or not. `ctx` may be `discord.Message` or `discord.ext.commands.Context`
         """
@@ -56,7 +56,7 @@ class Config(commands.Cog):
             return False  # prevents daft spam before bot is ready with configs
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         while not self.bot.online:
             await asyncio.sleep(1)  # Wait else DB won't be available
 
@@ -64,7 +64,7 @@ class Config(commands.Cog):
         self.bot.update_config = self.update_config
 
     @commands.Cog.listener()
-    async def on_guild_join(self, guild):
+    async def on_guild_join(self, guild: discord.Guild) -> None:
         """
         Adds configs to a certain guild - executed upon joining a new guild
         """
@@ -75,7 +75,7 @@ class Config(commands.Cog):
         # 1) Make any edits directly to bot.configs[guild.id]
         # 2) Call bot.propagate_config(guild.id) which propagates any edits to the DB
 
-    async def add_config(self, guild_id):
+    async def add_config(self, guild_id: int) -> None:
         """
         Method that gets the configuraton for a guild and puts it into self.bot.configs dictionary (with the guild ID as the key). The data
         is stored in the `config` table. If no configuration is found, a new record is made and a blank configuration dict.
@@ -98,15 +98,15 @@ class Config(commands.Cog):
             self.bot.configs[guild_id] = dict(
                 zip(keys, values))  # Turns the record into a dictionary (column name = key, value = value)
 
-    async def update_config(self, ctx, key, value):
+    async def update_config(self, ctx: commands.Context, key: str, value: str) -> None:
         if ctx.guild.id in self.bot.configs:
             self.bot.configs[ctx.guild.id][key] = value
             await self.propagate_config(ctx.guild.id)
 
-    async def get_config_key(self, ctx, key):
+    async def get_config_key(self, ctx: commands.Context, key: str) -> Any:
         return self.bot.configs.get(ctx.id if isinstance(ctx, discord.Guild) else ctx.guild.id, {}).get(key, None)
 
-    async def propagate_config(self, guild_id):
+    async def propagate_config(self, guild_id: int) -> None:
         """
         Method that sends the config data stored in self.bot.configs and propagates them to the DB.
         Should only be called internally ideally.
@@ -130,12 +130,12 @@ class Config(commands.Cog):
     # COMMANDS
     @commands.command()
     @commands.guild_only()
-    async def what_prefixes(self, ctx):
+    async def what_prefixes(self, ctx: commands.Context) -> None:
         await ctx.send(await self.bot.get_used_prefixes(ctx))
 
     @commands.group()
     @commands.guild_only()
-    async def config(self, ctx):
+    async def config(self, ctx: commands.Context) -> None:
         """
         View the current configuration settings of the guild
         """
@@ -189,7 +189,7 @@ class Config(commands.Cog):
 
     @config.command(pass_context=True)
     @commands.guild_only()
-    async def set(self, ctx, key=None, *, value=None):  # consume then you don't have to wrap phrases in quotes
+    async def set(self, ctx: commands.Context, key: str = "", *, value: str = "") -> None:  # consume then you don't have to wrap phrases in quotes
         """
         Sets a configuration variable
         """
@@ -265,7 +265,7 @@ class Config(commands.Cog):
 
     @config.command(pass_context=True)
     @commands.guild_only()
-    async def remove(self, ctx, key):
+    async def remove(self, ctx: commands.Context, key: str) -> None:
         """
         Removes a configuration variable
         """
@@ -289,7 +289,7 @@ class Config(commands.Cog):
 
     @config.command(pass_context=True)
     @commands.guild_only()
-    async def current(self, ctx, key=None):
+    async def current(self, ctx: commands.Context, key: str = "") -> None:
         """
         Shows the current configuration variable
         """
@@ -319,7 +319,7 @@ class Config(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
-    async def prefix(self, ctx, new_prefix=None):
+    async def prefix(self, ctx: commands.Context, new_prefix: str = "") -> None:
         """
         View the current prefix or change it
         """
@@ -337,7 +337,7 @@ class Config(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
-    async def staffcmd(self, ctx):
+    async def staffcmd(self, ctx: commands.Context) -> None:
         """
         Tests whether the staff role is set up correctly
         """
@@ -348,5 +348,5 @@ class Config(commands.Cog):
             await ctx.send("You are not staff!")
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Config(bot))

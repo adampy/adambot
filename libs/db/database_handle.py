@@ -1,6 +1,7 @@
 import asyncpg
 
-async def create_tables_if_not_exists(pool: asyncpg.pool.Pool):
+
+async def create_tables_if_not_exists(pool: asyncpg.pool.Pool) -> None:
     """Procedure that creates the tables necessary if they do not already exist"""
     async with pool.acquire() as connection:
         # Config table

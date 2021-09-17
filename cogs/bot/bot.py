@@ -6,12 +6,12 @@ import time
 
 
 class BotCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     @commands.command()
     @commands.guild_only()
-    async def botinfo(self, ctx):
+    async def botinfo(self, ctx: commands.Context) -> None:
         app_info = await self.bot.application_info()
         embed = Embed(title=f"Bot info for ({self.bot.user})", description=app_info.description if app_info.description else "", colour=0x87CEEB)
         embed.add_field(name="Uptime", value=self.bot.time_str(round(time.time() - self.bot.start_time)))
@@ -26,5 +26,5 @@ class BotCog(commands.Cog):
         await ctx.send(embed=embed)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(BotCog(bot))

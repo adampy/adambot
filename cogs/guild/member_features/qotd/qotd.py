@@ -6,10 +6,10 @@ from math import inf
 
 
 class QOTD(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
-    async def has_qotd_perms(self, ctx):
+    async def has_qotd_perms(self, ctx: commands.Context) -> bool:
         """
         Method that returns true if the ctx.author has either a staff or QOTD role
         """
@@ -22,22 +22,22 @@ class QOTD(commands.Cog):
         return False
 
     @commands.group()
-    async def qotd(self, ctx):
+    async def qotd(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             await ctx.send(f'```{ctx.prefix}qotd submit <question>```')
 
     @qotd.command(pass_context=True)
     @commands.guild_only()
-    async def submit(self, ctx, *args):
+    async def submit(self, ctx: commands.Context, *, qotd: str) -> None:
         """
         Submit a QOTD
         """
 
-        qotd = ' '.join(args)
         if len(qotd) > 255:
             await ctx.send('Question over **255** characters, please **shorten** before trying the command again.')
             return
-        if not args:
+
+        if not qotd:
             await ctx.send(f'```{ctx.prefix}qotd submit <question>```')
             return
 
@@ -73,7 +73,7 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True)
     @commands.guild_only()
-    async def list(self, ctx, page_num=1):
+    async def list(self, ctx: commands.Context, page_num: int = 1) -> None:
         if not await self.has_qotd_perms(ctx):
             await ctx.send("You do not have permissions to show all QOTDs :sob:")
             return
@@ -101,7 +101,7 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True, aliases=['remove'])
     @commands.guild_only()
-    async def delete(self, ctx, *question_ids):
+    async def delete(self, ctx: commands.Context, *question_ids: tuple[str]) -> None:
         if not await self.has_qotd_perms(ctx): # TODO: Perhaps a `is_qotd` decorator is needed for completeness
             await ctx.send("You do not have permissions to delete a QOTD :sob:")
             return
@@ -128,7 +128,7 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True, aliases=['choose'])
     @commands.guild_only()
-    async def pick(self, ctx, question_id):
+    async def pick(self, ctx: commands.Context, question_id: int) -> None:
         if not await self.has_qotd_perms(ctx):
             await ctx.send("You do not have permissions to pick a QOTD :sob:")
             return
@@ -175,5 +175,5 @@ class QOTD(commands.Cog):
             await mod_log.send(embed=embed)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(QOTD(bot))
