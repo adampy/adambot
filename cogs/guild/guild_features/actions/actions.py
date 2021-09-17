@@ -259,6 +259,10 @@ class Actions(commands.Cog):
         if not action or not action.get("commands", None):
             return
 
+        if action.get("staff", False) and not await self.bot.is_staff(ctx):
+            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+            return
+
         clean_ctx = await self.bot.get_context(ctx.message, cls=NoSendContext)  # not entirely sure yet how to override ctx.message.channel without making all hell break loose
 
         arg_index = 0
@@ -423,6 +427,7 @@ class Actions(commands.Cog):
 
         action = {
             "commands": [],
+            "staff": False
         }  # doesn't strictly need to be a dict by itself at the moment, but this makes expansion easier
 
         commands_ = []
@@ -444,6 +449,26 @@ class Actions(commands.Cog):
             return
 
         result = None
+
+        staff_check = await ctx.send(embed=Embed(title=":information_source: Make this action staff only?"))
+
+        await staff_check.add_reaction(self.bot.EmojiEnum.TRUE)
+        await staff_check.add_reaction(self.bot.EmojiEnum.FALSE)
+
+        try:
+            response = await self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.TRUE], staff_check), timeout=300)
+        except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+            return
+
+        await self.try_remove_reactions(staff_check)
+        if response[0].emoji == self.bot.EmojiEnum.TRUE:
+            action["staff"] = True
+
+            await ctx.send(embed=Embed(title=":information_source: This action has been marked as staff only"))
+
+        else:
+            await ctx.send(embed=Embed(title=":information_source: This action won't be marked as staff only"))
 
         while not isinstance(result, tuple):  # adding a reaction returns a tuple because... that makes sense
             hi = await ctx.send(embed=Embed(title=":information_source: Add a command", description=f"Type the name of the {'first' if not result else 'next'} command you want to add, or click the reaction to finish", colour=Colour.from_rgb(238, 130, 238)))
