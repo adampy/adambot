@@ -517,8 +517,8 @@ class Actions(commands.Cog):
                     seen_args = sum([len(command.clean_params) for command in command_objs]) > 0
                     for x, param in enumerate(requested_args, start=1):
                         annotation = command.clean_params[param].annotation  # manipulate wanted as list then just refer back to dict by key for param props
-
-                        message = await ctx.send(embed=Embed(title=f":information_source: Managing  command values ({param})",
+                        if annotation is None or annotation == discord.Member:
+                            message = await ctx.send(embed=Embed(title=f":information_source: Managing  command values ({param})",
                                                              description=f"React with {self.bot.EmojiEnum.TRUE} if we should look for a reply author to use for this value first"
                                                                          f"\nNote that you will be next prompted to enter a value to fallback on if no reply is found"))  # should this only be done for annotations that could match it?
                                                                                                                                                                           # for example: only for discord.Member or None type annotations
@@ -526,91 +526,116 @@ class Actions(commands.Cog):
                         # i.e. you could end up with a reply and passing A C or no reply and passing A B C, which could get confusing
                         # todo: look at making reuse of reply args more clear, it even confused me at first
 
-                        await message.add_reaction(self.bot.EmojiEnum.TRUE)
-                        await message.add_reaction(self.bot.EmojiEnum.FALSE)
-                        try:
-                            response_ = await self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.TRUE], message), timeout=300)
-                        except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-                            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
-                            return
-
-                        await self.try_remove_reactions(message)
-
-                        if response_[0].emoji == self.bot.EmojiEnum.TRUE:
-                            command_props["reply_args"].append(x-1)
-
-                        # handle annotation checking here at some point, method from v2 needed for this
-                        pos = self.bot.ordinal(x)
-                        text = f"React with :x: if you don't want to add a default for the {pos} value, or type a default value\n"
-                        if seen_args > 0:
-                            text += f"React with {self.bot.EmojiEnum.RECYCLE} to reuse a value from a previous command"
-
-                        message = await ctx.send(embed=Embed(title=f":information_source: Managing command values ({param})", description=text, colour=Colour.from_rgb(255, 165, 0)))
-                        await message.add_reaction(self.bot.EmojiEnum.FALSE)
-
-                        if seen_args > 0:
-                            await message.add_reaction(self.bot.EmojiEnum.RECYCLE)
-
-                        try:
-                            done, pending = await asyncio.wait([
-                                self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=300),
-                                self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.RECYCLE], message), timeout=300)
-                            ], return_when=asyncio.FIRST_COMPLETED)
-
-                            result_ = done.pop().result()
-                        except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-                            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
-                            return
-
-                        for future in done:
-                            future.exception()
-
-                        for future in pending:
-                            future.cancel()
-
-                        await self.try_remove_reactions(message)
-
-                        if isinstance(result_, discord.Message):
-                            given_args[f"{x-1}"] = result_.content
-
-                        elif result_[0].emoji == self.bot.EmojiEnum.RECYCLE:
-                            arg_command_names = []
-                            for z, command in enumerate(command_objs):
-                                if len(command.clean_params) > 0:
-                                    arg_command_names.append((z, command.qualified_name))
-
-                            text = "\n".join([f"{y[0]}: *{y[1]}*" for y in list(enumerate([q[1] for q in arg_command_names], start=1))])
-                            await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
-                                                       description=f"Please send the number corresponding to the command that you want to reuse a value from:\n{text}",
-                                                       colour=Colour.from_rgb(0, 250, 154)))
-
+                            await message.add_reaction(self.bot.EmojiEnum.TRUE)
+                            await message.add_reaction(self.bot.EmojiEnum.FALSE)
                             try:
-                                response = await self.bot.wait_for("message", check=Checks.generate_range_check(ctx, 0, len(arg_command_names)), timeout=300)
+                                response_ = await self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.TRUE], message), timeout=300)
                             except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
                                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
                                 return
 
-                            response_command = int(response.content)
-                            params = len(self.bot.get_command(commands_[arg_command_names[response_command - 1][0]]['command']).clean_params)
-                            response_arg = 1
+                            await self.try_remove_reactions(message)
 
-                            if params > 1:
+                            if response_[0].emoji == self.bot.EmojiEnum.TRUE:
+                                command_props["reply_args"].append(x-1)
+
+                        # handle annotation checking here at some point, method from v2 needed for this
+
+
+                        useable_value = False
+
+                        while not useable_value:
+                            pos = self.bot.ordinal(x)
+                            text = f"React with :x: if you don't want to add a default for the {pos} value, or type a default value\n"
+                            if seen_args > 0:
+                                text += f"React with {self.bot.EmojiEnum.RECYCLE} to reuse a value from a previous command"
+
+                            useable_value = True
+                            message = await ctx.send(embed=Embed(title=f":information_source: Managing command values ({param})", description=text, colour=Colour.from_rgb(255, 165, 0)))
+                            await message.add_reaction(self.bot.EmojiEnum.FALSE)
+
+                            if seen_args > 0:
+                                await message.add_reaction(self.bot.EmojiEnum.RECYCLE)
+
+                            try:
+                                done, pending = await asyncio.wait([
+                                    self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=300),
+                                    self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.RECYCLE], message), timeout=300)
+                                ], return_when=asyncio.FIRST_COMPLETED)
+
+                                result_ = done.pop().result()
+                            except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
+                                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+                                return
+
+                            for future in done:
+                                future.exception()
+
+                            for future in pending:
+                                future.cancel()
+
+                            await self.try_remove_reactions(message)
+
+                            if isinstance(result_, discord.Message):
+                                if annotation != inspect._empty:  # conversion will always fail on _empty, although it's pointless anyway
+                                    try:
+                                        test_conv = await commands.run_converters(ctx, annotation, result_.content, command.clean_params[param])  #, inspect.Parameter(param, inspect.Parameter.POSITIONAL_ONLY, annotation=annotation))
+                                    except commands.CommandError as e:
+                                        useable_value = False
+                                        await ctx.send(embed=Embed(title=f"Error using that value for ({param})",
+                                                               description="The value given is not of the type needed\nHINT: Values that need to be a member must be a name, mention or user ID of a member, other types of values are invalid"))
+                                if useable_value:
+                                    given_args[f"{x-1}"] = result_.content
+
+                            elif result_[0].emoji == self.bot.EmojiEnum.RECYCLE:
+                                arg_command_names = []
+                                for z, command in enumerate(command_objs):
+                                    if len(command.clean_params) > 0:
+                                        arg_command_names.append((z, command.qualified_name))
+
+                                text = "\n".join([f"{y[0]}: *{y[1]}*" for y in list(enumerate([q[1] for q in arg_command_names], start=1))])
                                 await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
-                                                           description=f"There are {params} values for this command. Enter a number from 1-{params} to select which value you want to reuse",
-                                                           colour=Colour.from_rgb(0, 250, 154)))  # make this bit a bit nicer?
+                                                           description=f"Please send the number corresponding to the command that you want to reuse a value from:\n{text}",
+                                                           colour=Colour.from_rgb(0, 250, 154)))
 
                                 try:
-                                    response_arg = await self.bot.wait_for("message", check=Checks.generate_range_check(ctx, 0, params), timeout=300)
+                                    response = await self.bot.wait_for("message", check=Checks.generate_range_check(ctx, 0, len(arg_command_names)), timeout=300)
                                 except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
                                     await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
                                     return
-                                response_arg = int(response_arg.content)
 
-                            else:
-                                await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})", description="Only detected one value for this command, using this.", colour=Colour.from_rgb(0, 250, 154)))
+                                response_command = int(response.content)
+                                params_ = self.bot.get_command(commands_[arg_command_names[response_command - 1][0]]['command']).clean_params
+                                params = len(params_)
+                                response_arg = 1
 
-                            command_props["reuse"][str(x-1)] = f"{arg_command_names[response_command - 1][0]},{response_arg - 1}"
-                            await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})", description=f"We will now reuse this command's {self.bot.ordinal(response_arg)} value for this value.", colour=Colour.from_rgb(0, 250, 154)))
+                                if params > 1:
+                                    await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
+                                                               description=f"There are {params} values for this command. Enter a number from 1-{params} to select which value you want to reuse",
+                                                               colour=Colour.from_rgb(0, 250, 154)))  # make this bit a bit nicer?
+
+                                    try:
+                                        response_arg = await self.bot.wait_for("message", check=Checks.generate_range_check(ctx, 0, params), timeout=300)
+                                    except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
+                                        await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+                                        return
+                                    response_arg = int(response_arg.content)
+
+                                else:
+                                    await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})", description="Only detected one value for this command, using this.", colour=Colour.from_rgb(0, 250, 154)))
+
+                                sel_default = commands_[response_command - 1]["defaults"].get(str(response_arg - 1))
+                                if sel_default and annotation != inspect._empty:
+                                    try:
+                                        await commands.run_converters(ctx, annotation, sel_default, command.clean_params[param])
+                                    except commands.CommandError:
+                                        useable_value = False
+                                        await ctx.send(embed=Embed(title=f"Error using that value for ({param})",
+                                                                   description="The value selected for reuse is not of the type needed\nHINT: Values that need to be a member must be a name, mention or user ID of a member, other types of values are invalid"))
+
+                                if useable_value:
+                                    command_props["reuse"][str(x-1)] = f"{arg_command_names[response_command - 1][0]},{response_arg - 1}"
+                                    await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})", description=f"We will now reuse this command's {self.bot.ordinal(response_arg)} value for this value.", colour=Colour.from_rgb(0, 250, 154)))
 
                         await ctx.send(embed=Embed(title="Processed value successfully!", description=f"**{command.name}**'s '({param})' has been successfully added", colour=self.bot.SUCCESS_GREEN))
 
