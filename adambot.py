@@ -119,7 +119,7 @@ class AdamBot(Bot):
         self.cog_load = time.time()
         print(f"\nLoaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
         print("Creating DB pool...")
-        db_url = os.environ.get('DATABASE_URL') if not type(self.internal_config.get("database_url", None)) is str else \
+        db_url = os.environ.get('DATABASE_URL') if not self.internal_config.get("database_url", "") == "" else \
             self.internal_config["database_url"]
 
         self.pool:\
