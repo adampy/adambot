@@ -129,10 +129,12 @@ class AdamBot(Bot):
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
         print(f'Bot fully setup!\nDB took {time.time() - self.cog_load} seconds to connect to ({time.time() - self.start_time} seconds total)')
         print("Logging into Discord...")
-        token = os.environ.get('TOKEN', None) if not type(self.internal_config.get('token', None)) is str else \
-            self.internal_config['token']
 
-        token = token if token else kwargs.get("token", None)
+        token = self.internal_config.get("token", "")
+        if not token:
+            token = os.environ.get("TOKEN", "")
+
+        token = token if token else kwargs.get("token", "")
         if not token:
             print("No token provided!")
             return
