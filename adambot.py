@@ -119,8 +119,9 @@ class AdamBot(Bot):
         self.cog_load = time.time()
         print(f"\nLoaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
         print("Creating DB pool...")
-        db_url = os.environ.get('DATABASE_URL') if not self.internal_config.get("database_url", "") == "" else \
-            self.internal_config["database_url"]
+        db_url = self.internal_config.get("database_url", "")
+        if not db_url:
+            db_url = os.environ.get("DATABASE_URL", "")
 
         self.pool:\
             asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(db_url + "?sslmode=require", max_size=self.connections))
