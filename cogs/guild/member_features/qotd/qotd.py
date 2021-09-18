@@ -128,7 +128,7 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True, aliases=['choose'])
     @commands.guild_only()
-    async def pick(self, ctx: commands.Context, question_id: int) -> None:
+    async def pick(self, ctx: commands.Context, question_id: str) -> None:
         if not await self.has_qotd_perms(ctx):
             await ctx.send("You do not have permissions to pick a QOTD :sob:")
             return
