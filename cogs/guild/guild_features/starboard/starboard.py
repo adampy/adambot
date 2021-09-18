@@ -192,7 +192,12 @@ class Starboard(commands.Cog):
     
     async def on_raw_reaction_event(self, payload) -> None:
         starboards = await self._get_starboards(payload.guild_id)
+        message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+
         for starboard in starboards:
+            if message.channel.id == starboard["channel_id"]:  # stops people spamming star react onto starboard embeds
+                continue
+
             # Parse the colour if one exists
             if starboard["embed_colour"]:
                 colour = starboard["embed_colour"]  # colour is now a hex code in the format "#FFFFFF"
@@ -205,8 +210,6 @@ class Starboard(commands.Cog):
 
             if (starboard["emoji"] is not None and starboard["emoji"] == payload.emoji.name) or (starboard["emoji_id"] is not None and starboard["emoji_id"] == payload.emoji.id):  # Valid emoji
                 # Get the amount of stars (we fetch this from Discord instead of having a field in starboard_entry record because new emoji's may be added when bot is offline)
-                message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
-                
                 # Find the correct reaction
                 stars = 0
                 for r in message.reactions:
