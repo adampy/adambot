@@ -78,7 +78,7 @@ class Reputation(commands.Cog):
 
         if ctx.subcommand_passed not in subcommands:
             args = ctx.message.content.replace(f"{ctx.prefix}rep", "").strip()
-            await ctx.invoke(self.rep.get_command("award"), args)
+            await ctx.invoke(self.rep.get_command("award"), **{"args": args})
             
     @rep.error
     async def rep_error(self, ctx: commands.Context, error) -> None:
@@ -89,19 +89,18 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
-    async def award(self, ctx: commands.Context, *args: tuple[str]) -> None:
+    async def award(self, ctx: commands.Context, *, args: Union[discord.User, discord.Member, str]) -> None:
         """
         Gives the member a reputation point. Aliases are give and point
         """
 
         # todo: sort this mess out
-        args_ = " ".join(args)
-        user = await self.bot.get_spaced_member(ctx, self.bot, *args) if args_ else None  # check so rep award doesn't silently fail when no string given
+        user = await self.bot.get_spaced_member(ctx, self.bot, args=args) if args else None  # check so rep award doesn't silently fail when no string given
 
         if not user:
-            failed = Embed(title=f':x:  Sorry we could not find the user!' if args_ else 'Rep Help', color=self.bot.ERROR_RED)
-            if args_:
-                failed.add_field(name="Requested user", value=args_)
+            failed = Embed(title=f':x:  Sorry we could not find the user!' if args else 'Rep Help', color=self.bot.ERROR_RED)
+            if args:
+                failed.add_field(name="Requested user", value=args)
 
             failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{ctx.prefix}rep Member_Name`\nor\n`{ctx.prefix}rep @Member`\n'
                              f'Pro tip: If e.g. fred roberto was recently active you can type `{ctx.prefix}rep fred`\n\nTo see the other available rep commands type `{ctx.prefix}help rep`', inline=False)
@@ -248,15 +247,15 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=["count"])
     @commands.guild_only()
-    async def check(self, ctx: commands.Context, *args: tuple[str]) -> None:
+    async def check(self, ctx: commands.Context, *, args: str="") -> None:
         """
         Checks a specific person reps, or your own if user is left blank
         """
 
-        if len(args) == 0:
+        if not args:
             user = ctx.author
         else:
-            user = await self.bot.get_spaced_member(ctx, self.bot, *args)
+            user = await self.bot.get_spaced_member(ctx, self.bot, args=args)
             if user is None:
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "We could not find that user!")
                 return

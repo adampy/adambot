@@ -192,9 +192,9 @@ class Starboard(commands.Cog):
     
     async def on_raw_reaction_event(self, payload) -> None:
         starboards = await self._get_starboards(payload.guild_id)
-        message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
 
         for starboard in starboards:
+            message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
             if message.channel.id == starboard["channel_id"]:  # stops people spamming star react onto starboard embeds
                 continue
 
@@ -241,6 +241,7 @@ class Starboard(commands.Cog):
                         await old_msg.delete()
                 else:
                     if minimum_met:
+                        message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
                         # Message doesn't exist, make a new one
                         msg = await starboard_channel.send(embed=await self.make_starboard_embed(message, stars, payload.emoji, colour))
                         await self._create_starboard_entry(starboard["channel_id"], payload.message_id, msg.id)

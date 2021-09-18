@@ -1,7 +1,9 @@
 # Adapted from Hodor's private bot
 
+import discord
 from discord.ext import commands
 from discord import Embed, Colour
+from typing import Union
 
 
 class Spotify(commands.Cog):
@@ -9,11 +11,14 @@ class Spotify(commands.Cog):
         self.bot = bot
 
     @commands.command(name="spotify", aliases=["spotifyinfo"], pass_context=True)
-    async def spotify_info(self, ctx: commands.Context, *args: tuple[str]) -> None:
+    async def spotify_info(self, ctx: commands.Context, *, args: Union[discord.Member, str] = "") -> None:
         if len(args) == 0:
             user = ctx.message.author
         else:
-            user = await self.bot.get_spaced_member(ctx, self.bot, *args)
+            if type(args) is not discord.Member:
+                user = await self.bot.get_spaced_member(ctx, self.bot, args=args)
+            else:
+                user = args
             if user is None:
                 fail_embed = Embed(title="Spotify info", description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**', color=Colour.from_rgb(255, 7, 58))
                 fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (

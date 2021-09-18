@@ -295,7 +295,7 @@ class Moderation(commands.Cog):
 
         if type(member) is not discord.User:
             member, in_guild = await self.get_member_obj(ctx, member)
-            
+
         if member is None:
             await ctx.send("Couldn't find that user!")
             return

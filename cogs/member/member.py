@@ -206,7 +206,7 @@ class Member(commands.Cog):
         if len(args) == 0:
             user = author
         else:
-            user = await self.bot.get_spaced_member(ctx, self.bot, args)
+            user = await self.bot.get_spaced_member(ctx, self.bot, args=args)
             args = args.replace("<", "").replace(">", "").replace("@", "").replace("!", "")
             if user is None and args.isdigit():
                 user = await self.bot.fetch_user(int(args))  # allows getting some limited info about a user that isn't a member of the guild

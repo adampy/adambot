@@ -227,23 +227,19 @@ async def send_text_file(text: str, channel: discord.TextChannel, filename: str,
     await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
 
-async def get_spaced_member(ctx: commands.Context, bot, *args: Union[tuple[str], list[str], str]) -> Union[discord.Member, None]:
+async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> Union[discord.Member, None]:
     """
     Moves hell on Earth to get a guild member object from a given string
     Makes use of last_active, a priority temp list that stores member objects of
     the most recently active members
     """
 
-    if type(args) in [tuple, list]:
-        possible_mention = args[0]
-    else:
-        possible_mention = args
+    possible_mention = args.split(" ")[0]
     user = None
     try:
         user = await commands.MemberConverter().convert(ctx,
                                                         possible_mention)  # try standard approach before anything daft
     except commands.errors.MemberNotFound:
-        args = " ".join(args)
         try:
             user = await commands.MemberConverter().convert(ctx, args)
         except commands.errors.MemberNotFound:
