@@ -95,7 +95,8 @@ class Moderation(commands.Cog):
 
             embed = Embed(title='Purge', color=Colour.from_rgb(175, 29, 29))
             embed.add_field(name='Count', value=f"{len(deleted)}")
-            embed.add_field(name='Channel', value=channel.mention)
+            embed.add_field(name='Channel', value=ctx.channel.mention)
+            embed.add_field(name='Staff member', value=ctx.author.mention)
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await channel.send(embed=embed)
         else:
