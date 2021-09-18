@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import Embed, Colour, Status
 import re
 from datetime import datetime, timedelta
+import pytz
 import time
 
 
@@ -10,7 +11,6 @@ class Member(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
 
-# -----------------------MISC------------------------------
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         await self.bot.tasks.register_task_type("reminder", self.handle_remind, needs_extra_columns={
@@ -18,25 +18,6 @@ class Member(commands.Cog):
             "channel_id": "bigint",
             "guild_id": "bigint",
             "reason": "varchar(255)"})
-
-    @commands.command(pass_context=True)
-    async def host(self, ctx: commands.Context) -> None:
-        """
-        Check if the bot is currently hosted locally or remotely
-        """
-
-        await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
-
-    @commands.command(pass_context=True)
-    async def ping(self, ctx: commands.Context) -> None:
-        await ctx.send(f"Pong! ({round(self.bot.latency * 1000)} ms)")
-
-    @commands.command(pass_context=True)
-    async def uptime(self, ctx: commands.Context) -> None:
-        """View how long the bot has been running for"""
-        seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
-        time_string = self.bot.time_str(seconds)
-        await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
                 
 # -----------------------QUOTE------------------------------
 
@@ -410,12 +391,12 @@ class Member(commands.Cog):
             string = f'{hour}AM'
         rn = self.bot.correct_time()
         if which == "GCSE":
-            time_ = datetime(year=2021, month=8, day=12, hour=hour, minute=0, second=0)
+            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=18, hour=hour, minute=0, second=0))
         else:
-            time_ = datetime(year=2021, month=8, day=10, hour=hour, minute=0, second=0)
+            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=11, hour=hour, minute=0, second=0))
         embed = Embed(title=f"Countdown until {which} results day at {string} (on {time_.day}/{time_.month}/{time_.year})",
                       color=Colour.from_rgb(148, 0, 211))
-        time_ = time_.replace(tzinfo=self.bot.display_timezone)
+
         if rn > time_:
             embed.description = "Results have already been released!"
         else:
@@ -430,8 +411,17 @@ class Member(commands.Cog):
 
     @commands.command(pass_context=True, aliases=["exams", "alevels"])
     async def gcses(self, ctx: commands.Context) -> None:
-        embed = Embed(title="Information on UK exams",  color=Colour.from_rgb(148, 0, 211),
-                      description="UK exams are not going ahead this year and have instead been replaced by teacher assessments!")
+        embed = Embed(title="Information on UK exams", color=Colour.from_rgb(148, 0, 211))
+        now = self.bot.correct_time()
+        time_ = self.bot.correct_time(datetime(year=2022, month=5, day=16, hour=9, minute=0, second=0))
+        if now > time_:
+            embed.description = "Exams have already started!"
+        else:
+            time_ = time_ - now
+            m, s = divmod(time_.seconds, 60)
+            h, m = divmod(m, 60)
+            embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining until the first exam (RS Paper 1)"
+
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
                     self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
         await ctx.send(embed=embed)

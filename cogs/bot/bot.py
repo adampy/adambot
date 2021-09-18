@@ -25,6 +25,25 @@ class BotCog(commands.Cog):
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
         await ctx.send(embed=embed)
 
+    @commands.command(pass_context=True)
+    async def host(self, ctx: commands.Context) -> None:
+        """
+        Check if the bot is currently hosted locally or remotely
+        """
+
+        await ctx.send(f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now.")
+
+    @commands.command(pass_context=True)
+    async def ping(self, ctx: commands.Context) -> None:
+        await ctx.send(f"Pong! ({round(self.bot.latency * 1000)} ms)")
+
+    @commands.command(pass_context=True)
+    async def uptime(self, ctx: commands.Context) -> None:
+        """View how long the bot has been running for"""
+        seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
+        time_string = self.bot.time_str(seconds)
+        await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
+
 
 def setup(bot) -> None:
     bot.add_cog(BotCog(bot))
