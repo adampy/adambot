@@ -3,6 +3,6 @@ requests
 asyncpg
 matplotlib
 pytz
-tzlocal
+tzlocal==2.0.0
 pandas
 emoji
