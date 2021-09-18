@@ -210,7 +210,7 @@ class Starboard(commands.Cog):
                 # Find the correct reaction
                 stars = 0
                 for r in message.reactions:
-                    if (not r.custom_emoji and r.emoji == payload.emoji.name) or (r.custom_emoji and r.emoji.id == payload.emoji.id):
+                    if (not r.is_custom_emoji() and r.emoji == payload.emoji.name) or (r.is_custom_emoji() and r.emoji.id == payload.emoji.id):
                         # This is the reaction we want to process
                         stars = r.count
                         # If the starboard has self star disabled, we need to remove a star if the author has reacted, as well as all stars from a bot
