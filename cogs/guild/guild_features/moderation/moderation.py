@@ -147,7 +147,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True, aliases=["hackban", "massban"])
     @has_permissions(ban_members=True)
-    async def ban(self, ctx: commands.Context, member: discord.Member, *, args: str = "") -> None:
+    async def ban(self, ctx: commands.Context, member: Union[discord.Member, str], *, args: str = "") -> None:
         """
         Bans a given user.
         Merged with previous command hackban
@@ -188,12 +188,20 @@ class Moderation(commands.Cog):
                                                f", {len(already_banned)} users already banned" if len(
                                                    already_banned) > 0 else "")
                                    )
-            member, in_guild = await self.get_member_obj(ctx, member_)
+
+            if type(member_) is not discord.Member:
+                member, in_guild = await self.get_member_obj(ctx, member_)
+            else:
+                member = member_
+                in_guild = True
+
             if in_guild:
                 if ctx.me.top_role < member.top_role:
                     await ctx.send(f"Can't ban {member.mention}, they have a higher role than the bot!")
                     continue
             for invite in invites:
+                invite.inviter.id
+                member.id
                 if invite.inviter.id == member.id:
                     await ctx.invoke(self.bot.get_command("revokeinvite"), invite_code=invite.code)
             if timeperiod:
@@ -274,7 +282,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
-    async def unban(self, ctx: commands.Context, member: discord.Member, *, args: str = "") -> None:
+    async def unban(self, ctx: commands.Context, member: Union[discord.User, str], *, args: str = "") -> None:
         """
         Unbans a given user with the ID.
         Ban members perm needed.
@@ -285,7 +293,9 @@ class Moderation(commands.Cog):
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"]
 
-        member, in_guild = await self.get_member_obj(ctx, member)
+        if type(member) is not discord.User:
+            member, in_guild = await self.get_member_obj(ctx, member)
+            
         if member is None:
             await ctx.send("Couldn't find that user!")
             return
