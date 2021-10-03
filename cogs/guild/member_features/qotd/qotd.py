@@ -1,26 +1,44 @@
 from discord.ext import commands
 import datetime
-from discord import Embed, Colour
+from discord import Embed, Colour, Message
 from random import choice
 from math import inf
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url, DefaultEmbedResponses
+from typing import Union, Any, Callable
+from inspect import signature # Used in @qotd_perms decorator
+import asyncio
 
+def qotd_perms(func: Callable) -> Callable:
+    """
+    Decorator that allows the command to only be executed by people with QOTD perms / staff / administrators.
+    This needs to be placed underneath the @command.command() decorator, and can only be used for commands in a cog
+
+    Usage:
+        @commands.command()
+        @qotd_perms
+        async def ping(self, ctx):
+            await ctx.send("Pong!")
+    """
+
+    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Union[Any, Message]:
+        while not cog.bot.online:
+            await asyncio.sleep(1)  # Wait else DB won't be available
+
+        qotd_role_id = await cog.bot.get_config_key(ctx, "qotd_role")
+        staff_role_id = await cog.bot.get_config_key(ctx, "staff_role")
+        role_ids = [y.id for y in ctx.author.roles]
+        if qotd_role_id in role_ids or staff_role_id in role_ids or ctx.author.guild_permissions.administrator:
+            return await func(cog, ctx, *args, **kwargs)
+        else:
+            return await DefaultEmbedResponses.invalid_perms(cog.bot, ctx)
+    
+    decorator.__name__ = func.__name__
+    decorator.__signature__ = signature(func)
+    return decorator
 
 class QOTD(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
-
-    async def has_qotd_perms(self, ctx: commands.Context) -> bool:
-        """
-        Method that returns true if the ctx.author has either a staff or QOTD role
-        """
-
-        qotd_role_id = await self.bot.get_config_key(ctx, "qotd_role")
-        staff_role_id = await self.bot.get_config_key(ctx, "staff_role")
-        for role in ctx.author.roles:
-            if role.id == qotd_role_id or role.id == staff_role_id:
-                return True
-        return False
 
     @commands.group()
     async def qotd(self, ctx: commands.Context) -> None:
@@ -74,11 +92,8 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True)
     @commands.guild_only()
+    @qotd_perms
     async def list(self, ctx: commands.Context, page_num: int = 1) -> None:
-        if not await self.has_qotd_perms(ctx):
-            await ctx.send("You do not have permissions to show all QOTDs :sob:")
-            return
-
         async with self.bot.pool.acquire() as connection:
             qotds = await connection.fetch('SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id', ctx.guild.id)
 
@@ -102,11 +117,8 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True, aliases=['remove'])
     @commands.guild_only()
+    @qotd_perms
     async def delete(self, ctx: commands.Context, *question_ids: str) -> None:
-        if not await self.has_qotd_perms(ctx): # TODO: Perhaps a `is_qotd` decorator is needed for completeness
-            await ctx.send("You do not have permissions to delete a QOTD :sob:")
-            return
-            
         async with self.bot.pool.acquire() as connection:
             for question_id in question_ids:
                 try:
@@ -129,11 +141,8 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True, aliases=['choose'])
     @commands.guild_only()
+    @qotd_perms
     async def pick(self, ctx: commands.Context, question_id: str) -> None:
-        if not await self.has_qotd_perms(ctx):
-            await ctx.send("You do not have permissions to pick a QOTD :sob:")
-            return
-
         qotd_channel_id = await self.bot.get_config_key(ctx, "qotd_channel")
         if qotd_channel_id is None:
             await ctx.send("You cannot pick a QOTD because a QOTD channel has not been set :sob:")
