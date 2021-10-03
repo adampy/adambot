@@ -48,8 +48,15 @@ class EmbedPages:
         # Clear previous data
         self.embed = Embed(title=f"{self.title} (Page {page_num}/{self.top_limit})", color=self.colour,
                            description=self.desc)
-        self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
-        self.embed.set_thumbnail(url=self.thumbnail_url)
+        
+        if self.footer and self.icon_url:
+            self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
+        elif self.footer:
+            self.embed.set_footer(text=self.footer) # TODO: Is there a more efficient way to cover the cases where either a footer or icon_url is given but not both?
+        elif self.icon_url:
+            self.embed.set_footer(icon_url=self.icon_url)
+        if self.thumbnail_url:
+            self.embed.set_thumbnail(url=self.thumbnail_url) # NOTE: I WAS CHANGING ALL GUILD ICONS AND AVATARS SO THEY WORK WITH THE DEFAULTS I.E. NO AVATAR OR NO GUILD ICON
 
         # Gettings the wanted data
         self.page_num = page_num
@@ -498,7 +505,7 @@ class DefaultEmbedResponses:
                       color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=ctx.author.avatar.url)
+                bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -509,7 +516,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':x: {title}', description=desc, color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=ctx.author.avatar.url)
+                bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -520,7 +527,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':white_check_mark: {title}', description=desc, color=SUCCESS_GREEN)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-              bot.ts_format), icon_url=ctx.author.avatar.url)
+              bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -531,7 +538,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':information_source: {title}', description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=ctx.author.avatar.url)
+             bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -542,8 +549,23 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':grey_question: {title}', description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=ctx.author.avatar.url)
+             bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
         return response
+
+def get_guild_icon_url(guild: discord.Guild) -> str:
+    """
+    Returns either a `str` which corresponds to `guild`'s icon. If none is present, an empty string is returned
+    """
+    return guild.icon if hasattr(guild, "icon") else ""
+
+def get_user_avatar_url(user: discord.User) -> str:
+    """
+    Returns a `str` which corresponds to `user`'s current avatar url
+    """
+    if user.avatar:
+        return user.avatar.url
+    else:
+        return user.default_avatar.url

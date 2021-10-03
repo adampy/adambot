@@ -3,8 +3,8 @@ from discord.ext import commands
 from discord import Embed, Colour
 import matplotlib.pyplot as plt
 from libs.misc.decorators import is_staff
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 from typing import Union
-
 
 class Reputation(commands.Cog):
     def __init__(self, bot) -> None:
@@ -26,8 +26,8 @@ class Reputation(commands.Cog):
             self.bot,
             ctx.author,
             ctx.channel,
-            thumbnail_url=ctx.guild.icon.url,
-            icon_url=ctx.author.avatar.url,
+            thumbnail_url=get_guild_icon_url(ctx.guild),
+            icon_url=get_user_avatar_url(ctx.author),
             footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
         )
         await embed.set_page(1)  # Default first page
@@ -94,8 +94,13 @@ class Reputation(commands.Cog):
         Gives the member a reputation point. Aliases are give and point
         """
 
-        # todo: sort this mess out
-        user = await self.bot.get_spaced_member(ctx, self.bot, args=args) if args else None  # check so rep award doesn't silently fail when no string given
+        if type(args) == discord.Member:
+            user = args
+        elif type(args) == discord.User:
+            user = ctx.guild.get_member(args.id)
+        else:
+            # todo: sort this mess out
+            user = await self.bot.get_spaced_member(ctx, self.bot, args=args) if args else None  # check so rep award doesn't silently fail when no string given
 
         if not user:
             failed = Embed(title=f':x:  Sorry we could not find the user!' if args else 'Rep Help', color=self.bot.ERROR_RED)
@@ -104,7 +109,7 @@ class Reputation(commands.Cog):
 
             failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{ctx.prefix}rep Member_Name`\nor\n`{ctx.prefix}rep @Member`\n'
                              f'Pro tip: If e.g. fred roberto was recently active you can type `{ctx.prefix}rep fred`\n\nTo see the other available rep commands type `{ctx.prefix}help rep`', inline=False)
-            failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+            failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
 
             await ctx.send(embed=failed)
             return
@@ -123,7 +128,7 @@ class Reputation(commands.Cog):
 
             if award:
                 reps = await self.modify_rep(user, 1)
-                await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick} received a reputation point!", desc=f"{user.mention} now has {reps} reputation points!", thumbnail_url=user.avatar.url)
+                await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick} received a reputation point!", desc=f"{user.mention} now has {reps} reputation points!", thumbnail_url=get_user_avatar_url(user))
 
                 # Log rep
                 channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
@@ -139,11 +144,11 @@ class Reputation(commands.Cog):
                 await channel.send(embed=embed)
 
             else:  # Rep cannot be given
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, title, desc="Contact a member of staff if you think you are seeing this by mistake.", thumbnail_url=user.avatar.url)
-                # user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, title, desc="Contact a member of staff if you think you are seeing this by mistake.", thumbnail_url=get_user_avatar_url(user))
+                # user_embed.set_footer(text=("Awarded" if award else "Requested") + f" by: {author_nick} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
         else:
             desc = "The bot overlords do not accept puny humans' rewards" if user.bot else "You cannot rep yourself, cheating bugger."
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"Failed to award a reputation point to {nick}", desc=desc, thumbnail_url=user.avatar.url)
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"Failed to award a reputation point to {nick}", desc=desc, thumbnail_url=get_user_avatar_url(user))
 
     @rep.command(aliases=['lb'])
     @commands.guild_only()
@@ -195,7 +200,7 @@ class Reputation(commands.Cog):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The reputation points must be a number!")
             return
         new_reps = await self.set_rep(user.id, ctx.guild.id, int(rep))
-        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{user.display_name}'s reputation points have been changed!", desc=f"{user.display_name} now has {new_reps} reputation points!", thumbnail_url=user.avatar.url)
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{user.display_name}'s reputation points have been changed!", desc=f"{user.display_name} now has {new_reps} reputation points!", thumbnail_url=get_user_avatar_url(user))
 
         channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if channel_id is None:
@@ -283,8 +288,8 @@ class Reputation(commands.Cog):
         # could change to user.colour at some point, I prefer the purple for now though
         embed.add_field(name='Rep points', value=rep)
         embed.add_field(name='Leaderboard position', value=self.bot.ordinal(lb_pos) if lb_pos else 'Nowhere :(')
-        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
-        embed.set_thumbnail(url=user.avatar.url)
+        embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+        embed.set_thumbnail(url=get_user_avatar_url(user))
         await ctx.send(embed=embed)
 
     @rep.command()

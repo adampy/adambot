@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import re
 from libs.misc.decorators import is_staff
+from libs.misc.utils import get_user_avatar_url
 from typing import Union
 
 class ReactionRoles(commands.Cog):
@@ -175,7 +176,7 @@ class ReactionRoles(commands.Cog):
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)
 
         embed = discord.Embed(title=f':information_source: {ctx.guild.name} reaction roles', color=self.bot.INFORMATION_BLUE)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
         
         message_reactions = {}  # ID -> str (to put in embed)
         message_channels = {}  # ID -> discord.TextChannel

@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 from discord import Embed, Colour
 from typing import Union
+from libs.misc.utils import get_user_avatar_url
 
 
 class Spotify(commands.Cog):
@@ -22,7 +23,7 @@ class Spotify(commands.Cog):
             if user is None:
                 fail_embed = Embed(title="Spotify info", description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**', color=Colour.from_rgb(255, 7, 58))
                 fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                        self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+                        self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
                 await ctx.send(embed=fail_embed)
                 return
 
@@ -34,7 +35,7 @@ class Spotify(commands.Cog):
         if spotify_activity is None:
             fail_embed = Embed(title=f"Spotify info for {user}", description="The user isn't currently listening to Spotify\n*(note that this can't be detected unless Spotify is visible on the status)*", colour=user.colour)
             fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
             await ctx.message.channel.send(embed=fail_embed)
             return
         duration = spotify_activity.duration.seconds
@@ -54,9 +55,9 @@ class Spotify(commands.Cog):
         embed.add_field(name="Party ID (Premium Only)", value=f"{spotify_activity.party_id}")
         embed.add_field(name="Song's Spotify Link", value=f"https://open.spotify.com/track/{spotify_activity.track_id}", inline=False)
         embed.set_thumbnail(url=spotify_activity.album_cover_url)
-        embed.set_author(name=f"{user}", icon_url=user.avatar.url)
+        embed.set_author(name=f"{user}", icon_url=get_user_avatar_url(user))
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
         await ctx.message.channel.send(embed=embed)
 
 

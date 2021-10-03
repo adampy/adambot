@@ -3,8 +3,7 @@ from discord.ext import commands
 from discord import Embed, Colour, Status
 import re
 from datetime import datetime, timedelta
-import pytz
-import time
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
 class Member(commands.Cog):
@@ -50,7 +49,7 @@ class Member(commands.Cog):
 
         if image:
             embed.set_image(url=image)
-        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=user.avatar.url)
+        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=get_user_avatar_url(user))
         embed.description = f"❝ {content} ❞" + edited
         await ctx.send(embed=embed)
 
@@ -167,7 +166,9 @@ class Member(commands.Cog):
         join = Embed(title=f'**__{str(guild)}__**',
                      description=f"Created at {self.bot.correct_time(time_).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
                      color=Colour.from_rgb(21, 125, 224))
-        join.set_thumbnail(url=guild.icon.url)
+        icon_url = get_guild_icon_url(guild)
+        if icon_url:
+            join.set_thumbnail(url=icon_url)
 
         join.add_field(name='Users Online',
                        value=f'{len([x for x in guild.members if x.status != Status.offline])}/{len(guild.members)}')
@@ -188,7 +189,7 @@ class Member(commands.Cog):
         join.add_field(name='Boost level', value=f'{ctx.guild.premium_tier} ({ctx.guild.premium_subscription_count} boosts, {len(ctx.guild.premium_subscribers)} boosters)')
         join.add_field(name='Default Notification Level', value=f'{self.bot.make_readable(guild.default_notifications.name)}')
         join.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
-                self.bot.ts_format), icon_url=ctx.author.avatar.url)
+                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
 
         await ctx.send(embed=join)
 
@@ -287,7 +288,7 @@ class Member(commands.Cog):
                 )
 
         data.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
-                self.bot.ts_format), icon_url=ctx.author.avatar.url)
+                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
         flags = user.public_flags.all()  # e.g. hypesquad stuff
         if flags:
             desc = []
@@ -298,12 +299,10 @@ class Member(commands.Cog):
 
         name = f"{user} ~ {user.display_name}"
 
-        if user.avatar:
-            data.set_author(name=name, icon_url=user.avatar.url)
-            data.set_thumbnail(url=user.avatar.url)
-        else:
-            data.set_author(name=name)
-
+        avatar = get_user_avatar_url(user)
+        data.set_author(name=name, icon_url=avatar)
+        data.set_thumbnail(url=avatar)
+        
         await ctx.send(embed=data)
 
 # -----------------------REMIND------------------------------
@@ -359,7 +358,7 @@ class Member(commands.Cog):
         if not member:
             member = ctx.author
 
-        await ctx.send(member.avatar.url)
+        await ctx.send(get_user_avatar_url(member))
 
 # -----------------------COUNTDOWNS------------------------------
 
@@ -405,8 +404,10 @@ class Member(commands.Cog):
             h, m = divmod(m, 60)
             embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining"
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
-        embed.set_thumbnail(url=ctx.guild.icon.url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+        icon_url = get_guild_icon_url(ctx.guild)
+        if icon_url:
+            embed.set_thumbnail(url=icon_url)
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True, aliases=["exams", "alevels"])
@@ -423,7 +424,7 @@ class Member(commands.Cog):
             embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining until the first exam (RS Paper 1)"
 
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)

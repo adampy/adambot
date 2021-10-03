@@ -5,6 +5,7 @@ import copy
 import asyncpg
 import asyncio
 from typing import Any
+from libs.misc.utils import get_guild_icon_url, get_user_avatar_url
 
 class Validation(Enum):
     Channel = 1     # Is a channel that the bot can read/write in
@@ -180,8 +181,8 @@ class Config(commands.Cog):
                 ctx.author,
                 ctx.channel,
                 desc=desc,
-                thumbnail_url=ctx.guild.icon.url,
-                icon_url=ctx.author.avatar.url,
+                thumbnail_url=get_guild_icon_url(ctx.guild),
+                icon_url=get_user_avatar_url(ctx.author),
                 footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
             )
             await embed.set_page(1)  # Default first page

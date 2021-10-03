@@ -2,6 +2,7 @@ import discord
 from discord import Colour
 from discord.ext import commands
 from libs.misc.decorators import is_staff
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 class Warnings(commands.Cog):
     def __init__(self, bot) -> None:
@@ -24,8 +25,8 @@ class Warnings(commands.Cog):
                 self.bot,
                 ctx.author,
                 ctx.channel,
-                thumbnail_url=ctx.guild.icon.url,
-                icon_url=ctx.author.avatar.url,
+                thumbnail_url=get_guild_icon_url(ctx.guild),
+                icon_url=get_user_avatar_url(ctx.author),
                 footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
 
             await embed.set_page(int(page_num))
@@ -80,8 +81,8 @@ class Warnings(commands.Cog):
                         self.bot,
                         ctx.author,
                         ctx.channel,
-                        thumbnail_url=ctx.guild.icon.url,
-                        icon_url=ctx.author.avatar.url,
+                        thumbnail_url=get_guild_icon_url(ctx.guild),
+                        icon_url=get_user_avatar_url(ctx.author),
                         footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format))
 
                     await embed.set_page(1)

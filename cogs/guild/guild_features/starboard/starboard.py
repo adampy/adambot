@@ -2,9 +2,10 @@ import discord
 from discord.ext import commands
 import asyncio
 import re
-from typing import Union  # Used for type hinting
+from typing import Union
 from emoji import get_emoji_regexp
 from libs.misc.decorators import is_staff
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
 class Starboard(commands.Cog):
@@ -20,7 +21,7 @@ class Starboard(commands.Cog):
         """
 
         embed = discord.Embed(title=f"{stars} {emoji} (in #{message.channel.name})", color=color if color else self.bot.GOLDEN_YELLOW, description=message.content)
-        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
+        embed.set_author(name=message.author.display_name, icon_url=get_user_avatar_url(message.author))
         if message.embeds:
             embedded_data = message.embeds[0]
             if embedded_data.type == 'image' and not self.is_url_spoiler(message.content, embedded_data.url):
@@ -276,8 +277,8 @@ class Starboard(commands.Cog):
             self.bot,
             ctx.author,
             ctx.channel,
-            thumbnail_url=ctx.guild.icon.url,
-            icon_url=ctx.author.avatar.url,
+            thumbnail_url=get_guild_icon_url(ctx.guild),
+            icon_url=get_user_avatar_url(ctx.author),
             footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format),
         )
 

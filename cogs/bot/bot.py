@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
-from discord import Embed, Colour
+from discord import Embed
 import platform
 import time
-
+from libs.misc.utils import get_user_avatar_url
 
 class BotCog(commands.Cog):
     def __init__(self, bot) -> None:
@@ -21,8 +21,9 @@ class BotCog(commands.Cog):
         embed.add_field(name="Bot owner", value=f"{app_info.owner}", inline=False)
         embed.add_field(name="Public bot", value=f"{app_info.bot_public}", inline=False)
 
-        embed.set_thumbnail(url=app_info.icon.url)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+        if hasattr(app_info, "icon"):
+            embed.set_thumbnail(url=app_info.icon.url)
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)
@@ -35,11 +36,16 @@ class BotCog(commands.Cog):
 
     @commands.command(pass_context=True)
     async def ping(self, ctx: commands.Context) -> None:
+        """
+        View the bot's current latency
+        """
         await ctx.send(f"Pong! ({round(self.bot.latency * 1000)} ms)")
 
     @commands.command(pass_context=True)
     async def uptime(self, ctx: commands.Context) -> None:
-        """View how long the bot has been running for"""
+        """
+        View how long the bot has been running for
+        """
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")

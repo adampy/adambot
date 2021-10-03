@@ -3,6 +3,7 @@ from discord.ext import commands
 import discord
 from discord import Embed, errors
 from libs.misc.decorators import is_staff
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 """
     TODO:
@@ -269,8 +270,10 @@ class Role(commands.Cog):
         embed.add_field(name="Mentionable", value=role.mentionable)
         embed.add_field(name="Colour", value=role.colour)
         embed.add_field(name="Role ID", value=role.id)
-        embed.set_thumbnail(url=ctx.guild.icon.url)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=ctx.author.avatar.url)
+        icon_url = get_guild_icon_url(ctx.guild)
+        if icon_url:
+            embed.set_thumbnail(url=icon_url)
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
 
         await ctx.send(embed=embed)
 
@@ -297,8 +300,8 @@ class Role(commands.Cog):
             self.bot,
             ctx.author,
             ctx.channel,
-            thumbnail_url=ctx.guild.icon.url,
-            icon_url=ctx.author.avatar.url,
+            thumbnail_url=get_guild_icon_url(ctx.guild),
+            icon_url=get_user_avatar_url(ctx.author),
             footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
         )
 

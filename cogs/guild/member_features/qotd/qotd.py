@@ -3,6 +3,7 @@ import datetime
 from discord import Embed, Colour
 from random import choice
 from math import inf
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
 class QOTD(commands.Cog):
@@ -90,8 +91,8 @@ class QOTD(commands.Cog):
                 self.bot,
                 ctx.author,
                 ctx.channel,
-                thumbnail_url=ctx.guild.icon.url,
-                icon_url=ctx.author.avatar.url,
+                thumbnail_url=get_guild_icon_url(ctx.guild),
+                icon_url=get_user_avatar_url(ctx.author),
                 footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
             )
             await embed.set_page(int(page_num))

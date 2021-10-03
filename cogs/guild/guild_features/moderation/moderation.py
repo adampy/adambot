@@ -5,6 +5,7 @@ from discord.ext.commands import has_permissions
 from discord.utils import get
 from datetime import datetime, timedelta
 from libs.misc.decorators import is_dev, is_staff
+from libs.misc.utils import get_user_avatar_url
 from typing import Union
 
 
@@ -140,7 +141,7 @@ class Moderation(commands.Cog):
         embed = Embed(title='Kick', color=Colour.from_rgb(220, 123, 28))
         embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
         embed.add_field(name='Reason', value=reason + f" (kicked by {ctx.author.name})")
-        embed.set_thumbnail(url=member.avatar.url)
+        embed.set_thumbnail(url=get_user_avatar_url(member))
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
@@ -239,7 +240,7 @@ class Moderation(commands.Cog):
             embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
             embed.add_field(name='Moderator', value=str(ctx.author))
             embed.add_field(name='Reason', value=reason)
-            embed.set_thumbnail(url=member.avatar.url)
+            embed.set_thumbnail(url=get_user_avatar_url(member))
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
             await channel.send(embed=embed)
@@ -274,7 +275,7 @@ class Moderation(commands.Cog):
             embed.add_field(name='User', value=f'{user.mention} ({user.id})')
             embed.add_field(name='Moderator', value=str(self.bot.user if not author else author))
             embed.add_field(name='Reason', value=reason)
-            embed.set_thumbnail(url=user.avatar.url)
+            embed.set_thumbnail(url=get_user_avatar_url(user))
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await channel.send(embed=embed)
         except Exception as e:
@@ -384,7 +385,7 @@ class Moderation(commands.Cog):
         embed.add_field(name='Reason', value=reason)
         embed.add_field(name='Expires',
                         value=timestring.replace('until ', '') if timestring != 'indefinitely' else "Never")
-        embed.set_thumbnail(url=member.avatar.url)
+        embed.set_thumbnail(url=get_user_avatar_url(member))
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 

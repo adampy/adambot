@@ -4,6 +4,7 @@ from discord.ext import commands
 import asyncio
 import datetime
 from libs.misc.decorators import is_staff
+from libs.misc.utils import get_user_avatar_url
 from typing import Union
 
 
@@ -174,7 +175,7 @@ You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
         embed.add_field(name='Members', value=str(len(members)))
         embed.add_field(name='Reason', value='Auto-kicked from the -lurkers kick command')
         embed.add_field(name='Initiator', value=ctx.author.mention)
-        embed.set_thumbnail(url=ctx.author.avatar.url)
+        embed.set_thumbnail(url=get_user_avatar_url(ctx.author))
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
