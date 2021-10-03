@@ -51,7 +51,7 @@ class Logging(commands.Cog):
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
 
         channel_id = await self.bot.get_config_key(message, "mod_log_channel")
-        if channel_id is None:
+        if channel_id is None or (message.author.id == self.bot.user.id and not message.content): # Don't log in the logs if logs dont exist or bot deleting own embed pages
             return
 
         channel = self.bot.get_channel(channel_id)
