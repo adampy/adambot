@@ -56,15 +56,15 @@ class BotCog(commands.Cog):
         Changes the status to represent new server number on guild join
         """
         if guild.system_channel:
-            await guild.system_channel.send(f"Hey there! To get started, do `{self.global_prefix}help` or `{self.global_prefix}config`.")
-        await self.change_presence(activity=discord.Game(name=f'in {len(self.guilds)} servers | Type `help` for help'), status=discord.Status.online) # TODO: Would it be more efficient to store len(self.guilds) inside adambot on init, then update that?
+            await guild.system_channel.send(f"Hey there! To get started, do `{self.bot.global_prefix}help` or `{self.bot.global_prefix}config`.")
+        await self.bot.change_presence(activity=discord.Game(name=f'in {len(self.bot.guilds)} servers | Type `help` for help'), status=discord.Status.online) # TODO: Would it be more efficient to store len(self.guilds) inside adambot on init, then update that?
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild) -> None:
         """
         Changes the status to represent new server number on guild leave
         """
-        await self.change_presence(activity=discord.Game(name=f'in {len(self.guilds)} servers | Type `help` for help'), status=discord.Status.online)
+        await self.bot.change_presence(activity=discord.Game(name=f'in {len(self.bot.guilds)} servers | Type `help` for help'), status=discord.Status.online)
 
 def setup(bot) -> None:
     bot.add_cog(BotCog(bot))
