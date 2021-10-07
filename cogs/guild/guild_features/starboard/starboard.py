@@ -1,3 +1,4 @@
+from inspect import Attribute
 import discord
 from discord.ext import commands
 import asyncio
@@ -7,10 +8,114 @@ from emoji import get_emoji_regexp
 from libs.misc.decorators import is_staff
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
+class Starboard:
+    class Entry:
+        @classmethod
+        async def make_entry(cls, record: dict, bot: discord.Client) -> None:
+            super().__init__(cls)
+            self = Starboard.Entry()
+            self.bot_message_id = record["bot_message_id"]
+            self.message_id = record["message_id"]
+            self.channel_id = record["starboard_channel_id"] # Channel ID of bot message
+            try:
+                self.channel = bot.get_channel(self.channel_id)
+                self.bot_message = await self.channel.fetch_message(self.bot_message_id)
+            except discord.NotFound:
+                self.channel = self.bot_message = None
+            return self
 
-class Starboard(commands.Cog):
+    def __init__(self, record: dict, bot: discord.Client) -> None:
+        self.bot = bot
+        self.channel = self.bot.get_channel(record["channel_id"])
+        self.guild = self.channel.guild
+        self.emoji = record["emoji"]
+        self.emoji_id = record["emoji_id"]
+        self.minimum_stars = record["minimum_stars"]
+        self.embed_colour = record["embed_colour"]
+        self.allow_self_star = record["allow_self_star"]
+        self.record = record
+        self.entries = []
+
+    @classmethod
+    async def make_starboards(cls, records: list, entries: list, bot: discord.Client) -> dict:
+        """
+        Makes a dict of {channel_id: Starboard} for the given starboards and entries from the DB
+        """
+
+        starboards = {}
+        for record in records:
+            obj = Starboard(record, bot)
+            starboards[obj.channel.id] = obj # Make empty starboard
+        for entry in entries:
+            obj = await Starboard.Entry.make_entry(entry, bot)
+            starboards[entry["starboard_channel_id"]].entries.append(obj) # Add all entries to their respective starboard
+        return starboards
+
+    def get_record(self) -> dict:
+        """
+        Function that returns the record in the database for the starboard
+        """
+        return self.record
+
+    def get_string_emoji(self) -> str:
+        """
+        Returns the unicode emoji or a discord formatted custom emoji as a string
+        """
+
+        custom_emoji = self.bot.get_emoji(self.emoji_id) if self.emoji_id else None
+        emoji = self.emoji if self.emoji else f"<:{custom_emoji.name}:{custom_emoji.id}>"
+        return emoji
+
+    async def update(self, new_starboard_data: dict) -> None:
+        """
+        Update a starboard to its current given state
+        """
+
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("UPDATE starboard SET emoji = $1, emoji_id = $2, minimum_stars = $3, embed_colour = $4, allow_self_star = $5 WHERE channel_id = $6;", new_starboard_data["emoji"], new_starboard_data["emoji_id"], new_starboard_data["minimum_stars"], new_starboard_data["embed_colour"], new_starboard_data["allow_self_star"], self.channel_id)
+
+    async def try_get_entry(self, message_id: int) -> Union[Entry, None]:
+        """
+        Returns either a starboard entry or None if it doesn't exist
+        """
+
+        for entry in self.entries:
+            if entry.message_id == message_id:
+                return entry
+        return None
+
+    async def create_entry(self, message_id: int, bot_message_id: int, starboard_channel_id: int, bot: discord.Client) -> None:
+        """
+        Creates a starboard entry for an existing starboard (adds to the DB too)
+        """
+
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("INSERT INTO starboard_entry (message_id, starboard_channel_id, bot_message_id) VALUES ($1, $2, $3);", message_id, self.channel.id, bot_message_id)
+        self.entries.append(await self.Entry.make_entry({
+            "message_id": message_id,
+            "bot_message_id": bot_message_id,
+            "starboard_channel_id": starboard_channel_id
+        }, bot))
+
+    async def delete_entry(self, message_id: int) -> None:
+        """
+        Deletes a starboard entry from an existing starboard (removes from the DB too)
+        """
+
+        async with self.bot.pool.acquire() as connection:
+            await connection.execute("DELETE FROM starboard_entry WHERE starboard_channel_id = $1 AND message_id = $2;", self.channel.id, message_id)
+        indx = -1
+        for i, e in enumerate(self.entries): # TODO: What happens if found_entry is still None after search i.e. entry not found
+            if e.message_id == message_id:
+                indx = i
+                break
+        self.entries.pop(indx)
+
+
+class StarboardCog(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
+        self.starboards = {} # Links channel_id -> Starboard
 
     # TODO: Some help commands when args are missing would be nice
 
@@ -48,27 +153,27 @@ class Starboard(commands.Cog):
 
     # --- Utility functions ---
 
-    async def _get_starboards(self, guild_id: int) -> dict:
+    async def _get_starboards(self, guild_id: int) -> list:
         """
-        Returns all of the starboards for a given guild
+        Returns all a list of Starboard for a given guild
         """
 
-        async with self.bot.pool.acquire() as connection:
-            data = await connection.fetch("SELECT * FROM starboard WHERE guild_id = $1;", guild_id)
-        return data
+        results = []
+        for starboard in self.starboards.values():
+            if starboard.guild.id == guild_id:
+                results.append(starboard)
+        return results
 
-    async def _try_get_starboard(self, channel_id: int) -> dict:
+    async def _try_get_starboard(self, channel_id: int) -> Union[Starboard, None]:
         """
         Return the starboard for the given text channel or None if it doesn't exist
         """
 
-        async with self.bot.pool.acquire() as connection:
-            data = await connection.fetch("SELECT * FROM starboard WHERE channel_id = $1;", channel_id)
-        return data[0] if data else None
+        return self.starboards.get(channel_id, None)
 
     async def _create_starboard(self, channel: discord.TextChannel, is_custom_emoji: bool, emoji: Union[discord.Emoji, str], minimum_stars: int, embed_colour: str = None, allow_self_star: bool = True) -> None:
         """
-        Creates a starboard in the databae
+        Creates a starboard in the database and add it to `self.starboards`
         """
 
         async with self.bot.pool.acquire() as connection:
@@ -76,47 +181,25 @@ class Starboard(commands.Cog):
                 await connection.execute("INSERT INTO starboard (guild_id, channel_id, emoji_id, minimum_stars, embed_colour, allow_self_star) VALUES ($1, $2, $3, $4, $5, $6);", channel.guild.id, channel.id, emoji.id, minimum_stars, embed_colour, allow_self_star)  # If custom emoji, store ID in DB
             else:
                 await connection.execute("INSERT INTO starboard (guild_id, channel_id, emoji, minimum_stars, embed_colour, allow_self_star) VALUES ($1, $2, $3, $4, $5, $6);", channel.guild.id, channel.id, emoji, minimum_stars, embed_colour, allow_self_star)  # If not custom emoji, store emoji in DB
+        new_starboard = Starboard({
+            "channel_id": channel.id,
+            "guild_id": channel.guild.id,
+            "emoji": None if is_custom_emoji else emoji,
+            "emoji_id": None if not is_custom_emoji else emoji.id,
+            "minimum_stars": minimum_stars,
+            "embed_colour": embed_colour,
+            "allow_self_star": allow_self_star
+        })
+        self.starboards[channel.id] = new_starboard
 
     async def _delete_starboard(self, channel: discord.TextChannel) -> None:
         """
         Deletes a starboard channel and all its entries from the database
         """
 
+        del self.starboards[channel.id] # Remove from starboards
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE FROM starboard WHERE channel_id = $1", channel.id)
-
-    async def _try_get_starboard_entry(self, starboard_channel_id: int, message_id: int) -> dict:
-        """
-        Returns either a starboard entry record or None if it doesn't exist
-        """
-
-        async with self.bot.pool.acquire() as connection:
-            entry = await connection.fetch("SELECT * FROM starboard_entry WHERE starboard_channel_id = $1 AND message_id = $2;", starboard_channel_id, message_id)
-        return entry[0] if entry else None
-
-    async def _create_starboard_entry(self, starboard_channel_id: int, message_id: int, bot_message_id: int) -> None:
-        """
-        Creates a starboard entry for an existing starboard
-        """
-
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute("INSERT INTO starboard_entry (message_id, starboard_channel_id, bot_message_id) VALUES ($1, $2, $3);", message_id, starboard_channel_id, bot_message_id)
-
-    async def _delete_starboard_entry(self, starboard_channel_id: int, message_id: int) -> None:
-        """
-        Deletes a starboard entry from an existing starboard
-        """
-
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute("DELETE FROM starboard_entry WHERE starboard_channel_id = $1 AND message_id = $2;", starboard_channel_id, message_id)
-
-    async def _update_starboard(self, starboard_channel_id: int, starboard_data: dict) -> None:
-        """
-        Update a starboard to its current given state
-        """
-
-        async with self.bot.pool.acquire() as connection:
-            await connection.execute("UPDATE starboard SET emoji = $1, emoji_id = $2, minimum_stars = $3, embed_colour = $4, allow_self_star = $5 WHERE channel_id = $6;", starboard_data["emoji"], starboard_data["emoji_id"], starboard_data["minimum_stars"], starboard_data["embed_colour"], starboard_data["allow_self_star"], starboard_channel_id)
+            await connection.execute("DELETE FROM starboard WHERE channel_id = $1;", channel.id)
 
     @staticmethod
     async def _is_valid_emoji(emoji: str, msg_context: commands.Context) -> list[bool, Union[discord.Emoji, str, bool]]:
@@ -149,15 +232,6 @@ class Starboard(commands.Cog):
             return "#" + parsed_colour.upper()  # If no errors at this point, the colour can be assumed to be valid
         except ValueError:
             return False
-
-    def _get_emoji_from_starboard_data(self, starboard: dict) -> str:  # return type is str i think?
-        """
-        Returns the unicode emoji or a discord formatted custom emoji
-        """
-
-        custom_emoji = self.bot.get_emoji(starboard["emoji_id"]) if starboard["emoji_id"] else None
-        emoji = starboard["emoji"] if starboard["emoji"] else f"<:{custom_emoji.name}:{custom_emoji.id}>"
-        return emoji
 
     async def boolean_reaction_getter(self, ctx: commands.Context, message: discord.Message, timeout: int = 300) -> bool: # TODO: Could move this to utils if needed in the future
         """
@@ -192,16 +266,19 @@ class Starboard(commands.Cog):
         await self.on_raw_reaction_event(payload)
     
     async def on_raw_reaction_event(self, payload) -> None:
-        starboards = await self._get_starboards(payload.guild_id)
-
-        for starboard in starboards:
+        try:
             message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
-            if message.channel.id == starboard["channel_id"]:  # stops people spamming star react onto starboard embeds
+        except discord.errors.NotFound:
+            return
+
+        starboards = await self._get_starboards(payload.guild_id)
+        for starboard in starboards:
+            if message.channel.id == starboard.channel.id:  # stops people spamming star react onto starboard embeds
                 continue
 
             # Parse the colour if one exists
-            if starboard["embed_colour"]:
-                colour = starboard["embed_colour"]  # colour is now a hex code in the format "#FFFFFF"
+            if starboard.embed_colour:
+                colour = starboard.embed_colour  # colour is now a hex code in the format "#FFFFFF"
                 r = int(colour[1] + colour[2], 16)
                 g = int(colour[3] + colour[4], 16)
                 b = int(colour[5] + colour[6], 16)
@@ -209,7 +286,7 @@ class Starboard(commands.Cog):
             else:
                 colour = self.bot.GOLDEN_YELLOW
 
-            if (starboard["emoji"] is not None and starboard["emoji"] == payload.emoji.name) or (starboard["emoji_id"] is not None and starboard["emoji_id"] == payload.emoji.id):  # Valid emoji
+            if (starboard.emoji is not None and starboard.emoji == payload.emoji.name) or (starboard.emoji_id is not None and starboard.emoji_id == payload.emoji.id):  # Valid emoji
                 # Get the amount of stars (we fetch this from Discord instead of having a field in starboard_entry record because new emoji's may be added when bot is offline)
                 # Find the correct reaction
                 stars = 0
@@ -218,40 +295,51 @@ class Starboard(commands.Cog):
                         # This is the reaction we want to process
                         stars = r.count
                         # If the starboard has self star disabled, we need to remove a star if the author has reacted, as well as all stars from a bot
-                        deducted_stars = [u.id for u in await r.users().flatten() if u.bot or (not starboard["allow_self_star"] and u.id == message.author.id)]  # Means that bots cannot star nor the author IF allow self star is False
+                        deducted_stars = [u.id for u in await r.users().flatten() if u.bot or (not starboard.allow_self_star and u.id == message.author.id)]  # Means that bots cannot star nor the author IF allow self star is False
                         stars -= len(deducted_stars)
                 
-                minimum_met = stars >= starboard["minimum_stars"]
-                entry = await self._try_get_starboard_entry(starboard["channel_id"], payload.message_id)
-                starboard_channel = self.bot.get_channel(starboard["channel_id"])
-                if entry:
+                minimum_met = stars >= starboard.minimum_stars
+                entry = await starboard.try_get_entry(payload.message_id)
+                if not minimum_met:
+                    if entry.bot_message:
+                        await entry.bot_message.delete()
+                    if entry:
+                        await starboard.delete_entry(payload.message_id)
+                elif entry and entry.bot_message: # If minimum met and entry
+                    new_embed = await self.make_starboard_embed(message, stars, payload.emoji, colour)
                     try:
-                        old_msg = await starboard_channel.fetch_message(entry["bot_message_id"])
+                        # Update bot message
+                        await entry.bot_message.edit(embed=new_embed)
                     except discord.NotFound:
-                        if minimum_met:
-                            # Message doesn't exist, make a new one
-                            msg = await starboard_channel.send(embed=await self.make_starboard_embed(message, stars, payload.emoji, colour))
-                            await self._create_starboard_entry(starboard["channel_id"], payload.message_id, msg.id)
-                            
-                    if minimum_met:
-                        # Update old message
-                        await old_msg.edit(embed=await self.make_starboard_embed(message, stars, payload.emoji, colour))
-                    else:
-                        # Delete entry
-                        await self._delete_starboard_entry(starboard["channel_id"], entry['message_id'])
-                        await old_msg.delete()
+                        # Bot message deleted
+                        msg = await starboard.channel.send(embed=new_embed)
+                        entry.bot_message = msg
+                        entry.bot_message_id = msg.id
                 else:
-                    if minimum_met:
-                        message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
-                        # Message doesn't exist, make a new one
-                        msg = await starboard_channel.send(embed=await self.make_starboard_embed(message, stars, payload.emoji, colour))
-                        await self._create_starboard_entry(starboard["channel_id"], payload.message_id, msg.id)
+                    message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+                    # Message doesn't exist, make a new one
+                    msg = await starboard.channel.send(embed=await self.make_starboard_embed(message, stars, payload.emoji, colour))
+                    if not entry:
+                        await starboard.create_entry(payload.message_id, msg.id, starboard.channel.id, self.bot)
+                    elif entry or entry.bot_message is None:
+                        entry.bot_message = msg
+                        entry.bot_message_id = msg.id
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.TextChannel) -> None:
         starboard = await self._try_get_starboard(channel.id)
         if starboard:
             await self._delete_starboard(channel)
+
+    @commands.Cog.listener()
+    async def on_ready(self) -> None:
+        while not self.bot.online:
+            await asyncio.sleep(1)  # Wait else DB won't be available
+
+        async with self.bot.pool.acquire() as connection:
+            starboards = await connection.fetch("SELECT * FROM starboard;")
+            entries = await connection.fetch("SELECT * FROM starboard_entry;")
+            self.starboards = await Starboard.make_starboards(starboards, entries, self.bot)
             
     # --- Commands ---
 
@@ -260,7 +348,7 @@ class Starboard(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send(f'```{ctx.prefix}help starboard```')
 
-    @starboard.command()
+    @starboard.command(aliases=["list"])
     @commands.guild_only()
     @is_staff
     async def view(self, ctx: commands.Context) -> None:
@@ -380,7 +468,7 @@ class Starboard(commands.Cog):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Starboard does not exist")
             return
         
-        starboard_data = dict(starboard)
+        starboard_data = starboard.get_record()
         if option == "minimum":
             if not (value.isdigit() and int(value) > 0):
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Invalid minimum given - it must be above 0")
@@ -421,12 +509,12 @@ class Starboard(commands.Cog):
             return
 
         # If execution is here, the data has been changed, log the new change
-        await self._update_starboard(channel.id, starboard_data)
+        await starboard.update(starboard_data)
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Successfully updated the starboard!")
         if option in ["color", "colour", "embed_colour"]:
             await channel.send(f"From this point onwards, all starboard embeds have the colour: {new_colour}!")
         elif option in ["emoji", "minimum"]:
-            await channel.send(f"From this point onwards, it takes {starboard_data['minimum_stars']}x {self._get_emoji_from_starboard_data(starboard_data)}{'s' if starboard_data['minimum_stars'] > 1 else ''} to get onto the starboard!")
+            await channel.send(f"From this point onwards, it takes {starboard_data['minimum_stars']}x {starboard.get_string_emoji()}{'s' if starboard_data['minimum_stars'] > 1 else ''} to get onto the starboard!")
         elif option == "self_star":
             await channel.send(f"From this point onwards, message authors {'can' if starboard_data['allow_self_star'] == True else 'cannot'} star their own messages to get them onto the starboard!")
 
@@ -475,4 +563,4 @@ class Starboard(commands.Cog):
 
 
 def setup(bot) -> None:
-    bot.add_cog(Starboard(bot))
+    bot.add_cog(StarboardCog(bot))

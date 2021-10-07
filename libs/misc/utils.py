@@ -106,14 +106,14 @@ class EmbedPages:
 
             elif self.page_type == PageTypes.STARBOARD_LIST:
                 starboard = self.data[i]
-                channel = self.bot.get_channel(starboard["channel_id"])
-                custom_emoji = self.bot.get_emoji(starboard["emoji_id"]) if starboard["emoji_id"] else None
-                colour = starboard["embed_colour"] if starboard["embed_colour"] else "#" + "".join([str(hex(component)).replace("0x", "").upper() for component in self.bot.GOLDEN_YELLOW.to_rgb()])
+                channel = self.bot.get_channel(starboard.channel.id)
+                custom_emoji = self.bot.get_emoji(starboard.emoji_id) if starboard.emoji_id else None
+                colour = starboard.embed_colour if starboard.embed_colour else "#" + "".join([str(hex(component)).replace("0x", "").upper() for component in self.bot.GOLDEN_YELLOW.to_rgb()])
                 
-                sub_fields = f"• Minimum stars: {starboard['minimum_stars']}\n"  # Add star subfield
-                sub_fields += "• Emoji: " + (starboard["emoji"] if starboard["emoji"] else f"<:{custom_emoji.name}:{custom_emoji.id}>")  # Add either the standard emoji, or the custom one
+                sub_fields = f"• Minimum stars: {starboard.minimum_stars}\n"  # Add star subfield
+                sub_fields += "• Emoji: " + (starboard.emoji if starboard.emoji else f"<:{custom_emoji.name}:{custom_emoji.id}>")  # Add either the standard emoji, or the custom one
                 sub_fields += "\n• Colour: " + colour
-                sub_fields += "\n• Allow self starring (author can star their own message): " + str(starboard["allow_self_star"])
+                sub_fields += "\n• Allow self starring (author can star their own message): " + str(starboard.allow_self_star)
                 self.embed.add_field(name=f"#{channel.name}", value=sub_fields, inline=False)
 
     async def previous_page(self) -> None:
