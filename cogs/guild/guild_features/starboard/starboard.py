@@ -14,6 +14,7 @@ class Starboard:
         async def make_entry(cls, record: dict, bot: discord.Client) -> None:
             super().__init__(cls)
             self = Starboard.Entry()
+            self.bot = bot
             self.bot_message_id = record["bot_message_id"]
             self.message_id = record["message_id"]
             self.channel_id = record["starboard_channel_id"] # Channel ID of bot message
@@ -23,6 +24,12 @@ class Starboard:
             except discord.NotFound:
                 self.channel = self.bot_message = None
             return self
+
+        async def update_bot_message(self, new_msg: discord.Message) -> None:
+            self.bot_message = new_msg
+            self.bot_message_id = new_msg.id
+            async with self.bot.pool.acquire() as connection:
+                await connection.execute("UPDATE starboard_entry SET bot_message_id = $1 WHERE starboard_channel_id = $2 AND message_id = $3;", self.bot_message_id, self.channel_id, self.message_id)
 
     def __init__(self, record: dict, bot: discord.Client) -> None:
         self.bot = bot
@@ -72,7 +79,12 @@ class Starboard:
         """
 
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("UPDATE starboard SET emoji = $1, emoji_id = $2, minimum_stars = $3, embed_colour = $4, allow_self_star = $5 WHERE channel_id = $6;", new_starboard_data["emoji"], new_starboard_data["emoji_id"], new_starboard_data["minimum_stars"], new_starboard_data["embed_colour"], new_starboard_data["allow_self_star"], self.channel_id)
+            await connection.execute("UPDATE starboard SET emoji = $1, emoji_id = $2, minimum_stars = $3, embed_colour = $4, allow_self_star = $5 WHERE channel_id = $6;", new_starboard_data["emoji"], new_starboard_data["emoji_id"], new_starboard_data["minimum_stars"], new_starboard_data["embed_colour"], new_starboard_data["allow_self_star"], self.channel.id)
+        self.emoji = new_starboard_data["emoji"]
+        self.emoji_id = new_starboard_data["emoji_id"]
+        self.minimum_stars = new_starboard_data["minimum_stars"]
+        self.embed_colour = new_starboard_data["embed_colour"]
+        self.allow_self_star = new_starboard_data["allow_self_star"]
 
     async def try_get_entry(self, message_id: int) -> Union[Entry, None]:
         """
@@ -301,10 +313,11 @@ class StarboardCog(commands.Cog):
                 minimum_met = stars >= starboard.minimum_stars
                 entry = await starboard.try_get_entry(payload.message_id)
                 if not minimum_met:
-                    if entry.bot_message:
-                        await entry.bot_message.delete()
                     if entry:
                         await starboard.delete_entry(payload.message_id)
+                        if entry.bot_message:
+                            await entry.bot_message.delete()
+                            
                 elif entry and entry.bot_message: # If minimum met and entry
                     new_embed = await self.make_starboard_embed(message, stars, payload.emoji, colour)
                     try:
@@ -313,8 +326,7 @@ class StarboardCog(commands.Cog):
                     except discord.NotFound:
                         # Bot message deleted
                         msg = await starboard.channel.send(embed=new_embed)
-                        entry.bot_message = msg
-                        entry.bot_message_id = msg.id
+                        await entry.update_bot_message(msg)
                 else:
                     message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
                     # Message doesn't exist, make a new one
@@ -322,8 +334,7 @@ class StarboardCog(commands.Cog):
                     if not entry:
                         await starboard.create_entry(payload.message_id, msg.id, starboard.channel.id, self.bot)
                     elif entry or entry.bot_message is None:
-                        entry.bot_message = msg
-                        entry.bot_message_id = msg.id
+                        await entry.update_bot_message(msg)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.TextChannel) -> None:
@@ -468,7 +479,7 @@ class StarboardCog(commands.Cog):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Starboard does not exist")
             return
         
-        starboard_data = starboard.get_record()
+        starboard_data = dict(starboard.get_record())
         if option == "minimum":
             if not (value.isdigit() and int(value) > 0):
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Invalid minimum given - it must be above 0")
