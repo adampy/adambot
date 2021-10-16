@@ -269,17 +269,27 @@ class Member(commands.Cog):
                 if isinstance(activity, discord.Spotify):
                     data.add_field(name="Listening to Spotify",
                                value=f"{activity.title} by {activity.artist} on {activity.album} ({self.bot.time_str((discord.utils.utcnow() - activity.start).seconds)} elapsed)", inline=False)
+
                 elif isinstance(activity, discord.CustomActivity):
                     data.add_field(name="Custom Status", value=f"{activity.name}", inline=False)
+
                 else:
-                    data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} ({self.bot.time_str((discord.utils.utcnow() - activity.start).seconds)} elapsed)\n{activity.details}", inline=False)
+                    """
+                    It's worth noting that all activities normally have details attached, but Game objects do NOT have details
+                    Rationale: memory optimisation
+                    """
+
+                    data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} ({self.bot.time_str((discord.utils.utcnow() - activity.start).seconds)} elapsed)\n{'' if not hasattr(activity, 'details') else activity.details}", inline=False)
+
             if roles:
                 disp_roles = ', '.join([role.name for role in roles[:10]])
                 if len(roles) > 10:
                     disp_roles += f" (+{len(roles) - 10} roles)"
                 data.add_field(name="Roles", value=disp_roles, inline=False)
+
             else:
                 data.add_field(name="Roles", value="No roles currently!")
+
             if voice_state and voice_state.channel:
                 data.add_field(
                     name="Current voice channel",
