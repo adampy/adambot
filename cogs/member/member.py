@@ -267,8 +267,9 @@ class Member(commands.Cog):
             data.add_field(name="Position", value=f"#{member_number}/{len(guild.members)}")
             for activity in user.activities:
                 if isinstance(activity, discord.Spotify):
+                    diff = discord.utils.utcnow() - activity.start  # timedeltas have stupid normalisation of days, seconds, milliseconds because that make sense
                     data.add_field(name="Listening to Spotify",
-                               value=f"{activity.title} by {activity.artist} on {activity.album} ({self.bot.time_str((discord.utils.utcnow() - activity.start).seconds)} elapsed)", inline=False)
+                               value=f"{activity.title} by {activity.artist} on {activity.album} ({self.bot.time_str(diff.seconds + diff.days * 86400)} elapsed)", inline=False)
 
                 elif isinstance(activity, discord.CustomActivity):
                     data.add_field(name="Custom Status", value=f"{activity.name}", inline=False)
@@ -279,7 +280,8 @@ class Member(commands.Cog):
                     Rationale: memory optimisation
                     """
 
-                    data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} ({self.bot.time_str((discord.utils.utcnow() - activity.start).seconds)} elapsed)\n{'' if not hasattr(activity, 'details') else activity.details}", inline=False)
+                    diff = discord.utils.utcnow() - activity.start
+                    data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} ({self.bot.time_str(diff.seconds + diff.days * 86400)} elapsed)\n{'' if not hasattr(activity, 'details') else activity.details}", inline=False)
 
             if roles:
                 disp_roles = ', '.join([role.name for role in roles[:10]])
