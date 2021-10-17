@@ -353,7 +353,6 @@ class Moderation(commands.Cog):
             reason = parsed_args["reason"]
 
             if timeperiod:
-                await ctx.reply("Registered a scheduled unmute")
                 await self.bot.tasks.submit_task("unmute", datetime.utcnow() + timedelta(seconds=timeperiod),
                                                  extra_columns={"member_id": member.id, "guild_id": member.guild.id})
         await member.add_roles(role, reason=reason if reason else f'No reason - muted by {ctx.author.name}')
