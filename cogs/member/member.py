@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import Embed, Colour, Status
 import re
+from typing import Union
 from datetime import datetime, timedelta
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
@@ -110,7 +111,7 @@ class Member(commands.Cog):
         await ctx.send('https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4')
 
     @commands.command()
-    async def spamping(self, ctx: commands.Context, amount: str, user: discord.Member, *, message) -> None:
+    async def spamping(self, ctx: commands.Context, amount: str, user: Union[discord.Member, discord.Role], *, message) -> None:
         """
         For annoying certain people
         """
