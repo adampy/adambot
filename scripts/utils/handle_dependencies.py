@@ -23,8 +23,6 @@ def handle_dependencies():
 
         outdated_packages = subprocess.check_output([sys.executable, '-m', 'pip', 'list', '-o']).decode("utf-8").split("\n")  # NOTE: this is HELLA slow so it's a good job it'll mostly only be run once
         installed_packages = subprocess.check_output([sys.executable, '-m', 'pip', 'list']).decode("utf-8").split("\n")
-        if not [k for k in installed_packages if k.startswith("setuptools ")]:
-            outdated_packages.append("setuptools not-installed installed")
         if not [k for k in installed_packages if k.startswith("wheel ")]:
             outdated_packages.append("wheel not-installed installed")
 
