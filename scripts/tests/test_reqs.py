@@ -17,8 +17,29 @@ def get_unsat_requirements() -> list[list[str, DEPENDENCY]]:
         - Of the correct version where it can be determined
     """
 
-    with open(Path(__file__).parent.with_name("requirements.txt")) as d:
+    parents = 0
+    filepath = Path(__file__)
+    while filepath == Path(__file__):
+        """
+        Weird hack to basically keep going up a directory level until the requirements.txt is found
+        This is to allow the script to run independently within any directory within the project
+        """
+
+        try:
+            temp = filepath
+            for i in range(parents):
+                temp = getattr(temp, "parent", None)
+                if temp is None:
+                    print("Could not find requirements.txt, exiting...")
+                    exit(1)
+            temp = temp.with_name("requirements.txt")
+            filepath = open(temp)
+        except Exception:
+            parents += 1
+
+    with filepath as d:
         a = list(filter("".__ne__, [line.rstrip() for line in d]))
+    filepath.close()
 
     c = [[b, DEPENDENCY.IS_SATISFIED] for b in a]
     requirements = pkg_resources.parse_requirements([str(b).replace(".git", "").split("/")[-1:][0] for b in a])
