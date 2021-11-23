@@ -6,6 +6,7 @@ except ImportError:  # is part of setuptools
     import subprocess
     try:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--force-reinstall', 'setuptools', '--user'])
+        import pkg_resources
     except Exception as e:
         print(f"Something has gone horribly wrong and the dependencies cannot be tested\n{type(e).__name__}: {e}")
         exit(1)
