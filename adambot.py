@@ -21,10 +21,24 @@ if missing + broken + conflicted:
     conflicted will always need input since each case is different
     """
 
-    do_missing = input("Install all missing and broken dependencies without further prompt? (Y/N)").lower()
+    print("Checking for pip update, please wait...")
+
+    outdated_packages = subprocess.check_output([sys.executable, '-m', 'pip', 'list', '-o']).decode("utf-8").split("\n")  # NOTE: this is HELLA slow so it's a good job it'll mostly only be run once
+    for i, package in enumerate(outdated_packages):
+        if package.startswith("pip "):
+            parsed = list(filter("".__ne__, package.split(" ")))
+            upgrade_pip = input(f"Upgrade pip from {parsed[1]} to {parsed[2]}? This may reduce installation issues. (Y/N) ").lower()
+            if upgrade_pip == "y":
+                try:
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip', '--user'])
+                except Exception as e:
+                    print(f"WARNING: Something went wrong with upgrading pip\n{type(e).__name__}: {e}")
+            break
+
+    do_missing = input("Install all missing and broken dependencies without further prompt? (Y/N) ").lower()
     for miss in missing + conflicted + broken:
         if miss in conflicted or do_missing != "y":
-            a = input(f"Resolve dependency: {miss}? (Y/N)"
+            a = input(f"Resolve dependency: {miss}? (Y/N) "
                       f"{f'{chr(10)}WARNING: This will uninstall your current version of {miss}  ' if miss in conflicted else ''}").lower()
         else:
             a = "y"
@@ -43,7 +57,8 @@ if missing + broken + conflicted:
 
 if not_resolved:
     print(f"The following missing/conflicted dependencies have not been resolved: {', '.join(not_resolved)}"
-          f"Exiting...")
+          f"{chr(10)}Exiting...")
+    exit(1)
 
 import discord
 from discord.ext import commands
