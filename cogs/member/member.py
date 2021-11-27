@@ -180,7 +180,6 @@ class Member(commands.Cog):
 
         join.add_field(name='Roles', value=f'{len(guild.roles)}')
         join.add_field(name='Owner', value=f'{str(guild.owner)}')
-        join.add_field(name='Region', value=str(guild.region))
         join.add_field(name='Server ID', value=f'{guild.id}')
 
         join.add_field(name='Emoji slots filled', value=f'{len(ctx.guild.emojis)}/{ctx.guild.emoji_limit}')
