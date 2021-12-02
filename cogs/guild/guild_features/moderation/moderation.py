@@ -128,7 +128,7 @@ class Moderation(commands.Cog):
         try:  # perhaps add some like `attempt_dm` thing in utils instead of this?
             await member.send(f"You have been kicked from {ctx.guild} ({reason})")
         except discord.errors.Forbidden:
-            print(f"Could not DM {member.display_name} about their kick!")
+            await ctx.send(f"Could not DM {member.display_name} about their kick!")
 
         await member.kick(reason=reason)
         await ctx.send(f'{member.mention} has been kicked :boot:')
@@ -202,8 +202,6 @@ class Moderation(commands.Cog):
                     await ctx.send(f"Can't ban {member.mention}, they have a higher role than the bot!")
                     continue
             for invite in invites:
-                invite.inviter.id
-                member.id
                 if invite.inviter.id == member.id:
                     await ctx.invoke(self.bot.get_command("revokeinvite"), invite_code=invite.code)
             if timeperiod:
@@ -226,7 +224,7 @@ class Moderation(commands.Cog):
             try:
                 await member.send(f"You have been banned from {ctx.guild.name} ({reason})")
             except discord.errors.Forbidden:
-                print(f"Could not DM {member.id} about their ban!")
+                await ctx.send(f"Could not DM {member.id} about their ban!")
             await ctx.guild.ban(member, reason=reason, delete_message_days=0)
             if not massban:
                 await ctx.send(f'{member.mention} has been banned.')
@@ -371,7 +369,7 @@ class Moderation(commands.Cog):
         try:
             await member.send(f'You have been muted {timestring} for {reasonstring}.')
         except discord.errors.Forbidden:
-            print(f"NOTE: Could not DM {member.display_name} about their mute")
+            await ctx.send(f"Could not DM {member.display_name} about their mute!")
 
         channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
         if channel_id is None:

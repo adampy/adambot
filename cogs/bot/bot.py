@@ -5,6 +5,7 @@ import platform
 import time
 from libs.misc.utils import get_user_avatar_url
 
+
 class BotCog(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
@@ -39,6 +40,7 @@ class BotCog(commands.Cog):
         """
         View the bot's current latency
         """
+
         await ctx.send(f"Pong! ({round(self.bot.latency * 1000)} ms)")
 
     @commands.command(pass_context=True)
@@ -46,6 +48,7 @@ class BotCog(commands.Cog):
         """
         View how long the bot has been running for
         """
+
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
@@ -55,6 +58,7 @@ class BotCog(commands.Cog):
         """
         Changes the status to represent new server number on guild join
         """
+
         if guild.system_channel:
             await guild.system_channel.send(f"Hey there! To get started, do `{self.bot.global_prefix}help` or `{self.bot.global_prefix}config`.")
         await self.bot.change_presence(activity=discord.Game(name=f'in {len(self.bot.guilds)} servers | Type `help` for help'), status=discord.Status.online) # TODO: Would it be more efficient to store len(self.guilds) inside adambot on init, then update that?
@@ -64,7 +68,9 @@ class BotCog(commands.Cog):
         """
         Changes the status to represent new server number on guild leave
         """
+
         await self.bot.change_presence(activity=discord.Game(name=f'in {len(self.bot.guilds)} servers | Type `help` for help'), status=discord.Status.online)
+
 
 def setup(bot) -> None:
     bot.add_cog(BotCog(bot))
