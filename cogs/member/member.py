@@ -279,9 +279,12 @@ class Member(commands.Cog):
                     It's worth noting that all activities normally have details attached, but Game objects do NOT have details
                     Rationale: memory optimisation
                     """
-
-                    diff = discord.utils.utcnow() - activity.start
-                    data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} ({self.bot.time_str(diff.seconds + diff.days * 86400)} elapsed)\n{'' if not hasattr(activity, 'details') else activity.details}", inline=False)
+                    if activity.start:
+                        diff = discord.utils.utcnow() - activity.start
+                        diff = f"({self.bot.time_str(diff.seconds + diff.days * 86400)} elapsed)"
+                    else:
+                        diff = ""
+                    data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} {diff}\n{'' if not hasattr(activity, 'details') else activity.details}", inline=False)
 
             if roles:
                 disp_roles = ', '.join([role.name for role in roles[:10]])
