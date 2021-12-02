@@ -69,8 +69,8 @@ class EmbedPages:
                 user = await self.bot.fetch_user(member_id)
                 date = (self.data[i][3] + timedelta(hours=1)).strftime('%H:%M on %d/%m/%y')
 
-                self.embed.add_field(name=f"{question_id}. {question}",
-                                     value=f"{date} by {user.name if user else '*MEMBER NOT FOUND*'} ({member_id})",
+                self.embed.add_field(name=f"{question}",
+                                     value=f"ID **{question_id}** submitted on {date} by {user.name if user else '*MEMBER NOT FOUND*'} ({member_id})",
                                      inline=False)
 
             elif self.page_type == PageTypes.WARN:
