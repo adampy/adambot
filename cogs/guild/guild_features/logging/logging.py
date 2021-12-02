@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import Embed, Colour
 from discord.utils import get
 from libs.misc.utils import get_user_avatar_url
+from math import ceil
 
 
 # def getdeepattr(obj: object, dotted_attr: str) -> object:
@@ -55,13 +56,21 @@ class Logging(commands.Cog):
             return
 
         channel = self.bot.get_channel(channel_id)
-        embed = Embed(title=':information_source: Message Deleted', color=Colour.from_rgb(172, 32, 31))
-        embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
-        embed.add_field(name='Message ID', value=message.id, inline=True)
-        embed.add_field(name='Channel', value=message.channel.mention, inline=True)
-        embed.add_field(name='Message', value=message.content if (hasattr(message, "content") and message.content) else "(No detected text content)", inline=False)
-        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await channel.send(embed=embed)
+
+        embeds = []
+        chunks = ceil(len(message.content)/1024)
+
+        for i in range(1, chunks + 1):
+            embed = Embed(title=':information_source: Message Deleted', color=Colour.from_rgb(172, 32, 31))
+            embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
+            embed.add_field(name='Message ID', value=message.id, inline=True)
+            embed.add_field(name='Channel', value=message.channel.mention, inline=True)
+            embed.add_field(name=f'Message {f"part {i}" if i > 1 else ""}', value=message.content[1024*(i - 1):1024*i] if (hasattr(message, "content") and message.content) else "(No detected text content)", inline=False)
+            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+
+            embeds.append(embed)
+
+        [await channel.send(embed=embed) for embed in embeds]
 
         if message.reference:  # intended mainly for replies, can be used in other contexts (see docs)
             ref = await ctx.fetch_message(message.reference.message_id)
@@ -107,15 +116,34 @@ class Logging(commands.Cog):
             return
         channel = self.bot.get_channel(channel_id)
 
-        embed = Embed(title=':information_source: Message Updated', color=Colour.from_rgb(118, 37, 171))
-        embed.add_field(name='User', value=f'{str(after.author)} ({after.author.id})', inline=True)
-        embed.add_field(name='Message ID', value=after.id, inline=True)
-        embed.add_field(name='Channel', value=after.channel.mention, inline=True)
-        embed.add_field(name='Old Message', value=before.content if before.content else "(No detected text content)", inline=False)
-        embed.add_field(name='New Message', value=after.content if after.content else "(No detected text content)", inline=False)
-        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+        old_chunks = ceil(len(before.content)/1024)
+        new_chunks = ceil(len(after.content)/1024)
+        chunks = old_chunks if old_chunks > new_chunks else new_chunks
+        chunks = 1 if chunks == 0 else chunks
+        print(f"chunks is {chunks}")
+        embeds = []
 
-        await channel.send(embed=embed)
+        for i in range(1, chunks + 1):
+            embed = Embed(title=':information_source: Message Updated', color=Colour.from_rgb(118, 37, 171))
+            embed.add_field(name='User', value=f'{str(after.author)} ({after.author.id})', inline=True)
+            embed.add_field(name='Message ID', value=after.id, inline=True)
+            embed.add_field(name='Channel', value=after.channel.mention, inline=True)
+
+            print(f"CHUNK {i}")
+            print(f"{len(before.content)} length of before, condition is {1024*(i - 1)} < {len(before.content)} which is {1024*(i - 1) < len(before.content) or (not before.content and i == 1)}")
+            print(f"{len(after.content)} length of after, condition is {1024 * (i - 1)} < {len(after.content)} which is {1024 * (i - 1) < len(after.content) or (not after.content and i == 1)}")
+
+
+            if 1024*(i - 1) < len(before.content) or (not before.content and i == 1):
+                embed.add_field(name=f'Old Message {f"part {i}" if i > 1 else ""}', value=before.content[1024*(i - 1):1024*i] if before.content else "(No detected text content)", inline=False)
+
+            if 1024 * (i - 1) < len(after.content) or (not after.content and i == 1):
+                embed.add_field(name=f'New Message {f"part {i}" if i > 1 else ""}', value=after.content[1024*(i - 1):1024*i] if after.content else "(No detected text content)", inline=False)
+            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+
+            embeds.append(embed)
+
+        [await channel.send(embed=embed) for embed in embeds]
 
     @staticmethod
     async def role_comparison(before: discord.Member, after: discord.Member) -> tuple[list[discord.Role], list[discord.Role]]:
