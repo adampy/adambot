@@ -327,7 +327,7 @@ class Member(commands.Cog):
             message = f'You told me to remind you about this:\n{data["reason"]}'
             try:
                 await member.send(message)
-            except discord.Forbidden:
+            except (discord.errors.Forbidden, discord.errors.HTTPException):
                 channel = self.bot.get_channel(data["channel_id"])
                 await channel.send(f"{member.mention}, {message}")
         except Exception as e:

@@ -127,7 +127,7 @@ class Moderation(commands.Cog):
 
         try:  # perhaps add some like `attempt_dm` thing in utils instead of this?
             await member.send(f"You have been kicked from {ctx.guild} ({reason})")
-        except discord.errors.Forbidden:
+        except (discord.errors.Forbidden, discord.errors.HTTPException):
             await ctx.send(f"Could not DM {member.display_name} about their kick!")
 
         await member.kick(reason=reason)
@@ -223,7 +223,7 @@ class Moderation(commands.Cog):
                     continue
             try:
                 await member.send(f"You have been banned from {ctx.guild.name} ({reason})")
-            except discord.errors.Forbidden:
+            except (discord.errors.Forbidden, discord.errors.HTTPException):
                 await ctx.send(f"Could not DM {member.id} about their ban!")
             await ctx.guild.ban(member, reason=reason, delete_message_days=0)
             if not massban:
@@ -368,7 +368,7 @@ class Moderation(commands.Cog):
             reasonstring = reason
         try:
             await member.send(f'You have been muted {timestring} for {reasonstring}.')
-        except discord.errors.Forbidden:
+        except (discord.errors.Forbidden, discord.errors.HTTPException):
             await ctx.send(f"Could not DM {member.display_name} about their mute!")
 
         channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
