@@ -381,7 +381,7 @@ class Logging(commands.Cog):
             else:
                 invite_log.description = ":arrow_right: Member Avatar"
 
-            invite_log.add_field(name="Member", value=member.mention)
+            invite_log.add_field(name="Member", value=f"{member.mention} [{member.name}] ({member.id})")
 
             for x, invite in enumerate(updated_invites):
                 invite_log.add_field(
@@ -398,13 +398,13 @@ class Logging(commands.Cog):
             invite_log.add_field(name="Account created", value=self.bot.correct_time(member.created_at).strftime(self.bot.ts_format), inline=False)
 
             if not updated_invites:
-                invite_log.add_field(name="Invite used", value="Undetected")
+                invite_log.add_field(name="Invite used", value="Server Discovery")
 
             invite_log.set_thumbnail(url=get_user_avatar_url(member))
             if (invite_log.to_dict() not in self.previous_inv_log_embeds) or not updated_invites:  # limits log spam e.g. if connection drops
 
-                if possible_joins_missed or len(updated_invites) != 1:
-                    await get(guild.text_channels, name='invite-logs').send("*WARNING: Due to a bot glitch or other reason, the below data may be inaccurate due to potentially missed previous joins.*")
+                #if possible_joins_missed or len(updated_invites) != 1:
+                #    await get(guild.text_channels, name='invite-logs').send("*WARNING: Due to a bot glitch or other reason, the below data may be inaccurate due to potentially missed previous joins.*")
 
                 self.previous_inv_log_embeds.append(invite_log.to_dict())
                 await ichannel.send(embed=invite_log)
