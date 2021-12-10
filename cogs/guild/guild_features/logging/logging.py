@@ -120,7 +120,6 @@ class Logging(commands.Cog):
         new_chunks = ceil(len(after.content)/1024)
         chunks = old_chunks if old_chunks > new_chunks else new_chunks
         chunks = 1 if chunks == 0 else chunks
-        print(f"chunks is {chunks}")
         embeds = []
 
         for i in range(1, chunks + 1):
@@ -128,11 +127,6 @@ class Logging(commands.Cog):
             embed.add_field(name='User', value=f'{str(after.author)} ({after.author.id})', inline=True)
             embed.add_field(name='Message ID', value=after.id, inline=True)
             embed.add_field(name='Channel', value=after.channel.mention, inline=True)
-
-            print(f"CHUNK {i}")
-            print(f"{len(before.content)} length of before, condition is {1024*(i - 1)} < {len(before.content)} which is {1024*(i - 1) < len(before.content) or (not before.content and i == 1)}")
-            print(f"{len(after.content)} length of after, condition is {1024 * (i - 1)} < {len(after.content)} which is {1024 * (i - 1) < len(after.content) or (not after.content and i == 1)}")
-
 
             if 1024*(i - 1) < len(before.content) or (not before.content and i == 1):
                 embed.add_field(name=f'Old Message {f"part {i}" if i > 1 else ""}', value=before.content[1024*(i - 1):1024*i] if before.content else "(No detected text content)", inline=False)
