@@ -1,5 +1,6 @@
 import os
 import inspect
+import discord
 from discord.ext import commands
 from libs.misc.decorators import is_dev
 
