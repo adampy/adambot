@@ -187,20 +187,39 @@ class AdamBot(Bot):
             print("[X]    No cogs loaded since none were specified.")
             return
 
-        cog_config = pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[
+        cog_list = pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[
             0]  # flatten
-        for key in cog_config:
-            if type(cog_config[key]) is list:  # random validation checks yay
-                for filename in cog_config[key]:
+
+        for key in cog_list:
+            if type(cog_list[key]) is list:  # random validation checks yay
+                for filename in cog_list[key]:
+                    loader = None
                     if type(filename) is str:
                         try:
-                            self.load_extension(f"cogs.{key}.{filename}")
-                            print(f'\n[+]    {f"cogs.{key}.{filename}"}')
+                            try:
+                                cog_config_file = open(f"./cogs/{key.replace('.', '/')}/config_{filename}.json")
+                                cog_config = json.loads(cog_config_file.read())
+                                loader = cog_config.get("loader", None)
+                            except Exception:
+                                pass  # probably not found
+
+                            if type(loader) is str and os.path.abspath(f"cogs/{loader}").startswith(os.path.abspath(f"./cogs/{key.replace('.', '/')}")):  # restrict paths
+                                try:
+                                    loader = os.path.relpath(loader)
+                                    loader = loader.replace(chr(92), "/").replace("/", ".")
+                                    while ".." in loader:
+                                        loader = loader.replace("..", ".")
+                                except Exception:
+                                    pass
+                            else:
+                                loader = filename
+                            self.load_extension(f"cogs.{key}.{loader}")
+                            print(f'\n[+]    {f"cogs.{key}.{loader}"}')
                         except Exception as e:
                             print(
-                                f"\n\n\n[-]   cogs.{key}.{filename} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
+                                f"\n\n\n[-]   cogs.{key}.{loader} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
                     else:
-                        print(f"[X]    Ignoring cogs.{key}[{filename}] since it isn't text")
+                        print(f"[X]    Ignoring cogs.{key}[{loader}] since it isn't text")
             else:
                 print(
                     f"[X]    Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
