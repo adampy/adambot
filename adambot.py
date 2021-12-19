@@ -155,6 +155,38 @@ class AdamBot(Bot):
             print(
                 f"Something went wrong handling the token!\nThe error was {type(e).__name__}: {e}")  # overridden close cleans this up neatly
 
+    def load_cog(self, key: str, filename: str, base="cogs") -> bool:
+        loader = None
+        if type(filename) is str and type(key) is str:
+            try:
+                try:
+                    cog_config_file = open(f"./{base.replace('.', '/')}/{key.replace('.', '/')}/config_{filename}.json")
+                    cog_config = json.loads(cog_config_file.read())
+                    loader = cog_config.get("loader", None)
+                except Exception:
+                    pass  # probably not found
+
+                if type(loader) is str and os.path.abspath(f"{base}/{loader}").startswith(
+                        os.path.abspath(f"./{base.replace('.', '/')}/{key.replace('.', '/')}")):  # restrict paths
+                    try:
+                        loader = os.path.relpath(loader)
+                        loader = loader.replace(chr(92), "/").replace("/", ".")
+                        while ".." in loader:
+                            loader = loader.replace("..", ".")
+                    except Exception:
+                        pass
+                else:
+                    loader = filename
+                self.load_extension(f"{base}.{key}.{loader}")
+                print(f'\n[+]    {f"{base}.{key}.{loader}"}')
+                return True
+            except Exception as e:
+                print(
+                    f"\n\n\n[-]   {base}.{key}.{loader} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
+        else:
+            print(f"[X]    Ignoring {base}.{key}[{loader}] since it isn't text")
+        return False
+
     def load_core_cogs(self) -> None:
         """
         Non-negotiable.
@@ -170,12 +202,11 @@ class AdamBot(Bot):
         ]
 
         for cog in cogs:
-            try:
-                self.load_extension(cog)
-                print(f'\n[+]    {cog}')
-            except Exception as e:
+            temp = cog.split(".")
+            great_success = self.load_cog(".".join(temp[1:-1]), temp[-1], base=temp[0])  # definitely NOT a Borat reference
+            if not great_success:
                 print(
-                    f"\n\n\n[-]   {cog} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
+                    f"Exiting since a core cog could not be loaded...")
                 exit()
 
     def load_cogs(self) -> None:
@@ -193,33 +224,7 @@ class AdamBot(Bot):
         for key in cog_list:
             if type(cog_list[key]) is list:  # random validation checks yay
                 for filename in cog_list[key]:
-                    loader = None
-                    if type(filename) is str:
-                        try:
-                            try:
-                                cog_config_file = open(f"./cogs/{key.replace('.', '/')}/config_{filename}.json")
-                                cog_config = json.loads(cog_config_file.read())
-                                loader = cog_config.get("loader", None)
-                            except Exception:
-                                pass  # probably not found
-
-                            if type(loader) is str and os.path.abspath(f"cogs/{loader}").startswith(os.path.abspath(f"./cogs/{key.replace('.', '/')}")):  # restrict paths
-                                try:
-                                    loader = os.path.relpath(loader)
-                                    loader = loader.replace(chr(92), "/").replace("/", ".")
-                                    while ".." in loader:
-                                        loader = loader.replace("..", ".")
-                                except Exception:
-                                    pass
-                            else:
-                                loader = filename
-                            self.load_extension(f"cogs.{key}.{loader}")
-                            print(f'\n[+]    {f"cogs.{key}.{loader}"}')
-                        except Exception as e:
-                            print(
-                                f"\n\n\n[-]   cogs.{key}.{loader} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
-                    else:
-                        print(f"[X]    Ignoring cogs.{key}[{loader}] since it isn't text")
+                    self.load_cog(key, filename)
             else:
                 print(
                     f"[X]    Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
