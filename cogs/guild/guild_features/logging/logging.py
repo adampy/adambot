@@ -333,7 +333,7 @@ class Logging(commands.Cog):
         roles_str = roles_str[:len(roles_str) - 2]
 
         member_left.add_field(name="Roles", value=roles_str if member.roles[1:] else "None", inline=False)
-        member_left.set_thumbnail(url=get_user_avatar_url(member)[0])
+        member_left.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0])
         member_left.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=member_left)
 

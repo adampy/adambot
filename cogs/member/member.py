@@ -189,7 +189,7 @@ class Member(commands.Cog):
         join.add_field(name='Boost level', value=f'{ctx.guild.premium_tier} ({ctx.guild.premium_subscription_count} boosts, {len(ctx.guild.premium_subscribers)} boosters)')
         join.add_field(name='Default Notification Level', value=f'{self.bot.make_readable(guild.default_notifications.name)}')
         join.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
-                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author)[0])
+                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
 
         await ctx.send(embed=join)
 
