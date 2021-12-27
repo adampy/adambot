@@ -255,7 +255,7 @@ class StarboardCog(commands.Cog):
             self.bot.EmojiEnum.FALSE: False
         }
 
-        def check(reaction: discord.Reaction, user: Union[discord.User, discord.Member]) -> bool:
+        def check(reaction: discord.Reaction, user: Union[discord.Member, discord.User]) -> bool:
             return reaction.emoji in possible_responses.keys() and user == ctx.author
 
         for emoji in possible_responses.keys():

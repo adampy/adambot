@@ -12,7 +12,7 @@ class Spotify(commands.Cog):
         self.bot = bot
 
     @commands.command(name="spotify", aliases=["spotifyinfo"], pass_context=True)
-    async def spotify_info(self, ctx: commands.Context, *, args: Union[discord.Member, str] = "") -> None:
+    async def spotify_info(self, ctx: commands.Context, *, args: Union[discord.Member, discord.User, str] = "") -> None:
         if len(args) == 0:
             user = ctx.message.author
         else:

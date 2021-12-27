@@ -150,7 +150,7 @@ class TriviaSession:
             if self.running:
                 self.bot.loop.create_task(self.ask_next_question())  # Adding to self.bot.loop prevents stack overflow errors
 
-    def increment_score(self, user: discord.User) -> None:
+    def increment_score(self, user: Union[discord.Member, discord.User]) -> None:
         """
         Method that increments the score of a given `user` into the `self.scores` dict.
         """
