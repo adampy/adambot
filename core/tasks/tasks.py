@@ -2,7 +2,7 @@ from discord.ext import commands
 import asyncio
 import asyncpg
 import datetime
-from typing import Callable, Union
+from typing import Callable
 
 
 class Tasks(commands.Cog):
@@ -38,7 +38,7 @@ class Tasks(commands.Cog):
             "extra_data": needs_extra_columns
         }
 
-    async def submit_task(self, task_name: str, timestamp: Union[str, datetime.datetime], extra_columns: dict) -> None:
+    async def submit_task(self, task_name: str, timestamp: str | datetime.datetime, extra_columns: dict) -> None:
         while not self.bot.online:
             await asyncio.sleep(1)  # wait else DB won't be available
 

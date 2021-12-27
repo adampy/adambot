@@ -3,7 +3,6 @@ from discord import Embed, Colour
 from discord.ext import commands
 import asyncio
 from libs.misc.decorators import is_staff
-from typing import Union
 import datetime
 
 """
@@ -122,7 +121,7 @@ class SupportConnectionManager:
             await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `support accept {new_connection.id}` to accept it.", embed=embed)
         return new_connection
 
-    async def get(self, id_: int = -1, guild_id: int = -1) -> Union[SupportConnection, list[SupportConnection]]:  # might need return type annotation checking
+    async def get(self, id_: int = -1, guild_id: int = -1) -> SupportConnection | list[SupportConnection]:  # might need return type annotation checking
         """
         Returns connections from the database, whether they are open or not, or a support connection via ID. This method returns False
         if a support ticket is now found when searching by ID, else it returns a list of SupportConnection
@@ -157,7 +156,7 @@ class SupportConnectionManager:
                 connections[i] = new_connection
             return connections
 
-    async def in_connections(self, member: discord.Member) -> Union[SupportConnection, bool]:
+    async def in_connections(self, member: discord.Member) -> SupportConnection | bool:
         """
         Checks if a connection already exists with the user, if it does returns connection data or returns False if not.
         """
@@ -269,7 +268,7 @@ class Support(commands.Cog):
                             await connection.log_message(MessageOrigin.STAFF, message)
 
     @commands.Cog.listener()
-    async def on_typing(self, channel: Union[discord.DMChannel, discord.TextChannel], user: discord.User, when: datetime.datetime) -> None:
+    async def on_typing(self, channel: discord.DMChannel | discord.TextChannel, user: discord.User, when: datetime.datetime) -> None:
         """
         A handle for typing events between DMs, so that the typing presence can go through the DMs via the bot.
         """

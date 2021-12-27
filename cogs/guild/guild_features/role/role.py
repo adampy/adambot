@@ -1,4 +1,3 @@
-from typing import Union
 from discord.ext import commands
 import discord
 from discord import Embed, errors
@@ -105,7 +104,7 @@ class Role(commands.Cog):
                 return 1
         return 0
 
-    async def checked_role_change(self, ctx: commands.Context, role: discord.Role, member: discord.Member, action: str, tracker: discord.Message = None, part_of_more: bool = False, single_output: bool = True) -> Union[int, float]:
+    async def checked_role_change(self, ctx: commands.Context, role: discord.Role, member: discord.Member, action: str, tracker: discord.Message = None, part_of_more: bool = False, single_output: bool = True) -> int | float:
         """
         Returns:
             0: Everything fine
@@ -249,7 +248,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    async def info(self, ctx: commands.Context, *, role: Union[discord.Role, str]) -> None:
+    async def info(self, ctx: commands.Context, *, role: discord.Role | str) -> None:
         """
         Displays various details about a specified role.
         Works with a role mention, role name or role ID.
@@ -319,7 +318,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    async def members(self, ctx: commands.Context, *, role: Union[discord.Role, str]) -> None:
+    async def members(self, ctx: commands.Context, *, role: discord.Role | str) -> None:
         """
         Lists all the members that have a specified role.
         Works with a role mention, role name or role ID.
@@ -357,7 +356,7 @@ class Role(commands.Cog):
     )  # sorry we don't have a world-beating AI to beat these types of problems just yet
     @commands.guild_only()
     @is_staff
-    async def add(self, ctx: commands.Context, role: Union[discord.Role, str], *, member: discord.Member) -> None:
+    async def add(self, ctx: commands.Context, role: discord.Role | str, *, member: discord.Member) -> None:
         """
         Staff role required.
         Add a specific role to a specified member.
@@ -384,7 +383,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def remove(self, ctx: commands.Context, role: Union[discord.Role, str], member: discord.Member) -> None:
+    async def remove(self, ctx: commands.Context, role: discord.Role | str, member: discord.Member) -> None:
         """
         Staff role required.
         Remove a specific role from a specified member.
@@ -425,7 +424,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def swap(self, ctx: commands.Context, swap_from: Union[discord.Role, str], *, swap_to: Union[discord.Role, str]) -> None:
+    async def swap(self, ctx: commands.Context, swap_from: discord.Role | str, *, swap_to: discord.Role | str) -> None:
         """
         Staff role required.
         Allows shifting/swapping of roles.
@@ -499,7 +498,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def removeall(self, ctx: commands.Context, *, role: Union[discord.Role, str]) -> None:
+    async def removeall(self, ctx: commands.Context, *, role: discord.Role | str) -> None:
         """
         Staff role required.
         Allows removing a role from all members who have it.
@@ -556,7 +555,7 @@ class Role(commands.Cog):
     )
     @commands.guild_only()
     @is_staff
-    async def addall(self, ctx: commands.Context, ref_role: Union[discord.Role, str], *, add_role: Union[discord.Role, str]) -> None:
+    async def addall(self, ctx: commands.Context, ref_role: discord.Role | str, *, add_role: discord.Role | str) -> None:
         """
         Staff role required.
         Allows adding a role to all members who have another role.

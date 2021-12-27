@@ -4,7 +4,6 @@ from discord import Embed, Colour
 import matplotlib.pyplot as plt
 from libs.misc.decorators import is_staff
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
-from typing import Union
 
 class Reputation(commands.Cog):
     def __init__(self, bot) -> None:
@@ -89,7 +88,7 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=['give', 'point'])
     @commands.guild_only()
-    async def award(self, ctx: commands.Context, *, args: Union[discord.Member, discord.User, str]) -> None:
+    async def award(self, ctx: commands.Context, *, args: discord.Member | discord.User | str) -> None:
         """
         Gives the member a reputation point. Aliases are give and point
         """
@@ -191,7 +190,7 @@ class Reputation(commands.Cog):
     @rep.command()
     @commands.guild_only()
     @is_staff
-    async def set(self, ctx: commands.Context, user: Union[discord.Member, discord.User], rep: str) -> None:
+    async def set(self, ctx: commands.Context, user: discord.Member | discord.User, rep: str) -> None:
         """
         Sets a specific members reps to a given value.
         """

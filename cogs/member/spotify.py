@@ -3,7 +3,6 @@
 import discord
 from discord.ext import commands
 from discord import Embed, Colour
-from typing import Union
 from libs.misc.utils import get_user_avatar_url
 
 
@@ -12,7 +11,7 @@ class Spotify(commands.Cog):
         self.bot = bot
 
     @commands.command(name="spotify", aliases=["spotifyinfo"], pass_context=True)
-    async def spotify_info(self, ctx: commands.Context, *, args: Union[discord.Member, discord.User, str] = "") -> None:
+    async def spotify_info(self, ctx: commands.Context, *, args: discord.Member | discord.User | str = "") -> None:
         if len(args) == 0:
             user = ctx.message.author
         else:

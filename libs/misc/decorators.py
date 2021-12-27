@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from inspect import signature
 from .utils import DefaultEmbedResponses, DEVS
-from typing import Union, Callable, Any
+from typing import Callable, Any
 
 
 def is_staff(func: Callable) -> Callable:
@@ -20,7 +20,7 @@ def is_staff(func: Callable) -> Callable:
             await ctx.send("Pong!")
     """
 
-    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Union[Any, discord.Message]:
+    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Any | discord.Message:
         while not cog.bot.online:
             await asyncio.sleep(1)  # Wait else DB won't be available
 
@@ -49,7 +49,7 @@ def is_dev(func: Callable) -> Callable:
             await ctx.send("Pong!")
     """
 
-    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Union[Any, discord.Message]:
+    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Any | discord.Message:
         if ctx.author.id in DEVS:
             return await func(cog, ctx, *args, **kwargs)
         else:

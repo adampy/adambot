@@ -1,9 +1,7 @@
-from inspect import Attribute
 import discord
 from discord.ext import commands
 import asyncio
 import re
-from typing import Union
 from emoji import get_emoji_regexp
 from libs.misc.decorators import is_staff
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
@@ -86,7 +84,7 @@ class Starboard:
         self.embed_colour = new_starboard_data["embed_colour"]
         self.allow_self_star = new_starboard_data["allow_self_star"]
 
-    async def try_get_entry(self, message_id: int) -> Union[Entry, None]:
+    async def try_get_entry(self, message_id: int) -> Entry | None:
         """
         Returns either a starboard entry or None if it doesn't exist
         """
@@ -176,14 +174,14 @@ class StarboardCog(commands.Cog):
                 results.append(starboard)
         return results
 
-    async def _try_get_starboard(self, channel_id: int) -> Union[Starboard, None]:
+    async def _try_get_starboard(self, channel_id: int) -> Starboard | None:
         """
         Return the starboard for the given text channel or None if it doesn't exist
         """
 
         return self.starboards.get(channel_id, None)
 
-    async def _create_starboard(self, channel: discord.TextChannel, is_custom_emoji: bool, emoji: Union[discord.Emoji, str], minimum_stars: int, embed_colour: str = None, allow_self_star: bool = True) -> None:
+    async def _create_starboard(self, channel: discord.TextChannel, is_custom_emoji: bool, emoji: discord.Emoji | str, minimum_stars: int, embed_colour: str = None, allow_self_star: bool = True) -> None:
         """
         Creates a starboard in the database and add it to `self.starboards`
         """
@@ -214,7 +212,7 @@ class StarboardCog(commands.Cog):
             await connection.execute("DELETE FROM starboard WHERE channel_id = $1;", channel.id)
 
     @staticmethod
-    async def _is_valid_emoji(emoji: str, msg_context: commands.Context) -> list[bool, Union[discord.Emoji, str, bool]]:
+    async def _is_valid_emoji(emoji: str, msg_context: commands.Context) -> list[bool, discord.Emoji | str | bool]:
         """
         Checks if a given emoji can be used. If it can be used it returns a list where the first element is True/False if its a custom emoji and second is the emoji itself or None if the emoji cannot be used.
         """
@@ -231,7 +229,7 @@ class StarboardCog(commands.Cog):
         return [custom_emoji, return_emoji]
 
     @staticmethod
-    def _is_valid_hex_colour(string: str) -> Union[str, bool]:
+    def _is_valid_hex_colour(string: str) -> str | bool:
         """
         Returns either a decimal denoting the colour if the colour is valid, or False if not valid
         """
@@ -255,7 +253,7 @@ class StarboardCog(commands.Cog):
             self.bot.EmojiEnum.FALSE: False
         }
 
-        def check(reaction: discord.Reaction, user: Union[discord.Member, discord.User]) -> bool:
+        def check(reaction: discord.Reaction, user: discord.Member | discord.User) -> bool:
             return reaction.emoji in possible_responses.keys() and user == ctx.author
 
         for emoji in possible_responses.keys():

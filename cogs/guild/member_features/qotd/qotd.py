@@ -4,7 +4,7 @@ from discord import Embed, Colour, Message
 from random import choice
 from math import inf
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url, DefaultEmbedResponses
-from typing import Union, Any, Callable
+from typing import Any, Callable
 from inspect import signature # Used in @qotd_perms decorator
 import asyncio
 
@@ -20,7 +20,7 @@ def qotd_perms(func: Callable) -> Callable:
             await ctx.send("Pong!")
     """
 
-    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Union[Any, Message]:
+    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Any | Message:
         while not cog.bot.online:
             await asyncio.sleep(1)  # Wait else DB won't be available
 

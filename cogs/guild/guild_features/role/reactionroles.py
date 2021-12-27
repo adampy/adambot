@@ -3,7 +3,6 @@ from discord.ext import commands
 import re
 from libs.misc.decorators import is_staff
 from libs.misc.utils import get_user_avatar_url
-from typing import Union
 
 class ReactionRoles(commands.Cog):
     def __init__(self, bot) -> None:
@@ -82,7 +81,7 @@ class ReactionRoles(commands.Cog):
     @rr.command()
     @commands.guild_only()
     @is_staff
-    async def add(self, ctx: commands.Context, emoji: Union[discord.Emoji, str], role: discord.Role, inverse: str = None) -> None:
+    async def add(self, ctx: commands.Context, emoji: discord.Emoji | str, role: discord.Role, inverse: str = None) -> None:
         """
         Adds an emoji and a corresponding role to the replied message. If the `inverse` argument == "true" the role is removed upon reaction add and vice versa.
         """
@@ -123,7 +122,7 @@ class ReactionRoles(commands.Cog):
     @rr.command()
     @commands.guild_only()
     @is_staff
-    async def remove(self, ctx: commands.Context, emoji: Union[discord.Emoji, str]) -> None:
+    async def remove(self, ctx: commands.Context, emoji: discord.Emoji | str) -> None:
         """
         Removes an emoji and a corresponding role from the replied message
         """

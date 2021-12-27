@@ -16,13 +16,12 @@ import pandas
 import json
 import argparse
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
-from typing import Union
 
 class AdamBot(Bot):
     async def get_context(self, message: discord.Message, *, cls=commands.Context) -> commands.Context:
         return await super().get_context(message, cls=cls) if cls else None
 
-    async def determine_prefix(self, bot, message: discord.Message) -> Union[when_mentioned, when_mentioned_or]:
+    async def determine_prefix(self, bot, message: discord.Message) -> list[str]:
         """
         Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used
         'bot' is a required argument but also pointless since each AdamBot object isn't going to be trying to handle *other* AdamBot objects' prefixes
@@ -267,7 +266,7 @@ class AdamBot(Bot):
         if not hasattr(ctx.cog, "on_command_error"):  # don't re-raise if ext handling
             raise error  # re-raise error so cogs can mess around but not block every single error. Does duplicate traceback but error tracebacks are a bloody mess anyway
 
-    def correct_time(self, conv_time: Union[datetime.datetime, None] = None,
+    def correct_time(self, conv_time: datetime.datetime | None = None,
                      timezone_: str = "system") -> datetime.datetime:
         if not conv_time:
             conv_time = datetime.datetime.now()

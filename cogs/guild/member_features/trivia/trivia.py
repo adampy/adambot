@@ -7,7 +7,6 @@ import random
 import asyncio
 from datetime import datetime
 from libs.misc.decorators import is_staff
-from typing import Union
 
 
 TRIVIAS = [
@@ -150,7 +149,7 @@ class TriviaSession:
             if self.running:
                 self.bot.loop.create_task(self.ask_next_question())  # Adding to self.bot.loop prevents stack overflow errors
 
-    def increment_score(self, user: Union[discord.Member, discord.User]) -> None:
+    def increment_score(self, user: discord.Member | discord.User) -> None:
         """
         Method that increments the score of a given `user` into the `self.scores` dict.
         """
@@ -206,7 +205,7 @@ class Trivia(commands.Cog):
         await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Available trivias", desc=desc)
 
     @trivia.command(pass_context=True)
-    async def start(self, ctx: commands.Context, trivia: Union[str, None] = None) -> None:
+    async def start(self, ctx: commands.Context, trivia: str | None = None) -> None:
         """
         Command that starts a new trivia game in the currently set trivia channel
         """

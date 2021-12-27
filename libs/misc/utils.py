@@ -6,7 +6,6 @@ from math import ceil
 from datetime import timedelta
 from io import BytesIO, StringIO
 import asyncio
-from typing import Union
 
 
 class EmbedPages:
@@ -234,7 +233,7 @@ async def send_text_file(text: str, channel: discord.TextChannel, filename: str,
     await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
 
-async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> Union[discord.Member, None]:
+async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> discord.Member | None:
     """
     Moves hell on Earth to get a guild member object from a given string
     Makes use of last_active, a priority temp list that stores member objects of

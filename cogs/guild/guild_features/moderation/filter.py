@@ -4,7 +4,6 @@ from libs.misc.decorators import is_staff
 import asyncio
 import ast  # using ast for literal_eval, stops code injection
 import asyncpg
-from typing import Union
 
 
 class Filter(commands.Cog):
@@ -121,7 +120,7 @@ class Filter(commands.Cog):
         if not ctx.invoked_subcommand:
             await ctx.reply(f"Type `{ctx.prefix}help filter` to get info!")
 
-    async def clean_up(self, ctx: commands.Context, text: str, key: str, spoiler: bool = True) -> Union[discord.Message, None]:
+    async def clean_up(self, ctx: commands.Context, text: str, key: str, spoiler: bool = True) -> discord.Message | None:
         """
         Strictly only cleans up one list. Cross-checks occur specifically within their own scopes.
         This makes sure space isn't wasted by adding random garbage to the filter that will already be in effect anyway

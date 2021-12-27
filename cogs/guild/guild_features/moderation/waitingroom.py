@@ -5,7 +5,6 @@ import asyncio
 import datetime
 from libs.misc.decorators import is_staff
 from libs.misc.utils import get_user_avatar_url
-from typing import Union
 
 
 class WaitingRoom(commands.Cog):
@@ -14,7 +13,7 @@ class WaitingRoom(commands.Cog):
         self.welcome_message = ""
         self.welcome_channel = None
     
-    async def get_parsed_welcome_message(self, welcome_msg: str, new_user: Union[discord.Member, discord.User]) -> str:
+    async def get_parsed_welcome_message(self, welcome_msg: str, new_user: discord.Member | discord.User) -> str:
         """
         Method that gets the parsed welcome message, with channel and role mentions.
         """
@@ -36,7 +35,7 @@ class WaitingRoom(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     @is_staff
-    async def testwelcome(self, ctx: commands.Context, to_ping: Union[discord.Member, discord.User] = None) -> None:
+    async def testwelcome(self, ctx: commands.Context, to_ping: discord.Member | discord.User = None) -> None:
         """
         Command that returns the welcome message, and pretends the command invoker is the new user.
         """

@@ -6,7 +6,6 @@ from discord.utils import get
 from datetime import datetime, timedelta
 from libs.misc.decorators import is_dev, is_staff
 from libs.misc.utils import get_user_avatar_url
-from typing import Union
 
 
 class Moderation(commands.Cog):
@@ -18,7 +17,7 @@ class Moderation(commands.Cog):
         await self.bot.tasks.register_task_type("unmute", self.handle_unmute)
         await self.bot.tasks.register_task_type("unban", self.handle_unban)
 
-    async def get_member_obj(self, ctx: commands.Context, member: discord.Member) -> Union[list[discord.Member, bool], list[None, None]]:
+    async def get_member_obj(self, ctx: commands.Context, member: discord.Member) -> list[discord.Member, bool] | list[None, None]:
         """
         Attempts to get user/member object from mention/user ID.
         Independent of whether the user is a member of a shared guild
@@ -149,7 +148,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True, aliases=["hackban", "massban"])
     @has_permissions(ban_members=True)
-    async def ban(self, ctx: commands.Context, member: Union[discord.Member, str], *, args: str = "") -> None:
+    async def ban(self, ctx: commands.Context, member: discord.Member | str, *, args: str = "") -> None:
         """
         Bans a given user.
         Merged with previous command hackban
@@ -282,7 +281,7 @@ class Moderation(commands.Cog):
 
     @commands.command(pass_context=True)
     @has_permissions(ban_members=True)
-    async def unban(self, ctx: commands.Context, member: Union[discord.User, str], *, args: str = "") -> None:
+    async def unban(self, ctx: commands.Context, member: discord.User | str, *, args: str = "") -> None:
         """
         Unbans a given user with the ID.
         Ban members perm needed.
