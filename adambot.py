@@ -51,11 +51,19 @@ class AdamBot(Bot):
     def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args,
                  **kwargs) -> None:
         self.internal_config = self.load_internal_config(config_path)
+        self.cog_list = {}
         kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
 
-        super().__init__(*args, **kwargs)
-        self.load_core_cogs()
+        self.core_cogs = [
+            "core.config.config",
+            "core.tasks.tasks",
+            "libs.misc.temp_utils_cog"
+            # as the name suggests, this is temporary, will be moved/split up at some point, just not right now
+        ]
 
+        super().__init__(*args, **kwargs)
+        self.preload_core_cogs()
+        self.preload_cogs()
         self.global_prefix = self.internal_config.get("global_prefix",
                                                       None)  # Stores the global prefix, or None if not set / using guild specific one
 
@@ -67,6 +75,7 @@ class AdamBot(Bot):
         self.ts_format = '%A %d/%m/%Y %H:%M:%S'
         self.start_time = start_time
         self._init_time = time.time()
+
         print(f"BOT INITIALISED {self._init_time - start_time} seconds")
         self.start_up(kwargs)  # kwargs passed here specifically to prevent leak of sensitive stuff passed in
 
@@ -155,8 +164,9 @@ class AdamBot(Bot):
             print(
                 f"Something went wrong handling the token!\nThe error was {type(e).__name__}: {e}")  # overridden close cleans this up neatly
 
-    def load_cog(self, key: str, filename: str, base="cogs") -> bool:
+    def preload_cog(self, key: str, filename: str, base="cogs") -> list[bool, Exception]:
         loader = None
+        cog_config = {}
         if type(filename) is str and type(key) is str:
             try:
                 try:
@@ -177,39 +187,55 @@ class AdamBot(Bot):
                         pass
                 else:
                     loader = filename
-                self.load_extension(f"{base}.{key}.{loader}")
-                print(f'\n[+]    {f"{base}.{key}.{loader}"}')
-                return True
+                final = f"{base}.{key}.{loader}"
+                self.cog_list[final] = cog_config
+                if final in self.core_cogs:
+                    self.cog_list[final]["core"] = True
+                else:
+                    self.cog_list[final]["core"] = False
+                return [True, None]
             except Exception as e:
                 print(
-                    f"\n\n\n[-]   {base}.{key}.{loader} could not be loaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
+                    f"\n\n\n[-]   {base}.{key}.{loader} could not be preloaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
+                return [False, e]
         else:
-            print(f"[X]    Ignoring {base}.{key}[{loader}] since it isn't text")
-        return False
+            print(f"[X]    Ignoring {base}.{key} since it isn't text")
+        return [False, None]
 
-    def load_core_cogs(self) -> None:
+    def load_cog(self, name) -> list[bool, Exception]:
+        e = None
+        if name in self.cog_list:
+            try:
+                self.load_extension(name)
+                print(f'\n[+]    {name}')
+            except Exception as e:
+                return [False, e]
+        else:
+            print(f"\n\n\n[-]   {name} ignored since it wasn't registered")
+            return [False, None]
+        return [True, None]
+
+    def load_cogs(self):
+        for name in self.cog_list:
+            result = self.load_cog(name)
+            if not result[0]:
+                print(f"\n\n\n[-]   {name} could not be loaded due to an error! " + f"See the error below for more details\n\n{type(result[1]).__name__}: {result[1]}" if result[1] else "")
+                if name in self.core_cogs:
+                    print(f"Exiting since a core cog could not be loaded...")
+                    exit()
+
+    def preload_core_cogs(self) -> None:
         """
         Non-negotiable.
         """
 
         print("Loading core cogs...")
 
-        cogs = [
-            "core.config.config",
-            "core.tasks.tasks",
-            "libs.misc.temp_utils_cog"
-            # as the name suggests, this is temporary, will be moved/split up at some point, just not right now
-        ]
-
-        for cog in cogs:
+        for cog in self.core_cogs:
             temp = cog.split(".")
-            great_success = self.load_cog(".".join(temp[1:-1]), temp[-1], base=temp[0])  # definitely NOT a Borat reference
-            if not great_success:
-                print(
-                    f"Exiting since a core cog could not be loaded...")
-                exit()
+            self.preload_cog(".".join(temp[1:-1]), temp[-1], base=temp[0])
 
-    def load_cogs(self) -> None:
+    def preload_cogs(self) -> None:
         """
         Procedure that loads all the cogs, from tree in config file
         """
@@ -224,7 +250,7 @@ class AdamBot(Bot):
         for key in cog_list:
             if type(cog_list[key]) is list:  # random validation checks yay
                 for filename in cog_list[key]:
-                    self.load_cog(key, filename)
+                    self.preload_cog(key, filename)
             else:
                 print(
                     f"[X]    Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
