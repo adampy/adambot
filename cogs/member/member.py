@@ -50,7 +50,7 @@ class Member(commands.Cog):
 
         if image:
             embed.set_image(url=image)
-        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=get_user_avatar_url(user))
+        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=get_user_avatar_url(user, mode=1)[0])
         embed.description = f"❝ {content} ❞" + edited
         await ctx.send(embed=embed)
 
@@ -189,7 +189,7 @@ class Member(commands.Cog):
         join.add_field(name='Boost level', value=f'{ctx.guild.premium_tier} ({ctx.guild.premium_subscription_count} boosts, {len(ctx.guild.premium_subscribers)} boosters)')
         join.add_field(name='Default Notification Level', value=f'{self.bot.make_readable(guild.default_notifications.name)}')
         join.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
-                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author)[0])
 
         await ctx.send(embed=join)
 
@@ -303,7 +303,7 @@ class Member(commands.Cog):
                 )
 
         data.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
-                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
         flags = user.public_flags.all()  # e.g. hypesquad stuff
         if flags:
             desc = []
@@ -314,7 +314,7 @@ class Member(commands.Cog):
 
         name = f"{user} ~ {user.display_name}"
 
-        avatar = get_user_avatar_url(user)
+        avatar = get_user_avatar_url(user, mode=1)[0]
         data.set_author(name=name, icon_url=avatar)
         data.set_thumbnail(url=avatar)
         
@@ -373,7 +373,13 @@ class Member(commands.Cog):
         if not member:
             member = ctx.author
 
-        await ctx.send(get_user_avatar_url(member))
+        avatar_urls = get_user_avatar_url(member, mode=2)
+
+        if len(avatar_urls) == 1 or avatar_urls[0] == avatar_urls[1]:
+            await ctx.send(avatar_urls[0])
+        else:
+            await ctx.send(f"**ACCOUNT AVATAR:**\n{avatar_urls[0]}")
+            await ctx.send(f"**SERVER AVATAR:**\n{avatar_urls[1]}")
 
 # -----------------------COUNTDOWNS------------------------------
 
@@ -419,7 +425,7 @@ class Member(commands.Cog):
             h, m = divmod(m, 60)
             embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining"
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
         icon_url = get_guild_icon_url(ctx.guild)
         if icon_url:
             embed.set_thumbnail(url=icon_url)
@@ -439,7 +445,7 @@ class Member(commands.Cog):
             embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining until the first exam (RS Paper 1)"
 
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)

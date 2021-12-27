@@ -177,7 +177,7 @@ class Logging(commands.Cog):
         Handler that returns the old avatar for thumbnail usage and the new avatar for the embed image
         """
 
-        return {"thumbnail_url": get_user_avatar_url(before), "image": get_user_avatar_url(after), "description": ":arrow_right: Old Avatar\n:arrow_down: New Avatar"}
+        return {"thumbnail_url": get_user_avatar_url(before)[0], "image": get_user_avatar_url(after)[0], "description": ":arrow_right: Old Avatar\n:arrow_down: New Avatar"}  # todo: guild avatar listener if it exists
 
     @staticmethod
     async def disp_name_handler(before: discord.Member, after: discord.Member) -> dict:
@@ -244,7 +244,7 @@ class Logging(commands.Cog):
 
             if hasattr(before, prop["name"]) and hasattr(after, prop["name"]):  # user objects don't have all the same properties as member objects
 
-                if (getattr(before, prop["name"]) != getattr(after, prop["name"])) or (prop["name"] == "avatar" and get_user_avatar_url(before) != get_user_avatar_url(after)): #TODO: Fix up the edge case with avatars?
+                if (getattr(before, prop["name"]) != getattr(after, prop["name"])) or (prop["name"] == "avatar" and get_user_avatar_url(before)[0] != get_user_avatar_url(after)[0]): #TODO: Fix up the edge case with avatars?
                     log = Embed(title=f':information_source: {prop["display_name"]} Updated', color=prop["colour"])
                     log.add_field(name='User', value=f'{after} ({after.id})', inline=True)
 
@@ -274,7 +274,7 @@ class Logging(commands.Cog):
                             continue
 
                     if not thumbnail_set:
-                        log.set_thumbnail(url=get_user_avatar_url(after))
+                        log.set_thumbnail(url=get_user_avatar_url(after, mode=1)[0])
                     log.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
                     # Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
@@ -333,7 +333,7 @@ class Logging(commands.Cog):
         roles_str = roles_str[:len(roles_str) - 2]
 
         member_left.add_field(name="Roles", value=roles_str if member.roles[1:] else "None", inline=False)
-        member_left.set_thumbnail(url=get_user_avatar_url(member))
+        member_left.set_thumbnail(url=get_user_avatar_url(member)[0])
         member_left.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=member_left)
 
@@ -369,7 +369,7 @@ class Logging(commands.Cog):
             if len(updated_invites) == 1:
                 invite_log.set_author(
                     name=f"{updated_invites[0].inviter} ~ {updated_invites[0].inviter.display_name}" if updated_invites[0].inviter else f"{guild.name} ~ Vanity URL",
-                    icon_url=get_user_avatar_url(updated_invites[0].inviter))
+                    icon_url=get_user_avatar_url(updated_invites[0].inviter, mode=1)[0])
 
                 invite_log.description = ":arrow_up: Inviter Avatar\n:arrow_right: Member Avatar"
             else:
@@ -394,7 +394,7 @@ class Logging(commands.Cog):
             if not updated_invites:
                 invite_log.add_field(name="Invite used", value="Server Discovery")
 
-            invite_log.set_thumbnail(url=get_user_avatar_url(member))
+            invite_log.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0])
             if (invite_log.to_dict() not in self.previous_inv_log_embeds) or not updated_invites:  # limits log spam e.g. if connection drops
 
                 #if possible_joins_missed or len(updated_invites) != 1:
@@ -412,7 +412,7 @@ class Logging(commands.Cog):
         member_join.add_field(name="User", value=f"{member} ({member.id})\n | {member.mention}")
         member_join.add_field(name="Created",
                               value=self.bot.correct_time(member.created_at).strftime(self.bot.ts_format))
-        member_join.set_thumbnail(url=get_user_avatar_url(member))
+        member_join.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0]) # if you somehow get a guild pfp set that fast
         member_join.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=member_join)
 

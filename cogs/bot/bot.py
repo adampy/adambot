@@ -24,7 +24,7 @@ class BotCog(commands.Cog):
 
         if hasattr(app_info, "icon"):
             embed.set_thumbnail(url=app_info.icon.url)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)

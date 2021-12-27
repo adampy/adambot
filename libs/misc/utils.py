@@ -505,7 +505,7 @@ class DefaultEmbedResponses:
                       color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+                bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -516,7 +516,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':x: {title}', description=desc, color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+                bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -527,7 +527,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':white_check_mark: {title}', description=desc, color=SUCCESS_GREEN)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-              bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+              bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -538,7 +538,7 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':information_source: {title}', description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+             bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
@@ -549,11 +549,12 @@ class DefaultEmbedResponses:
         embed = Embed(title=f':grey_question: {title}', description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+             bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
         response = await ctx.reply(embed=embed)
         return response
+
 
 def get_guild_icon_url(guild: discord.Guild) -> str:
     """
@@ -561,11 +562,32 @@ def get_guild_icon_url(guild: discord.Guild) -> str:
     """
     return guild.icon if hasattr(guild, "icon") else ""
 
-def get_user_avatar_url(user: discord.User) -> str:
+
+def get_user_avatar_url(member: discord.Member, mode: int = 0) -> list[str]:
     """
     Returns a `str` which corresponds to `user`'s current avatar url
+
+    Mode:
+
+    0 - Account avatar
+    1 - Guild avatar - will return account avatar if None
+    2 - Both
     """
-    if user.avatar:
-        return user.avatar.url
+
+    account_avatar_url = member.avatar
+    if not account_avatar_url:
+        account_avatar_url = member.default_avatar.url
     else:
-        return user.default_avatar.url
+        account_avatar_url = account_avatar_url.url
+
+    guild_avatar_url = account_avatar_url if (not hasattr(member, "guild_avatar") or not hasattr(member.guild_avatar, "url") or not member.guild_avatar.url) else member.guild_avatar.url
+
+    match mode:  # OMG A SWITCH CASE
+        case 0:
+            return [account_avatar_url]
+        case 1:
+            return [guild_avatar_url]
+        case 2:
+            return [account_avatar_url, guild_avatar_url]
+        case _:
+            return []

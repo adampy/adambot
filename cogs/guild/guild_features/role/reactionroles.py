@@ -176,7 +176,7 @@ class ReactionRoles(commands.Cog):
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)
 
         embed = discord.Embed(title=f':information_source: {ctx.guild.name} reaction roles', color=self.bot.INFORMATION_BLUE)
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author))
+        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
         
         message_reactions = {}  # ID -> str (to put in embed)
         message_channels = {}  # ID -> discord.TextChannel
