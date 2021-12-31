@@ -1,0 +1,4 @@
+{
+  "loader": "./actions",
+  "intents": ["reactions", "guild_messages"]
+}

@@ -1,0 +1,4 @@
+{
+  "loader": "./warnings",
+  "intents": ["members"]
+}

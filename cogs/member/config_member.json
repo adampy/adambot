@@ -1,0 +1,4 @@
+{
+  "loader": "./member",
+  "intents": ["members", "guilds", "presences", "guild_messages", "emojis"]
+}

@@ -1,0 +1,4 @@
+{
+  "loader": "./demographics",
+  "intents": ["members", "guilds"]
+}

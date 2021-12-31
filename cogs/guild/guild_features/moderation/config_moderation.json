@@ -1,0 +1,4 @@
+{
+  "loader": "./moderation",
+  "intents": ["guild_messages"]
+}

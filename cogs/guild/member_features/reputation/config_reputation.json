@@ -1,0 +1,4 @@
+{
+  "loader": "./reputation",
+  "intents": ["guilds", "members"]
+}

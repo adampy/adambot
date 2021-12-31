@@ -1,0 +1,4 @@
+{
+  "loader": "./starboard",
+  "intents": ["guild_reactions", "members", "guild"]
+}

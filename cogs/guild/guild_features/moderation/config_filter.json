@@ -1,0 +1,4 @@
+{
+  "loader": "./filter",
+  "intents": ["guild_messages"]
+}

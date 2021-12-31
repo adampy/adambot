@@ -1,0 +1,4 @@
+{
+  "loader": "./logging",
+  "intents": ["guilds", "guild_messages", "members"]
+}

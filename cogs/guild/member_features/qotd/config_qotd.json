@@ -1,0 +1,4 @@
+{
+  "loader": "./qotd",
+  "intents": ["members", "guild"]
+}

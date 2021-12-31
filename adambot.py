@@ -51,6 +51,7 @@ class AdamBot(Bot):
                  **kwargs) -> None:
         self.internal_config = self.load_internal_config(config_path)
         self.cog_list = {}
+        self.intent_list = []
         kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
 
         self.core_cogs = [
@@ -60,9 +61,12 @@ class AdamBot(Bot):
             # as the name suggests, this is temporary, will be moved/split up at some point, just not right now
         ]
 
-        super().__init__(*args, **kwargs)
         self.preload_core_cogs()
         self.preload_cogs()
+
+        print(list(dict.fromkeys(self.intent_list)))
+
+        super().__init__(*args, intents=self.make_intents(list(dict.fromkeys(self.intent_list))), **kwargs)
         self.global_prefix = self.internal_config.get("global_prefix",
                                                       None)  # Stores the global prefix, or None if not set / using guild specific one
 
@@ -188,6 +192,9 @@ class AdamBot(Bot):
                     loader = filename
                 final = f"{base}.{key}.{loader}"
                 self.cog_list[final] = cog_config
+                if "intents" in cog_config:
+                    self.preloader_add_intents(cog_config["intents"], source=final)
+
                 if final in self.core_cogs:
                     self.cog_list[final]["core"] = True
                 else:
@@ -200,6 +207,26 @@ class AdamBot(Bot):
         else:
             print(f"[X]    Ignoring {base}.{key} since it isn't text")
         return [False, None]
+
+    def preloader_add_intents(self, intents: list[str], source: str = "") -> None:
+        requested = []
+        for intent in intents:
+            if type(intent) is str:
+                requested.append(intent)
+        self.intent_list += requested
+        print(f"{'An unspecified source' if not source else source} requested intents: {', '.join(requested)}")
+
+    def make_intents(self, intents: list[str]) -> discord.Intents:
+        base = discord.Intents.none()
+        for intent in intents:
+            try:
+                if hasattr(base, intent):
+                    setattr(base, intent, True)
+                else:
+                    raise Exception
+            except Exception:
+                print(f"Error setting intent '{intent}' since it is not valid")
+        return base
 
     def load_cog(self, name) -> list[bool, Exception]:
         e = None
@@ -282,11 +309,6 @@ class AdamBot(Bot):
         except AttributeError:  # TODO: Sometimes on local env throws exception (AttributeError: 'zoneinfo.ZoneInfo' object has no attribute 'localize') / potential fix?
             return conv_time
 
-
-intents = discord.Intents.default()
-for intent in ["members", "presences", "reactions", "typing", "dm_messages", "guilds"]:
-    intents.__setattr__(intent, True)
-
 parser = argparse.ArgumentParser()
 # todo: make this more customisable
 parser.add_argument("-p", "--prefix", nargs="?", default=None)
@@ -295,5 +317,9 @@ parser.add_argument("-c", "--connections", nargs="?",
                     default=10)  # DB pool max_size (how many concurrent connections the pool can have)
 args = parser.parse_args()
 
-bot = AdamBot(start_time, token=args.token, connections=args.connections, intents=intents,
-              command_prefix=args.prefix)  # If the prefix given == None use the guild ones, otherwise use the given prefix
+bot = AdamBot(start_time, token=args.token, connections=args.connections,
+              command_prefix=args.prefix)
+
+
+#bot = AdamBot(start_time, token=args.token, connections=args.connections, intents=intents,
+              #command_prefix=args.prefix)  # If the prefix given == None use the guild ones, otherwise use the given prefix

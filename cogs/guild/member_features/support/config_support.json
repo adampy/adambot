@@ -1,0 +1,4 @@
+{
+  "loader": "./support",
+  "intents": ["dm_typing", "dm_messages", "guilds", "members"]
+}

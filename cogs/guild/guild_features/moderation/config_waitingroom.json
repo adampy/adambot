@@ -1,0 +1,4 @@
+{
+  "loader": "./waitingroom",
+  "intents": ["guild_messages", "members"]
+}

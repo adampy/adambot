@@ -1,0 +1,4 @@
+{
+  "loader": "./spotify",
+  "intents": ["guilds", "members", "presences"]
+}

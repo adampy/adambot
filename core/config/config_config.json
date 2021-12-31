@@ -1,0 +1,4 @@
+{
+  "loader": "./config",
+  "guilds": ["guilds", "members"]
+}
