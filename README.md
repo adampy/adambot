@@ -16,5 +16,7 @@ Adam-Bot is a general purpose Discord bot. If you have an issue, feature request
 
 The official Adam-Bot instance is hosted on [Heroku](https://www.heroku.com) currently coupled with a [free-tier PostgreSQL database](https://elements.heroku.com/addons/heroku-postgresql)
 
+Note: This project requires Python 3.10 or above.
+
 # :calendar: Todo
 To see the current roadmap for the bot, please see [here](https://github.com/adampy/adambot/projects/1).
