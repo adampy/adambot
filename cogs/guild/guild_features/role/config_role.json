@@ -1,4 +1,4 @@
 {
   "loader": "./role",
-  "intents": ["guild_reactions", "guilds", "members"]
+  "intents": ["guilds", "guild_reactions", "members"]
 }

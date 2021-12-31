@@ -1,4 +1,4 @@
 {
   "loader": "./trivia",
-  "intents": ["members", "guilds"]
+  "intents": ["guilds", "members"]
 }

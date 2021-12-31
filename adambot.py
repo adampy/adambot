@@ -64,8 +64,6 @@ class AdamBot(Bot):
         self.preload_core_cogs()
         self.preload_cogs()
 
-        print(list(dict.fromkeys(self.intent_list)))
-
         super().__init__(*args, intents=self.make_intents(list(dict.fromkeys(self.intent_list))), **kwargs)
         self.global_prefix = self.internal_config.get("global_prefix",
                                                       None)  # Stores the global prefix, or None if not set / using guild specific one
@@ -192,7 +190,7 @@ class AdamBot(Bot):
                     loader = filename
                 final = f"{base}.{key}.{loader}"
                 self.cog_list[final] = cog_config
-                if "intents" in cog_config:
+                if cog_config.get("intents", []):  # accounts for eval edge case
                     self.preloader_add_intents(cog_config["intents"], source=final)
 
                 if final in self.core_cogs:
@@ -318,8 +316,4 @@ parser.add_argument("-c", "--connections", nargs="?",
 args = parser.parse_args()
 
 bot = AdamBot(start_time, token=args.token, connections=args.connections,
-              command_prefix=args.prefix)
-
-
-#bot = AdamBot(start_time, token=args.token, connections=args.connections, intents=intents,
-              #command_prefix=args.prefix)  # If the prefix given == None use the guild ones, otherwise use the given prefix
+              command_prefix=args.prefix)  # If the prefix given == None use the guild ones, otherwise use the given prefix
