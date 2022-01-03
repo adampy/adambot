@@ -32,15 +32,22 @@ def handle_dependencies():
                 parsed = [line.rstrip() for line in list(filter("".__ne__, package.split(" ")))]
                 helpful_update.append([*parsed])
         if helpful_update:
-            upgrade_helpfuls = input(f"Install & upgrade the following core packages:\n\n{chr(10).join([f'{package[0]} {package[1]} -> {package[2]}' for package in helpful_update])}\n\nThis may reduce installation issues. (Y/N) ").lower()
+            try:
+                upgrade_helpfuls = input(f"Install & upgrade the following core packages:\n\n{chr(10).join([f'{package[0]} {package[1]} -> {package[2]}' for package in helpful_update])}\n\nThis may reduce installation issues. (Y/N) ").lower()
+            except EOFError:  # for remote systems where input is not allowed
+                upgrade_helpfuls = "y"
+
             if upgrade_helpfuls == "y":
                 for helpful in helpful_update:
                     try:
                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', helpful[0], '--user'])
                     except Exception as e:
                         print(f"WARNING: Something went wrong with upgrading {helpful}\n{type(e).__name__}: {e}")
-
-        do_missing = input("Install all missing and broken dependencies without further prompt? (Y/N) ").lower()
+        try:
+            do_missing = input("Install all missing and broken dependencies without further prompt? (Y/N) ").lower()
+        except EOFError:
+            do_missing = "y"
+            
         for miss in missing + conflicted + broken:
             if miss in conflicted or do_missing != "y":
                 a = input(f"Resolve dependency: {miss}? (Y/N) "
