@@ -208,6 +208,10 @@ class Config(commands.Cog):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "You must specify a value to set the key to!")
             return
 
+        if key == "prefix" and value == self.bot.global_prefix:  # mitigates conflict issue with >1 instances on same DB
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "This guild-specific prefix is redundant since it's the same as the global prefix!")
+            return
+
         key = key.lower()
         if key not in self.CONFIG.keys():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")
@@ -279,10 +283,6 @@ class Config(commands.Cog):
         key = key.lower()
         if key not in self.CONFIG.keys():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That is not a valid configuration option!")
-            return
-
-        if key == "prefix":
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "The prefix cannot be removed")
             return
 
         self.bot.configs[ctx.guild.id][key] = None
