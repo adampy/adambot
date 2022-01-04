@@ -60,7 +60,7 @@ class WaitingRoom(commands.Cog):
         # Get default phrase if there is one, but the one given in the command overrides the config one
         config_phrase = await self.bot.get_config_key(ctx, "lurker_phrase")
         show_tip = False
-        if phrase: # Handle subcommand
+        if phrase:  # Handle subcommand
             # If phrase is given and a default hasn't yet been set, show a tip on setting defaults
             show_tip = True if config_phrase is None else False
             if phrase[0] == "kick":

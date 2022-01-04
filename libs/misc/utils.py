@@ -1,6 +1,5 @@
 import discord
 from discord import Embed, Colour, Message, File
-from discord.errors import HTTPException
 from discord.ext import commands
 from math import ceil
 from datetime import timedelta
@@ -51,11 +50,11 @@ class EmbedPages:
         if self.footer and self.icon_url:
             self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
         elif self.footer:
-            self.embed.set_footer(text=self.footer) # TODO: Is there a more efficient way to cover the cases where either a footer or icon_url is given but not both?
+            self.embed.set_footer(text=self.footer)  # TODO: Is there a more efficient way to cover the cases where either a footer or icon_url is given but not both?
         elif self.icon_url:
             self.embed.set_footer(icon_url=self.icon_url)
         if self.thumbnail_url:
-            self.embed.set_thumbnail(url=self.thumbnail_url) # NOTE: I WAS CHANGING ALL GUILD ICONS AND AVATARS SO THEY WORK WITH THE DEFAULTS I.E. NO AVATAR OR NO GUILD ICON
+            self.embed.set_thumbnail(url=self.thumbnail_url)  # NOTE: I WAS CHANGING ALL GUILD ICONS AND AVATARS SO THEY WORK WITH THE DEFAULTS I.E. NO AVATAR OR NO GUILD ICON
 
         # Gettings the wanted data
         self.page_num = page_num
@@ -164,7 +163,7 @@ class EmbedPages:
         try:
             await asyncio.sleep(self.timeout)
             await self.message.clear_reactions()
-        except HTTPException:  # Removing reactions failed (perhaps message already deleted)
+        except discord.HTTPException:  # Removing reactions failed (perhaps message already deleted)
             pass
 
     async def edit(self) -> None:

@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from discord import Embed, Colour
-from discord.utils import get
 from libs.misc.utils import get_user_avatar_url
 from math import ceil
 

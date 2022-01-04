@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from libs.misc.decorators import is_staff
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
+
 class Reputation(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
@@ -230,7 +231,7 @@ class Reputation(commands.Cog):
 
         try:
             user = await self.bot.fetch_user(user_id)
-        except discord.errors.NotFound:
+        except discord.NotFound:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That user does not exist!")
             return
 
@@ -251,7 +252,7 @@ class Reputation(commands.Cog):
 
     @rep.command(aliases=["count"])
     @commands.guild_only()
-    async def check(self, ctx: commands.Context, *, args: str="") -> None:
+    async def check(self, ctx: commands.Context, *, args: str = "") -> None:
         """
         Checks a specific person reps, or your own if user is left blank
         """

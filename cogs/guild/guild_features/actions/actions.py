@@ -2,7 +2,6 @@
 
 import discord
 from discord.ext import commands
-from discord.errors import HTTPException
 from discord import Embed, Colour
 import inspect
 import asyncio
@@ -228,7 +227,7 @@ class Actions(commands.Cog):
 
         try:
             await message.clear_reactions()
-        except HTTPException:
+        except discord.HTTPException:
             return
 
     async def register_action(self, guild_id: int, name: str, action: dict) -> None:

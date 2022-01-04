@@ -47,7 +47,7 @@ def handle_dependencies():
             do_missing = input("Install all missing and broken dependencies without further prompt? (Y/N) ").lower()
         except EOFError:
             do_missing = "y"
-            
+
         for miss in missing + conflicted + broken:
             if miss in conflicted or do_missing != "y":
                 a = input(f"Resolve dependency: {miss}? (Y/N) "
@@ -71,6 +71,7 @@ def handle_dependencies():
         print(f"The following missing/conflicted dependencies have not been resolved: {', '.join(not_resolved)}"
               f"{chr(10)}Exiting...")
         exit(1)
+
 
 if __name__ == "__main__":
     handle_dependencies()

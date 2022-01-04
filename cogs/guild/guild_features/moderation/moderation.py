@@ -43,7 +43,7 @@ class Moderation(commands.Cog):
     async def is_user_banned(ctx: commands.Context, user: discord.User) -> bool:
         try:
             await ctx.guild.fetch_ban(user)
-        except discord.errors.NotFound:
+        except discord.NotFound:
             return False
         return True
 
@@ -126,7 +126,7 @@ class Moderation(commands.Cog):
 
         try:  # perhaps add some like `attempt_dm` thing in utils instead of this?
             await member.send(f"You have been kicked from {ctx.guild} ({reason})")
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
+        except (discord.Forbidden, discord.HTTPException):
             await ctx.send(f"Could not DM {member.display_name} about their kick!")
 
         await member.kick(reason=reason)
@@ -222,7 +222,7 @@ class Moderation(commands.Cog):
                     continue
             try:
                 await member.send(f"You have been banned from {ctx.guild.name} ({reason})")
-            except (discord.errors.Forbidden, discord.errors.HTTPException):
+            except (discord.Forbidden, discord.HTTPException):
                 await ctx.send(f"Could not DM {member.id} about their ban!")
             await ctx.guild.ban(member, reason=reason, delete_message_days=0)
             if not massban:
@@ -323,7 +323,7 @@ class Moderation(commands.Cog):
             muted_role = await self.bot.get_config_key(message, "muted_role")
             if muted_role is not None and muted_role in [role.id for role in message.author.roles]:
                 await message.delete()
-        except discord.errors.NotFound:
+        except discord.NotFound:
             pass  # Message can't be deleted (nobody cares)
         except KeyError:
             pass  # Bot not fully loaded yet (nobody cares)
@@ -367,7 +367,7 @@ class Moderation(commands.Cog):
             reasonstring = reason
         try:
             await member.send(f'You have been muted {timestring} for {reasonstring}.')
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
+        except (discord.Forbidden, discord.HTTPException):
             await ctx.send(f"Could not DM {member.display_name} about their mute!")
 
         channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")

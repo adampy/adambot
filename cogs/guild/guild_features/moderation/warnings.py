@@ -4,6 +4,7 @@ from discord.ext import commands
 from libs.misc.decorators import is_staff
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
+
 class Warnings(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
@@ -124,8 +125,6 @@ class Warnings(commands.Cog):
                         await ctx.send(f'Warning with ID {warning} has been deleted.')
                 else:
                     await ctx.send(f'Error whilst deleting ID {warning}: give me a warning ID, not words!')
-
-
 
         if len(warnings) > 1:
             await ctx.send(f"The warning's have been deleted.")

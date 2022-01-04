@@ -278,7 +278,7 @@ class StarboardCog(commands.Cog):
     async def on_raw_reaction_event(self, payload) -> None:
         try:
             message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
-        except discord.errors.NotFound:
+        except discord.NotFound:
             return
 
         starboards = await self._get_starboards(payload.guild_id)

@@ -25,7 +25,7 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool) -> None:
             invite_log_channel BIGINT,
             lurker_phrase VARCHAR(1023),
             spamping_access BOOLEAN DEFAULT false
-        )""") # bruhs counts how many bruh moments a guild has had
+        )""")  # bruhs counts how many bruh moments a guild has had
 
         # Filter table
         await connection.execute("""CREATE TABLE IF NOT EXISTS filter(
@@ -115,7 +115,7 @@ async def create_tables_if_not_exists(pool: asyncpg.pool.Pool) -> None:
             inverse BOOLEAN DEFAULT FALSE,
             emoji TEXT,
             emoji_id BIGINT
-        )""") # TODO: Normalise this table to 3NF?
+        )""")  # TODO: Normalise this table to 3NF?
 
         # Starboard table
         await connection.execute("""CREATE TABLE IF NOT EXISTS starboard(

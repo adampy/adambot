@@ -40,7 +40,7 @@ class Member(commands.Cog):
         content = re.sub(repl, r"\1​\2", msg.content)
 
         if msg.attachments:
-            image = msg.attachments[0]['url']
+            image = msg.attachments[0].url
 
         embed = Embed(title="Quote link",
                       url=f"https://discordapp.com/channels/{channel.id}/{messageid}",
@@ -219,12 +219,12 @@ class Member(commands.Cog):
         is_member = isinstance(user, discord.Member)
         if is_member:
             statuses = ""
-            if user.desktop_status.name != "offline":
-                statuses += f"{getattr(self.bot.EmojiEnum, user.desktop_status.name.upper())} Desktop "
-            if user.web_status.name != "offline":
-                statuses += f"{getattr(self.bot.EmojiEnum, user.web_status.name.upper())} Web "
-            if user.mobile_status.name != "offline":
-                statuses += f"{getattr(self.bot.EmojiEnum, user.mobile_status.name.upper())} Mobile"
+            if user.desktop_status != discord.Status.offline:
+                statuses += f"{getattr(self.bot.EmojiEnum, str(user.desktop_status).upper())} Desktop "
+            if user.web_status != discord.Status.offline:
+                statuses += f"{getattr(self.bot.EmojiEnum, str(user.web_status).upper())} Web "
+            if user.mobile_status != discord.Status.offline:
+                statuses += f"{getattr(self.bot.EmojiEnum, str(user.mobile_status).upper())} Mobile"
             if not statuses:
                 statuses = "in offline status"
             else:
@@ -307,7 +307,7 @@ class Member(commands.Cog):
         if flags:
             desc = []
             for flag in flags:
-                desc.append(self.bot.make_readable(flag.name))
+                desc.append(self.bot.make_readable(flag.name))  # PyCharm likes to complain about this but it's an enum so... it's perfectly valid
             desc = ", ".join(desc)
             data.add_field(name="Special flags", value=desc, inline=False)
 
@@ -326,7 +326,7 @@ class Member(commands.Cog):
             message = f'You told me to remind you about this:\n{data["reason"]}'
             try:
                 await member.send(message)
-            except (discord.errors.Forbidden, discord.errors.HTTPException):
+            except (discord.Forbidden, discord.HTTPException):
                 channel = self.bot.get_channel(data["channel_id"])
                 await channel.send(f"{member.mention}, {message}")
         except Exception as e:

@@ -5,8 +5,9 @@ from random import choice
 from math import inf
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url, DefaultEmbedResponses
 from typing import Any, Callable
-from inspect import signature # Used in @qotd_perms decorator
+from inspect import signature  # Used in @qotd_perms decorator
 import asyncio
+
 
 def qotd_perms(func: Callable) -> Callable:
     """
@@ -35,6 +36,7 @@ def qotd_perms(func: Callable) -> Callable:
     decorator.__name__ = func.__name__
     decorator.__signature__ = signature(func)
     return decorator
+
 
 class QOTD(commands.Cog):
     def __init__(self, bot) -> None:

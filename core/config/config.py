@@ -7,6 +7,7 @@ import asyncio
 from typing import Any
 from libs.misc.utils import get_guild_icon_url, get_user_avatar_url
 
+
 class Validation(Enum):
     Channel = 1     # Is a channel that the bot can read/write in
     Role = 2        # Is a valid role
