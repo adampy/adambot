@@ -1,9 +1,3 @@
-import time
-
-start_time = time.time()
-
-__import__("importlib").import_module("scripts.utils.handle_dependencies").handle_dependencies()
-
 import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, when_mentioned_or, when_mentioned
@@ -11,11 +5,14 @@ import asyncpg
 import os
 import pytz
 import datetime
+import time
 from tzlocal import get_localzone
 import pandas
 import json
-import argparse
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
+
+from scripts.utils import cog_handler
+
 
 class AdamBot(Bot):
     async def get_context(self, message: discord.Message, *, cls=commands.Context) -> commands.Context:
@@ -50,21 +47,20 @@ class AdamBot(Bot):
     def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args,
                  **kwargs) -> None:
         self.internal_config = self.load_internal_config(config_path)
-        self.cog_list = {}
-        self.intent_list = []
+        self.cog_handler = cog_handler.CogHandler()
+
         kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
 
-        self.core_cogs = [
-            "core.config.config",
-            "core.tasks.tasks",
-            "libs.misc.temp_utils_cog"
-            # as the name suggests, this is temporary, will be moved/split up at some point, just not right now
-        ]
+        self.cog_handler.preload_core_cogs()
 
-        self.preload_core_cogs()
-        self.preload_cogs()
+        cog_dict = pandas.json_normalize(self.internal_config.get("cogs", {}), sep=".").to_dict(orient="records")[0]
 
-        super().__init__(*args, intents=self.make_intents(list(dict.fromkeys(self.intent_list))), **kwargs)
+        if cog_dict:
+            self.cog_handler.preload_cogs(pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[0])
+        else:
+            print("[X]    No cogs specified.")
+
+        super().__init__(*args, intents=self.cog_handler.make_intents(list(dict.fromkeys(self.cog_handler.intent_list))), **kwargs)
         self.global_prefix = self.internal_config.get("global_prefix",
                                                       None)  # Stores the global prefix, or None if not set / using guild specific one
 
@@ -131,7 +127,7 @@ class AdamBot(Bot):
         """
 
         print("Loading cogs...")
-        self.load_cogs()
+        self.cog_handler.load_cogs(self)
         self.cog_load = time.time()
         print(
             f"\nLoaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
@@ -141,8 +137,7 @@ class AdamBot(Bot):
             db_url = os.environ.get("DATABASE_URL", "")
 
         self.pool: \
-            asyncpg.pool.Pool = self.loop.run_until_complete(
-            asyncpg.create_pool(db_url + "?sslmode=require", max_size=self.connections))
+            asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(db_url + "?sslmode=require", max_size=self.connections))
 
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
         print(
@@ -164,120 +159,6 @@ class AdamBot(Bot):
         except Exception as e:
             print(
                 f"Something went wrong handling the token!\nThe error was {type(e).__name__}: {e}")  # overridden close cleans this up neatly
-
-    def preload_cog(self, key: str, filename: str, base="cogs") -> list[bool, Exception]:
-        loader = None
-        cog_config = {}
-        if type(filename) is str and type(key) is str:
-            try:
-                try:
-                    cog_config_file = open(f"./{base.replace('.', '/')}/{key.replace('.', '/')}/config_{filename}.json")
-                    cog_config = json.loads(cog_config_file.read())
-                    loader = cog_config.get("loader", None)
-                except Exception:
-                    pass  # probably not found
-
-                if type(loader) is str and os.path.abspath(f"{base}/{loader}").startswith(
-                        os.path.abspath(f"./{base.replace('.', '/')}/{key.replace('.', '/')}")):  # restrict paths
-                    try:
-                        loader = os.path.relpath(loader)
-                        loader = loader.replace(chr(92), "/").replace("/", ".")
-                        while ".." in loader:
-                            loader = loader.replace("..", ".")
-                    except Exception:
-                        pass
-                else:
-                    loader = filename
-                final = f"{base}.{key}.{loader}"
-                self.cog_list[final] = cog_config
-                if cog_config.get("intents", []):  # accounts for eval edge case
-                    self.preloader_add_intents(cog_config["intents"], source=final)
-
-                if final in self.core_cogs:
-                    self.cog_list[final]["core"] = True
-                else:
-                    self.cog_list[final]["core"] = False
-                return [True, None]
-            except Exception as e:
-                print(
-                    f"\n\n\n[-]   {base}.{key}.{loader} could not be preloaded due to an error! See the error below for more details\n\n{type(e).__name__}: {e}\n\n\n")
-                return [False, e]
-        else:
-            print(f"[X]    Ignoring {base}.{key} since it isn't text")
-        return [False, None]
-
-    def preloader_add_intents(self, intents: list[str], source: str = "") -> None:
-        requested = []
-        for intent in intents:
-            if type(intent) is str:
-                requested.append(intent)
-        self.intent_list += requested
-        print(f"{'An unspecified source' if not source else source} requested intents: {', '.join(requested)}")
-
-    def make_intents(self, intents: list[str]) -> discord.Intents:
-        base = discord.Intents.none()
-        for intent in intents:
-            try:
-                if hasattr(base, intent):
-                    setattr(base, intent, True)
-                else:
-                    raise Exception
-            except Exception:
-                print(f"Error setting intent '{intent}' since it is not valid")
-        return base
-
-    def load_cog(self, name) -> list[bool, Exception]:
-        e = None
-        if name in self.cog_list:
-            try:
-                self.load_extension(name)
-                print(f'\n[+]    {name}')
-            except Exception as e:
-                return [False, e]
-        else:
-            print(f"\n\n\n[-]   {name} ignored since it wasn't registered")
-            return [False, None]
-        return [True, None]
-
-    def load_cogs(self):
-        for name in self.cog_list:
-            result = self.load_cog(name)
-            if not result[0]:
-                print(f"\n\n\n[-]   {name} could not be loaded due to an error! " + f"See the error below for more details\n\n{type(result[1]).__name__}: {result[1]}" if result[1] else "")
-                if name in self.core_cogs:
-                    print(f"Exiting since a core cog could not be loaded...")
-                    exit()
-
-    def preload_core_cogs(self) -> None:
-        """
-        Non-negotiable.
-        """
-
-        print("Loading core cogs...")
-
-        for cog in self.core_cogs:
-            temp = cog.split(".")
-            self.preload_cog(".".join(temp[1:-1]), temp[-1], base=temp[0])
-
-    def preload_cogs(self) -> None:
-        """
-        Procedure that loads all the cogs, from tree in config file
-        """
-
-        if "cogs" not in self.internal_config:
-            print("[X]    No cogs loaded since none were specified.")
-            return
-
-        cog_list = pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[
-            0]  # flatten
-
-        for key in cog_list:
-            if type(cog_list[key]) is list:  # random validation checks yay
-                for filename in cog_list[key]:
-                    self.preload_cog(key, filename)
-            else:
-                print(
-                    f"[X]    Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
 
     async def on_ready(self) -> None:
         await database_handle.create_tables_if_not_exists(self.pool)  # Makes tables if they do not exist
@@ -306,15 +187,3 @@ class AdamBot(Bot):
             return tz_obj.localize(conv_time.replace(tzinfo=None)).astimezone(self.display_timezone)
         except AttributeError:  # TODO: Sometimes on local env throws exception (AttributeError: 'zoneinfo.ZoneInfo' object has no attribute 'localize') / potential fix?
             return conv_time
-
-
-parser = argparse.ArgumentParser()
-# todo: make this more customisable
-parser.add_argument("-p", "--prefix", nargs="?", default=None)
-parser.add_argument("-t", "--token", nargs="?", default=None)  # can change token on the fly/keep env clean
-parser.add_argument("-c", "--connections", nargs="?",
-                    default=10)  # DB pool max_size (how many concurrent connections the pool can have)
-args = parser.parse_args()
-
-bot = AdamBot(start_time, token=args.token, connections=args.connections,
-              command_prefix=args.prefix)  # If the prefix given == None use the guild ones, otherwise use the given prefix
