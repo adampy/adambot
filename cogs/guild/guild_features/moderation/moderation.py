@@ -181,6 +181,8 @@ class Moderation(commands.Cog):
             members = [member]
         already_banned = []
         not_found = []
+        could_not_notify = []
+
         ban = 0
         for ban, member_ in enumerate(members, start=1):
             if massban:
@@ -223,7 +225,11 @@ class Moderation(commands.Cog):
             try:
                 await member.send(f"You have been banned from {ctx.guild.name} ({reason})")
             except (discord.Forbidden, discord.HTTPException):
-                await ctx.send(f"Could not DM {member.id} about their ban!")
+                if not massban:
+                    await ctx.send(f"Could not DM {member.mention} ({member.id}) about their ban!")
+                else:
+                    could_not_notify.append(member)
+
             await ctx.guild.ban(member, reason=reason, delete_message_days=0)
             if not massban:
                 await ctx.send(f'{member.mention} has been banned.')
@@ -251,6 +257,10 @@ class Moderation(commands.Cog):
                                        (
                                            f"\n__**These users are already banned**__:\n\n - {f'{chr(10)} - '.join(f'{a_already_banned}' for a_already_banned in already_banned)}" if len(
                                                already_banned) > 0 else ""
+                                       ) +
+                                       (
+                                           f"\n__**These users couldn't be DMed about their ban**__:\n\n - {f'{chr(10)} - '.join(f'{a_unnotified}' for a_unnotified in could_not_notify)}" if len(
+                                               could_not_notify) > 0 else ""
                                        )
                                )
 
