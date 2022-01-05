@@ -10,7 +10,6 @@ from tzlocal import get_localzone
 import pandas
 import json
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
-
 from scripts.utils import cog_handler
 
 
@@ -26,8 +25,7 @@ class AdamBot(Bot):
 
         watch_prefixes = [await self.get_config_key(message, "prefix") if message.guild else None, self.global_prefix]
         if watch_prefixes != [None] * len(watch_prefixes):
-            return when_mentioned_or(*tuple([prefix for prefix in watch_prefixes if type(prefix) is str]))(self,
-                                                                                                           message)  # internal conf prefix or guild conf prefix can be used
+            return when_mentioned_or(*tuple([prefix for prefix in watch_prefixes if type(prefix) is str]))(self, message)  # internal conf prefix or guild conf prefix can be used
         else:
             # Config tables aren't loaded yet or internal config doesn't specify another prefix, temporarily set to mentions only
             return when_mentioned(self, message)
@@ -47,24 +45,34 @@ class AdamBot(Bot):
     def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args,
                  **kwargs) -> None:
         self.internal_config = self.load_internal_config(config_path)
-        self.cog_handler = cog_handler.CogHandler()
+        self.cog_handler = cog_handler.CogHandler(self)
 
         kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
-
         self.cog_handler.preload_core_cogs()
 
         cog_dict = pandas.json_normalize(self.internal_config.get("cogs", {}), sep=".").to_dict(orient="records")[0]
-
         if cog_dict:
             self.cog_handler.preload_cogs(pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[0])
         else:
             print("[X]    No cogs specified.")
 
         super().__init__(*args, intents=self.cog_handler.make_intents(list(dict.fromkeys(self.cog_handler.intent_list))), **kwargs)
+
+        db_start = time.time()
+        print("Creating DB pool...")
+        db_url = self.internal_config.get("database_url", "")
+        if not db_url:
+            db_url = os.environ.get("DATABASE_URL", "")
+        self.connections = kwargs.get("connections", 10)  # Max DB pool connections
+        self.pool: \
+            asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(db_url + "?sslmode=require", max_size=self.connections))
+
+        self.loop.run_until_complete(database_handle.introduce_tables(self.pool, self.cog_handler.db_tables))
+        print(f"DB took {time.time() - db_start} seconds to connect to")
+
         self.global_prefix = self.internal_config.get("global_prefix",
                                                       None)  # Stores the global prefix, or None if not set / using guild specific one
 
-        self.connections = kwargs.get("connections", 10)  # Max DB pool connections
         self.online = False  # Start at False, changes to True once fully initialised
         self.LOCAL_HOST = False if os.environ.get("REMOTE", None) else True
         self.display_timezone = pytz.timezone('Europe/London')
@@ -127,21 +135,14 @@ class AdamBot(Bot):
         """
 
         print("Loading cogs...")
-        self.cog_handler.load_cogs(self)
+        self.cog_handler.load_cogs()
         self.cog_load = time.time()
         print(
             f"\nLoaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
-        print("Creating DB pool...")
-        db_url = self.internal_config.get("database_url", "")
-        if not db_url:
-            db_url = os.environ.get("DATABASE_URL", "")
-
-        self.pool: \
-            asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(db_url + "?sslmode=require", max_size=self.connections))
 
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
         print(
-            f'Bot fully setup!\nDB took {time.time() - self.cog_load} seconds to connect to ({time.time() - self.start_time} seconds total)')
+            f'Bot fully setup! ({time.time() - self.start_time} seconds total)')
         print("Logging into Discord...")
 
         token = self.internal_config.get("token", "")
@@ -161,7 +162,6 @@ class AdamBot(Bot):
                 f"Something went wrong handling the token!\nThe error was {type(e).__name__}: {e}")  # overridden close cleans this up neatly
 
     async def on_ready(self) -> None:
-        await database_handle.create_tables_if_not_exists(self.pool)  # Makes tables if they do not exist
         self.login_time = time.time()
         print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
         await self.change_presence(activity=discord.Game(name=f'in {len(self.guilds)} servers | Type `help` for help'),

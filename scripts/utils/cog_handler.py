@@ -3,7 +3,9 @@ import discord
 import os
 
 class CogHandler:
-    def __init__(self):
+    def __init__(self, bot):
+
+        self.bot = bot
         self.cog_list = {}
 
         self.core_cogs = [
@@ -14,7 +16,7 @@ class CogHandler:
         ]
 
         self.intent_list = []
-
+        self.db_tables = []
 
     def preload_cog(self, key: str, filename: str, base="cogs") -> list[bool, Exception]:
         loader = None
@@ -43,6 +45,14 @@ class CogHandler:
                 self.cog_list[final] = cog_config
                 if cog_config.get("intents", []):  # accounts for eval edge case
                     self.preloader_add_intents(cog_config["intents"], source=final)
+
+                db_schema = cog_config.get("db_schema", {})
+                if db_schema:
+                    for key in db_schema:
+                        table_schema = db_schema.get(key)
+                        fields = table_schema.get("fields", [])
+                        if fields and type(fields) is list:
+                            self.db_tables.append({"name": key, "fields": fields})
 
                 if final in self.core_cogs:
                     self.cog_list[final]["core"] = True
@@ -77,11 +87,11 @@ class CogHandler:
                 print(f"Error setting intent '{intent}' since it is not valid")
         return base
 
-    def load_cog(self, name, bot) -> list[bool, Exception]:
+    def load_cog(self, name) -> list[bool, Exception]:
         e = None
         if name in self.cog_list:
             try:
-                bot.load_extension(name)
+                self.bot.load_extension(name)
                 print(f'\n[+]    {name}')
             except Exception as e:
                 return [False, e]
@@ -90,9 +100,9 @@ class CogHandler:
             return [False, None]
         return [True, None]
 
-    def load_cogs(self, bot):
+    def load_cogs(self):
         for name in self.cog_list:
-            result = self.load_cog(name, bot)
+            result = self.load_cog(name)
             if not result[0]:
                 print(f"\n\n\n[-]   {name} could not be loaded due to an error! " + f"See the error below for more details\n\n{type(result[1]).__name__}: {result[1]}" if result[1] else "")
                 if name in self.core_cogs:

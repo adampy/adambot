@@ -1,3 +1,14 @@
 {
-  "loader": "./tasks"
+  "loader": "./tasks",
+  "db_schema": {
+    "tasks": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "task_name VARCHAR(255) NOT NULL",
+        "task_time TIMESTAMPTZ",
+        "member_id BIGINT",
+        "guild_id BIGINT"
+      ]
+    }
+  }
 }

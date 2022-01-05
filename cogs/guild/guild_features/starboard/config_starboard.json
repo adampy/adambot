@@ -1,4 +1,26 @@
 {
   "loader": "./starboard",
-  "intents": ["guilds", "guild_reactions", "members"]
+  "intents": ["guilds", "guild_reactions", "members"],
+  "db_schema": {
+    "starboard": {
+      "fields": [
+        "channel_id BIGINT PRIMARY KEY",
+        "guild_id BIGINT NOT NULL",
+        "emoji TEXT",
+        "emoji_id BIGINT",
+        "minimum_stars INT NOT NULL",
+        "embed_colour VARCHAR(7)",
+        "allow_self_star BOOL"
+      ]
+    },
+
+    "starboard_entry": {
+      "fields": [
+        "message_id BIGINT NOT NULL",
+        "starboard_channel_id BIGINT NOT NULL",
+        "bot_message_id BIGINT NOT NULL",
+        "CONSTRAINT fk_starboard_reference FOREIGN KEY (starboard_channel_id) REFERENCES starboard(channel_id) ON DELETE CASCADE"
+      ]
+    }
+  }
 }

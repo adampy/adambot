@@ -1,4 +1,13 @@
 {
   "loader": "./filter",
-  "intents": ["guild_messages"]
+  "intents": ["guild_messages"],
+  "db_schema": {
+    "filter": {
+      "fields": [
+        "guild_id BIGINT PRIMARY KEY",
+        "filters TEXT"
+      ]
+
+    }
+  }
 }

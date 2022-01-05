@@ -1,4 +1,29 @@
 {
   "loader": "./config",
-  "guilds": ["guilds", "members"]
+  "guilds": ["guilds", "members"],
+  "db_schema": {
+    "config": {
+      "fields": [
+        "guild_id BIGINT PRIMARY KEY",
+        "welcome_channel BIGINT",
+        "welcome_msg VARCHAR(1023)",
+        "support_log_channel BIGINT",
+        "staff_role BIGINT",
+        "qotd_role BIGINT",
+        "qotd_limit INT DEFAULT 0",
+        "qotd_channel BIGINT",
+        "muted_role BIGINT",
+        "mod_log_channel BIGINT",
+        "prefix VARCHAR(1023) DEFAULT '-'",
+        "bruhs INT DEFAULT 0",
+        "rep_award_banned BIGINT",
+        "rep_receive_banned BIGINT",
+        "jail_role BIGINT",
+        "trivia_channel BIGINT",
+        "invite_log_channel BIGINT",
+        "lurker_phrase VARCHAR(1023)",
+        "spamping_access BOOLEAN DEFAULT false"
+      ]
+    }
+  }
 }

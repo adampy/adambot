@@ -1,4 +1,16 @@
 {
   "loader": "./member",
-  "intents": ["emojis", "guilds", "guild_messages", "members", "presences"]
+  "intents": ["emojis", "guilds", "guild_messages", "members", "presences"],
+  "db_schema": {
+    "remind": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "member_id BIGINT",
+        "reminder_time TIMESTAMPTZ",
+        "reminder VARCHAR(255)",
+        "created_at TIMESTAMPTZ",
+        "channel_id BIGINT"
+      ]
+    }
+  }
 }

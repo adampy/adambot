@@ -1,4 +1,13 @@
 {
   "loader": "./reputation",
-  "intents": ["guilds", "members"]
+  "intents": ["guilds", "members"],
+  "db_schema": {
+    "reps": {
+      "fields": [
+        "member_id BIGINT",
+        "guild_id BIGINT",
+        "reps INT"
+      ]
+    }
+  }
 }

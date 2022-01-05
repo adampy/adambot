@@ -1,4 +1,15 @@
 {
   "loader": "./qotd",
-  "intents": ["guilds", "members"]
+  "intents": ["guilds", "members"],
+  "db_schema": {
+    "qotd": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "question VARCHAR(255) NOT NULL",
+        "submitted_by BIGINT NOT NULL",
+        "submitted_at TIMESTAMPTZ NOT NULL DEFAULT now()",
+        "guild_id BIGINT NOT NULL"
+      ]
+    }
+  }
 }

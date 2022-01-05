@@ -1,4 +1,15 @@
 {
   "loader": "./support",
-  "intents": ["dm_typing", "dm_messages", "guilds", "members"]
+  "intents": ["dm_typing", "dm_messages", "guilds", "members"],
+  "db_schema": {
+    "support": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "member_id BIGINT",
+        "staff_id BIGINT",
+        "guild_id BIGINT",
+        "started_at TIMESTAMPTZ"
+      ]
+    }
+  }
 }
