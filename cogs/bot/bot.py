@@ -2,13 +2,42 @@ import discord
 from discord.ext import commands
 from discord import Embed
 import platform
+import os
 import time
+import subprocess
+import requests
 from libs.misc.utils import get_user_avatar_url
 
 
 class BotCog(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
+        self.remote_url = os.environ.get("AB_REMOTE_URL")
+        parent_needed = False
+        folder_name = ""
+        if not self.remote_url:
+            self.remote_name = subprocess.run(f"git config branch.{self.branch_name}.remote".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip() if self.branch_name else ""
+            self.remote_url = subprocess.run(f"git config remote.{self.remote_name}.url".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip() if self.remote_name else ""
+            if self.remote_url.endswith(".git"):
+                self.remote_url = self.remote_url[:-4]
+
+        else:
+            clone = subprocess.run(f"git clone {os.environ.get('AB_REMOTE_URL')}.git".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
+            if "fatal" not in clone:
+                parent_needed = True
+                folder_name = f"-C {os.environ.get('AB_REMOTE_URL').split('/')[-1]} "
+                if os.environ.get("AB_REMOTE_BRANCH"):
+                    subprocess.run(f"git {folder_name}checkout {os.environ.get('AB_REMOTE_BRANCH')}".split(" "), stdout=subprocess.PIPE)
+
+        self.commit_hash = subprocess.run(f"git {folder_name}rev-parse HEAD".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
+        self.commit_name = subprocess.run(f"git {folder_name}log -1 --pretty=format:%s".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
+        self.branch_name = subprocess.run(f"git {folder_name}rev-parse --abbrev-ref HEAD".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
+
+        if parent_needed:
+            os.system("cd ..")
+
+        self.commit_page = requests.get(f"{self.remote_url}/commit/{self.commit_hash}") if self.commit_hash and self.remote_url else ""
+        self.commit_url = f"{self.remote_url}/commit/{self.commit_hash}" if type(self.commit_page) is not str and self.commit_page.status_code == 200 else "" if self.commit_page else ""
 
     @commands.command()
     @commands.guild_only()
@@ -18,6 +47,9 @@ class BotCog(commands.Cog):
         embed.add_field(name="Uptime", value=self.bot.time_str(round(time.time() - self.bot.start_time)))
         embed.add_field(name="Discord.py version", value=discord.__version__, inline=False)
         embed.add_field(name="Python version", value=f"{platform.python_version()}", inline=False)
+        embed.add_field(name="Commit in use", value=f"{self.commit_name} ({self.commit_hash})" if self.commit_hash else "Unknown", inline=False)
+        if self.commit_url:
+            embed.add_field(name="Commit link", value=self.commit_url, inline=False)
         embed.add_field(name="Host OS", value=f"{platform.system()}", inline=False)
         embed.add_field(name="Bot owner", value=f"{app_info.owner}", inline=False)
         embed.add_field(name="Public bot", value=f"{app_info.bot_public}", inline=False)
