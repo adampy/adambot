@@ -1,4 +1,15 @@
 {
   "loader": "./moderation",
-  "intents": ["guild_messages"]
+  "intents": ["guild_messages"],
+  "config_keys": {
+    "muted_role": {
+      "validator": "Role",
+      "description": "The role that prevents someone from interacting with a server (subject to permissions)"
+    },
+
+    "jail_role": {
+      "validator": "Role",
+      "description": "The role that puts people into jail"
+    }
+  }
 }

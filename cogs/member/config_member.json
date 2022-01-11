@@ -12,5 +12,12 @@
         "channel_id BIGINT"
       ]
     }
+  },
+
+  "config_keys": {
+    "spamping_access": {
+      "validator": "Boolean",
+      "description": "Allow *ALL* users of a guild to access spamping/ghostping, default False"
+    }
   }
 }

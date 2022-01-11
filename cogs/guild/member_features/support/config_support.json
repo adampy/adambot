@@ -11,5 +11,12 @@
         "started_at TIMESTAMPTZ"
       ]
     }
+  },
+
+  "config_keys": {
+    "support_channel": {
+      "validator": "Channel",
+      "description": "Where the logs from the support module go"
+    }
   }
 }

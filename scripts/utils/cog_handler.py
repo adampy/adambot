@@ -91,6 +91,10 @@ class CogHandler:
         e = None
         if name in self.cog_list:
             try:
+                for key in self.cog_list[name].get("config_keys", []):
+                    data = self.cog_list[name]["config_keys"][key]
+                    print(f"Sent config key {key} in for validation (requested by cog {name})")
+                    self.bot.config_cog.register_config_key(key, data["validator"], data["description"])
                 self.bot.load_extension(name)
                 print(f'\n[+]    {name}')
             except Exception as e:

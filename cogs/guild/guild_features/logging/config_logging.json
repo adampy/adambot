@@ -1,4 +1,10 @@
 {
   "loader": "./logging",
-  "intents": ["guilds", "guild_messages", "members"]
+  "intents": ["guilds", "guild_messages", "members"],
+  "config_keys": {
+    "invite_log_channel": {
+      "validator": "Channel",
+      "description": "Where invites are logged"
+    }
+  }
 }

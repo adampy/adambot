@@ -15,32 +15,30 @@ class Validation(Enum):
     String = 4      # String less than 2000 chars
     Boolean = 5     # Is either a yes/no
 
+def get_validator(value):
+    return getattr(Validation, value)
 
 class Config(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
         self.bot.configs = {}
+        self.bot.config_cog = self
+        self.bot.update_config = self.update_config
+        self.bot.register_config_key = self.register_config_key
         self.bot.is_staff = self.is_staff  # is_staff defined here
         self.bot.get_config_key = self.get_config_key
         self.CONFIG = {  # Stores each column of the config table, the type of validation it is, and a short description of how its used - the embed follows the same order as this
-            "welcome_channel": [Validation.Channel, "Where the welcome message is sent"],
-            "welcome_msg": [Validation.String, "What is sent when someone new joins (<user> tags the new user)"],
-            "support_log_channel": [Validation.Channel, "Where the logs from the support module go"],
-            "staff_role": [Validation.Role, "The role that designates bot perms"],
-            "qotd_role": [Validation.Role, "The role that designates QOTD perms (show, pick, delete)"],
-            "qotd_limit": [Validation.Integer, "How many QOTDs people can submit per day"],
-            "qotd_channel": [Validation.Channel, "Where the QOTDs are displayed when picked"],
-            "muted_role": [Validation.Role, "The role that prevents someone from talking"],
-            "mod_log_channel": [Validation.Channel, "Where the main logs go"],
-            "invite_log_channel": [Validation.Channel, "Where invites are logged"],
-            "prefix": [Validation.String, "The prefix the bot uses, default is '-'"],
-            "rep_award_banned": [Validation.Role, "The role that blocks people giving reputation"],
-            "rep_receive_banned": [Validation.Role, "The role that blocks people receiving reputation"],
-            "jail_role": [Validation.Role, "The role that puts people into jail"],
-            "trivia_channel": [Validation.Channel, "Where trivias get played"],
-            "lurker_phrase": [Validation.String, "The default phrase when using the lurker command"],
-            "spamping_access": [Validation.Boolean, "Allow *ALL* users of a guild to access spamping/ghostping, default False"]
+            "staff_role": [Validation.Role, "The role that designates bot perms"],  # CORE
+            "mod_log_channel": [Validation.Channel, "Where the main logs go"],  # CORE
+            "prefix": [Validation.String, "The prefix the bot uses, default is '-'"],  # CORE
         }
+
+    def register_config_key(self, name: str, validator_type: str | Validation, description: str) -> bool:
+        if type(validator_type) is str:
+            validator_type = getattr(Validation, validator_type, None)
+
+        if [type(a) for a in [name, validator_type, description]] == [str, Validation, str]:
+            self.CONFIG[name] = [validator_type, description]
 
     async def add_all_guild_configs(self) -> None:
         """Adds configs to all guilds - executed on startup"""
@@ -63,7 +61,6 @@ class Config(commands.Cog):
             await asyncio.sleep(1)  # Wait else DB won't be available
 
         await self.add_all_guild_configs()
-        self.bot.update_config = self.update_config
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild) -> None:
@@ -95,8 +92,23 @@ class Config(commands.Cog):
                         record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;",
                                                            guild_id)  # Fetch configuration record
 
+
             keys = list(record.keys())[1:]
             values = list(record.values())[1:]  # Include all keys and values apart from the first one (guild_id)
+
+            i=0
+            while i < len(keys):  # remove phantom keys
+                if keys[i] not in self.CONFIG.keys():
+                    del keys[i]
+                    del values[i]
+                    i -= 1
+                i += 1
+
+            for key in self.CONFIG:
+                if key not in keys:
+                    keys.append(key)
+                    values.append(None)
+
             self.bot.configs[guild_id] = dict(
                 zip(keys, values))  # Turns the record into a dictionary (column name = key, value = value)
 
@@ -114,18 +126,44 @@ class Config(commands.Cog):
         Should only be called internally ideally.
         """
 
+        async with self.bot.pool.acquire() as connection:
+            current_columns = await connection.fetch("SELECT column_name FROM information_schema.columns WHERE table_name = 'config'")
+            current_columns = [column["column_name"] for column in current_columns]
+
         data = self.bot.configs[guild_id]
+        new_data = {}
+        for j in data:
+            if data.get(j):
+                new_data[j] = data[j]
+
+        data = new_data
         length = len(data.keys())
 
         # Make SQL
         sql_part = ""
         keys = list(data)  # List of the keys (current column names in the database)
+        counter = 0
         for i in range(length):
-            sql_part += f"{keys[i]} = (${i + 1})"  # For each key, add "{nth key_name} = $n+1"
-            if i != length - 1:
-                sql_part += ", "  # If not the last element, add a ", "
+            column_exists = keys[i] in list(current_columns)
+            if data.get(keys[i], None):
+                if not column_exists:  # create new columns when data needs to be stored
+                    async with self.bot.pool.acquire() as connection:
+                        validator = self.CONFIG.get(keys[i])[0]
+                        if validator in [Validation.Role, Validation.Channel, Validation.Integer]:
+                            await connection.execute(f"ALTER TABLE config ADD {keys[i]} BIGINT")
+                        elif validator == Validation.Boolean:
+                            await connection.execute(f"ALTER TABLE config ADD {keys[i]} BOOLEAN DEFAULT false")
+                        else:
+                            await connection.execute(f"ALTER TABLE config ADD {keys[i]} VARCHAR(1023)")
 
-        sql = f"UPDATE config SET {sql_part} WHERE guild_id = {guild_id};"
+            if data.get(keys[i], None) or not data.get(keys[i], None) and column_exists:  # need to update table if column exists as there was already data
+                sql_part += f"{keys[i]} = (${counter + 1}),"  # For each key, add "{nth key_name} = $n+1"
+
+                counter += 1
+
+
+
+        sql = f"UPDATE config SET {sql_part[:-1]} WHERE guild_id = {guild_id};"
         async with self.bot.pool.acquire() as connection:
             await connection.execute(sql, *data.values())
 
@@ -156,20 +194,22 @@ class Config(commands.Cog):
 
             data = copy.deepcopy(self.CONFIG)
             config_dict = self.bot.configs[ctx.guild.id]
+
             for key in config_dict.keys():
                 if key not in data.keys():
                     continue  # This clause ensures that variables, e.g. "bruhs", that are in the DB but not in self.CONFIG, do not appear
-                
-                if data[key][0] == Validation.Channel:
+
+                if not config_dict[key] or data[key][0] not in [Validation.Channel, Validation.Role]:
+                    data[key].append(config_dict[key] if config_dict[key] is not None else "*N/A*")
+
+                elif data[key][0] == Validation.Channel:
                     channel = ctx.guild.get_channel(config_dict[key])
                     data[key].append(f"{channel.mention} ({config_dict[key]})" if channel else "*N/A*")
 
                 elif data[key][0] == Validation.Role:
                     role = ctx.guild.get_role(config_dict[key])
                     data[key].append(f"{role.mention} ({config_dict[key]})" if role else "*N/A*")
-                
-                else:
-                    data[key].append(config_dict[key] if config_dict[key] is not None else "*N/A*")
+
             
             p = config_dict["prefix"]
             desc = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{p}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{p}config set qotd_limit 2`"

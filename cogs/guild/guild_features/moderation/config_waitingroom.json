@@ -1,4 +1,20 @@
 {
   "loader": "./waitingroom",
-  "intents": ["guild_messages", "members"]
+  "intents": ["guild_messages", "members"],
+  "config_keys": {
+    "welcome_channel": {
+      "validator": "Channel",
+      "description": "Where the welcome message is sent"
+    },
+
+    "welcome_msg": {
+      "validator": "String",
+      "description": "What is sent when someone new joins (<user> tags the new user)"
+    },
+
+    "lurker_phrase": {
+      "validator": "String",
+      "description": "The default phrase when using the lurker command"
+    }
+  }
 }
