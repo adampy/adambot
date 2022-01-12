@@ -13,29 +13,24 @@ class BotCog(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
         self.remote_url = os.environ.get("AB_REMOTE_URL")
-        parent_needed = False
+        self.given_commit_hash = os.environ.get("AB_COMMIT_HASH")
+        self.given_branch = os.environ.get("AB_REMOTE_BRANCH")
         folder_name = ""
+        if self.remote_url:  # only clone to depth 1 if no commit hash is specified (ie assume latest), and only a specific branch IF specified else do all
+            clone = subprocess.run(f"git clone {'--depth 1' if not self.given_commit_hash else ''} {f'--branch {self.given_branch}' if self.given_branch else '--no-single-branch'} {os.environ.get('AB_REMOTE_URL')}.git".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
+            if "fatal" not in clone:
+                folder_name = f"-C {self.remote_url.split('/')[-1]} "
+
+        self.branch_name = subprocess.run(f"git {folder_name}rev-parse --abbrev-ref HEAD".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip() if not self.given_branch else self.given_branch
+
         if not self.remote_url:
             self.remote_name = subprocess.run(f"git config branch.{self.branch_name}.remote".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip() if self.branch_name else ""
             self.remote_url = subprocess.run(f"git config remote.{self.remote_name}.url".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip() if self.remote_name else ""
             if self.remote_url.endswith(".git"):
                 self.remote_url = self.remote_url[:-4]
 
-        else:
-            clone = subprocess.run(f"git clone {os.environ.get('AB_REMOTE_URL')}.git".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
-            if "fatal" not in clone:
-                parent_needed = True
-                folder_name = f"-C {os.environ.get('AB_REMOTE_URL').split('/')[-1]} "
-                if os.environ.get("AB_REMOTE_BRANCH"):
-                    subprocess.run(f"git {folder_name}checkout {os.environ.get('AB_REMOTE_BRANCH')}".split(" "), stdout=subprocess.PIPE)
-
-        self.commit_hash = subprocess.run(f"git {folder_name}rev-parse HEAD".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
-        self.commit_name = subprocess.run(f"git {folder_name}log -1 --pretty=format:%s".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
-        self.branch_name = subprocess.run(f"git {folder_name}rev-parse --abbrev-ref HEAD".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
-
-        if parent_needed:
-            os.system("cd ..")
-
+        self.commit_hash = subprocess.run(f"git {folder_name}rev-parse HEAD".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip() if not self.given_commit_hash else self.given_commit_hash
+        self.commit_name = subprocess.run(f"git {folder_name}log -1 {self.commit_hash} --pretty=format:%s".split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").strip()
         self.commit_page = requests.get(f"{self.remote_url}/commit/{self.commit_hash}") if self.commit_hash and self.remote_url else ""
         self.commit_url = f"{self.remote_url}/commit/{self.commit_hash}" if type(self.commit_page) is not str and self.commit_page.status_code == 200 else "" if self.commit_page else ""
 
@@ -50,6 +45,8 @@ class BotCog(commands.Cog):
         embed.add_field(name="Commit in use", value=f"{self.commit_name} ({self.commit_hash})" if self.commit_hash else "Unknown", inline=False)
         if self.commit_url:
             embed.add_field(name="Commit link", value=self.commit_url, inline=False)
+        if self.branch_name:
+            embed.add_field(name="Currently checked out branch", value=self.branch_name, inline=False)
         embed.add_field(name="Host OS", value=f"{platform.system()}", inline=False)
         embed.add_field(name="Bot owner", value=f"{app_info.owner}", inline=False)
         embed.add_field(name="Public bot", value=f"{app_info.bot_public}", inline=False)
