@@ -66,7 +66,8 @@ class Member(commands.Cog):
             return
 
         if 'bruh' in message.content.lower() and not message.author.bot and True not in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
-            await self.bot.update_config(message, "bruhs", await self.bot.get_config_key(message, "bruhs") + 1)
+            async with self.bot.pool.acquire() as connection:
+                await connection.execute("UPDATE config SET bruhs=bruhs + 1 WHERE guild_id=($1)", message.guild.id)
         return
 
     @commands.command(aliases=['bruh'])
@@ -74,8 +75,8 @@ class Member(commands.Cog):
         """See how many bruh moments we've had"""
         async with self.bot.pool.acquire() as connection:
             global_bruhs = await connection.fetchval("SELECT SUM(bruhs) FROM config;")
-        
-        guild_bruhs = await self.bot.get_config_key(ctx, "bruhs")
+            guild_bruhs = await connection.fetchval("SELECT bruhs FROM config WHERE guild_id=($1)", ctx.guild.id)
+
         await ctx.send(f'•**Global** bruh moments: **{global_bruhs}**\n•**{ctx.guild.name}** bruh moments: **{guild_bruhs}**')
 
     @commands.command()
