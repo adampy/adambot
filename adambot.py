@@ -68,6 +68,7 @@ class AdamBot(Bot):
             asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(db_url + "?sslmode=require", max_size=self.connections))
 
         self.loop.run_until_complete(database_handle.introduce_tables(self.pool, self.cog_handler.db_tables))
+        self.loop.run_until_complete(database_handle.insert_columns_if_not_exists(self.pool, self.cog_handler.db_tables))
         print(f"DB took {time.time() - db_start} seconds to connect to")
 
         self.global_prefix = self.internal_config.get("global_prefix",

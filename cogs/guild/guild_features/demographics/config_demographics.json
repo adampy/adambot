@@ -15,7 +15,10 @@
       "fields": [
         "n int NOT NULL DEFAULT 0",
         "taken_at timestamptz NOT NULL DEFAULT now()",
-        "role_reference int NOT NULL",
+        "role_reference int NOT NULL"
+      ],
+
+      "other_params": [
         "CONSTRAINT fk_role_reference FOREIGN KEY (role_reference) REFERENCES demographic_roles(id) ON DELETE CASCADE"
       ]
     }

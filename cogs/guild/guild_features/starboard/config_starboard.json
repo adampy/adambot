@@ -18,7 +18,10 @@
       "fields": [
         "message_id BIGINT NOT NULL",
         "starboard_channel_id BIGINT NOT NULL",
-        "bot_message_id BIGINT NOT NULL",
+        "bot_message_id BIGINT NOT NULL"
+      ],
+
+      "other_params": [
         "CONSTRAINT fk_starboard_reference FOREIGN KEY (starboard_channel_id) REFERENCES starboard(channel_id) ON DELETE CASCADE"
       ]
     }
