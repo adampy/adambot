@@ -96,7 +96,6 @@ class EmbedPages:
             elif self.page_type == PageTypes.CONFIG:
                 config_key = list(self.data.keys())[i]  # Change the index into the key
                 config_option = self.data[config_key]  # Get the current value list from the key
-                print(f"CONFIG_OPTION IS {config_option}")
                 name = f"• {str(config_key)} ({config_option[1]})"  # Config name that appears on the embed
                 self.embed.add_field(name=name, value=config_option[2], inline=False)
 

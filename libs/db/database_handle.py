@@ -37,13 +37,10 @@ async def insert_columns_if_not_exists(pool, table_collection):
 
             available_columns = await connection.fetch(f"SELECT column_name FROM information_schema.columns WHERE table_name='{name}'")
             available_columns = [column["column_name"] for column in available_columns]
-            print(available_columns)
-            print(field_names)
 
             for field_name in field_names:  # idea of this is to add new columns added to cog configs automatically without needing to do it manually
                 if field_name not in available_columns:
                     print(f"Adding column {field_name} to {name}")
-                    print(f"ALTER TABLE {name} ADD {field_name} {field_cond[field_names.index(field_name)]}")
                     await connection.execute(f"ALTER TABLE {name} ADD {field_name} {field_cond[field_names.index(field_name)]}")
             [print(f"INFO: Phantom DB column {column} in {name}") for column in available_columns if column not in field_names]  # don't delete in case they're still needed
 
