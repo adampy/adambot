@@ -6,9 +6,13 @@
       "fields": [
         "guild_id BIGINT PRIMARY KEY",
         "staff_role BIGINT",
-        "mod_log_channel BIGINT",
+        "log_channel BIGINT",
         "prefix VARCHAR(1023) DEFAULT '-'"
-      ]
+      ],
+
+      "migrate": {
+        "log_channel": "mod_log_channel"
+      }
     }
   }
 }

@@ -29,7 +29,7 @@ class Config(commands.Cog):
         self.bot.get_config_key = self.get_config_key
         self.CONFIG = {  # Stores each column of the config table, the type of validation it is, and a short description of how its used - the embed follows the same order as this
             "staff_role": [Validation.Role, "The role that designates bot perms"],  # CORE
-            "mod_log_channel": [Validation.Channel, "Where the main logs go"],  # CORE
+            "log_channel": [Validation.Channel, "Where the main logs go"],  # CORE
             "prefix": [Validation.String, "The prefix the bot uses, default is '-'"],  # CORE
         }
 

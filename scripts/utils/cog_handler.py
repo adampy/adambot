@@ -51,8 +51,10 @@ class CogHandler:
                     for key in db_schema:
                         table_schema = db_schema.get(key)
                         fields = table_schema.get("fields", [])
+                        other_params = table_schema.get("other_params", [])
+                        migrate = table_schema.get("migrate", {})
                         if fields and type(fields) is list:
-                            self.db_tables.append({"name": key, "fields": fields})
+                            self.db_tables.append({"name": key, "fields": fields, "other_params": other_params, "migrate": migrate})
 
                 if final in self.core_cogs:
                     self.cog_list[final]["core"] = True

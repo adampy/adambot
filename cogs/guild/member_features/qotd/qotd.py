@@ -82,15 +82,15 @@ class QOTD(commands.Cog):
                 await ctx.message.delete()
                 await ctx.send(f':thumbsup: Thank you for submitting your QOTD. Your QOTD ID is **{qotd_id}**.', delete_after=20)
 
-                mod_log_channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
-                if mod_log_channel_id is not None:
-                    mod_log = self.bot.get_channel(mod_log_channel_id)
+                log_channel_id = await self.bot.get_config_key(ctx, "log_channel")
+                if log_channel_id is not None:
+                    log = self.bot.get_channel(log_channel_id)
                     embed = Embed(title=':grey_question: QOTD Submitted', color=Colour.from_rgb(177, 252, 129))
                     embed.add_field(name='ID', value=qotd_id)
                     embed.add_field(name='Author', value=ctx.author)
                     embed.add_field(name='Question', value=qotd, inline=True)
                     embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-                    await mod_log.send(embed=embed)
+                    await log.send(embed=embed)
 
     @qotd.command(pass_context=True)
     @commands.guild_only()
@@ -127,14 +127,14 @@ class QOTD(commands.Cog):
                     await connection.execute('DELETE FROM qotd WHERE id = ($1) AND guild_id = $2', int(question_id), ctx.guild.id)
                     await ctx.send(f'QOTD ID **{question_id}** has been deleted.')
 
-                    mod_log_channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
-                    if mod_log_channel_id is not None:
-                        mod_log = self.bot.get_channel(mod_log_channel_id)
+                    log_channel_id = await self.bot.get_config_key(ctx, "log_channel")
+                    if log_channel_id is not None:
+                        log = self.bot.get_channel(log_channel_id)
                         embed = Embed(title=':grey_question: QOTD Deleted', color=Colour.from_rgb(177, 252, 129))
                         embed.add_field(name='ID', value=question_id)
                         embed.add_field(name='Staff', value=str(ctx.author))
                         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-                        await mod_log.send(embed=embed)
+                        await log.send(embed=embed)
                         
                 except ValueError:
                     await ctx.send("Question ID must be an integer!")
@@ -175,16 +175,16 @@ class QOTD(commands.Cog):
         await ctx.send(':ok_hand:')
         await qotd_channel.send(message)
 
-        mod_log_channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
-        if mod_log_channel_id is not None:
-            mod_log = self.bot.get_channel(mod_log_channel_id)
+        log_channel_id = await self.bot.get_config_key(ctx, "log_channel")
+        if log_channel_id is not None:
+            log = self.bot.get_channel(log_channel_id)
             embed = Embed(title=':grey_question: QOTD Picked', color=Colour.from_rgb(177, 252, 129))
             embed.add_field(name='ID', value=question_data[0])
             embed.add_field(name='Author', value=str(member))
             embed.add_field(name='Question', value=question, inline=True)
             embed.add_field(name='Picked by', value=str(ctx.author))
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-            await mod_log.send(embed=embed)
+            await log.send(embed=embed)
 
 
 def setup(bot) -> None:

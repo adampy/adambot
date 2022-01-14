@@ -165,7 +165,7 @@ You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
         else:
             await question.edit(content="Unknown response, therefore no lurkers have been kicked :ok_hand:")
 
-        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(ctx, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)

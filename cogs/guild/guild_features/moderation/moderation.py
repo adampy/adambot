@@ -88,7 +88,7 @@ class Moderation(commands.Cog):
 
             await ctx.send(f"Purged **{len(deleted)}** messages!", delete_after=3)
 
-            channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+            channel_id = await self.bot.get_config_key(ctx, "log_channel")
             if channel_id is None:
                 return
             channel = self.bot.get_channel(channel_id)
@@ -132,7 +132,7 @@ class Moderation(commands.Cog):
         await member.kick(reason=reason)
         await ctx.send(f'{member.mention} has been kicked :boot:')
 
-        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(ctx, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -234,7 +234,7 @@ class Moderation(commands.Cog):
             if not massban:
                 await ctx.send(f'{member.mention} has been banned.')
 
-            channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+            channel_id = await self.bot.get_config_key(ctx, "log_channel")
             if channel_id is None:
                 return
             channel = self.bot.get_channel(channel_id)
@@ -273,7 +273,7 @@ class Moderation(commands.Cog):
                     return
             guild = self.bot.get_guild(data["guild_id"])
             await guild.unban(user, reason=reason)
-            channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+            channel_id = await self.bot.get_config_key(ctx, "log_channel")
             if channel_id is None:
                 return
             channel = self.bot.get_channel(channel_id)
@@ -380,7 +380,7 @@ class Moderation(commands.Cog):
         except (discord.Forbidden, discord.HTTPException):
             await ctx.send(f"Could not DM {member.display_name} about their mute!")
 
-        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(ctx, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)

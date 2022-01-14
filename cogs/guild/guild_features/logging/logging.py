@@ -50,7 +50,7 @@ class Logging(commands.Cog):
     async def on_message_delete(self, message: discord.Message) -> None:
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
 
-        channel_id = await self.bot.get_config_key(message, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(message, "log_channel")
         if channel_id is None or (message.author.id == self.bot.user.id and not message.content): # Don't log in the logs if logs dont exist or bot deleting own embed pages
             return
 
@@ -88,7 +88,7 @@ class Logging(commands.Cog):
         """
         msg_channel = self.bot.get_channel(payload.channel_id)
 
-        channel_id = await self.bot.get_config_key(msg_channel, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(msg_channel, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -110,7 +110,7 @@ class Logging(commands.Cog):
         if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
             return
 
-        channel_id = await self.bot.get_config_key(before, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(before, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -278,7 +278,7 @@ class Logging(commands.Cog):
 
                     # Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
                     if prop["display_name"] in ["Nickname", "Roles"]:
-                        channel_id = await self.bot.get_config_key(before, "mod_log_channel")
+                        channel_id = await self.bot.get_config_key(before, "log_channel")
                         if channel_id:
                             channel = self.bot.get_channel(channel_id)
                             await channel.send(embed=log)
@@ -286,7 +286,7 @@ class Logging(commands.Cog):
                     else:
                         shared_guilds = [x for x in self.bot.guilds if after in x.members]
                         for guild in shared_guilds:
-                            channel_id = await self.bot.get_config_key(guild, "mod_log_channel")
+                            channel_id = await self.bot.get_config_key(guild, "log_channel")
 
                             if channel_id:
                                 channel = self.bot.get_channel(channel_id)
@@ -302,7 +302,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member) -> None:
-        channel_id = await self.bot.get_config_key(member, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(member, "log_channel")
         if channel_id is None:
             return
 
@@ -402,7 +402,7 @@ class Logging(commands.Cog):
                 self.previous_inv_log_embeds.append(invite_log.to_dict())
                 await ichannel.send(embed=invite_log)
 
-        channel_id = await self.bot.get_config_key(guild, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(guild, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)

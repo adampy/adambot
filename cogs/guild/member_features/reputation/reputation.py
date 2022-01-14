@@ -131,7 +131,7 @@ class Reputation(commands.Cog):
                 await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick} received a reputation point!", desc=f"{user.mention} now has {reps} reputation points!", thumbnail_url=get_user_avatar_url(user, mode=1)[0])
 
                 # Log rep
-                channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+                channel_id = await self.bot.get_config_key(ctx, "log_channel")
                 if channel_id is None:
                     return
                 channel = self.bot.get_channel(channel_id)
@@ -178,7 +178,7 @@ class Reputation(commands.Cog):
 
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Reputation reset completed!", desc=f"All reputation points in {ctx.guild.name} have been removed")
 
-        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(ctx, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -202,7 +202,7 @@ class Reputation(commands.Cog):
         new_reps = await self.set_rep(user.id, ctx.guild.id, int(rep))
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{user.display_name}'s reputation points have been changed!", desc=f"{user.display_name} now has {new_reps} reputation points!", thumbnail_url=get_user_avatar_url(user)[0])
 
-        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(ctx, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -239,7 +239,7 @@ class Reputation(commands.Cog):
         nick = user.display_name if user else user_id
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{nick}'s reputation points have been changed!", desc=f"{nick} now has {new_reps} reputation points!")
 
-        channel_id = await self.bot.get_config_key(ctx, "mod_log_channel")
+        channel_id = await self.bot.get_config_key(ctx, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
