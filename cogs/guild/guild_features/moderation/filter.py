@@ -1,3 +1,4 @@
+from math import ceil
 import discord
 from discord.ext import commands
 from libs.misc.decorators import is_staff
@@ -108,10 +109,36 @@ class Filter(commands.Cog):
             msg = message.content.lower()
             for ignore in filters["ignored"]:
                 msg = msg.replace(ignore.lower(), "")
-            if True in [phrase.lower() in msg for phrase in filters["filtered"]] and not is_command:
+
+            tripped = [phrase.lower() for phrase in filters["filtered"] if phrase.lower() in msg]
+            disp_tripped = "||" + (" ,".join([f'"{trip}"' for trip in tripped[:10]])) + (f"(+ {len(tripped) - 10} more)" if len(tripped) > 10 else "") + "||"
+            if tripped and not is_command:
                 # case insensitive is probably the best idea
                 await message.delete()
-        except KeyError:  # If the bot hasn't loaded the filters yet
+
+                log_channel = self.bot.get_channel(await self.bot.get_config_key(ctx, "filter_log_channel"))
+                log_channel = self.bot.get_channel(await self.bot.get_config_key(ctx, "log_channel")) if not log_channel else log_channel
+                if log_channel:
+                    embeds = []
+                    chunks = ceil(len(message.content) / 1020)
+
+                    for i in range(1, chunks + 1):
+                        embed = discord.Embed(title=':x: Message Filtered', color=discord.Colour.from_rgb(255, 7, 58))
+                        embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
+                        embed.add_field(name="Filtered phrases", value=disp_tripped)
+                        embed.add_field(name='Message ID', value=message.id, inline=True)
+                        embed.add_field(name='Channel', value=message.channel.mention, inline=True)
+                        embed.add_field(name=f'Message {f"part {i}" if i > 1 else ""}',
+                                        value=f"||{message.content[1020 * (i - 1):1020 * i]}||" if (hasattr(message,
+                                                                                                   "content") and message.content) else "(No detected text content)",
+                                        inline=False)
+                        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
+
+                        embeds.append(embed)
+
+                    [await log_channel.send(embed=embed) for embed in embeds]
+
+        except Exception:  # If the bot hasn't loaded the filters yet
             pass
 
     @commands.group()
