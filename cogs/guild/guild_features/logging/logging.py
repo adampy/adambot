@@ -5,26 +5,6 @@ from libs.misc.utils import get_user_avatar_url
 from math import ceil
 
 
-# def getdeepattr(obj: object, dotted_attr: str) -> object:
-#     """
-#     Custom utility function that provides the same functionality as `getattr()` but it allows dotted attributes, e.g. `getattr(member, "avatar.url")`
-#     """
-#     for child in dotted_attr.split("."):
-#         obj = getattr(obj, child)
-#     return obj
-
-
-# def hasdeepattr(obj: object, dotted_attr: str) -> object:
-#     """
-#     Custom utility function that provides the same functionality as `hasattr()` but it allows dotted attributes, e.g. `hasattr(member, "avatar.url")`
-#     """
-#     try:
-#         getattr(obj, dotted_attr)
-#         return True
-#     except AttributeError:
-#         return False
-
-
 class Logging(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
@@ -35,6 +15,10 @@ class Logging(commands.Cog):
     @staticmethod
     async def get_all_invites(guild: discord.Guild) -> list[discord.Invite]:
         return await guild.invites() + ([await guild.vanity_invite()] if "VANITY_URL" in guild.features else [])
+
+    async def get_log_channel(self, ctx: discord.ext.commands.Context, name: str) -> int:
+        spec_channel = await self.bot.get_config_key(ctx, f"{name}_log_channel")
+        return spec_channel if spec_channel else await self.bot.get_config_key(ctx, "misc_log_channel")
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -48,10 +32,11 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message) -> None:
+
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
 
-        channel_id = await self.bot.get_config_key(message, "log_channel")
-        if channel_id is None or (message.author.id == self.bot.user.id and not message.content): # Don't log in the logs if logs dont exist or bot deleting own embed pages
+        channel_id = await self.get_log_channel(ctx, "message")
+        if channel_id is None or (message.author.id == self.bot.user.id and not message.content):  # Don't log in the logs if logs dont exist or bot deleting own embed pages
             return
 
         channel = self.bot.get_channel(channel_id)
@@ -88,7 +73,7 @@ class Logging(commands.Cog):
         """
         msg_channel = self.bot.get_channel(payload.channel_id)
 
-        channel_id = await self.bot.get_config_key(msg_channel, "log_channel")
+        channel_id = await self.get_log_channel(payload.guild_id, "message")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -110,7 +95,7 @@ class Logging(commands.Cog):
         if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
             return
 
-        channel_id = await self.bot.get_config_key(before, "log_channel")
+        channel_id = await self.get_log_channel(before.guild, "message")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
@@ -243,7 +228,7 @@ class Logging(commands.Cog):
 
             if hasattr(before, prop["name"]) and hasattr(after, prop["name"]):  # user objects don't have all the same properties as member objects
 
-                if (getattr(before, prop["name"]) != getattr(after, prop["name"])) or (prop["name"] == "avatar" and get_user_avatar_url(before)[0] != get_user_avatar_url(after)[0]): #TODO: Fix up the edge case with avatars?
+                if (getattr(before, prop["name"]) != getattr(after, prop["name"])) or (prop["name"] == "avatar" and get_user_avatar_url(before)[0] != get_user_avatar_url(after)[0]):  # TODO: Fix up the edge case with avatars?
                     log = Embed(title=f':information_source: {prop["display_name"]} Updated', color=prop["colour"])
                     log.add_field(name='User', value=f'{after} ({after.id})', inline=True)
 
@@ -278,7 +263,7 @@ class Logging(commands.Cog):
 
                     # Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
                     if prop["display_name"] in ["Nickname", "Roles"]:
-                        channel_id = await self.bot.get_config_key(before, "log_channel")
+                        channel_id = await self.get_log_channel(before.guild, "member_update")
                         if channel_id:
                             channel = self.bot.get_channel(channel_id)
                             await channel.send(embed=log)
@@ -286,8 +271,7 @@ class Logging(commands.Cog):
                     else:
                         shared_guilds = [x for x in self.bot.guilds if after in x.members]
                         for guild in shared_guilds:
-                            channel_id = await self.bot.get_config_key(guild, "log_channel")
-
+                            channel_id = await self.get_log_channel(guild, "member_update")
                             if channel_id:
                                 channel = self.bot.get_channel(channel_id)
                                 await channel.send(embed=log)
@@ -302,7 +286,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member) -> None:
-        channel_id = await self.bot.get_config_key(member, "log_channel")
+        channel_id = await self.get_log_channel(member.guild, "join_leave")
         if channel_id is None:
             return
 
@@ -340,7 +324,7 @@ class Logging(commands.Cog):
     async def on_member_join(self, member: discord.Member) -> None:
         guild = member.guild
 
-        ichannel_id = await self.bot.get_config_key(guild, "invite_log_channel")
+        ichannel_id = await self.get_log_channel(guild, "join_leave")
         if ichannel_id is None:  # If invite channel not set
             return
         ichannel = self.bot.get_channel(ichannel_id)
@@ -394,6 +378,7 @@ class Logging(commands.Cog):
                 invite_log.add_field(name="Invite used", value="Server Discovery")
 
             invite_log.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0])
+            invite_log.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             if (invite_log.to_dict() not in self.previous_inv_log_embeds) or not updated_invites:  # limits log spam e.g. if connection drops
 
                 #if possible_joins_missed or len(updated_invites) != 1:
@@ -401,19 +386,6 @@ class Logging(commands.Cog):
 
                 self.previous_inv_log_embeds.append(invite_log.to_dict())
                 await ichannel.send(embed=invite_log)
-
-        channel_id = await self.bot.get_config_key(guild, "log_channel")
-        if channel_id is None:
-            return
-        channel = self.bot.get_channel(channel_id)
-
-        member_join = Embed(title=":information_source: User Joined", color=Colour.from_rgb(52, 215, 189))
-        member_join.add_field(name="User", value=f"{member} ({member.id})\n | {member.mention}")
-        member_join.add_field(name="Created",
-                              value=self.bot.correct_time(member.created_at).strftime(self.bot.ts_format))
-        member_join.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0]) # if you somehow get a guild pfp set that fast
-        member_join.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-        await channel.send(embed=member_join)
 
 
 def setup(bot) -> None:

@@ -2,9 +2,25 @@
   "loader": "./logging",
   "intents": ["guilds", "guild_messages", "members"],
   "config_keys": {
-    "invite_log_channel": {
+    "join_leave_log_channel": {
       "validator": "Channel",
-      "description": "Where invites are logged"
+      "description": "Where member joins and leaves are logged",
+      "migrate_from": "invite_log_channel"
+    },
+
+    "message_log_channel": {
+      "validator": "Channel",
+      "description": "Where message related events are logged"
+    },
+
+    "member_update_log_channel": {
+      "validator": "Channel",
+      "description": "Where attributes relating to a user/member are logged"
+    },
+
+    "misc_log_channel": {
+      "validator": "Channel",
+      "description": "Where events with no specific channel available/that can be configured are logged"
     }
   }
 }

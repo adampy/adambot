@@ -117,8 +117,8 @@ class Config(commands.Cog):
             self.bot.configs[ctx.guild.id][key] = value
             await self.propagate_config(ctx.guild.id)
 
-    async def get_config_key(self, ctx: commands.Context, key: str) -> Any:
-        return self.bot.configs.get(ctx.id if isinstance(ctx, discord.Guild) else ctx.guild.id, {}).get(key, None)
+    async def get_config_key(self, ctx: commands.Context | discord.Guild | int, key: str) -> Any:
+        return self.bot.configs.get(ctx.id if isinstance(ctx, discord.Guild) else ctx.guild.id if isinstance(ctx, commands.Context) else ctx, {}).get(key, None)
 
     async def propagate_config(self, guild_id: int) -> None:
         """

@@ -3,11 +3,10 @@ import discord
 import os
 
 class CogHandler:
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
 
         self.bot = bot
         self.cog_list = {}
-
         self.core_cogs = [
             "core.config.config",
             "core.tasks.tasks",
@@ -55,6 +54,14 @@ class CogHandler:
                         migrate = table_schema.get("migrate", {})
                         if fields and type(fields) is list:
                             self.db_tables.append({"name": key, "fields": fields, "other_params": other_params, "migrate": migrate})
+
+                config_keys = cog_config.get("config_keys", {})
+                if config_keys:
+                    for key in config_keys:
+                        key_ = config_keys.get(key)
+                        migrate = key_.get("migrate_from", "")
+                        if migrate:
+                            self.db_tables[[self.db_tables.index(table) for table in self.db_tables if table["name"] == "config"][0]]["migrate"][key] = migrate  # hint: should be moved to 2d dict ;)
 
                 if final in self.core_cogs:
                     self.cog_list[final]["core"] = True
@@ -106,7 +113,7 @@ class CogHandler:
             return [False, None]
         return [True, None]
 
-    def load_cogs(self):
+    def load_cogs(self) -> None:
         for name in self.cog_list:
             result = self.load_cog(name)
             if not result[0]:
@@ -138,3 +145,9 @@ class CogHandler:
             else:
                 print(
                     f"[X]    Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
+
+    def give_config(self, cog_obj: discord.Cog) -> dict:
+        mem_address = id(cog_obj)
+        for key in self.bot.cogs:
+            if id(self.bot.cogs[key]) == mem_address:
+                return self.cog_list[self.bot.cogs[key].__module__]
