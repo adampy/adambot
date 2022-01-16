@@ -173,7 +173,7 @@ class Filter(commands.Cog):
 
         message = f"Added *{disp_text}* to the {key} list!"
         the_list = '\n'.join([f"•  *{word}*" if key == "ignored" else f"•  ||*{word}*||" for word in removed])
-        message = message if not removed else (message + f"\n\nRemoved some redundant phrases from the {key} list too:\n\n{the_list}")
+        message = message if not the_list else (message + f"\n\nRemoved some redundant phrases from the {key} list too:\n\n{the_list}")
 
         return message
 
@@ -239,12 +239,12 @@ class Filter(commands.Cog):
             return  # get ignored
 
         if text not in self.filters[ctx.guild.id][key]:
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"No such thing is in the {key} list!", desc)
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"That phrase is not in the {key} list!", desc)
 
         else:
             del self.filters[ctx.guild.id][key][self.filters[ctx.guild.id][key].index(text)]
             await self.propagate_new_guild_filter(ctx.guild)
-            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"Phrase removed from {key} list!", desc)
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Phrase removed", desc=f"{text} removed from {key} list!\n{desc}")
 
     @filter.command()
     @commands.guild_only()
@@ -265,7 +265,7 @@ class Filter(commands.Cog):
             del self.filters[ctx.guild.id]["ignored"][self.filters[ctx.guild.id]["ignored"].index(removal)]
 
         msg = '\n'.join([f"•  *{word}*" for word in remove]) if remove else ""
-        await self.generic_remove(ctx, text, "filtered", desc=f"Removed some redundant phrases from the ignored list too:\n\n{msg}")
+        await self.generic_remove(ctx, text, "filtered", desc=f"Removed some redundant phrases from the ignored list too:\n\n{msg}" if msg else "")
 
     @filter.command()
     @commands.guild_only()

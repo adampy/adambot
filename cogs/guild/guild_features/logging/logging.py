@@ -18,7 +18,7 @@ class Logging(commands.Cog):
 
     async def get_log_channel(self, ctx: discord.ext.commands.Context, name: str) -> discord.TextChannel | discord.Thread:
         spec_channel = self.bot.get_channel(await self.bot.get_config_key(ctx, f"{name}_log_channel"))
-        return spec_channel if spec_channel else self.bot.get_channel(await self.bot.get_config_key(ctx, "misc_log_channel"))
+        return spec_channel if spec_channel and spec_channel.permissions_for(ctx.guild.me).send_messages else self.bot.get_channel(await self.bot.get_config_key(ctx, "misc_log_channel"))
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
