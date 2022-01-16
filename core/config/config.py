@@ -203,15 +203,14 @@ class Config(commands.Cog):
                     data[key].append(config_dict[key] if config_dict[key] is not None else "*N/A*")
 
                 elif data[key][0] == Validation.Channel:
-                    channel = ctx.guild.get_channel(config_dict[key])
+                    channel = ctx.guild.get_channel_or_thread(config_dict[key])  # note that this is gonna have to be looked at again if any other types of channels are to be allowed
                     data[key].append(f"{channel.mention} ({config_dict[key]})" if channel else "*N/A*")
 
                 elif data[key][0] == Validation.Role:
                     role = ctx.guild.get_role(config_dict[key])
                     data[key].append(f"{role.mention} ({config_dict[key]})" if role else "*N/A*")
 
-            
-            p = config_dict["prefix"]
+            p = (await self.bot.get_used_prefixes(ctx))[-1]  # guild will be last if set, if not it'll fall back to global
             desc = f"Below are the configurable options for {ctx.guild.name}. To change one, do `{p}config set <key> <value>` where <key> is the option you'd like to change, e.g. `{p}config set qotd_limit 2`"
             embed = self.bot.EmbedPages(
                 self.bot.PageTypes.CONFIG,
