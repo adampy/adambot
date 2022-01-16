@@ -269,23 +269,28 @@ class Config(commands.Cog):
         elif validation_type == Validation.Channel:
             try:
                 channel = await commands.TextChannelConverter().convert(ctx, value)
-                if not channel.permissions_for(ctx.guild.me).send_messages:
-                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have send message permissions in that channel!")
-                    return
-                value = channel
             except commands.errors.ChannelNotFound:
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That channel cannot be found!")
+                try:
+                    channel = await commands.ThreadConverter().convert(ctx, value)
+                except commands.errors.ThreadNotFound:
+                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That channel cannot be found!")
+                    return
+
+            if not channel.permissions_for(ctx.guild.me).send_messages:
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have send message permissions in that channel!")
                 return
+            value = channel
+
             
         elif validation_type == Validation.Integer:
             if not value.isdigit():
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"Please give me an integer")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "Please give me an integer")
                 return
             value = int(value)
         
         elif validation_type == Validation.String:
             if len(value) >= 1000:
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", f"The string provided needs to be less than 1000 characters")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "The string provided needs to be less than 1000 characters")
                 return
             
         elif validation_type == Validation.Boolean:
@@ -327,7 +332,7 @@ class Config(commands.Cog):
 
         self.bot.configs[ctx.guild.id][key] = None
         await self.propagate_config(ctx.guild.id)
-        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f"It has been changed to ***N/A***")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", "It has been changed to ***N/A***")
 
     @config.command(pass_context=True)
     @commands.guild_only()
@@ -370,7 +375,7 @@ class Config(commands.Cog):
 
         if new_prefix is None:
             prefix = await self.get_config_key(ctx, "prefix")
-            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"Current value of prefix",  prefix)
+            await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Current value of prefix",  prefix)
         else:
             if not (ctx.author.guild_permissions.administrator or await self.is_staff(ctx)):
                 await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
