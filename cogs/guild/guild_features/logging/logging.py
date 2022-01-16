@@ -16,9 +16,9 @@ class Logging(commands.Cog):
     async def get_all_invites(guild: discord.Guild) -> list[discord.Invite]:
         return await guild.invites() + ([await guild.vanity_invite()] if "VANITY_URL" in guild.features else [])
 
-    async def get_log_channel(self, ctx: discord.ext.commands.Context, name: str) -> int:
-        spec_channel = await self.bot.get_config_key(ctx, f"{name}_log_channel")
-        return spec_channel if spec_channel else await self.bot.get_config_key(ctx, "misc_log_channel")
+    async def get_log_channel(self, ctx: discord.ext.commands.Context, name: str) -> discord.TextChannel:
+        spec_channel = self.bot.get_channel(await self.bot.get_config_key(ctx, f"{name}_log_channel"))
+        return spec_channel if spec_channel else self.bot.get_channel(await self.bot.get_config_key(ctx, "misc_log_channel"))
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -35,11 +35,9 @@ class Logging(commands.Cog):
 
         ctx = await self.bot.get_context(message)  # needed to fetch ref message
 
-        channel_id = await self.get_log_channel(ctx, "message")
-        if channel_id is None or (message.author.id == self.bot.user.id and not message.content):  # Don't log in the logs if logs dont exist or bot deleting own embed pages
+        channel = await self.get_log_channel(ctx, "message")
+        if channel is None or (message.author.id == self.bot.user.id and not message.content):  # Don't log in the logs if logs dont exist or bot deleting own embed pages
             return
-
-        channel = self.bot.get_channel(channel_id)
 
         embeds = []
         chunks = ceil(len(message.content)/1024)
@@ -73,10 +71,9 @@ class Logging(commands.Cog):
         """
         msg_channel = self.bot.get_channel(payload.channel_id)
 
-        channel_id = await self.get_log_channel(payload.guild_id, "message")
-        if channel_id is None:
+        channel = await self.get_log_channel(payload.guild_id, "message")
+        if channel is None:
             return
-        channel = self.bot.get_channel(channel_id)
 
         embed = Embed(title=':information_source: Bulk Message Deleted', color=Colour.from_rgb(172, 32, 31))
         embed.add_field(name='Count', value=f"{len(payload.message_ids)}", inline=True)
@@ -95,10 +92,10 @@ class Logging(commands.Cog):
         if before.content == after.content:  # fixes weird bug where messages get logged as updated e.g. when an image or embed is posted, even though there's no actual change to their content
             return
 
-        channel_id = await self.get_log_channel(before.guild, "message")
-        if channel_id is None:
+        channel = await self.get_log_channel(before.guild, "message")
+
+        if channel is None:
             return
-        channel = self.bot.get_channel(channel_id)
 
         old_chunks = ceil(len(before.content)/1024)
         new_chunks = ceil(len(after.content)/1024)
@@ -263,17 +260,15 @@ class Logging(commands.Cog):
 
                     # Send `log` embed to all servers the user is part of, unless its a nickname change or role change (which are server specific)
                     if prop["display_name"] in ["Nickname", "Roles"]:
-                        channel_id = await self.get_log_channel(before.guild, "member_update")
-                        if channel_id:
-                            channel = self.bot.get_channel(channel_id)
+                        channel = await self.get_log_channel(before.guild, "member_update")
+                        if channel:
                             await channel.send(embed=log)
 
                     else:
                         shared_guilds = [x for x in self.bot.guilds if after in x.members]
                         for guild in shared_guilds:
-                            channel_id = await self.get_log_channel(guild, "member_update")
-                            if channel_id:
-                                channel = self.bot.get_channel(channel_id)
+                            channel = await self.get_log_channel(guild, "member_update")
+                            if channel:
                                 await channel.send(embed=log)
 
     @commands.Cog.listener()
@@ -286,11 +281,10 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member) -> None:
-        channel_id = await self.get_log_channel(member.guild, "join_leave")
-        if channel_id is None:
+        channel = await self.get_log_channel(member.guild, "join_leave")
+        if channel is None:
             return
 
-        channel = self.bot.get_channel(channel_id)
         member_left = Embed(title=":information_source: User Left", color=Colour.from_rgb(218, 118, 39))
         member_left.add_field(name="User", value=f"{member} ({member.id})\n {member.mention}")
 
@@ -324,10 +318,10 @@ class Logging(commands.Cog):
     async def on_member_join(self, member: discord.Member) -> None:
         guild = member.guild
 
-        ichannel_id = await self.get_log_channel(guild, "join_leave")
-        if ichannel_id is None:  # If invite channel not set
+        ichannel = await self.get_log_channel(guild, "join_leave")
+        if ichannel is None:  # If invite channel not set
             return
-        ichannel = self.bot.get_channel(ichannel_id)
+
         old_invites = self.invites[guild.id]
         new_invites = await self.get_all_invites(guild)
 
