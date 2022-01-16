@@ -78,7 +78,7 @@ class Filter(commands.Cog):
         Handles messages that are being sent.
         """
 
-        if not self.bot.is_ready() or type(message.channel) != discord.TextChannel:  # Only filter on TextChannels
+        if not self.bot.is_ready() or type(message.channel) not in [discord.TextChannel, discord.Thread]:  # Only filter on TextChannels
             return  # sometimes barfs on startup
 
         await self.handle_message(message)
@@ -89,7 +89,7 @@ class Filter(commands.Cog):
         Handles message edits for people trying to get around the filter.
         """
 
-        if not self.bot.is_ready() or type(before.channel) != discord.TextChannel:  # Only filter on TextChannels
+        if not self.bot.is_ready() or type(before.channel) not in [discord.TextChannel, discord.Thread]:  # Only filter on TextChannels
             return  # sometimes barfs on startup
         await self.handle_message(after)
 

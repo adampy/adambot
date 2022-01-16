@@ -14,7 +14,7 @@
   },
 
   "config_keys": {
-    "support_channel": {
+    "support_log_channel": {
       "validator": "Channel",
       "description": "Where the logs from the support module go"
     }

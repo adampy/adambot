@@ -21,7 +21,7 @@ class Member(commands.Cog):
 # -----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
-    async def quote(self, ctx: commands.Context, messageid: int, channel: discord.TextChannel) -> None:
+    async def quote(self, ctx: commands.Context, messageid: int, channel: discord.TextChannel | discord.Thread) -> None:
         """
         Quote a message to remember it.
         """
@@ -141,7 +141,7 @@ class Member(commands.Cog):
         if ctx.author.guild_permissions.administrator or await self.bot.get_config_key(ctx, "spamping_access"):  # Only allow command if in private server or admin
             await ctx.message.delete()
             for i in range(int(amount)):
-                for channel in [channel for channel in ctx.guild.channels if type(channel) == discord.TextChannel]:
+                for channel in [channel for channel in ctx.guild.channels if type(channel) in [discord.TextChannel, discord.Thread]]:
                     try:
                         msg = await channel.send(user.mention)
                         await msg.delete()

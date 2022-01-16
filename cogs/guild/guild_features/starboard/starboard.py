@@ -181,7 +181,7 @@ class StarboardCog(commands.Cog):
 
         return self.starboards.get(channel_id, None)
 
-    async def _create_starboard(self, channel: discord.TextChannel, is_custom_emoji: bool, emoji: discord.Emoji | str, minimum_stars: int, embed_colour: str = None, allow_self_star: bool = True) -> None:
+    async def _create_starboard(self, channel: discord.TextChannel | discord.Thread, is_custom_emoji: bool, emoji: discord.Emoji | str, minimum_stars: int, embed_colour: str = None, allow_self_star: bool = True) -> None:
         """
         Creates a starboard in the database and add it to `self.starboards`
         """
@@ -202,7 +202,7 @@ class StarboardCog(commands.Cog):
         })
         self.starboards[channel.id] = new_starboard
 
-    async def _delete_starboard(self, channel: discord.TextChannel) -> None:
+    async def _delete_starboard(self, channel: discord.TextChannel | discord.Thread) -> None:
         """
         Deletes a starboard channel and all its entries from the database
         """
@@ -335,7 +335,7 @@ class StarboardCog(commands.Cog):
                         await entry.update_bot_message(msg)
 
     @commands.Cog.listener()
-    async def on_guild_channel_delete(self, channel: discord.TextChannel) -> None:
+    async def on_guild_channel_delete(self, channel: discord.TextChannel | discord.Thread) -> None:
         starboard = await self._try_get_starboard(channel.id)
         if starboard:
             await self._delete_starboard(channel)
@@ -400,13 +400,17 @@ class StarboardCog(commands.Cog):
                 context = await self.bot.get_context(m)
                 try:
                     channel = await commands.TextChannelConverter().convert(context, m.content)  # If not found do not cache
+                except commands.errors.ChannelNotFound:
+                    try:
+                        channel = await commands.ThreadConverter().convert(context, m.content)
+                    except commands.errors.ThreadNotFound:
+                        await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Channel not found", desc="Please try again with another channel")
+                        continue
+
                     pre_existing = await self._try_get_starboard(channel.id)
                     if pre_existing:
                         await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The channel already has a starboard, please try again")
                         continue  # Jump to next loop iteration to cancel moving onto the next setup stage
-                except commands.errors.ChannelNotFound:
-                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Channel not found", desc="Please try again with another channel")
-                    continue
 
                 if channel:
                     break
@@ -466,7 +470,7 @@ class StarboardCog(commands.Cog):
     @starboard.command()
     @commands.guild_only()
     @is_staff
-    async def edit(self, ctx: commands.Context, channel: discord.TextChannel, option: str, value: str) -> None:
+    async def edit(self, ctx: commands.Context, channel: discord.TextChannel | discord.Thread, option: str, value: str) -> None:
         """
         Edit a starboard setup. `option` can either be "minimum", "emoji", "colour"/"color"/"embed_colour", or "self_star"
         """
@@ -530,7 +534,7 @@ class StarboardCog(commands.Cog):
     @starboard.command()
     @commands.guild_only()
     @is_staff
-    async def delete(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
+    async def delete(self, ctx: commands.Context, channel: discord.TextChannel | discord.Thread) -> None:
         """
         Delete a starboard setup and all its entries from the bot
         """

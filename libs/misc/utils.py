@@ -8,7 +8,7 @@ import asyncio
 
 
 class EmbedPages:
-    def __init__(self, page_type: int, data: list, title: str, colour: Colour, bot, initiator: discord.Member, channel: discord.TextChannel, desc: str = "", thumbnail_url: str = "",
+    def __init__(self, page_type: int, data: list, title: str, colour: Colour, bot, initiator: discord.Member, channel: discord.TextChannel | discord.Thread, desc: str = "", thumbnail_url: str = "",
                  footer: str = "", icon_url: str = "") -> None:
         self.bot = bot
         self.data = data
@@ -210,7 +210,7 @@ DEVS = [
 CODE_URL = "https://github.com/adampy/adambot"
 
 
-async def send_image_file(fig, channel: discord.TextChannel, filename: str, extension: str = "png") -> None:
+async def send_image_file(fig, channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "png") -> None:
     """
     Send data to a channel with filename `filename`
     """
@@ -221,7 +221,7 @@ async def send_image_file(fig, channel: discord.TextChannel, filename: str, exte
     await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
 
 
-async def send_text_file(text: str, channel: discord.TextChannel, filename: str, extension: str = "txt") -> None:
+async def send_text_file(text: str, channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "txt") -> None:
     """
     Send a text data to a channel with filename `filename`
     """

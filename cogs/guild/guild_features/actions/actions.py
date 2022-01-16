@@ -727,7 +727,9 @@ class Actions(commands.Cog):
                         await output.add_reaction(self.bot.EmojiEnum.FALSE)
                         await output.add_reaction(self.bot.EmojiEnum.SPEAKING)
 
-                        while not await self.try_conversion(ctx, getattr(result_, "content", None), discord.TextChannel, "content"):  # can't have async checks
+                        channel_conv = await self.try_conversion(ctx, getattr(result_, "content", None), discord.TextChannel, "content")
+                        thread_conv = await self.try_conversion(ctx, getattr(result_, "content", None), discord.Thread, "content")
+                        while not channel_conv and not thread_conv:  # can't have async checks
 
                             try:
                                 done, pending = await asyncio.wait([
@@ -754,7 +756,10 @@ class Actions(commands.Cog):
 
                         if isinstance(result_, discord.Message) or result_[0].emoji == self.bot.EmojiEnum.SPEAKING:
                             if isinstance(result_, discord.Message):
-                                channel = await commands.run_converters(ctx, discord.TextChannel, result_.content, inspect.Parameter("content", inspect.Parameter.POSITIONAL_ONLY))
+                                if channel_conv:
+                                    channel = await commands.run_converters(ctx, discord.TextChannel, result_.content, inspect.Parameter("content", inspect.Parameter.POSITIONAL_ONLY))
+                                else:
+                                    channel = await commands.run_converters(ctx, discord.Thread, result_.content, inspect.Parameter("content", inspect.Parameter.POSITIONAL_ONLY))
                                 channel_id = channel.id
                             else:
                                 channel_id = 0

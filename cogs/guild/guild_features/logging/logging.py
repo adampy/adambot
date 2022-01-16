@@ -16,7 +16,7 @@ class Logging(commands.Cog):
     async def get_all_invites(guild: discord.Guild) -> list[discord.Invite]:
         return await guild.invites() + ([await guild.vanity_invite()] if "VANITY_URL" in guild.features else [])
 
-    async def get_log_channel(self, ctx: discord.ext.commands.Context, name: str) -> discord.TextChannel:
+    async def get_log_channel(self, ctx: discord.ext.commands.Context, name: str) -> discord.TextChannel | discord.Thread:
         spec_channel = self.bot.get_channel(await self.bot.get_config_key(ctx, f"{name}_log_channel"))
         return spec_channel if spec_channel else self.bot.get_channel(await self.bot.get_config_key(ctx, "misc_log_channel"))
 

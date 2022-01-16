@@ -268,7 +268,7 @@ class Support(commands.Cog):
                             await connection.log_message(MessageOrigin.STAFF, message)
 
     @commands.Cog.listener()
-    async def on_typing(self, channel: discord.DMChannel | discord.TextChannel, user: discord.User, when: datetime.datetime) -> None:
+    async def on_typing(self, channel: discord.DMChannel | discord.TextChannel | discord.Thread, user: discord.User, when: datetime.datetime) -> None:
         """
         A handle for typing events between DMs, so that the typing presence can go through the DMs via the bot.
         """

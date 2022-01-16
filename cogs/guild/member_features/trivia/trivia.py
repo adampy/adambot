@@ -57,7 +57,7 @@ RESPONSES = {
 
 
 class TriviaSession:
-    def __init__(self, bot, channel: discord.TextChannel, trivia_name: str) -> None:
+    def __init__(self, bot, channel: discord.TextChannel | discord.Thread, trivia_name: str) -> None:
         self.bot = bot
         self.channel = channel
         self.trivia_name = trivia_name

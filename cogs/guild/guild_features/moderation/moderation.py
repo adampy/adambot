@@ -486,7 +486,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @is_staff
-    async def say(self, ctx: commands.Context, channel: discord.TextChannel, *, text: str) -> None:
+    async def say(self, ctx: commands.Context, channel: discord.TextChannel | discord.Thread, *, text: str) -> None:
         """
         Say a given string in a given channel
         Staff role needed.

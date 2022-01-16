@@ -307,7 +307,7 @@ class Config(commands.Cog):
         if validation_type == Validation.Channel or validation_type == Validation.Role:
             self.bot.configs[ctx.guild.id][key] = value.id
             await self.propagate_config(ctx.guild.id)
-            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value.mention}"')  # Value is either a TextChannel or Role
+            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!", f'It has been changed to "{value.mention}"')  # Value is either a TextChannel, Thread or Role
         else:
             self.bot.configs[ctx.guild.id][key] = value
             await self.propagate_config(ctx.guild.id)
