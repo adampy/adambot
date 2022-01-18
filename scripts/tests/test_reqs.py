@@ -5,7 +5,7 @@ except ImportError:  # is part of setuptools
     import sys
     import subprocess
     try:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--force-reinstall', 'setuptools', '--user'])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", "setuptools", "--user"])
         print("Please restart the project for changes to take effect.")
     except Exception as e:
         print(f"Something has gone horribly wrong and the dependencies cannot be tested, please check your Python installation\n{type(e).__name__}: {e}")
@@ -70,9 +70,9 @@ def get_unsat_requirements() -> list[list[str, DEPENDENCY]]:
 
 if __name__ == "__main__":  # can be run as independent test
     output = get_unsat_requirements()
-    missing = ','.join([str(f[0]) for f in output if f[1] == DEPENDENCY.IS_MISSING])
-    conflicts = ','.join([str(g[0]) for g in output if g[1] == DEPENDENCY.IS_CONFLICTED])
-    broken = ','.join([str(h[0]) for h in output if h[1] == DEPENDENCY.IS_BROKEN])
+    missing = ",".join([str(f[0]) for f in output if f[1] == DEPENDENCY.IS_MISSING])
+    conflicts = ",".join([str(g[0]) for g in output if g[1] == DEPENDENCY.IS_CONFLICTED])
+    broken = ",".join([str(h[0]) for h in output if h[1] == DEPENDENCY.IS_BROKEN])
     if missing:
         print(f"Missing dependencies {missing}")
 

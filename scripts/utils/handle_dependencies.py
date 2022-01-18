@@ -21,8 +21,8 @@ def handle_dependencies():
 
         print("Checking for pip update, please wait...")
 
-        outdated_packages = subprocess.check_output([sys.executable, '-m', 'pip', 'list', '-o']).decode("utf-8").split("\n")  # NOTE: this is HELLA slow so it's a good job it'll mostly only be run once
-        installed_packages = subprocess.check_output([sys.executable, '-m', 'pip', 'list']).decode("utf-8").split("\n")
+        outdated_packages = subprocess.check_output([sys.executable, "-m", "pip", "list", "-o"]).decode("utf-8").split("\n")  # NOTE: this is HELLA slow so it's a good job it'll mostly only be run once
+        installed_packages = subprocess.check_output([sys.executable, "-m", "pip", "list"]).decode("utf-8").split("\n")
         if not [k for k in installed_packages if k.startswith("wheel ")]:
             outdated_packages.append("wheel not-installed installed")
 
@@ -40,7 +40,7 @@ def handle_dependencies():
             if upgrade_helpfuls == "y":
                 for helpful in helpful_update:
                     try:
-                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', helpful[0], '--user'])
+                        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", helpful[0], "--user"])
                     except Exception as e:
                         print(f"WARNING: Something went wrong with upgrading {helpful}\n{type(e).__name__}: {e}")
         try:
@@ -59,9 +59,9 @@ def handle_dependencies():
                 try:
                     if miss in broken:
                         subprocess.check_call(
-                            [sys.executable, '-m', 'pip', 'install', '--upgrade', '--force-reinstall', miss, '--user'])
+                            [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", miss, "--user"])
                     else:
-                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', miss, '--user'])
+                        subprocess.check_call([sys.executable, "-m", "pip", "install", miss, "--user"])
                 except Exception:
                     not_resolved.append(miss)
             else:

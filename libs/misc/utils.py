@@ -65,7 +65,7 @@ class EmbedPages:
                 question = self.data[i][1]
                 member_id = int(self.data[i][2])
                 user = await self.bot.fetch_user(member_id)
-                date = (self.data[i][3] + timedelta(hours=1)).strftime('%H:%M on %d/%m/%y')
+                date = (self.data[i][3] + timedelta(hours=1)).strftime("%H:%M on %d/%m/%y")
 
                 self.embed.add_field(name=f"{question}",
                                      value=f"ID **{question_id}** submitted on {date} by {user.name if user else '*MEMBER NOT FOUND*'} ({member_id})",
@@ -184,16 +184,16 @@ class PageTypes:
 
 
 class EmojiEnum:
-    MIN_BUTTON = '\U000023ee'
-    MAX_BUTTON = '\U000023ed'
-    LEFT_ARROW = '\U000025c0'
-    RIGHT_ARROW = '\U000025b6'
-    BUTTON = '\U00002b55'
-    CLOSE = '\N{CROSS MARK}'
-    TRUE = '\U00002705'
-    FALSE = '\N{CROSS MARK}'
-    RECYCLE = '\U0000267b'
-    SPEAKING = '\U0001F5E3'
+    MIN_BUTTON = "\U000023ee"
+    MAX_BUTTON = "\U000023ed"
+    LEFT_ARROW = "\U000025c0"
+    RIGHT_ARROW = "\U000025b6"
+    BUTTON = "\U00002b55"
+    CLOSE = "\N{CROSS MARK}"
+    TRUE = "\U00002705"
+    FALSE = "\N{CROSS MARK}"
+    RECYCLE = "\U0000267b"
+    SPEAKING = "\U0001F5E3"
 
     ONLINE = "\U0001F7E2"
     IDLE = "\U0001F7E1"
@@ -218,7 +218,7 @@ async def send_image_file(fig, channel: discord.TextChannel | discord.Thread, fi
     buf = BytesIO()
     fig.savefig(buf)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
+    await channel.send(file=File(buf, filename=f"{filename}.{extension}"))
 
 
 async def send_text_file(text: str, channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "txt") -> None:
@@ -229,7 +229,7 @@ async def send_text_file(text: str, channel: discord.TextChannel | discord.Threa
     buf = StringIO()
     buf.write(text)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f'{filename}.{extension}'))
+    await channel.send(file=File(buf, filename=f"{filename}.{extension}"))
 
 
 async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> discord.Member | None:
@@ -291,9 +291,9 @@ def ordinal(n: int) -> str:
         - https://stackoverflow.com/questions/9647202/ordinal-numbers-replacement
     """
 
-    suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+    suffix = ["th", "st", "nd", "rd", "th"][min(n % 10, 4)]
     if 11 <= (n % 100) <= 13:
-        suffix = 'th'
+        suffix = "th"
     return str(n) + suffix
 
 
@@ -383,7 +383,7 @@ class flags:
                 break
         if not startswithflag:  # then it's blank
             args = self.flag_prefix + (
-                str(self.flags[blank_as_flag]["flag"]) if (blank_as_flag in self.flags) else '') + ' ' + args
+                str(self.flags[blank_as_flag]["flag"]) if (blank_as_flag in self.flags) else "") + " " + args
         if args.startswith(self.flag_prefix):
             args = " " + args
         args = args.split(f" {self.flag_prefix}")
@@ -392,7 +392,7 @@ class flags:
             del args[0]
         for a in range(len(args)):
             if len(args[a]) == 1:
-                args[a].insert(0, '' if blank_as_flag not in self.flags else self.flags[blank_as_flag]["flag"])
+                args[a].insert(0, "" if blank_as_flag not in self.flags else self.flags[blank_as_flag]["flag"])
             args[a] = [args[a][0], " ".join(args[a][1:])]
             if (args[a][0] in self.inv_flags) and (self.inv_flags[args[a][0]] in fetch or fetch == ["*"]):
                 if self.inv_flags[args[a][0]] in flag_dict:
@@ -419,19 +419,19 @@ def time_arg(arg: str) -> int:  # rewrite
     """
 
     total = 0
-    times = arg.split(' ')
+    times = arg.split(" ")
     if len(times) == 0:
         return 0
     for item in times:
-        if item[-1] == 'w':
+        if item[-1] == "w":
             total += 7 * 24 * 60 * 60 * int(item[:-1])
-        elif item[-1] == 'd':
+        elif item[-1] == "d":
             total += 24 * 60 * 60 * int(item[:-1])
-        elif item[-1] == 'h':
+        elif item[-1] == "h":
             total += 60 * 60 * int(item[:-1])
-        elif item[-1] == 'm':
+        elif item[-1] == "m":
             total += 60 * int(item[:-1])
-        elif item[-1] == 's':
+        elif item[-1] == "s":
             total += int(item[:-1])
     return total
 
@@ -499,7 +499,7 @@ class DefaultEmbedResponses:
         Internal procedure that is executed when a user has invalid perms
         """
 
-        embed = Embed(title=f':x: You do not have permissions to do that!', description="Only people with permissions (usually staff) can use this command!",
+        embed = Embed(title=f":x: You do not have permissions to do that!", description="Only people with permissions (usually staff) can use this command!",
                       color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
@@ -511,7 +511,7 @@ class DefaultEmbedResponses:
 
     @staticmethod
     async def error_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
-        embed = Embed(title=f':x: {title}', description=desc, color=ERROR_RED)
+        embed = Embed(title=f":x: {title}", description=desc, color=ERROR_RED)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
                 bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
@@ -522,7 +522,7 @@ class DefaultEmbedResponses:
 
     @staticmethod
     async def success_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
-        embed = Embed(title=f':white_check_mark: {title}', description=desc, color=SUCCESS_GREEN)
+        embed = Embed(title=f":white_check_mark: {title}", description=desc, color=SUCCESS_GREEN)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
               bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
@@ -533,7 +533,7 @@ class DefaultEmbedResponses:
 
     @staticmethod
     async def information_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
-        embed = Embed(title=f':information_source: {title}', description=desc, color=INFORMATION_BLUE)
+        embed = Embed(title=f":information_source: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
              bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
@@ -544,7 +544,7 @@ class DefaultEmbedResponses:
 
     @staticmethod
     async def question_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
-        embed = Embed(title=f':grey_question: {title}', description=desc, color=INFORMATION_BLUE)
+        embed = Embed(title=f":grey_question: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
             embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
              bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])

@@ -36,16 +36,16 @@ class Filter(commands.Cog):
         """
 
         async with self.bot.pool.acquire() as connection:
-            prop = await connection.fetchval('SELECT filters FROM filter WHERE guild_id = $1', guild.id)
+            prop = await connection.fetchval("SELECT filters FROM filter WHERE guild_id = $1", guild.id)
             if not prop:
-                await connection.execute('INSERT INTO filter (guild_id, filters) VALUES ($1, $2)', guild.id, "{'filtered':[], 'ignored':[]}")
-                self.filters[guild.id] = {'filtered': [], 'ignored': []}
+                await connection.execute("INSERT INTO filter (guild_id, filters) VALUES ($1, $2)", guild.id, "{'filtered':[], 'ignored':[]}")
+                self.filters[guild.id] = {"filtered": [], "ignored": []}
 
             else:
                 prop = ast.literal_eval(prop)
                 if type(prop) is not dict or not ("filtered" in prop and "ignored" in prop):
-                    await connection.execute('UPDATE filter SET filters = $1 WHERE guild_id = $2', "{'filtered':[], 'ignored':[]}", guild.id)
-                    self.filters[guild.id] = {'filtered': [], 'ignored': []}
+                    await connection.execute("UPDATE filter SET filters = $1 WHERE guild_id = $2", "{'filtered':[], 'ignored':[]}", guild.id)
+                    self.filters[guild.id] = {"filtered": [], "ignored": []}
                 else:
                     self.filters[guild.id] = prop
 
@@ -55,7 +55,7 @@ class Filter(commands.Cog):
         """
 
         async with self.bot.pool.acquire() as connection:
-            await connection.execute('UPDATE filter SET filters = $1 WHERE guild_id = $2', str(self.filters[guild.id]), guild.id)
+            await connection.execute("UPDATE filter SET filters = $1 WHERE guild_id = $2", str(self.filters[guild.id]), guild.id)
 
     # ---LISTENERS---
 
@@ -111,7 +111,7 @@ class Filter(commands.Cog):
                 msg = msg.replace(ignore.lower(), "")
 
             tripped = [phrase.lower() for phrase in filters["filtered"] if phrase.lower() in msg]
-            disp_tripped = "||" + (" ,".join([f'"{trip}"' for trip in tripped[:10]])) + (f"(+ {len(tripped) - 10} more)" if len(tripped) > 10 else "") + "||"
+            disp_tripped = "||" + (" ,".join([f"'{trip}'" for trip in tripped[:10]])) + (f"(+ {len(tripped) - 10} more)" if len(tripped) > 10 else "") + "||"
             if tripped and not is_command:
                 # case insensitive is probably the best idea
                 await message.delete()
@@ -123,12 +123,12 @@ class Filter(commands.Cog):
                     chunks = ceil(len(message.content) / 1020)
 
                     for i in range(1, chunks + 1):
-                        embed = discord.Embed(title=':x: Message Filtered', color=discord.Colour.from_rgb(255, 7, 58))
-                        embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
+                        embed = discord.Embed(title=":x: Message Filtered", color=discord.Colour.from_rgb(255, 7, 58))
+                        embed.add_field(name="User", value=f"{str(message.author)} ({message.author.id})" or "undetected", inline=True)
                         embed.add_field(name="Filtered phrases", value=disp_tripped)
-                        embed.add_field(name='Message ID', value=message.id, inline=True)
-                        embed.add_field(name='Channel', value=message.channel.mention, inline=True)
-                        embed.add_field(name=f'Message {f"part {i}" if i > 1 else ""}',
+                        embed.add_field(name="Message ID", value=message.id, inline=True)
+                        embed.add_field(name="Channel", value=message.channel.mention, inline=True)
+                        embed.add_field(name=f"Message {f'part {i}' if i > 1 else ''}",
                                         value=f"||{message.content[1020 * (i - 1):1020 * i]}||" if (hasattr(message,
                                                                                                    "content") and message.content) else "(No detected text content)",
                                         inline=False)
@@ -172,7 +172,7 @@ class Filter(commands.Cog):
             del self.filters[ctx.guild.id][key][index]
 
         message = f"Added *{disp_text}* to the {key} list!"
-        the_list = '\n'.join([f"•  *{word}*" if key == "ignored" else f"•  ||*{word}*||" for word in removed])
+        the_list = "\n".join([f"•  *{word}*" if key == "ignored" else f"•  ||*{word}*||" for word in removed])
         message = message if not the_list else (message + f"\n\nRemoved some redundant phrases from the {key} list too:\n\n{the_list}")
 
         return message
@@ -264,7 +264,7 @@ class Filter(commands.Cog):
         for removal in remove:
             del self.filters[ctx.guild.id]["ignored"][self.filters[ctx.guild.id]["ignored"].index(removal)]
 
-        msg = '\n'.join([f"•  *{word}*" for word in remove]) if remove else ""
+        msg = "\n".join([f"•  *{word}*" for word in remove]) if remove else ""
         await self.generic_remove(ctx, text, "filtered", desc=f"Removed some redundant phrases from the ignored list too:\n\n{msg}" if msg else "")
 
     @filter.command()

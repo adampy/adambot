@@ -20,7 +20,7 @@ class AdamBot(Bot):
     async def determine_prefix(self, bot, message: discord.Message) -> list[str]:
         """
         Procedure that determines the prefix for a guild. This determines the prefix when a global one is not being used
-        'bot' is a required argument but also pointless since each AdamBot object isn't going to be trying to handle *other* AdamBot objects' prefixes
+        "bot" is a required argument but also pointless since each AdamBot object isn't going to be trying to handle *other* AdamBot objects' prefixes
         """
 
         watch_prefixes = [await self.get_config_key(message, "prefix") if message.guild else None, self.global_prefix]
@@ -76,9 +76,9 @@ class AdamBot(Bot):
 
         self.online = False  # Start at False, changes to True once fully initialised
         self.LOCAL_HOST = False if os.environ.get("REMOTE", None) else True
-        self.display_timezone = pytz.timezone('Europe/London')
+        self.display_timezone = pytz.timezone("Europe/London")
         self.timezone = get_localzone()
-        self.ts_format = '%A %d/%m/%Y %H:%M:%S'
+        self.ts_format = "%A %d/%m/%Y %H:%M:%S"
         self.start_time = start_time
         self._init_time = time.time()
 
@@ -142,8 +142,7 @@ class AdamBot(Bot):
             f"\nLoaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
 
         # Moved to here as it makes more sense to not load everything then tell the user they did an oopsies
-        print(
-            f'Bot fully setup! ({time.time() - self.start_time} seconds total)')
+        print(f"Bot fully setup! ({time.time() - self.start_time} seconds total)")
         print("Logging into Discord...")
 
         token = self.internal_config.get("token", "")
@@ -164,8 +163,8 @@ class AdamBot(Bot):
 
     async def on_ready(self) -> None:
         self.login_time = time.time()
-        print(f'Bot logged into Discord ({self.login_time - self.start_time} seconds total)')
-        await self.change_presence(activity=discord.Game(name=f'in {len(self.guilds)} servers | Type `help` for help'),
+        print(f"Bot logged into Discord ({self.login_time - self.start_time} seconds total)")
+        await self.change_presence(activity=discord.Game(name=f"in {len(self.guilds)} servers | Type `help` for help"),
                                    status=discord.Status.online)
         self.online = True
 

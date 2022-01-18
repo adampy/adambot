@@ -368,7 +368,7 @@ class Actions(commands.Cog):
                         command["var_args"].append(needed_arg)
 
                 elif arg_index < len(args):
-                    if arg in argspec.kwonlyargs and arg not in argspec.kwonlydefaults and f == len(action['commands']) - 1 and arg_index != len(args) - 1:  # i.e. *, args type arg
+                    if arg in argspec.kwonlyargs and arg not in argspec.kwonlydefaults and f == len(action["commands"]) - 1 and arg_index != len(args) - 1:  # i.e. *, args type arg
                         command["arg_values"][arg_list[x]] = " ".join(args[arg_index:])
 
                     elif arg != var_arg:
@@ -513,8 +513,8 @@ class Actions(commands.Cog):
 
             try:
                 done, pending = await asyncio.wait([
-                    self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=300),
-                    self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE], hi), timeout=300)
+                    self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx), timeout=300),
+                    self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE], hi), timeout=300)
                 ], return_when=asyncio.FIRST_COMPLETED)
 
                 result = done.pop().result()
@@ -622,8 +622,8 @@ class Actions(commands.Cog):
 
                             try:
                                 done, pending = await asyncio.wait([
-                                    self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=300),
-                                    self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.RECYCLE], message), timeout=300)
+                                    self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx), timeout=300),
+                                    self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.RECYCLE], message), timeout=300)
                                 ], return_when=asyncio.FIRST_COMPLETED)
 
                                 result_ = done.pop().result()
@@ -668,7 +668,7 @@ class Actions(commands.Cog):
                                     return
 
                                 response_command = int(response.content)
-                                params_ = self.bot.get_command(commands_[arg_command_names[response_command - 1][0]]['command']).clean_params
+                                params_ = self.bot.get_command(commands_[arg_command_names[response_command - 1][0]]["command"]).clean_params
                                 params = len(params_)
                                 response_arg = 1
 
@@ -733,8 +733,8 @@ class Actions(commands.Cog):
 
                             try:
                                 done, pending = await asyncio.wait([
-                                    self.bot.wait_for('message', check=Checks.generate_std_message_check(ctx), timeout=300),
-                                    self.bot.wait_for('reaction_add', check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.SPEAKING], output), timeout=300)
+                                    self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx), timeout=300),
+                                    self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.SPEAKING], output), timeout=300)
                                 ], return_when=asyncio.FIRST_COMPLETED)
 
                                 result_ = done.pop().result()

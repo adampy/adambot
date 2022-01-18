@@ -43,11 +43,11 @@ class Logging(commands.Cog):
         chunks = ceil(len(message.content)/1024)
 
         for i in range(1, chunks + 1):
-            embed = Embed(title=':information_source: Message Deleted', color=Colour.from_rgb(172, 32, 31))
-            embed.add_field(name='User', value=f'{str(message.author)} ({message.author.id})' or "undetected", inline=True)
-            embed.add_field(name='Message ID', value=message.id, inline=True)
-            embed.add_field(name='Channel', value=message.channel.mention, inline=True)
-            embed.add_field(name=f'Message {f"part {i}" if i > 1 else ""}', value=message.content[1024*(i - 1):1024*i] if (hasattr(message, "content") and message.content) else "(No detected text content)", inline=False)
+            embed = Embed(title=":information_source: Message Deleted", color=Colour.from_rgb(172, 32, 31))
+            embed.add_field(name="User", value=f"{str(message.author)} ({message.author.id})" or "undetected", inline=True)
+            embed.add_field(name="Message ID", value=message.id, inline=True)
+            embed.add_field(name="Channel", value=message.channel.mention, inline=True)
+            embed.add_field(name=f"Message {f'part {i}' if i > 1 else ''}", value=message.content[1024*(i - 1):1024*i] if (hasattr(message, "content") and message.content) else "(No detected text content)", inline=False)
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
             embeds.append(embed)
@@ -56,11 +56,11 @@ class Logging(commands.Cog):
 
         if message.reference:  # intended mainly for replies, can be used in other contexts (see docs)
             ref = await ctx.fetch_message(message.reference.message_id)
-            reference = Embed(title=':arrow_upper_left: Reference of deleted message', color=Colour.from_rgb(172, 32, 31))
-            reference.add_field(name='Author of reference', value=f'{str(ref.author)} ({ref.author.id})', inline=True)
-            reference.add_field(name='Message ID', value=ref.id, inline=True)
-            reference.add_field(name='Channel', value=ref.channel.mention, inline=True)
-            reference.add_field(name='Jump Link', value=ref.jump_url)
+            reference = Embed(title=":arrow_upper_left: Reference of deleted message", color=Colour.from_rgb(172, 32, 31))
+            reference.add_field(name="Author of reference", value=f"{str(ref.author)} ({ref.author.id})", inline=True)
+            reference.add_field(name="Message ID", value=ref.id, inline=True)
+            reference.add_field(name="Channel", value=ref.channel.mention, inline=True)
+            reference.add_field(name="Jump Link", value=ref.jump_url)
 
             await channel.send(embed=reference)
 
@@ -75,9 +75,9 @@ class Logging(commands.Cog):
         if channel is None:
             return
 
-        embed = Embed(title=':information_source: Bulk Message Deleted', color=Colour.from_rgb(172, 32, 31))
-        embed.add_field(name='Count', value=f"{len(payload.message_ids)}", inline=True)
-        embed.add_field(name='Channel', value=msg_channel.mention, inline=True)
+        embed = Embed(title=":information_source: Bulk Message Deleted", color=Colour.from_rgb(172, 32, 31))
+        embed.add_field(name="Count", value=f"{len(payload.message_ids)}", inline=True)
+        embed.add_field(name="Channel", value=msg_channel.mention, inline=True)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
@@ -104,16 +104,16 @@ class Logging(commands.Cog):
         embeds = []
 
         for i in range(1, chunks + 1):
-            embed = Embed(title=':information_source: Message Updated', color=Colour.from_rgb(118, 37, 171))
-            embed.add_field(name='User', value=f'{str(after.author)} ({after.author.id})', inline=True)
-            embed.add_field(name='Message ID', value=after.id, inline=True)
-            embed.add_field(name='Channel', value=after.channel.mention, inline=True)
+            embed = Embed(title=":information_source: Message Updated", color=Colour.from_rgb(118, 37, 171))
+            embed.add_field(name="User", value=f"{str(after.author)} ({after.author.id})", inline=True)
+            embed.add_field(name="Message ID", value=after.id, inline=True)
+            embed.add_field(name="Channel", value=after.channel.mention, inline=True)
 
             if 1024*(i - 1) < len(before.content) or (not before.content and i == 1):
-                embed.add_field(name=f'Old Message {f"part {i}" if i > 1 else ""}', value=before.content[1024*(i - 1):1024*i] if before.content else "(No detected text content)", inline=False)
+                embed.add_field(name=f"Old Message {f'part {i}' if i > 1 else ''}", value=before.content[1024*(i - 1):1024*i] if before.content else "(No detected text content)", inline=False)
 
             if 1024 * (i - 1) < len(after.content) or (not after.content and i == 1):
-                embed.add_field(name=f'New Message {f"part {i}" if i > 1 else ""}', value=after.content[1024*(i - 1):1024*i] if after.content else "(No detected text content)", inline=False)
+                embed.add_field(name=f"New Message {f'part {i}' if i > 1 else ''}", value=after.content[1024*(i - 1):1024*i] if after.content else "(No detected text content)", inline=False)
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
             embeds.append(embed)
@@ -226,12 +226,12 @@ class Logging(commands.Cog):
             if hasattr(before, prop["name"]) and hasattr(after, prop["name"]):  # user objects don't have all the same properties as member objects
 
                 if (getattr(before, prop["name"]) != getattr(after, prop["name"])) or (prop["name"] == "avatar" and get_user_avatar_url(before)[0] != get_user_avatar_url(after)[0]):  # TODO: Fix up the edge case with avatars?
-                    log = Embed(title=f':information_source: {prop["display_name"]} Updated', color=prop["colour"])
-                    log.add_field(name='User', value=f'{after} ({after.id})', inline=True)
+                    log = Embed(title=f":information_source: {prop['display_name']} Updated", color=prop["colour"])
+                    log.add_field(name="User", value=f"{after} ({after.id})", inline=True)
 
                     if not prop["custom_handler"]:
-                        log.add_field(name=f'Old {prop["display_name"].lower()}', value=getattr(before, prop["name"]))
-                        log.add_field(name=f'New {prop["display_name"].lower()}', value=getattr(after, prop["name"]))
+                        log.add_field(name=f"Old {prop['display_name'].lower()}", value=getattr(before, prop["name"]))
+                        log.add_field(name=f"New {prop['display_name'].lower()}", value=getattr(after, prop["name"]))
 
                     else:
                         """
@@ -247,9 +247,9 @@ class Logging(commands.Cog):
                             if "description" in result:
                                 log.description = result["description"]
                             if "image" in result:
-                                log.set_image(url=f'{result["image"]}')
+                                log.set_image(url=f"{result['image']}")
                             if "thumbnail_url" in result:
-                                log.set_thumbnail(url=f'{result["thumbnail_url"]}')
+                                log.set_thumbnail(url=f"{result['thumbnail_url']}")
                                 thumbnail_set = True
                         else:
                             continue
@@ -376,7 +376,7 @@ class Logging(commands.Cog):
             if (invite_log.to_dict() not in self.previous_inv_log_embeds) or not updated_invites:  # limits log spam e.g. if connection drops
 
                 #if possible_joins_missed or len(updated_invites) != 1:
-                #    await get(guild.text_channels, name='invite-logs').send("*WARNING: Due to a bot glitch or other reason, the below data may be inaccurate due to potentially missed previous joins.*")
+                #    await get(guild.text_channels, name="invite-logs").send("*WARNING: Due to a bot glitch or other reason, the below data may be inaccurate due to potentially missed previous joins.*")
 
                 self.previous_inv_log_embeds.append(invite_log.to_dict())
                 await ichannel.send(embed=invite_log)

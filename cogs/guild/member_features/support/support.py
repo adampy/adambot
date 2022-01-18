@@ -58,14 +58,14 @@ class SupportConnection:
             if channel is None:
                 return
 
-            embed = Embed(title='Message Sent', color=Colour.from_rgb(177, 252, 129))
+            embed = Embed(title="Message Sent", color=Colour.from_rgb(177, 252, 129))
             embed.add_field(name="ID", value=f"{self.id}", inline=True)
             if msg_type == MessageOrigin.MEMBER:
-                embed.add_field(name='Author', value=f'Member', inline=True)
+                embed.add_field(name="Author", value=f"Member", inline=True)
             elif msg_type == MessageOrigin.STAFF:
-                embed.add_field(name='Author', value=f'Staff: {message.author.display_name}')
+                embed.add_field(name="Author", value=f"Staff: {message.author.display_name}")
 
-            embed.add_field(name='Content', value=f'{message.content}', inline=False)
+            embed.add_field(name="Content", value=f"{message.content}", inline=False)
             await channel.send(embed=embed)
 
     async def accept(self, staff: discord.User) -> None:
@@ -74,7 +74,7 @@ class SupportConnection:
         """
 
         async with self.bot.pool.acquire() as connection:  # TODO: Handle when a staff already has a ticket open
-            await connection.execute('UPDATE support SET staff_id = $1, started_at = now() WHERE id = $2', staff.id, self.id)
+            await connection.execute("UPDATE support SET staff_id = $1, started_at = now() WHERE id = $2", staff.id, self.id)
         self.staff_id = staff.id
         self.staff = staff
 
@@ -115,8 +115,8 @@ class SupportConnectionManager:
             if channel is None or staff is None:  # If channel or staff removed
                 return
         
-            embed = Embed(title='New Ticket', color=Colour.from_rgb(0, 0, 255))
-            embed.add_field(name='ID', value=f"{new_connection.id}", inline=True)
+            embed = Embed(title="New Ticket", color=Colour.from_rgb(0, 0, 255))
+            embed.add_field(name="ID", value=f"{new_connection.id}", inline=True)
 
             await channel.send(f"{staff.mention} Support ticket started by a member, ID: {new_connection.id}. Type `support accept {new_connection.id}` to accept it.", embed=embed)
         return new_connection
@@ -181,12 +181,12 @@ class SupportConnectionManager:
             channel = self.bot.get_channel(channel_id)
             if channel is None:
                 return
-            embed = Embed(title='Ticket Ended', color=Colour.from_rgb(255, 0, 0))
-            embed.add_field(name='ID', value=connection.id, inline=True)
+            embed = Embed(title="Ticket Ended", color=Colour.from_rgb(255, 0, 0))
+            embed.add_field(name="ID", value=connection.id, inline=True)
             if staff is not None:
-                embed.add_field(name='Initiator', value=f"Staff: {staff.display_name}", inline=True)
+                embed.add_field(name="Initiator", value=f"Staff: {staff.display_name}", inline=True)
             else:
-                embed.add_field(name='Initiator', value="Member", inline=True)
+                embed.add_field(name="Initiator", value="Member", inline=True)
 
             await channel.send(embed=embed)
 
@@ -206,10 +206,10 @@ class Support(commands.Cog):
             # If support requested
             connection = await self.support_manager.in_connections(message.author)  # Holds connection data or False if a connection is not open
 
-            if not connection and self.bot.starts_with_any(message.content.lower(), ['support start', 'support begin']):
+            if not connection and self.bot.starts_with_any(message.content.lower(), ["support start", "support begin"]):
                 # Start a new connection
                 try:  # Try clause gets a valid guild_id
-                    guild_id = int(message.content.split(' ')[2])
+                    guild_id = int(message.content.split(" ")[2])
                     if guild_id not in [g.id for g in self.bot.guilds]:
                         await message.author.send(f"That is not a guild I know of, to get a list of guilds type `support start`")
                         return
@@ -239,32 +239,32 @@ class Support(commands.Cog):
                     return
 
                 connection = await self.support_manager.create(message.author.id, guild_id)  # This method handles the embed making the staff aware of the ticket
-                await message.author.send(f'Your ticket, **ID: {connection.id}**, has been sent. Staff have been alerted to your ticket and will be with you shortly!')
+                await message.author.send(f"Your ticket, **ID: {connection.id}**, has been sent. Staff have been alerted to your ticket and will be with you shortly!")
             
-            if self.bot.starts_with_any(message.content.lower(), ['support end', 'support close', 'support finish']) and connection:
+            if self.bot.starts_with_any(message.content.lower(), ["support end", "support close", "support finish"]) and connection:
                 if connection.member_id == message.author.id:  # Member sending
                     if connection.staff_id != 0:
-                        await connection.staff.send('The ticket was closed by the member.')
+                        await connection.staff.send("The ticket was closed by the member.")
                     await self.support_manager.remove(connection)
-                    await message.author.send('The ticket has been closed!')
+                    await message.author.send("The ticket has been closed!")
 
                 elif connection.staff_id == message.author.id:  # Staff sending
                     await self.support_manager.remove(connection, message.author)
-                    await connection.member.send('The ticket was closed by staff.')
-                    await message.author.send('The ticket has been closed!')
+                    await connection.member.send("The ticket was closed by staff.")
+                    await message.author.send("The ticket has been closed!")
             
             else:
-                if not connection and not message.content.startswith('-'):
+                if not connection and not message.content.startswith("-"):
                     # Not in connection and not starts with `support` AND not trying to do a command
-                    await message.author.send(f'Hi! You are not in a support chat with a staff member. If you would like to start an anonymous chat with an anonymous staff member type `support start` to get started.')
+                    await message.author.send(f"Hi! You are not in a support chat with a staff member. If you would like to start an anonymous chat with an anonymous staff member type `support start` to get started.")
                 else:
                     # Doesn't start with -
                     if connection:
                         if connection.member_id == message.author.id and connection.staff_id != 0:  # Member sending
-                            await connection.staff.send(f'Member: {message.content}')
+                            await connection.staff.send(f"Member: {message.content}")
                             await connection.log_message(MessageOrigin.MEMBER, message)
                         elif connection.staff_id == message.author.id and connection.member_id != 0:  # Staff sending
-                            await connection.member.send(f'Staff: {message.content}')
+                            await connection.member.send(f"Staff: {message.content}")
                             await connection.log_message(MessageOrigin.STAFF, message)
 
     @commands.Cog.listener()
@@ -293,7 +293,7 @@ class Support(commands.Cog):
         """
 
         if ctx.invoked_subcommand is None:
-            await ctx.send(f'```{ctx.prefix}help support``` for more commands. If you want to open a ticket type ```{ctx.prefix}support start```')
+            await ctx.send(f"```{ctx.prefix}help support``` for more commands. If you want to open a ticket type ```{ctx.prefix}support start```")
 
     @support.command(pass_context=True)
     @commands.guild_only()
@@ -306,7 +306,7 @@ class Support(commands.Cog):
         try:
             ticket = int(ticket)
         except ValueError:
-            await ctx.send('Ticket must be an integer.')
+            await ctx.send("Ticket must be an integer.")
             return
 
         in_connection = await self.support_manager.in_connections(ctx.author)
@@ -324,17 +324,17 @@ class Support(commands.Cog):
             return
 
         if connection.member_id == ctx.author.id:
-            await ctx.send('You cannot open a support ticket with yourself.')
+            await ctx.send("You cannot open a support ticket with yourself.")
             return
 
         await connection.accept(ctx.author)
-        await ctx.author.send('You are now connected anonymously with a member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)')
-        await connection.member.send('You are now connected anonymously with a staff member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)')
+        await ctx.author.send("You are now connected anonymously with a member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)")
+        await connection.member.send("You are now connected anonymously with a staff member. DM me to get started! (Type `support end` here when you are finished to close the support ticket)")
 
         channel_id = await self.bot.get_config_key(ctx, "support_log_channel")
         if channel_id is not None:
             embed = Embed(color=Colour.from_rgb(0, 0, 255))
-            embed.add_field(name='Staff Connected', value=f"ID: {connection.id}", inline=False)
+            embed.add_field(name="Staff Connected", value=f"ID: {connection.id}", inline=False)
 
             channel = self.bot.get_channel(channel_id)
             if channel is None:
@@ -357,7 +357,7 @@ class Support(commands.Cog):
         for ticket in tickets:
             if ticket.staff_id != 0:
                 if ticket.started_at:
-                    date = ticket.started_at.strftime('%H:%M on %d/%m/%y')
+                    date = ticket.started_at.strftime("%H:%M on %d/%m/%y")
                 else:
                     date = "Not yet accepted."
                 current.append(f"ID: {ticket.id}{newline}Member ID: ***REDACTED***{newline}Staff: {ticket.staff}{newline}Started at: {date}{newline}")

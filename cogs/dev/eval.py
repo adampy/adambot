@@ -57,7 +57,7 @@ class Eval(commands.Cog):
     @commands.guild_only()
     async def sql(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
-            await ctx.send(f'```{ctx.prefix}help sql```')
+            await ctx.send(f"```{ctx.prefix}help sql```")
 
     @sql.command(pass_context=True)
     @is_dev

@@ -73,9 +73,9 @@ class Tasks(commands.Cog):
                                 continue  # task_type hasn't been registered yet, hold task
                             await self.task_types[task["task_name"]]["handler"](task)
                         except Exception as e:
-                            print(f'{type(e).__name__}: {e}')
+                            print(f"{type(e).__name__}: {e}")
                         if self.task_types[task["task_name"]]["delete_post_handle"]:
-                            await connection.execute('DELETE FROM tasks WHERE id = ($1)', task["id"])
+                            await connection.execute("DELETE FROM tasks WHERE id = ($1)", task["id"])
             except (OSError, asyncpg.exceptions.ConnectionDoesNotExistError):
                 await asyncio.sleep(1)  # workaround for task crashing when connection temporarily drops with db
 

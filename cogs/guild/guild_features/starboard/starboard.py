@@ -139,7 +139,7 @@ class StarboardCog(commands.Cog):
         embed.set_author(name=message.author.display_name, icon_url=get_user_avatar_url(message.author, mode=1)[0])
         if message.embeds:
             embedded_data = message.embeds[0]
-            if embedded_data.type == 'image' and not self.is_url_spoiler(message.content, embedded_data.url):
+            if embedded_data.type == "image" and not self.is_url_spoiler(message.content, embedded_data.url):
                 embed.set_image(url=embedded_data.url)
             else:
                 embed.add_field(name="Message is an embed", value="Press the message link to view", inline=False)
@@ -150,12 +150,12 @@ class StarboardCog(commands.Cog):
         if message.attachments:
             attatched = message.attachments[0]
             is_spoiler = attatched.is_spoiler()
-            if not is_spoiler and attatched.url.lower().endswith(('png', 'jpeg', 'jpg', 'gif', 'webp')):
+            if not is_spoiler and attatched.url.lower().endswith(("png", "jpeg", "jpg", "gif", "webp")):
                 embed.set_image(url=attatched.url)
             elif is_spoiler:
-                embed.add_field(name='Attachment', value=f'||[{attatched.filename}]({attatched.url})||', inline=False)
+                embed.add_field(name="Attachment", value=f"||[{attatched.filename}]({attatched.url})||", inline=False)
             else:
-                embed.add_field(name='Attachment', value=f'[{attatched.filename}]({attatched.url})', inline=False)
+                embed.add_field(name="Attachment", value=f"[{attatched.filename}]({attatched.url})", inline=False)
 
         embed.add_field(name="Message link", value=f"[Click me!]({message.jump_url})")
         embed.set_footer(text=self.bot.correct_time().strftime("%H:%M on %m/%d/%Y"))
@@ -222,7 +222,7 @@ class StarboardCog(commands.Cog):
             custom_emoji = True
         except commands.errors.EmojiNotFound:
             # If here, emoji is either a standard emoji, or a custom one from another guild
-            match = re.match(r'<(a?):([a-zA-Z0-9]{1,32}):([0-9]{15,20})>$', emoji)  # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
+            match = re.match(r"<(a?):([a-zA-Z0-9]{1,32}):([0-9]{15,20})>$", emoji)  # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
             if not match:
                 custom_emoji = False
                 return_emoji = emoji if bool(get_emoji_regexp().search(emoji)) else None  # If `emoji` is an actual unicode emoji, this will set `return_emoji` to it, otherwise None
@@ -355,7 +355,7 @@ class StarboardCog(commands.Cog):
     @commands.group()
     async def starboard(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
-            await ctx.send(f'```{ctx.prefix}help starboard```')
+            await ctx.send(f"```{ctx.prefix}help starboard```")
 
     @starboard.command(aliases=["list"])
     @commands.guild_only()

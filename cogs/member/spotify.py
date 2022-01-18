@@ -20,7 +20,7 @@ class Spotify(commands.Cog):
             else:
                 user = args
             if user is None:
-                fail_embed = Embed(title="Spotify info", description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**', color=Colour.from_rgb(255, 7, 58))
+                fail_embed = Embed(title="Spotify info", description=f":x:  **Sorry {ctx.author.display_name} we could not find that user!**", color=Colour.from_rgb(255, 7, 58))
                 fail_embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
                         self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
                 await ctx.send(embed=fail_embed)

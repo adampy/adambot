@@ -60,7 +60,7 @@ class Moderation(commands.Cog):
     @commands.command(pass_context=True)
     @commands.has_permissions(
         manage_messages=True)  # TODO: Perhaps make it possible to turn some commands, like purge, off
-    async def purge(self, ctx: commands.Context, limit: str = '5', member: discord.Member = None) -> None:
+    async def purge(self, ctx: commands.Context, limit: str = "5", member: discord.Member = None) -> None:
         """
         Purges the channel.
         Usage: `purge 50`
@@ -93,14 +93,14 @@ class Moderation(commands.Cog):
                 return
             channel = self.bot.get_channel(channel_id)
 
-            embed = Embed(title='Purge', color=Colour.from_rgb(175, 29, 29))
-            embed.add_field(name='Count', value=f"{len(deleted)}")
-            embed.add_field(name='Channel', value=ctx.channel.mention)
-            embed.add_field(name='Staff member', value=ctx.author.mention)
+            embed = Embed(title="Purge", color=Colour.from_rgb(175, 29, 29))
+            embed.add_field(name="Count", value=f"{len(deleted)}")
+            embed.add_field(name="Channel", value=ctx.channel.mention)
+            embed.add_field(name="Staff member", value=ctx.author.mention)
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await channel.send(embed=embed)
         else:
-            await ctx.send(f'Please use an integer for the amount of messages to delete, not `{limit}` :ok_hand:')
+            await ctx.send(f"Please use an integer for the amount of messages to delete, not `{limit}` :ok_hand:")
 
     # -----------------------KICK------------------------------
 
@@ -122,7 +122,7 @@ class Moderation(commands.Cog):
             reason = parsed_args["reason"]
 
         if not reason:
-            reason = f'No reason provided'
+            reason = f"No reason provided"
 
         try:  # perhaps add some like `attempt_dm` thing in utils instead of this?
             await member.send(f"You have been kicked from {ctx.guild} ({reason})")
@@ -130,16 +130,16 @@ class Moderation(commands.Cog):
             await ctx.send(f"Could not DM {member.display_name} about their kick!")
 
         await member.kick(reason=reason)
-        await ctx.send(f'{member.mention} has been kicked :boot:')
+        await ctx.send(f"{member.mention} has been kicked :boot:")
 
         channel_id = await self.bot.get_config_key(ctx, "log_channel")
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
 
-        embed = Embed(title='Kick', color=Colour.from_rgb(220, 123, 28))
-        embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
-        embed.add_field(name='Reason', value=reason + f" (kicked by {ctx.author.name})")
+        embed = Embed(title="Kick", color=Colour.from_rgb(220, 123, 28))
+        embed.add_field(name="Member", value=f"{member.mention} ({member.id})")
+        embed.add_field(name="Reason", value=reason + f" (kicked by {ctx.author.name})")
         embed.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0])
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
@@ -232,17 +232,17 @@ class Moderation(commands.Cog):
 
             await ctx.guild.ban(member, reason=reason, delete_message_days=0)
             if not massban:
-                await ctx.send(f'{member.mention} has been banned.')
+                await ctx.send(f"{member.mention} has been banned.")
 
             channel_id = await self.bot.get_config_key(ctx, "log_channel")
             if channel_id is None:
                 return
             channel = self.bot.get_channel(channel_id)
 
-            embed = Embed(title='Ban' if in_guild else 'Hackban', color=Colour.from_rgb(255, 255, 255))
-            embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
-            embed.add_field(name='Moderator', value=str(ctx.author))
-            embed.add_field(name='Reason', value=reason)
+            embed = Embed(title="Ban" if in_guild else "Hackban", color=Colour.from_rgb(255, 255, 255))
+            embed.add_field(name="Member", value=f"{member.mention} ({member.id})")
+            embed.add_field(name="Moderator", value=str(ctx.author))
+            embed.add_field(name="Reason", value=reason)
             embed.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0])
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
@@ -278,10 +278,10 @@ class Moderation(commands.Cog):
                 return
             channel = self.bot.get_channel(channel_id)
 
-            embed = Embed(title='Unban', color=Colour.from_rgb(76, 176, 80))
-            embed.add_field(name='User', value=f'{user.mention} ({user.id})')
-            embed.add_field(name='Moderator', value=str(self.bot.user if not author else author))
-            embed.add_field(name='Reason', value=reason)
+            embed = Embed(title="Unban", color=Colour.from_rgb(76, 176, 80))
+            embed.add_field(name="User", value=f"{user.mention} ({user.id})")
+            embed.add_field(name="Moderator", value=str(self.bot.user if not author else author))
+            embed.add_field(name="Reason", value=reason)
             embed.set_thumbnail(url=get_user_avatar_url(user)[0])
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await channel.send(embed=embed)
@@ -310,12 +310,12 @@ class Moderation(commands.Cog):
             return
 
         if not await self.is_user_banned(ctx, member):
-            await ctx.send(f'{member.mention} is not already banned.')
+            await ctx.send(f"{member.mention} is not already banned.")
             return
 
         await self.handle_unban({"member_id": member.id, "guild_id": ctx.guild.id}, reason=reason, author=ctx.author,
                                 ctx=ctx)
-        await ctx.send(f'{member.mention} has been unbanned!')
+        await ctx.send(f"{member.mention} has been unbanned!")
 
     # -----------------------MUTES------------------------------
 
@@ -362,21 +362,21 @@ class Moderation(commands.Cog):
             if timeperiod:
                 await self.bot.tasks.submit_task("unmute", datetime.utcnow() + timedelta(seconds=timeperiod),
                                                  extra_columns={"member_id": member.id, "guild_id": member.guild.id})
-        await member.add_roles(role, reason=reason if reason else f'No reason - muted by {ctx.author.name}')
-        await ctx.send(f':ok_hand: **{member}** has been muted')
-        # 'you are muted ' + timestring
+        await member.add_roles(role, reason=reason if reason else f"No reason - muted by {ctx.author.name}")
+        await ctx.send(f":ok_hand: **{member}** has been muted")
+        # "you are muted " + timestring
         if not timeperiod:
-            timestring = 'indefinitely'
+            timestring = "indefinitely"
         else:
             time = (self.bot.correct_time() + timedelta(seconds=timeperiod))  # + timedelta(hours = 1)
-            timestring = 'until ' + time.strftime('%H:%M on %d/%m/%y')
+            timestring = "until " + time.strftime("%H:%M on %d/%m/%y")
 
         if not reason or reason is None:
-            reasonstring = 'an unknown reason (the staff member did not give a reason)'
+            reasonstring = "an unknown reason (the staff member did not give a reason)"
         else:
             reasonstring = reason
         try:
-            await member.send(f'You have been muted {timestring} for {reasonstring}.')
+            await member.send(f"You have been muted {timestring} for {reasonstring}.")
         except (discord.Forbidden, discord.HTTPException):
             await ctx.send(f"Could not DM {member.display_name} about their mute!")
 
@@ -385,12 +385,12 @@ class Moderation(commands.Cog):
             return
         channel = self.bot.get_channel(channel_id)
 
-        embed = Embed(title='Member Muted', color=Colour.from_rgb(172, 32, 31))
-        embed.add_field(name='Member', value=f'{member.mention} ({member.id})')
-        embed.add_field(name='Moderator', value=str(ctx.author))
-        embed.add_field(name='Reason', value=reason)
-        embed.add_field(name='Expires',
-                        value=timestring.replace('until ', '') if timestring != 'indefinitely' else "Never")
+        embed = Embed(title="Member Muted", color=Colour.from_rgb(172, 32, 31))
+        embed.add_field(name="Member", value=f"{member.mention} ({member.id})")
+        embed.add_field(name="Moderator", value=str(ctx.author))
+        embed.add_field(name="Reason", value=reason)
+        embed.add_field(name="Expires",
+                        value=timestring.replace("until ", "") if timestring != "indefinitely" else "Never")
         embed.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0])
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
@@ -416,10 +416,10 @@ class Moderation(commands.Cog):
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"]
-        reason = reason if reason else f'No reason - unmuted by {ctx.author.name}'
+        reason = reason if reason else f"No reason - unmuted by {ctx.author.name}"
 
         await self.handle_unmute({"member_id": member.id, "guild_id": member.guild.id}, reason=reason)
-        await ctx.send(f':ok_hand: **{member}** has been unmuted')
+        await ctx.send(f":ok_hand: **{member}** has been unmuted")
 
     # -----------------------SLOWMODE------------------------------
 
@@ -437,14 +437,14 @@ class Moderation(commands.Cog):
             if int(time) <= 60:
                 await ctx.channel.edit(slowmode_delay=int(time))
                 if int(time) == 0:
-                    await ctx.send(':ok_hand: slowmode removed from this channel.')
+                    await ctx.send(":ok_hand: slowmode removed from this channel.")
                 else:
-                    await ctx.send(f':ok_hand: Slowmode of {time} seconds added.')
+                    await ctx.send(f":ok_hand: Slowmode of {time} seconds added.")
             else:
-                await ctx.send('You cannot add a slowmode greater than 60.')
+                await ctx.send("You cannot add a slowmode greater than 60.")
 
         else:
-            await ctx.send('You must specify a whole number of seconds')
+            await ctx.send("You must specify a whole number of seconds")
 
     # -----------------------JAIL & BANISH------------------------------
 
@@ -478,7 +478,7 @@ class Moderation(commands.Cog):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "No jail role has been set")
             return
 
-        role = get(member.guild.roles, name='Jail')
+        role = get(member.guild.roles, name="Jail")
         await member.remove_roles(role)
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{member.display_name} has been unjailed.")
 

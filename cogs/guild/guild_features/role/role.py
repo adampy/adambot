@@ -18,7 +18,7 @@ from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 """
 
 
-class Verbosity:  # Using enum.Enum means that '>' and '<' operations cannot be performed, e.g. Verbosity.ALL > Verbosity.MINIMAL
+class Verbosity:  # Using enum.Enum means that ">" and "<" operations cannot be performed, e.g. Verbosity.ALL > Verbosity.MINIMAL
     SILENT = 0
     MINIMAL = 1
     ALL = 2
@@ -45,7 +45,7 @@ class Role(commands.Cog):
           1: Send embeds
           2: Raise errors where appropriate
 
-        Attempts to find roles within a guild that are closest to the 'role' provided.
+        Attempts to find roles within a guild that are closest to the "role" provided.
         """
 
         possible = []
@@ -60,8 +60,8 @@ class Role(commands.Cog):
             possible = equals  # solves the whole problem of typing "moderator" and it not realising you want "Moderator" and asking you if you meant Moderator or Head Moderator
 
         if len(possible) > 1 and verbosity > Verbosity.SILENT:
-            title = 'Multiple roles found. Please try again by entering one of the following roles.'
-            desc = '\n'.join([f"•  {role.name}" + (f" (Role ID: {role.id})" if [a_role.name.lower() for a_role in possible].count(role.name.lower()) > 1 else "") for role in possible])
+            title = "Multiple roles found. Please try again by entering one of the following roles."
+            desc = "\n".join([f"•  {role.name}" + (f" (Role ID: {role.id})" if [a_role.name.lower() for a_role in possible].count(role.name.lower()) > 1 else "") for role in possible])
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, title, desc=desc)
 
         elif len(possible) == 0 and verbosity > Verbosity.MINIMAL:
@@ -84,7 +84,7 @@ class Role(commands.Cog):
         """
 
         error_title = f"Couldn't {action} the role!" if error_title == "default" else error_title
-        if not ctx.me.guild_permissions.manage_roles:  # was originally gonna separate this all out but given discord rate-limits are stupid you can't work on the assumption that you've retained permissions
+        if not ctx.me.guild_permissions.manage_roles:  # was originally gonna separate this all out but given discord rate-limits are stupid you can't work on the assumption that you"ve retained permissions
             if verbosity > Verbosity.SILENT:
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, error_title, desc="Please give me **Manage Roles** permissions")
             return 3
@@ -109,8 +109,8 @@ class Role(commands.Cog):
         Returns:
             0: Everything fine
             1: Something non-critical went wrong, carry on but note a failure
-                1.1: Member didn't have 'role' to remove
-                1.2: Member already has 'role'
+                1.1: Member didn't have "role" to remove
+                1.2: Member already has "role"
             2: Something critical went wrong, run around screaming like a lunatic
             None: Oi gimme valid action
         """
@@ -177,7 +177,7 @@ class Role(commands.Cog):
     @commands.guild_only()
     async def role(self, ctx: commands.Context) -> None:
         """
-        'role' command group definition.
+        "role" command group definition.
         Checks if subcommand passed matches anything within the group.
         If no matching subcommand is found, the help command is displayed.
         """
@@ -204,7 +204,7 @@ class Role(commands.Cog):
         if not ctx.command:
             return  # begone you typoeth cretins!
 
-        if ctx.command.full_parent_name == "role":  # this cog should only care about its own commands' errors
+        if ctx.command.full_parent_name == "role":  # this cog should only care about its own commands" errors
             if isinstance(error, commands.RoleNotFound):
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't find one of the roles you specified!", desc=error)
 
@@ -230,8 +230,8 @@ class Role(commands.Cog):
                 raise error
         else:
             """
-            Error MUST be re-raised if not handled. in this case, any errors outside of the 'role' command group won't get handled.
-            Whilst the bot's 'on_command_error' listener can see the existence of the cog's listener, it's nothing more than that.
+            Error MUST be re-raised if not handled. in this case, any errors outside of the "role" command group won't get handled.
+            Whilst the bot's "on_command_error" listener can see the existence of the cog's listener, it"s nothing more than that.
             
             Why is this here specifically? First place I added this lol
             """
@@ -332,7 +332,7 @@ class Role(commands.Cog):
 
             role = possible[0]
 
-        message = "\n".join([f'`{member.id}` **{member.name}**' for member in role.members]) + \
+        message = "\n".join([f"`{member.id} **{member.name}**" for member in role.members]) + \
                   f"\n------------------------------------\n:white_check_mark: I found **{len(role.members)}** member{'' if len(role.members) == 1 else 's'} with the **{role.name}** role."
 
         await self.bot.send_text_file(message, ctx.channel, "roles", "txt") if len(message) > 2000 else await ctx.send(message)

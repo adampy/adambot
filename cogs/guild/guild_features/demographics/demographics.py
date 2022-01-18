@@ -108,7 +108,7 @@ class Demographics(commands.Cog):
 
         role_ids = await self._get_roles(ctx.guild)
         roles = [ctx.guild.get_role(x).name for x in role_ids]
-        await ctx.send("Currently tracked roles are: " + ', '.join(roles))
+        await ctx.send("Currently tracked roles are: " + ", ".join(roles))
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
@@ -267,11 +267,11 @@ class Demographics(commands.Cog):
 
                 ax.plot([x[0] for x in data], [x[1] for x in data], linewidth=1, markersize=2, color=rgb_scaled_tuple, label=role.name)
 
-        ax.set(xlabel='Time', ylabel='Frequency', title=f"{ctx.guild.name}'s  demographics ({ctx.guild.member_count} members)")
+        ax.set(xlabel="Time", ylabel="Frequency", title=f"{ctx.guild.name}'s  demographics ({ctx.guild.member_count} members)")
         ax.grid()
         ax.legend(loc="upper left")
         ax.set_ylim(bottom=0)
-        ax.fmt_xdata = DateFormatter('% Y-% m-% d % H:% M:% S') 
+        ax.fmt_xdata = DateFormatter("% Y-% m-% d % H:% M:% S")
         fig.autofmt_xdate()
 
         await self.bot.send_image_file(fig, ctx.channel, "demographics-data")

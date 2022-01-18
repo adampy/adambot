@@ -101,7 +101,7 @@ class ReactionRoles(commands.Cog):
                 custom_emoji = True
             except commands.errors.EmojiNotFound:
                 # If here, emoji is either a standard emoji, or a custom one from another guild
-                match = re.match(r'<(a?):([a-zA-Z0-9]{1,32}):([0-9]{15,20})>$', emoji)  # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
+                match = re.match(r"<(a?):([a-zA-Z0-9]{1,32}):([0-9]{15,20})>$", emoji)  # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
                 if match:
                     await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "You cannot add a reaction of a custom emoji from a different server!")
                     return
@@ -175,7 +175,7 @@ class ReactionRoles(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)
 
-        embed = discord.Embed(title=f':information_source: {ctx.guild.name} reaction roles', color=self.bot.INFORMATION_BLUE)
+        embed = discord.Embed(title=f":information_source: {ctx.guild.name} reaction roles", color=self.bot.INFORMATION_BLUE)
         embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
         
         message_reactions = {}  # ID -> str (to put in embed)

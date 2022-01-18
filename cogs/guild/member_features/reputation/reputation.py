@@ -12,7 +12,7 @@ class Reputation(commands.Cog):
 
     async def get_leaderboard(self, ctx: commands.Context) -> None:
         async with self.bot.pool.acquire() as connection:
-            leaderboard = await connection.fetch('SELECT member_id, reps FROM rep WHERE guild_id = $1 ORDER BY reps DESC', ctx.guild.id)
+            leaderboard = await connection.fetch("SELECT member_id, reps FROM rep WHERE guild_id = $1 ORDER BY reps DESC", ctx.guild.id)
 
         if len(leaderboard) == 0:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"There aren't any reputation points in {ctx.guild.name} yet! ")
@@ -37,7 +37,7 @@ class Reputation(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             reps = await connection.fetchval("SELECT reps FROM rep WHERE member_id = ($1) AND guild_id = $2", member.id, member.guild.id)
             if not reps:
-                await connection.execute('INSERT INTO rep (reps, member_id, guild_id) VALUES ($1, $2, $3)', change, member.id, member.guild.id)
+                await connection.execute("INSERT INTO rep (reps, member_id, guild_id) VALUES ($1, $2, $3)", change, member.id, member.guild.id)
             else:
                 await self.set_rep(member.id, member.guild.id, reps+change)
                 reps = reps + change
@@ -87,7 +87,7 @@ class Reputation(commands.Cog):
         else:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Unexpected error!", desc=error)
 
-    @rep.command(aliases=['give', 'point'])
+    @rep.command(aliases=["give", "point"])
     @commands.guild_only()
     async def award(self, ctx: commands.Context, *, args: discord.Member | discord.User | str) -> None:
         """
@@ -103,12 +103,12 @@ class Reputation(commands.Cog):
             user = await self.bot.get_spaced_member(ctx, self.bot, args=args) if args else None  # check so rep award doesn't silently fail when no string given
 
         if not user:
-            failed = Embed(title=f':x:  Sorry we could not find the user!' if args else 'Rep Help', color=self.bot.ERROR_RED)
+            failed = Embed(title=f":x:  Sorry we could not find the user!" if args else "Rep Help", color=self.bot.ERROR_RED)
             if args:
                 failed.add_field(name="Requested user", value=args)
 
-            failed.add_field(name="Information", value=f'\nTo award rep to someone, type \n`{ctx.prefix}rep Member_Name`\nor\n`{ctx.prefix}rep @Member`\n'
-                             f'Pro tip: If e.g. fred roberto was recently active you can type `{ctx.prefix}rep fred`\n\nTo see the other available rep commands type `{ctx.prefix}help rep`', inline=False)
+            failed.add_field(name="Information", value=f"\nTo award rep to someone, type \n`{ctx.prefix}rep Member_Name`\nor\n`{ctx.prefix}rep @Member`\n"
+                             f"Pro tip: If e.g. fred roberto was recently active you can type `{ctx.prefix}rep fred`\n\nTo see the other available rep commands type `{ctx.prefix}help rep`", inline=False)
             failed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
 
             await ctx.send(embed=failed)
@@ -135,11 +135,11 @@ class Reputation(commands.Cog):
                 if channel_id is None:
                     return
                 channel = self.bot.get_channel(channel_id)
-                embed = Embed(title='Reputation Points', color=Colour.from_rgb(177, 252, 129))
-                embed.add_field(name='From', value=f'{str(ctx.author)} ({ctx.author.id})')
-                embed.add_field(name='To', value=f'{str(user)} ({user.id})')
-                embed.add_field(name='New Rep', value=reps)
-                embed.add_field(name='Awarded in', value=ctx.channel.mention)
+                embed = Embed(title="Reputation Points", color=Colour.from_rgb(177, 252, 129))
+                embed.add_field(name="From", value=f"{str(ctx.author)} ({ctx.author.id})")
+                embed.add_field(name="To", value=f"{str(user)} ({user.id})")
+                embed.add_field(name="New Rep", value=reps)
+                embed.add_field(name="Awarded in", value=ctx.channel.mention)
                 embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
                 await channel.send(embed=embed)
 
@@ -150,7 +150,7 @@ class Reputation(commands.Cog):
             desc = "The bot overlords do not accept puny humans' rewards" if user.bot else "You cannot rep yourself, cheating bugger."
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"Failed to award a reputation point to {nick}", desc=desc, thumbnail_url=get_user_avatar_url(user, mode=1)[0])
 
-    @rep.command(aliases=['lb'])
+    @rep.command(aliases=["lb"])
     @commands.guild_only()
     async def leaderboard(self, ctx: commands.Context) -> None:
         """
@@ -163,7 +163,7 @@ class Reputation(commands.Cog):
     @commands.guild_only()
     async def reset(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
-            await ctx.send(f'```{ctx.prefix}rep reset all```')
+            await ctx.send(f"```{ctx.prefix}rep reset all```")
 
     @reset.command(pass_context=True)
     @commands.guild_only()
@@ -182,9 +182,9 @@ class Reputation(commands.Cog):
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
-        embed = Embed(title='Reputation Points Reset', color=Colour.from_rgb(177, 252, 129))
-        embed.add_field(name='Member', value='**EVERYONE**')
-        embed.add_field(name='Staff', value=str(ctx.author))
+        embed = Embed(title="Reputation Points Reset", color=Colour.from_rgb(177, 252, 129))
+        embed.add_field(name="Member", value="**EVERYONE**")
+        embed.add_field(name="Staff", value=str(ctx.author))
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
@@ -206,10 +206,10 @@ class Reputation(commands.Cog):
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
-        embed = Embed(title='Reputation Points Set', color=Colour.from_rgb(177, 252, 129))
-        embed.add_field(name='Member', value=str(user))
-        embed.add_field(name='Staff', value=str(ctx.author))
-        embed.add_field(name='New Rep', value=new_reps)
+        embed = Embed(title="Reputation Points Set", color=Colour.from_rgb(177, 252, 129))
+        embed.add_field(name="Member", value=str(user))
+        embed.add_field(name="Staff", value=str(ctx.author))
+        embed.add_field(name="New Rep", value=new_reps)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
@@ -243,10 +243,10 @@ class Reputation(commands.Cog):
         if channel_id is None:
             return
         channel = self.bot.get_channel(channel_id)
-        embed = Embed(title='Reputation Points Set (Hard set)', color=Colour.from_rgb(177, 252, 129))
-        embed.add_field(name='Member', value=user_id)
-        embed.add_field(name='Staff', value=str(ctx.author))
-        embed.add_field(name='New Rep', value=new_reps)
+        embed = Embed(title="Reputation Points Set (Hard set)", color=Colour.from_rgb(177, 252, 129))
+        embed.add_field(name="Member", value=user_id)
+        embed.add_field(name="Staff", value=str(ctx.author))
+        embed.add_field(name="New Rep", value=new_reps)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
@@ -284,10 +284,10 @@ class Reputation(commands.Cog):
 
         if not rep:
             rep = 0
-        embed = Embed(title=f'Rep info for {user.display_name} ({user})', color=Colour.from_rgb(139, 0, 139))
+        embed = Embed(title=f"Rep info for {user.display_name} ({user})", color=Colour.from_rgb(139, 0, 139))
         # could change to user.colour at some point, I prefer the purple for now though
-        embed.add_field(name='Rep points', value=rep)
-        embed.add_field(name='Leaderboard position', value=self.bot.ordinal(lb_pos) if lb_pos else 'Nowhere :(')
+        embed.add_field(name="Rep points", value=rep)
+        embed.add_field(name="Leaderboard position", value=self.bot.ordinal(lb_pos) if lb_pos else "Nowhere :(")
         embed.set_footer(text=f"Requested by {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
         embed.set_thumbnail(url=get_user_avatar_url(user, mode=1)[0])
         await ctx.send(embed=embed)
@@ -299,8 +299,8 @@ class Reputation(commands.Cog):
             vals = await connection.fetch("SELECT DISTINCT reps, COUNT(member_id) FROM rep WHERE reps > 0 AND guild_id = $1 GROUP BY reps ORDER BY reps", ctx.guild.id)
 
         fig, ax = plt.subplots()
-        ax.plot([x[0] for x in vals], [x[1] for x in vals], 'b-o', linewidth=0.5, markersize=1)
-        ax.set(xlabel='Reputation points (rep)', ylabel='Frequency (reps)', title='Rep frequency graph')
+        ax.plot([x[0] for x in vals], [x[1] for x in vals], "b-o", linewidth=0.5, markersize=1)
+        ax.set(xlabel="Reputation points (rep)", ylabel="Frequency (reps)", title="Rep frequency graph")
         ax.grid()
         ax.set_ylim(bottom=0)
 

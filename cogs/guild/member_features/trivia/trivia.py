@@ -10,48 +10,48 @@ from libs.misc.decorators import is_staff
 
 
 TRIVIAS = [
-    'cars',
-    'computers',
-    'disney',
-    'elements',
-    'games',
-    'GCSEBio',
-    'GCSEBloodBrothers',
-    'GCSEChemAQAPaper2',
-    'GCSECompSci',
-    'GCSEFrench',
-    'GCSEMaths',
-    'GCSEPhys',
-    'GCSERomeoJuliet',
-    'GCSERS',
-    'GCSESpanish',
-    'general',
-    'harrypotter',
-    'lordt-history',
-    'nato',
-    'SpecIonTests',
-    'usstateabbreviations',
-    'worldcapitals',
-    'worldflags',
-    'WW2'
+    "cars",
+    "computers",
+    "disney",
+    "elements",
+    "games",
+    "GCSEBio",
+    "GCSEBloodBrothers",
+    "GCSEChemAQAPaper2",
+    "GCSECompSci",
+    "GCSEFrench",
+    "GCSEMaths",
+    "GCSEPhys",
+    "GCSERomeoJuliet",
+    "GCSERS",
+    "GCSESpanish",
+    "general",
+    "harrypotter",
+    "lordt-history",
+    "nato",
+    "SpecIonTests",
+    "usstateabbreviations",
+    "worldcapitals",
+    "worldflags",
+    "WW2"
 ]
 
 SETTINGS = {
-    'question_duration': 20,
-    'ignored_questions_before_timeout': 5
+    "question_duration": 20,
+    "ignored_questions_before_timeout": 5
 }
 
 RESPONSES = {
-    'positive': [
-        'Well done {}! **+1** to you!',
-        'You got it, {}! **+1** for you!',
-        'Amazing! **+1** for {}',
-        'Nice work, Mr {}, you get **+1**!'
+    "positive": [
+        "Well done {}! **+1** to you!",
+        "You got it, {}! **+1** for you!",
+        "Amazing! **+1** for {}",
+        "Nice work, Mr {}, you get **+1**!"
     ],
-    'negative': [
-        'It\'s {} of course. **+1** for me!',
-        'I know, It\'s {}! **+1** to the bot!',
-        'You suck, loser. {} is the right answer. I get **+1**'
+    "negative": [
+        "It's {} of course. **+1** for me!",
+        "I know, It's {}! **+1** to the bot!",
+        "You suck, loser. {} is the right answer. I get **+1**"
     ]
 }
 
@@ -77,14 +77,14 @@ class TriviaSession:
         """
 
         try:
-            url = f'https://raw.githubusercontent.com/adampy/trivia/master/{self.trivia_name}.csv'
-            r = request.urlopen(url).read().decode('ISO-8859-1').split("\n")
+            url = f"https://raw.githubusercontent.com/adampy/trivia/master/{self.trivia_name}.csv"
+            r = request.urlopen(url).read().decode("ISO-8859-1").split("\n")
             reader = csv.reader(r)
             for line in reader:
                 if line:
                     self.questions.append([line[0], [x for x in line[1:] if x]])
         except Exception as e:
-            print(f'Error whilst loading {self.trivia_name}: {e}')
+            print(f"Error whilst loading {self.trivia_name}: {e}")
 
     async def start_trivia(self) -> None:
         """
@@ -164,14 +164,14 @@ class TriviaSession:
 
         self.running = not reset
         color = member.color if member else Colour.from_rgb(177, 252, 129)
-        embed = Embed(title='Trivia results' if reset else 'Trivia scores', color=color)
+        embed = Embed(title="Trivia results" if reset else "Trivia scores", color=color)
         total_score = sum([self.scores[indv] for indv in self.scores])
 
         for member_id in self.scores:
             name = self.channel.guild.get_member(member_id).display_name if self.channel.guild.get_member(member_id) else await self.bot.fetch_user(member_id).display_name
-            embed.add_field(name=name, value=f'{round(self.scores[member_id]*100/total_score, 1)}% ({self.scores[member_id]})', inline=True)
+            embed.add_field(name=name, value=f"{round(self.scores[member_id]*100/total_score, 1)}% ({self.scores[member_id]})", inline=True)
         if reset:
-            embed.set_footer(text=f'This trivia took {(datetime.utcnow()-self.started_at).seconds} seconds to complete.')
+            embed.set_footer(text=f"This trivia took {(datetime.utcnow()-self.started_at).seconds} seconds to complete.")
         await self.channel.send(msg_content, embed=embed)
 
     async def stop(self, invoker: discord.Member) -> None:
@@ -195,7 +195,7 @@ class Trivia(commands.Cog):
         """
 
         if ctx.invoked_subcommand is None:
-            await ctx.send(f'```{ctx.prefix}trivia list```')
+            await ctx.send(f"```{ctx.prefix}trivia list```")
 
     @trivia.command()
     async def list(self, ctx: commands.Context) -> None:
@@ -229,7 +229,7 @@ class Trivia(commands.Cog):
         self.trivia_sessions[ctx.guild.id] = session
         await session.start_trivia()
 
-    @trivia.command(aliases=['finish', 'end'])
+    @trivia.command(aliases=["finish", "end"])
     async def stop(self, ctx: commands.Context) -> None:
         """
         Command that stops a current trivia game
@@ -242,7 +242,7 @@ class Trivia(commands.Cog):
         await session.stop(ctx.author)
         del self.trivia_sessions[ctx.guild.id]  # Delete it from dict, and memory
 
-    @trivia.command(aliases=['answers', 'cheat'])
+    @trivia.command(aliases=["answers", "cheat"])
     @is_staff
     async def answer(self, ctx: commands.Context) -> None:
         """
@@ -272,7 +272,7 @@ class Trivia(commands.Cog):
         session.increment_score(self.bot.user)
         await session.ask_next_question()
 
-    @trivia.command(aliases=['lb'])
+    @trivia.command(aliases=["lb"])
     async def leaderboard(self, ctx: commands.Context) -> None:
         """
         Command that shows the leaderboard for the current trivia game

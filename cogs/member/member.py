@@ -29,13 +29,13 @@ class Member(commands.Cog):
         try:
             msg = await channel.fetch_message(messageid)
         except Exception:
-            await ctx.send(f'```{ctx.prefix}quote <message_id> [channel_id]```')
+            await ctx.send(f"```{ctx.prefix}quote <message_id> [channel_id]```")
             return
 
         user = msg.author
         image = None
         repl = re.compile(r"/(\[.+?)(\(.+?\))/")
-        edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ''
+        edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ""
 
         content = re.sub(repl, r"\1​\2", msg.content)
 
@@ -65,19 +65,19 @@ class Member(commands.Cog):
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
 
-        if 'bruh' in message.content.lower() and not message.author.bot and True not in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
+        if "bruh" in message.content.lower() and not message.author.bot and True not in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
             async with self.bot.pool.acquire() as connection:
                 await connection.execute("UPDATE config SET bruhs=bruhs + 1 WHERE guild_id=($1)", message.guild.id)
         return
 
-    @commands.command(aliases=['bruh'])
+    @commands.command(aliases=["bruh"])
     async def bruhs(self, ctx: commands.Context) -> None:
-        """See how many bruh moments we've had"""
+        """See how many bruh moments we"ve had"""
         async with self.bot.pool.acquire() as connection:
             global_bruhs = await connection.fetchval("SELECT SUM(bruhs) FROM config;")
             guild_bruhs = await connection.fetchval("SELECT bruhs FROM config WHERE guild_id=($1)", ctx.guild.id)
 
-        await ctx.send(f'•**Global** bruh moments: **{global_bruhs}**\n•**{ctx.guild.name}** bruh moments: **{guild_bruhs}**')
+        await ctx.send(f"•**Global** bruh moments: **{global_bruhs}**\n•**{ctx.guild.name}** bruh moments: **{guild_bruhs}**")
 
     @commands.command()
     async def cool(self, ctx: commands.Context, *, text: str) -> None:
@@ -108,7 +108,7 @@ class Member(commands.Cog):
     @commands.command()
     async def cringe(self, ctx: commands.Context) -> None:
         await ctx.message.delete()
-        await ctx.send('https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4')
+        await ctx.send("https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4")
 
     @commands.command()
     async def spamping(self, ctx: commands.Context, amount: str, user: discord.Member | discord.Role, *, message) -> None:
@@ -133,7 +133,7 @@ class Member(commands.Cog):
         """
         For sending a ghostping to annoy certain people
         """
-        
+
         if not amount.isdigit() or (amount.isdigit() and int(amount) > 100):
             await ctx.send("`amount` given must be an integer less than or equal to 100!")
             return
@@ -164,30 +164,30 @@ class Member(commands.Cog):
         time_ = guild.created_at
         time_since = discord.utils.utcnow() - time_
 
-        join = Embed(title=f'**__{str(guild)}__**',
+        join = Embed(title=f"**__{str(guild)}__**",
                      description=f"Created at {self.bot.correct_time(time_).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
                      color=Colour.from_rgb(21, 125, 224))
         icon_url = get_guild_icon_url(guild)
         if icon_url:
             join.set_thumbnail(url=icon_url)
 
-        join.add_field(name='Users Online',
-                       value=f'{len([x for x in guild.members if x.status != Status.offline])}/{len(guild.members)}')
+        join.add_field(name="Users Online",
+                       value=f"{len([x for x in guild.members if x.status != Status.offline])}/{len(guild.members)}")
         if ctx.guild.rules_channel:  # only community
-            join.add_field(name='Rules Channel', value=f'{ctx.guild.rules_channel.mention}')
-        join.add_field(name='Text Channels', value=f'{len(guild.text_channels)}')
-        join.add_field(name='Voice Channels', value=f'{len(guild.voice_channels)}')
+            join.add_field(name="Rules Channel", value=f"{ctx.guild.rules_channel.mention}")
+        join.add_field(name="Text Channels", value=f"{len(guild.text_channels)}")
+        join.add_field(name="Voice Channels", value=f"{len(guild.voice_channels)}")
 
-        join.add_field(name='Roles', value=f'{len(guild.roles)}')
-        join.add_field(name='Owner', value=f'{str(guild.owner)}')
-        join.add_field(name='Server ID', value=f'{guild.id}')
+        join.add_field(name="Roles", value=f"{len(guild.roles)}")
+        join.add_field(name="Owner", value=f"{str(guild.owner)}")
+        join.add_field(name="Server ID", value=f"{guild.id}")
 
-        join.add_field(name='Emoji slots filled', value=f'{len(ctx.guild.emojis)}/{ctx.guild.emoji_limit}')
-        join.add_field(name='Sticker slots filled', value=f'{len(ctx.guild.stickers)}/{ctx.guild.sticker_limit}')
-        join.add_field(name='Upload size limit', value=f'{guild.filesize_limit/1048576} MB')
+        join.add_field(name="Emoji slots filled", value=f"{len(ctx.guild.emojis)}/{ctx.guild.emoji_limit}")
+        join.add_field(name="Sticker slots filled", value=f"{len(ctx.guild.stickers)}/{ctx.guild.sticker_limit}")
+        join.add_field(name="Upload size limit", value=f"{guild.filesize_limit/1048576} MB")
 
-        join.add_field(name='Boost level', value=f'{ctx.guild.premium_tier} ({ctx.guild.premium_subscription_count} boosts, {len(ctx.guild.premium_subscribers)} boosters)')
-        join.add_field(name='Default Notification Level', value=f'{self.bot.make_readable(guild.default_notifications.name)}')
+        join.add_field(name="Boost level", value=f"{ctx.guild.premium_tier} ({ctx.guild.premium_subscription_count} boosts, {len(ctx.guild.premium_subscribers)} boosters)")
+        join.add_field(name="Default Notification Level", value=f"{self.bot.make_readable(guild.default_notifications.name)}")
         join.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
                 self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
 
@@ -213,7 +213,7 @@ class Member(commands.Cog):
                 user = await self.bot.fetch_user(int(args))  # allows getting some limited info about a user that isn't a member of the guild
             if user is None:
                 await ctx.send(embed=Embed(title="Userinfo",
-                                           description=f':x:  **Sorry {ctx.author.display_name} we could not find that user!**',
+                                           description=f":x:  **Sorry {ctx.author.display_name} we could not find that user!**",
                                            color=Colour.from_rgb(255, 7, 58)))
                 return
 
@@ -287,7 +287,7 @@ class Member(commands.Cog):
                     data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} {diff}\n{'' if not hasattr(activity, 'details') else activity.details}", inline=False)
 
             if roles:
-                disp_roles = ', '.join([role.name for role in roles[:10]])
+                disp_roles = ", ".join([role.name for role in roles[:10]])
                 if len(roles) > 10:
                     disp_roles += f" (+{len(roles) - 10} roles)"
                 data.add_field(name="Roles", value=disp_roles, inline=False)
@@ -324,16 +324,16 @@ class Member(commands.Cog):
     async def handle_remind(self, data: dict) -> None:
         try:
             member = self.bot.get_user(data["member_id"])
-            message = f'You told me to remind you about this:\n{data["reason"]}'
+            message = f"You told me to remind you about this:\n{data['reason']}"
             try:
                 await member.send(message)
             except (discord.Forbidden, discord.HTTPException):
                 channel = self.bot.get_channel(data["channel_id"])
                 await channel.send(f"{member.mention}, {message}")
         except Exception as e:
-            print(f'REMIND: {type(e).__name__}: {e}')
+            print(f"REMIND: {type(e).__name__}: {e}")
 
-    @commands.command(pass_context=True, aliases=['rm', 'remindme'])
+    @commands.command(pass_context=True, aliases=["rm", "remindme"])
     @commands.guild_only()
     async def remind(self, ctx: commands.Context, *, args: str) -> None:
         """
@@ -342,13 +342,13 @@ class Member(commands.Cog):
         was invoked in.
         """
 
-        timeperiod = ''
+        timeperiod = ""
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
         if not args or not timeperiod:
-            await ctx.send(f'```{ctx.prefix}remind <sentence...> -t <time>```')
+            await ctx.send(f"```{ctx.prefix}remind <sentence...> -t <time>```")
             return
 
         str_tp = self.bot.time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
@@ -356,7 +356,7 @@ class Member(commands.Cog):
         reminder = "*When:* " + str_tp + " ago\n" + str_reason
 
         if len(reminder) >= 256:
-            await ctx.send('Please shorten your reminder to under 256 characters.')
+            await ctx.send("Please shorten your reminder to under 256 characters.")
             return
 
         await self.bot.tasks.submit_task("reminder", datetime.utcnow() + timedelta(seconds=timeperiod),
@@ -383,7 +383,7 @@ class Member(commands.Cog):
 
 # -----------------------COUNTDOWNS------------------------------
 
-    @commands.command(pass_context=True, aliases=['results', 'gcseresults', 'alevelresults'])
+    @commands.command(pass_context=True, aliases=["results", "gcseresults", "alevelresults"])
     async def resultsday(self, ctx: commands.Context, hour: str = "") -> None:
         if ctx.invoked_with in ["resultsday", "gcseresults", "results", None]:
             which = "GCSE"
@@ -395,20 +395,20 @@ class Member(commands.Cog):
             try:
                 hour = int(hour)
             except ValueError:
-                await ctx.send('You must choose an integer between 0 and 23 for the command to work!')
+                await ctx.send("You must choose an integer between 0 and 23 for the command to work!")
 
         if not 0 <= hour < 24:
-            await ctx.send('The hour must be between 0 and 23!')
+            await ctx.send("The hour must be between 0 and 23!")
             return
 
         if hour == 12:
-            string = 'noon'
+            string = "noon"
         elif hour == 0:
-            string = '0:00AM'
+            string = "0:00AM"
         elif hour >= 12:
-            string = f'{hour - 12}PM'
+            string = f"{hour - 12}PM"
         else:
-            string = f'{hour}AM'
+            string = f"{hour}AM"
         rn = self.bot.correct_time()
         if which == "GCSE":
             time_ = self.bot.correct_time(datetime(year=2022, month=8, day=18, hour=hour, minute=0, second=0))

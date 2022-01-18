@@ -15,7 +15,7 @@ class Warnings(commands.Cog):
         """
 
         async with self.bot.pool.acquire() as connection:
-            warns = await connection.fetch('SELECT * FROM warn WHERE member_id = ($1) AND guild_id = $2 ORDER BY id;', member.id, ctx.guild.id)
+            warns = await connection.fetch("SELECT * FROM warn WHERE member_id = ($1) AND guild_id = $2 ORDER BY id;", member.id, ctx.guild.id)
 
         if len(warns) > 0:
             embed = self.bot.EmbedPages(
@@ -46,16 +46,16 @@ class Warnings(commands.Cog):
         parsed_args = self.bot.flag_handler.separate_args(reason, fetch=["reason"], blank_as_flag="reason")
         reason = parsed_args["reason"]
         if len(reason) > 255:
-            await ctx.send('The reason must be below 256 characters. Please shorten it before trying again.')
+            await ctx.send("The reason must be below 256 characters. Please shorten it before trying again.")
             return
 
         async with self.bot.pool.acquire() as connection:
-            await connection.execute('INSERT INTO warn (member_id, staff_id, guild_id, reason) values ($1, $2, $3, $4)', member.id, ctx.author.id, ctx.guild.id, reason)
-            warns = await connection.fetchval('SELECT COUNT(*) FROM warn WHERE member_id = ($1) AND guild_id = $2', member.id, ctx.guild.id)
+            await connection.execute("INSERT INTO warn (member_id, staff_id, guild_id, reason) values ($1, $2, $3, $4)", member.id, ctx.author.id, ctx.guild.id, reason)
+            warns = await connection.fetchval("SELECT COUNT(*) FROM warn WHERE member_id = ($1) AND guild_id = $2", member.id, ctx.guild.id)
 
-        await ctx.send(f':ok_hand: {member.mention} has been warned. They now have {warns} warns')
+        await ctx.send(f":ok_hand: {member.mention} has been warned. They now have {warns} warns")
         try:
-            await member.send(f'You have been warned by a member of the staff team ({ctx.author.mention}). The reason for your warn is: {reason}. You now have {warns} warns.')
+            await member.send(f"You have been warned by a member of the staff team ({ctx.author.mention}). The reason for your warn is: {reason}. You now have {warns} warns.")
         except Exception as e:
             print(e)
 
@@ -71,7 +71,7 @@ class Warnings(commands.Cog):
             if not member:
                 # Show all warns
                 async with self.bot.pool.acquire() as connection:
-                    warns = await connection.fetch('SELECT * FROM warn WHERE guild_id = $1 ORDER BY id;', ctx.guild.id)
+                    warns = await connection.fetch("SELECT * FROM warn WHERE guild_id = $1 ORDER BY id;", ctx.guild.id)
 
                 if len(warns) > 0:
                     embed = self.bot.EmbedPages(
@@ -100,7 +100,7 @@ class Warnings(commands.Cog):
             else:
                 await ctx.send("You don't have permission to view other people's warns.")
 
-    @commands.command(pass_context=True, aliases=['warndelete'])
+    @commands.command(pass_context=True, aliases=["warndelete"])
     @commands.guild_only()
     @is_staff
     async def warnremove(self, ctx: commands.Context, *warnings: str) -> None:
@@ -109,7 +109,7 @@ class Warnings(commands.Cog):
         """
 
         if len(warnings) > 1:
-            await ctx.send('One moment...')
+            await ctx.send("One moment...")
 
         async with self.bot.pool.acquire() as connection:
             for warning in warnings:
@@ -120,11 +120,11 @@ class Warnings(commands.Cog):
                         await ctx.send("You cannot remove warnings originating from another guild, or those that do not exist.")
                         continue  # Try next warning instead
 
-                    await connection.execute('DELETE FROM warn WHERE id = ($1) AND guild_id = $2', warning, ctx.guild.id)
+                    await connection.execute("DELETE FROM warn WHERE id = ($1) AND guild_id = $2", warning, ctx.guild.id)
                     if len(warnings) == 1:
-                        await ctx.send(f'Warning with ID {warning} has been deleted.')
+                        await ctx.send(f"Warning with ID {warning} has been deleted.")
                 else:
-                    await ctx.send(f'Error whilst deleting ID {warning}: give me a warning ID, not words!')
+                    await ctx.send(f"Error whilst deleting ID {warning}: give me a warning ID, not words!")
 
         if len(warnings) > 1:
             await ctx.send(f"The warning's have been deleted.")
