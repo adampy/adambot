@@ -1,0 +1,71 @@
+{
+  "token": "",
+  "database_url": "",
+  "global_prefix": "-",
+
+  "cogs": {
+	
+	"bot": [
+	  "bot"
+	],
+	
+	"dev": [
+	  "eval"
+	],
+
+	"guild": {
+	  "guild_features": {
+		"actions": [
+		  "actions"
+		],
+
+		"demographics": [
+		  "demographics"
+		],
+
+		"logging": [
+		  "logging"
+		],
+
+		"moderation": [
+		  "filter",
+		  "moderation",
+		  "waitingroom",
+		  "warnings"
+		],
+
+		"role": [
+		  "reactionroles",
+		  "role"
+		],
+
+		"starboard": [
+			"starboard"
+		]
+	  },
+
+	  "member_features": {
+		"qotd": [
+		  "qotd"
+		],
+
+		"reputation": [
+		  "reputation"
+		],
+
+		"support": [
+		  "support"
+		],
+
+		"trivia": [
+		  "trivia"
+		]
+	  }
+	},
+
+	"member": [
+	  "member",
+	  "spotify"
+	]
+  }
+}

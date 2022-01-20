@@ -1,0 +1,23 @@
+{
+  "loader": "./member",
+  "intents": ["emojis", "guilds", "guild_messages", "members", "presences"],
+  "db_schema": {
+    "remind": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "member_id BIGINT",
+        "reminder_time TIMESTAMPTZ",
+        "reminder VARCHAR(255)",
+        "created_at TIMESTAMPTZ",
+        "channel_id BIGINT"
+      ]
+    }
+  },
+
+  "config_keys": {
+    "spamping_access": {
+      "validator": "Boolean",
+      "description": "Allow *ALL* users of a guild to access spamping/ghostping, default False"
+    }
+  }
+}

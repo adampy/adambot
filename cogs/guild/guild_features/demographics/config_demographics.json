@@ -1,0 +1,26 @@
+{
+  "loader": "./demographics",
+  "intents": ["guilds", "members"],
+  "db_schema": {
+    "demographic_roles": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "sample_rate int NOT NULL DEFAULT 1",
+        "guild_id bigint NOT NULL",
+        "role_id bigint NOT NULL"
+      ]
+    },
+
+    "demographic_samples": {
+      "fields": [
+        "n int NOT NULL DEFAULT 0",
+        "taken_at timestamptz NOT NULL DEFAULT now()",
+        "role_reference int NOT NULL"
+      ],
+
+      "other_params": [
+        "CONSTRAINT fk_role_reference FOREIGN KEY (role_reference) REFERENCES demographic_roles(id) ON DELETE CASCADE"
+      ]
+    }
+  }
+}

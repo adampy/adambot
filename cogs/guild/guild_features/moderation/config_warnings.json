@@ -1,0 +1,16 @@
+{
+  "loader": "./warnings",
+  "intents": ["members"],
+  "db_schema": {
+    "warn": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "member_id BIGINT",
+        "staff_id BIGINT",
+        "warned_at TIMESTAMPTZ NOT NULL DEFAULT now()",
+        "reason VARCHAR(255)",
+        "guild_id BIGINT"
+      ]
+    }
+  }
+}

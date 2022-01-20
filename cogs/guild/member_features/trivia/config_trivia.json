@@ -1,0 +1,10 @@
+{
+  "loader": "./trivia",
+  "intents": ["guilds", "members"],
+  "config_keys": {
+    "trivia_channel": {
+      "validator": "Channel",
+      "description": "Where trivias get played"
+    }
+  }
+}

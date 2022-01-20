@@ -1,0 +1,14 @@
+{
+  "loader": "./actions",
+  "intents": ["guild_messages", "guild_reactions"],
+  "db_schema": {
+    "actions": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "guild_id BIGINT NOT NULL",
+        "action_name VARCHAR(255)",
+        "action TEXT"
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "loader": "./reputation",
+  "intents": ["guilds", "members"],
+  "db_schema": {
+    "reps": {
+      "fields": [
+        "member_id BIGINT",
+        "guild_id BIGINT",
+        "reps INT"
+      ]
+    }
+  },
+  "config_keys": {
+    "rep_award_banned": {
+      "validator": "Role",
+      "description": "The role that blocks people giving reputation"
+    },
+
+    "rep_receive_banned": {
+      "validator": "Role",
+      "description": "The role that blocks people receiving reputation"
+    }
+  }
+}

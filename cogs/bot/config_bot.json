@@ -1,0 +1,4 @@
+{
+  "loader": "./bot",
+  "intents": ["guilds"]
+}

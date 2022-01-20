@@ -1,0 +1,19 @@
+{
+  "loader": "./filter",
+  "intents": ["guild_messages"],
+  "db_schema": {
+    "filter": {
+      "fields": [
+        "guild_id BIGINT PRIMARY KEY",
+        "filters TEXT"
+      ]
+    }
+  },
+
+  "config_keys": {
+    "filter_log_channel": {
+      "validator": "Channel",
+      "description": "Where messages deleted by the filter will go, along with the reason(s) they were deleted"
+    }
+  }
+}

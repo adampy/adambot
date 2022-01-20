@@ -1,0 +1,32 @@
+{
+  "loader": "./qotd",
+  "intents": ["guilds", "members"],
+  "db_schema": {
+    "qotd": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "question VARCHAR(255) NOT NULL",
+        "submitted_by BIGINT NOT NULL",
+        "submitted_at TIMESTAMPTZ NOT NULL DEFAULT now()",
+        "guild_id BIGINT NOT NULL"
+      ]
+    }
+  },
+
+  "config_keys": {
+    "qotd_role": {
+      "validator": "Role",
+      "description": "The role that designates QOTD perms (show, pick, delete)"
+    },
+
+    "qotd_limit": {
+      "validator": "Integer",
+      "description": "How many QOTDs people can submit per day"
+    },
+
+    "qotd_channel": {
+      "validator": "Channel",
+      "description": "Where the QOTDs are displayed when picked"
+    }
+  }
+}

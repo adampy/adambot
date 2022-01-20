@@ -1,0 +1,18 @@
+{
+  "loader": "./config",
+  "guilds": ["guilds", "members"],
+  "db_schema": {
+    "config": {
+      "fields": [
+        "guild_id BIGINT PRIMARY KEY",
+        "staff_role BIGINT",
+        "log_channel BIGINT",
+        "prefix VARCHAR(1023) DEFAULT '-'"
+      ],
+
+      "migrate": {
+        "log_channel": "mod_log_channel"
+      }
+    }
+  }
+}

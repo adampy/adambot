@@ -1,0 +1,17 @@
+{
+  "loader": "./reactionroles",
+  "intents": ["guilds", "guild_reactions", "members"],
+  "db_schema": {
+    "reaction_roles": {
+      "fields": [
+        "message_id BIGINT NOT NULL",
+        "role_id BIGINT NOT NULL",
+        "guild_id BIGINT NOT NULL",
+        "channel_id BIGINT NOT NULL",
+        "inverse BOOLEAN DEFAULT FALSE",
+        "emoji TEXT",
+        "emoji_id BIGINT"
+      ]
+    }
+  }
+}

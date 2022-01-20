@@ -1,0 +1,22 @@
+{
+  "loader": "./support",
+  "intents": ["dm_typing", "dm_messages", "guilds", "members"],
+  "db_schema": {
+    "support": {
+      "fields": [
+        "id SERIAL PRIMARY KEY",
+        "member_id BIGINT",
+        "staff_id BIGINT",
+        "guild_id BIGINT",
+        "started_at TIMESTAMPTZ"
+      ]
+    }
+  },
+
+  "config_keys": {
+    "support_log_channel": {
+      "validator": "Channel",
+      "description": "Where the logs from the support module go"
+    }
+  }
+}
