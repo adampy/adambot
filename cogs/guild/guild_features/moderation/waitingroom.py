@@ -12,8 +12,9 @@ class WaitingRoom(commands.Cog):
         self.bot = bot
         self.welcome_message = ""
         self.welcome_channel = None
-    
-    async def get_parsed_welcome_message(self, welcome_msg: str, new_user: discord.Member | discord.User) -> str:
+
+    @staticmethod
+    async def get_parsed_welcome_message(welcome_msg: str, new_user: discord.Member | discord.User) -> str:
         """
         Method that gets the parsed welcome message, with channel and role mentions.
         """

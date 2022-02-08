@@ -326,7 +326,7 @@ class Logging(commands.Cog):
         new_invites = await self.get_all_invites(guild)
 
         updated_invites = []
-        possible_joins_missed = False
+        # possible_joins_missed = False
         for invite in new_invites:
             found = False
             for old_invite in old_invites:
@@ -334,8 +334,8 @@ class Logging(commands.Cog):
                     found = True
                     if invite.uses > old_invite.uses:
                         updated_invites.append(invite)
-                        if invite.uses - old_invite.uses != 1:
-                            possible_joins_missed = True
+                        # if invite.uses - old_invite.uses != 1:
+                        #     possible_joins_missed = True
 
             if not found and invite.uses != 0:  # else 0-use invites will be logged
                 updated_invites.append(invite)  # new invites
@@ -375,7 +375,7 @@ class Logging(commands.Cog):
             invite_log.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             if (invite_log.to_dict() not in self.previous_inv_log_embeds) or not updated_invites:  # limits log spam e.g. if connection drops
 
-                #if possible_joins_missed or len(updated_invites) != 1:
+                # if possible_joins_missed or len(updated_invites) != 1:
                 #    await get(guild.text_channels, name="invite-logs").send("*WARNING: Due to a bot glitch or other reason, the below data may be inaccurate due to potentially missed previous joins.*")
 
                 self.previous_inv_log_embeds.append(invite_log.to_dict())

@@ -74,7 +74,3 @@ async def insert_cog_db_columns_if_not_exists(pool: asyncpg.pool.Pool, table_col
 
             if name != "config":
                 [print(f"INFO: Phantom DB column {column} in {name}") for column in available_columns if column not in field_names]  # don't delete in case they're still needed
-
-
-
-

@@ -6,6 +6,7 @@ from emoji import get_emoji_regexp
 from libs.misc.decorators import is_staff
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
+
 class Starboard:
     class Entry:
         @classmethod
@@ -15,7 +16,7 @@ class Starboard:
             self.bot = bot
             self.bot_message_id = record["bot_message_id"]
             self.message_id = record["message_id"]
-            self.channel_id = record["starboard_channel_id"] # Channel ID of bot message
+            self.channel_id = record["starboard_channel_id"]  # Channel ID of bot message
             try:
                 self.channel = bot.get_channel(self.channel_id)
                 self.bot_message = await self.channel.fetch_message(self.bot_message_id)
@@ -50,10 +51,10 @@ class Starboard:
         starboards = {}
         for record in records:
             obj = Starboard(record, bot)
-            starboards[obj.channel.id] = obj # Make empty starboard
+            starboards[obj.channel.id] = obj  # Make empty starboard
         for entry in entries:
             obj = await Starboard.Entry.make_entry(entry, bot)
-            starboards[entry["starboard_channel_id"]].entries.append(obj) # Add all entries to their respective starboard
+            starboards[entry["starboard_channel_id"]].entries.append(obj)  # Add all entries to their respective starboard
         return starboards
 
     def get_record(self) -> dict:
@@ -115,7 +116,7 @@ class Starboard:
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE FROM starboard_entry WHERE starboard_channel_id = $1 AND message_id = $2;", self.channel.id, message_id)
         indx = -1
-        for i, e in enumerate(self.entries): # TODO: What happens if found_entry is still None after search i.e. entry not found
+        for i, e in enumerate(self.entries):  # TODO: What happens if found_entry is still None after search i.e. entry not found
             if e.message_id == message_id:
                 indx = i
                 break
@@ -125,7 +126,7 @@ class Starboard:
 class StarboardCog(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
-        self.starboards = {} # Links channel_id -> Starboard
+        self.starboards = {}  # Links channel_id -> Starboard
 
     # TODO: Some help commands when args are missing would be nice
 
@@ -207,7 +208,7 @@ class StarboardCog(commands.Cog):
         Deletes a starboard channel and all its entries from the database
         """
 
-        del self.starboards[channel.id] # Remove from starboards
+        del self.starboards[channel.id]  # Remove from starboards
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE FROM starboard WHERE channel_id = $1;", channel.id)
 
@@ -238,12 +239,12 @@ class StarboardCog(commands.Cog):
         if len(parsed_colour) != 6:
             return False
         try:
-            embed_colour = int(parsed_colour, 16)  # Convert from base 16 into an integer for storage
+            int(parsed_colour, 16)  # Convert from base 16 into an integer for storage
             return "#" + parsed_colour.upper()  # If no errors at this point, the colour can be assumed to be valid
         except ValueError:
             return False
 
-    async def boolean_reaction_getter(self, ctx: commands.Context, message: discord.Message, timeout: int = 300) -> bool: # TODO: Could move this to utils if needed in the future
+    async def boolean_reaction_getter(self, ctx: commands.Context, message: discord.Message, timeout: int = 300) -> bool:  # TODO: Could move this to utils if needed in the future
         """
         Method that can be used to get either a True/False from the user in a given `timeout`. Returns the answer, or None if timeout experienced
         """
@@ -253,8 +254,8 @@ class StarboardCog(commands.Cog):
             self.bot.EmojiEnum.FALSE: False
         }
 
-        def check(reaction: discord.Reaction, user: discord.Member | discord.User) -> bool:
-            return reaction.emoji in possible_responses.keys() and user == ctx.author
+        def check(r: discord.Reaction, u: discord.Member | discord.User) -> bool:
+            return r.emoji in possible_responses.keys() and u == ctx.author
 
         for emoji in possible_responses.keys():
             await message.add_reaction(emoji)
@@ -316,7 +317,7 @@ class StarboardCog(commands.Cog):
                         if entry.bot_message:
                             await entry.bot_message.delete()
                             
-                elif entry and entry.bot_message: # If minimum met and entry
+                elif entry and entry.bot_message:  # If minimum met and entry
                     new_embed = await self.make_starboard_embed(message, stars, payload.emoji, colour)
                     try:
                         # Update bot message

@@ -192,6 +192,7 @@ class Moderation(commands.Cog):
                                                    already_banned) > 0 else "")
                                    )
 
+            member: discord.Member  # analysis gets confused so type clarification
             if type(member_) is not discord.Member:
                 member, in_guild = await self.get_member_obj(ctx, member_)
             else:
@@ -285,8 +286,7 @@ class Moderation(commands.Cog):
             embed.set_thumbnail(url=get_user_avatar_url(user)[0])
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await channel.send(embed=embed)
-        except Exception as e:
-            print(e)
+        except Exception:
             pass  # go away!
 
     @commands.command(pass_context=True)

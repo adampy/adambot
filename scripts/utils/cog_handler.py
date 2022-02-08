@@ -2,6 +2,7 @@ import json
 import discord
 import os
 
+
 class CogHandler:
     def __init__(self, bot) -> None:
 
@@ -84,7 +85,8 @@ class CogHandler:
         self.intent_list += requested
         print(f"{'An unspecified source' if not source else source} requested intents: {', '.join(requested)}")
 
-    def make_intents(self, intents: list[str]) -> discord.Intents:
+    @staticmethod
+    def make_intents(intents: list[str]) -> discord.Intents:
         base = discord.Intents.none()
         for intent in intents:
             try:

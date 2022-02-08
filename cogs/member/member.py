@@ -17,7 +17,7 @@ class Member(commands.Cog):
             "channel_id": "bigint",
             "guild_id": "bigint",
             "reason": "varchar(255)"})
-                
+
 # -----------------------QUOTE------------------------------
 
     @commands.command(pass_context=True)
@@ -150,8 +150,7 @@ class Member(commands.Cog):
         else:
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
 
-
-# -----------------------USER AND SERVER INFO------------------------------
+    # -----------------------USER AND SERVER INFO------------------------------
 
     @commands.command(pass_context=True)
     @commands.guild_only()
@@ -317,7 +316,7 @@ class Member(commands.Cog):
         avatar = get_user_avatar_url(user, mode=1)[0]
         data.set_author(name=name, icon_url=avatar)
         data.set_thumbnail(url=avatar)
-        
+
         await ctx.send(embed=data)
 
 # -----------------------REMIND------------------------------

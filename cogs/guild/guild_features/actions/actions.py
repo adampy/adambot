@@ -314,8 +314,6 @@ class Actions(commands.Cog):
 
             argspec = inspect.getfullargspec(command["command_obj"].callback)
             argspec = argspec._replace(kwonlydefaults={}) if argspec.kwonlydefaults is None else argspec  # makes things simpler later on
-            argsig = str(inspect.signature(command["command_obj"].callback)).replace(" ", "")[1:][:-1].split(",")[2:]
-            arg_list_ = argspec.args[2:]
 
             var_arg = argspec.varargs
 
@@ -418,8 +416,8 @@ class Actions(commands.Cog):
 
                 split_content = output["content"].split()
 
+                # potential todo: allow ctx? e.g. allow mentioning context author. could get a little messy to handle though
                 for part in split_content:  # allows stuff like mentioning a user passed in args
-                                            # potential todo: allow ctx? e.g. allow mentioning context author. could get a little messy to handle though
                     if len(part) > 1 and part[::len(part) - 1] == "<>" and "." in part:
 
                         split_part = part[1:][:-1].split(".")
@@ -584,8 +582,8 @@ class Actions(commands.Cog):
                         if annotation is None or annotation == discord.Member:
                             message = await ctx.send(embed=Embed(title=f":information_source: Managing  command values ({param})",
                                                              description=f"React with {self.bot.EmojiEnum.TRUE} if we should look for a reply author to use for this value first"
-                                                                         f"\nNote that you will be next prompted to enter a value to fallback on if no reply is found"))  # should this only be done for annotations that could match it?
-                                                                                                                                                                          # for example: only for discord.Member or None type annotations
+                                                                         f"\nNote that you will be next prompted to enter a value to fallback on if no reply is found"))  # should this only be done for annotations that could match it? for example: only for discord.Member or None type annotations
+
                         # any potential complications with this? e.g. having A B C where B could be a reply author or not
                         # i.e. you could end up with a reply and passing A C or no reply and passing A B C, which could get confusing
                         # todo: look at making reuse of reply args more clear, it even confused me at first
@@ -604,7 +602,6 @@ class Actions(commands.Cog):
                                 command_props["reply_args"].append(x-1)
 
                         # handle annotation checking here at some point, method from v2 needed for this
-
 
                         useable_value = False
 
@@ -643,8 +640,8 @@ class Actions(commands.Cog):
                             if isinstance(result_, discord.Message):
                                 if annotation != inspect._empty:  # conversion will always fail on _empty, although it's pointless anyway
                                     try:
-                                        test_conv = await commands.run_converters(ctx, annotation, result_.content, command.clean_params[param])  #, inspect.Parameter(param, inspect.Parameter.POSITIONAL_ONLY, annotation=annotation))
-                                    except commands.CommandError as e:
+                                        await commands.run_converters(ctx, annotation, result_.content, command.clean_params[param])  # , inspect.Parameter(param, inspect.Parameter.POSITIONAL_ONLY, annotation=annotation))
+                                    except commands.CommandError:
                                         useable_value = False
                                         await ctx.send(embed=Embed(title=f"Error using that value for ({param})",
                                                                description="The value given is not of the type needed\nHINT: Values that need to be a member must be a name, mention or user ID of a member, other types of values are invalid"))

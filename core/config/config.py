@@ -15,8 +15,10 @@ class Validation(Enum):
     String = 4      # String less than 2000 chars
     Boolean = 5     # Is either a yes/no
 
+
 def get_validator(value):
     return getattr(Validation, value)
+
 
 class Config(commands.Cog):
     def __init__(self, bot) -> None:
@@ -30,7 +32,7 @@ class Config(commands.Cog):
         self.CONFIG = {  # Stores each column of the config table, the type of validation it is, and a short description of how its used - the embed follows the same order as this
             "staff_role": [Validation.Role, "The role that designates bot perms"],  # CORE
             "log_channel": [Validation.Channel, "Where the main logs go"],  # CORE
-            "prefix": [Validation.String, "The prefix the bot uses, default is '-'"],  # CORE
+            "prefix": [Validation.String, "The prefix the bot uses for this guild"],  # CORE
         }
 
     def register_config_key(self, name: str, validator_type: str | Validation, description: str) -> bool:
@@ -92,11 +94,10 @@ class Config(commands.Cog):
                         record = await connection.fetchrow("SELECT * FROM config WHERE guild_id = $1;",
                                                            guild_id)  # Fetch configuration record
 
-
             keys = list(record.keys())[1:]
             values = list(record.values())[1:]  # Include all keys and values apart from the first one (guild_id)
 
-            i=0
+            i = 0
             while i < len(keys):  # remove phantom keys
                 if keys[i] not in self.CONFIG.keys():
                     del keys[i]
@@ -119,12 +120,12 @@ class Config(commands.Cog):
 
     async def get_config_key(self, ctx: commands.Context | discord.Guild | int, key: str) -> Any:
         if isinstance(ctx, discord.Guild):
-            id = ctx.id
+            ctx_id = ctx.id
         elif hasattr(ctx, "guild"):
-            id = ctx.guild.id
+            ctx_id = ctx.guild.id
         else:
-            id = ctx
-        return self.bot.configs.get(id, {}).get(key, None)
+            ctx_id = ctx
+        return self.bot.configs.get(ctx_id, {}).get(key, None)
 
     async def propagate_config(self, guild_id: int) -> None:
         """
@@ -166,8 +167,6 @@ class Config(commands.Cog):
                 sql_part += f"{keys[i]} = (${counter + 1}),"  # For each key, add "{nth key_name} = $n+1"
 
                 counter += 1
-
-
 
         sql = f"UPDATE config SET {sql_part[:-1]} WHERE guild_id = {guild_id};"
         async with self.bot.pool.acquire() as connection:
@@ -286,7 +285,6 @@ class Config(commands.Cog):
                 return
             value = channel
 
-            
         elif validation_type == Validation.Integer:
             if not value.isdigit():
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Validation error!", "Please give me an integer")

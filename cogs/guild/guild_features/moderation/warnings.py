@@ -66,8 +66,7 @@ class Warnings(commands.Cog):
         Shows a user their warnings, or shows staff members all/a single persons warnings
         """
 
-        is_staff = await self.bot.is_staff(ctx)
-        if is_staff:
+        if await self.bot.is_staff(ctx):
             if not member:
                 # Show all warns
                 async with self.bot.pool.acquire() as connection:
