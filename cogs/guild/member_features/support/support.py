@@ -227,6 +227,11 @@ class Support(commands.Cog):
                     await message.author.send(output)
                     return
 
+                guild = self.bot.get_guild(guild_id)
+                if not guild.get_member(message.author.id):  # users should not be able to open support tickets for guild they are not a member of
+                    await message.author.send(f"That is not a guild I know of, to get a list of guilds type `support start`")  # shouldn't tell them they don't share the guild since they don't need to know the guild has the bot
+                    return
+
                 connection = await self.support_manager.in_connections(message.author)  # Holds connection data or False if a connection is not open
                 if connection:
                     await message.author.send(f"You already have a support ticket open in **{connection.guild.name}** and you cannot open another one until this one is closed")
@@ -235,7 +240,7 @@ class Support(commands.Cog):
                 # Check if guild has support module set up
                 log_channel_id = await self.bot.get_config_key(self.bot.get_guild(guild_id), "support_log_channel")
                 if not log_channel_id:
-                    await message.author.send(f"**{self.bot.get_guild(guild_id).name}** has not set up the support module :sob:")  # This prevents any connections being made at all
+                    await message.author.send(f"**{guild.name}** has not set up the support module :sob:")  # This prevents any connections being made at all
                     return
 
                 connection = await self.support_manager.create(message.author.id, guild_id)  # This method handles the embed making the staff aware of the ticket
