@@ -7,7 +7,7 @@
         "guild_id BIGINT PRIMARY KEY",
         "staff_role BIGINT",
         "log_channel BIGINT",
-        "prefix VARCHAR(1023) DEFAULT '-'"
+        "prefix VARCHAR(1023)"
       ],
 
       "migrate": {
