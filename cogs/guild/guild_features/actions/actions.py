@@ -239,7 +239,8 @@ class Actions(commands.Cog):
 
         self.bot.all_commands["base_action_handler"].aliases.append(name)
         self.actions[guild_id][name] = action
-        self.bot.all_commands[name] = self.base_action_handler
+        self.bot.remove_command("base_action_handler")  # behaviour has changed so sticking to documented methods for now
+        self.bot.add_command(self.base_action_handler)
 
     async def propagate_action(self, ctx: commands.Context, name: str, action: dict) -> None:
         """
