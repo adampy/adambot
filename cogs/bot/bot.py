@@ -7,6 +7,7 @@ import time
 import subprocess
 import requests
 from libs.misc.utils import get_user_avatar_url
+from datetime import datetime
 
 
 class BotCog(commands.Cog):
@@ -80,7 +81,11 @@ class BotCog(commands.Cog):
 
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
-        await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds.")
+
+        date = datetime.fromtimestamp(seconds)
+        markdown_time = discord.utils.format_dt(date, style='R')
+
+        await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds. ({markdown_time})")
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild) -> None:
