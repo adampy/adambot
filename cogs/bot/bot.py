@@ -82,7 +82,7 @@ class BotCog(commands.Cog):
         seconds = round(time.time() - self.bot.start_time)   # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
 
-        date = datetime.fromtimestamp(seconds)  # datetime object from the seconds
+        date = datetime.fromtimestamp(self.bot.start_time)  # datetime object from the seconds
         markdown_time = discord.utils.format_dt(date, style='R')  # e.g `5 days ago`
 
         await ctx.send(f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds. ({markdown_time})")
