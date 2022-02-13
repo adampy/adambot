@@ -303,13 +303,14 @@ class Logging(commands.Cog):
             user_joined = a.strftime(self.bot.ts_format)
             member_left.add_field(name="Joined", value=f"{user_joined} ({since_str} ago)" if joined_at else "Undetected")
 
-        roles = [f"{role.mention}" for role in member.roles][1:]  # 1: eliminates @@everyone
-        roles_str = ""
-        for role_ in roles:
-            roles_str += f"{role_}, "
-        roles_str = roles_str[:len(roles_str) - 2]
+        roles = member.roles[1:]
+        if roles:
+            disp_roles = ", ".join([role.mention for role in roles[:-11:-1]])
+            if len(roles) > 10:
+                disp_roles += f" (+{len(roles) - 10} roles)"
 
-        member_left.add_field(name="Roles", value=roles_str if member.roles[1:] else "None", inline=False)
+            member_left.add_field(name="Roles", value=disp_roles, inline=False)
+
         member_left.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0])
         member_left.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=member_left)

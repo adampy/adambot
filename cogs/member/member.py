@@ -241,7 +241,6 @@ class Member(commands.Cog):
         data.add_field(name="Joined Discord on", value=created_on)
 
         if is_member:
-            roles = user.roles[-1:0:-1]
 
             joined_at = user.joined_at
 
@@ -285,8 +284,9 @@ class Member(commands.Cog):
                         diff = ""
                     data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} {diff}\n{'' if not hasattr(activity, 'details') else activity.details}", inline=False)
 
+            roles = user.roles[1:]
             if roles:
-                disp_roles = ", ".join([role.name for role in roles[:10]])
+                disp_roles = ", ".join([role.mention for role in roles[:-11:-1]])
                 if len(roles) > 10:
                     disp_roles += f" (+{len(roles) - 10} roles)"
                 data.add_field(name="Roles", value=disp_roles, inline=False)
