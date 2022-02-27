@@ -332,7 +332,7 @@ class Role(commands.Cog):
 
             role = possible[0]
 
-        message = "\n".join([f"`{member.id} **{member.name}**" for member in role.members]) + \
+        message = "\n".join([f"`{member.id} **{member.name}**`" for member in role.members]) + \
                   f"\n------------------------------------\n:white_check_mark: I found **{len(role.members)}** member{'' if len(role.members) == 1 else 's'} with the **{role.name}** role."
 
         await self.bot.send_text_file(message, ctx.channel, "roles", "txt") if len(message) > 2000 else await ctx.send(message)
