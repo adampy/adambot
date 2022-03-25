@@ -302,7 +302,7 @@ class Support(commands.Cog):
 
     @support.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def accept(self, ctx: commands.Context, ticket: str) -> None:
         """
         Accepts a support ticket
@@ -348,7 +348,7 @@ class Support(commands.Cog):
 
     @support.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def connections(self, ctx: commands.Context) -> None:
         """
         Shows all current support connections with member info redacted
@@ -375,5 +375,5 @@ class Support(commands.Cog):
         await ctx.send(string)
 
 
-def setup(bot) -> None:
-    bot.add_cog(Support(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Support(bot))

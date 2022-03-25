@@ -100,7 +100,7 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def viewroles(self, ctx: commands.Context) -> None:
         """
         Gets all the roles that are tracked in a guild.
@@ -112,7 +112,7 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def addrole(self, ctx: commands.Context, role: discord.Role, sample_rate: int = 1) -> None:
         """
         Adds a role to the server's demographic samples.
@@ -144,7 +144,7 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def removerole(self, ctx: commands.Context, role: discord.Role) -> None:
         """
         Gets all the roles that are tracked in a guild.
@@ -173,7 +173,7 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def takesample(self, ctx: commands.Context, role: discord.Role = None) -> None:
         """
         Adds a TODO saying that a sample is required ASAP. If `role` == None then all guild demographics are sampled.
@@ -211,7 +211,7 @@ class Demographics(commands.Cog):
 
     @demographics.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def removeallsamples(self, ctx: commands.Context) -> None:
         """
         Removes all samples from the `demographic_samples` table.
@@ -277,5 +277,5 @@ class Demographics(commands.Cog):
         await self.bot.send_image_file(fig, ctx.channel, "demographics-data")
 
 
-def setup(bot) -> None:
-    bot.add_cog(Demographics(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Demographics(bot))

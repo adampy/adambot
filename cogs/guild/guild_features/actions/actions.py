@@ -152,7 +152,7 @@ class Actions(commands.Cog):
 
     @action.command(name="delete", aliases=["remove"])
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def delete_action(self, ctx: commands.Context, name: str = "") -> None:  # Actual deleting is handled by remove_action
         """
         Command to delete an action for a guild
@@ -172,7 +172,7 @@ class Actions(commands.Cog):
 
     @action.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def deleteall(self, ctx: commands.Context) -> None:
         """
         Command to delete all actions for a guild
@@ -187,7 +187,7 @@ class Actions(commands.Cog):
 
     @action.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def raw(self, ctx: commands.Context, name: str) -> None:
         if name not in self.actions[ctx.guild.id]:
             await ctx.send(embed=Embed(title="Could not show data for the requested action", description="No action with the given name exists!", colour=self.bot.ERROR_RED))
@@ -449,7 +449,7 @@ class Actions(commands.Cog):
 
     @action.command(name="create", aliases=["make"])
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def create_action(self, ctx: commands.Context) -> None:  # split this up?
         """
         A command that attempts to provide a user-friendly way of creating actions
@@ -797,5 +797,5 @@ class Actions(commands.Cog):
             await ctx.send(embed=Embed(title="Added action successfully!", description=f"{name} has been added as a new action!"))
 
 
-def setup(bot) -> None:
-    bot.add_cog(Actions(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Actions(bot))

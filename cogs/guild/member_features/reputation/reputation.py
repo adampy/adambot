@@ -190,7 +190,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def set(self, ctx: commands.Context, user: discord.Member | discord.User, rep: str) -> None:
         """
         Sets a specific members reps to a given value.
@@ -215,7 +215,7 @@ class Reputation(commands.Cog):
 
     @rep.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def hardset(self, ctx: commands.Context, user_id: str, rep: str) -> None:
         """
         Sets a specific member's reps to a given value via their ID.
@@ -307,5 +307,5 @@ class Reputation(commands.Cog):
         await self.bot.send_image_file(fig, ctx.channel, "rep-data")
 
 
-def setup(bot) -> None:
-    bot.add_cog(Reputation(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Reputation(bot))

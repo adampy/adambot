@@ -88,6 +88,7 @@ class CogHandler:
     @staticmethod
     def make_intents(intents: list[str]) -> discord.Intents:
         base = discord.Intents.none()
+        setattr(base, "message_content", True)  # should do this in the relevant cog configs but oh well
         for intent in intents:
             try:
                 if hasattr(base, intent):
@@ -98,7 +99,7 @@ class CogHandler:
                 print(f"Error setting intent '{intent}' since it is not valid")
         return base
 
-    def load_cog(self, name) -> list[bool, Exception]:
+    async def load_cog(self, name) -> list[bool, Exception]:
         e = None
         if name in self.cog_list:
             try:
@@ -106,7 +107,7 @@ class CogHandler:
                     data = self.cog_list[name]["config_keys"][key]
                     print(f"Sent config key {key} in for validation (requested by cog {name})")
                     self.bot.config_cog.register_config_key(key, data["validator"], data["description"])
-                self.bot.load_extension(name)
+                await self.bot.load_extension(name)
                 print(f"\n[+]    {name}")
             except Exception as e:
                 return [False, e]
@@ -115,9 +116,9 @@ class CogHandler:
             return [False, None]
         return [True, None]
 
-    def load_cogs(self) -> None:
+    async def load_cogs(self) -> None:
         for name in self.cog_list:
-            result = self.load_cog(name)
+            result = await self.load_cog(name)
             if not result[0]:
                 print(f"\n\n\n[-]   {name} could not be loaded due to an error! " + f"See the error below for more details\n\n{type(result[1]).__name__}: {result[1]}" if result[1] else "")
                 if name in self.core_cogs:
@@ -148,7 +149,7 @@ class CogHandler:
                 print(
                     f"[X]    Ignoring flattened key cogs.{key} since it doesn't have a text list of filenames under <files> as required.")
 
-    def give_config(self, cog_obj: discord.Cog) -> dict:
+    def give_config(self, cog_obj: discord.ext.commands.Cog) -> dict:
         mem_address = id(cog_obj)
         for key in self.bot.cogs:
             if id(self.bot.cogs[key]) == mem_address:

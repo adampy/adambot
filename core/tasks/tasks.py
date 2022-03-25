@@ -82,5 +82,5 @@ class Tasks(commands.Cog):
             await asyncio.sleep(1)
 
 
-def setup(bot) -> None:
-    bot.add_cog(Tasks(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Tasks(bot))

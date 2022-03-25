@@ -37,7 +37,7 @@ class Warnings(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def warn(self, ctx: commands.Context, member: discord.Member, *, reason: str = "") -> None:
         """
         Gives a member a warning, a reason is optional but recommended.
@@ -101,7 +101,7 @@ class Warnings(commands.Cog):
 
     @commands.command(pass_context=True, aliases=["warndelete"])
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def warnremove(self, ctx: commands.Context, *warnings: str) -> None:
         """
         Remove warnings with this command, can do `warnremove <warnID>` or `warnremove <warnID1> <warnID2> ... <warnIDn>`.
@@ -129,5 +129,5 @@ class Warnings(commands.Cog):
             await ctx.send(f"The warning's have been deleted.")
 
 
-def setup(bot) -> None:
-    bot.add_cog(Warnings(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Warnings(bot))

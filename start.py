@@ -1,6 +1,6 @@
 import time
+import asyncio
 start_time = time.time()
-
 from scripts.utils.handle_dependencies import handle_dependencies
 handle_dependencies()
 
@@ -15,5 +15,8 @@ parser.add_argument("-c", "--connections", nargs="?",
                     default=10)  # DB pool max_size (how many concurrent connections the pool can have)
 args = parser.parse_args()
 
-bot = AdamBot(start_time, token=args.token, connections=args.connections,
-              command_prefix=args.prefix)  # If the prefix given == None use the guild ones, otherwise use the given prefix
+try:
+    asyncio.run(AdamBot(start_time, token=args.token, connections=args.connections,
+            command_prefix=args.prefix).start_up())
+except Exception:
+    pass  # shush

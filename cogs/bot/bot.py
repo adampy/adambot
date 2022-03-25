@@ -106,5 +106,5 @@ class BotCog(commands.Cog):
         await self.bot.change_presence(activity=discord.Game(name=f"in {len(self.bot.guilds)} servers | Type `help` for help"), status=discord.Status.online)
 
 
-def setup(bot) -> None:
-    bot.add_cog(BotCog(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(BotCog(bot))

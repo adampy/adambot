@@ -187,5 +187,5 @@ class QOTD(commands.Cog):
             await log.send(embed=embed)
 
 
-def setup(bot) -> None:
-    bot.add_cog(QOTD(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(QOTD(bot))

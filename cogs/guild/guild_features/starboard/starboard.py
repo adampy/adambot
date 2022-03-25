@@ -360,7 +360,7 @@ class StarboardCog(commands.Cog):
 
     @starboard.command(aliases=["list"])
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def view(self, ctx: commands.Context) -> None:
         """
         View all of the starboards in the current guild
@@ -385,7 +385,7 @@ class StarboardCog(commands.Cog):
 
     @starboard.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def create(self, ctx: commands.Context) -> None:
         """
         Start the set up for the creation of a starboard
@@ -470,7 +470,7 @@ class StarboardCog(commands.Cog):
     
     @starboard.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def edit(self, ctx: commands.Context, channel: discord.TextChannel | discord.Thread, option: str, value: str) -> None:
         """
         Edit a starboard setup. `option` can either be "minimum", "emoji", "colour"/"color"/"embed_colour", or "self_star"
@@ -534,7 +534,7 @@ class StarboardCog(commands.Cog):
 
     @starboard.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def delete(self, ctx: commands.Context, channel: discord.TextChannel | discord.Thread) -> None:
         """
         Delete a starboard setup and all its entries from the bot
@@ -576,5 +576,5 @@ class StarboardCog(commands.Cog):
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That channel does not exist")
 
 
-def setup(bot) -> None:
-    bot.add_cog(StarboardCog(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(StarboardCog(bot))

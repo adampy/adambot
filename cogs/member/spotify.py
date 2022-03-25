@@ -60,5 +60,5 @@ class Spotify(commands.Cog):
         await ctx.message.channel.send(embed=embed)
 
 
-def setup(bot) -> None:
-    bot.add_cog(Spotify(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Spotify(bot))

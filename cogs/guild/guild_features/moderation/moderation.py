@@ -49,11 +49,11 @@ class Moderation(commands.Cog):
 
     # -----------------------CLOSE COMMAND-----------------------
 
-    @commands.command(pass_context=True, name="close", aliases=["die", "yeet"])
+    @commands.command(pass_context=True, name="close", aliases=["die", "yeet", "shutdown"])
     @commands.guild_only()
-    @is_dev
+    @is_dev()
     async def botclose(self, ctx: commands.Context) -> None:
-        await self.bot.close(ctx)
+        await self.bot.shutdown(ctx)
 
     # -----------------------PURGE------------------------------
 
@@ -485,7 +485,7 @@ class Moderation(commands.Cog):
     # -----------------------MISC------------------------------
 
     @commands.command()
-    @is_staff
+    @is_staff()
     async def say(self, ctx: commands.Context, channel: discord.TextChannel | discord.Thread, *, text: str) -> None:
         """
         Say a given string in a given channel
@@ -513,5 +513,5 @@ class Moderation(commands.Cog):
             await ctx.send(f"Invite revoking failed: {e}")
 
 
-def setup(bot) -> None:
-    bot.add_cog(Moderation(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Moderation(bot))

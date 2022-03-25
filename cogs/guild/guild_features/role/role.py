@@ -355,7 +355,7 @@ class Role(commands.Cog):
         help=single_role_change_help
     )  # sorry we don't have a world-beating AI to beat these types of problems just yet
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def add(self, ctx: commands.Context, role: discord.Role | str, *, member: discord.Member) -> None:
         """
         Staff role required.
@@ -382,7 +382,7 @@ class Role(commands.Cog):
         help=single_role_change_help.replace("add", "remove")
     )
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def remove(self, ctx: commands.Context, role: discord.Role | str, member: discord.Member) -> None:
         """
         Staff role required.
@@ -423,7 +423,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def swap(self, ctx: commands.Context, swap_from: discord.Role | str, *, swap_to: discord.Role | str) -> None:
         """
         Staff role required.
@@ -497,7 +497,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def removeall(self, ctx: commands.Context, *, role: discord.Role | str) -> None:
         """
         Staff role required.
@@ -554,7 +554,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def addall(self, ctx: commands.Context, ref_role: discord.Role | str, *, add_role: discord.Role | str) -> None:
         """
         Staff role required.
@@ -625,7 +625,7 @@ class Role(commands.Cog):
         """
     )
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def clear(self, ctx: commands.Context, *, member: discord.Member) -> None:
         """
         Staff role required.
@@ -658,5 +658,5 @@ class Role(commands.Cog):
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Roles removed successfully!", desc=f"All roles have been removed from {member.mention}" + (f" except for **{(', '.join(fail[:len(fail) - 1]) + f' and {fail[len(fail) - 1]}') if len(fail) > 1 else fail[0]}**, which could not be removed." if fail else ""))
 
 
-def setup(bot):
-    bot.add_cog(Role(bot))
+async def setup(bot):
+    await bot.add_cog(Role(bot))

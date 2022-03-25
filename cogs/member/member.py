@@ -452,5 +452,5 @@ class Member(commands.Cog):
         await ctx.send(f"Adam-Bot code can be found here: {self.bot.CODE_URL}")
 
 
-def setup(bot) -> None:
-    bot.add_cog(Member(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Member(bot))

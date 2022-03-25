@@ -81,7 +81,7 @@ class ReactionRoles(commands.Cog):
 
     @rr.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def add(self, ctx: commands.Context, emoji: discord.Emoji | str, role: discord.Role, inverse: str = None) -> None:
         """
         Adds an emoji and a corresponding role to the replied message. If the `inverse` argument == "true" the role is removed upon reaction add and vice versa.
@@ -122,7 +122,7 @@ class ReactionRoles(commands.Cog):
 
     @rr.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def remove(self, ctx: commands.Context, emoji: discord.Emoji | str) -> None:
         """
         Removes an emoji and a corresponding role from the replied message
@@ -150,7 +150,7 @@ class ReactionRoles(commands.Cog):
 
     @rr.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def delete(self, ctx: commands.Context) -> None:
         """
         Removes all the reaction roles from the replied message
@@ -166,7 +166,7 @@ class ReactionRoles(commands.Cog):
 
     @rr.command(name="list")
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def showreactionroles(self, ctx: commands.Context) -> None:
         """
         Shows all the current reaction roles in the guild
@@ -197,5 +197,5 @@ class ReactionRoles(commands.Cog):
         await ctx.reply(embed=embed)
 
 
-def setup(bot) -> None:
-    bot.add_cog(ReactionRoles(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(ReactionRoles(bot))

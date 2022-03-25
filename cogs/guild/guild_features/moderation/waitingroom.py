@@ -35,7 +35,7 @@ class WaitingRoom(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def testwelcome(self, ctx: commands.Context, to_ping: discord.Member | discord.User = None) -> None:
         """
         Command that returns the welcome message, and pretends the command invoker is the new user.
@@ -52,7 +52,7 @@ class WaitingRoom(commands.Cog):
     # -----LURKERS-----
 
     @commands.group(aliases=["lurker"])
-    @is_staff
+    @is_staff()
     async def lurkers(self, ctx: commands.Context, *phrase: str) -> None:
         """
         Ping all the people without a role so you can grab their attention. Optional, first argument is `message` is the phrase you want to send to lurkers.
@@ -123,7 +123,7 @@ You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
 
     @lurkers.command(pass_context=True, name="kick")  # Name parameter defines the name of the command the user will use
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def lurker_kick(self, ctx: commands.Context, days: str = "7") -> None:
         # days is specifically "7" as default and not 7 since if you specify an integer it barfs if you supply a non-int value
         """
@@ -180,5 +180,5 @@ You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
         await channel.send(embed=embed)
 
 
-def setup(bot) -> None:
-    bot.add_cog(WaitingRoom(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(WaitingRoom(bot))

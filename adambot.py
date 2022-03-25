@@ -46,8 +46,10 @@ class AdamBot(Bot):
                  **kwargs) -> None:
         self.internal_config = self.load_internal_config(config_path)
         self.cog_handler = cog_handler.CogHandler(self)
+        self.kwargs = kwargs
+        self.global_prefix = self.internal_config.get("global_prefix")
+        self.kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
 
-        kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
         self.cog_handler.preload_core_cogs()
 
         cog_dict = pandas.json_normalize(self.internal_config.get("cogs", {}), sep=".").to_dict(orient="records")[0]
@@ -58,21 +60,12 @@ class AdamBot(Bot):
 
         super().__init__(*args, intents=self.cog_handler.make_intents(list(dict.fromkeys(self.cog_handler.intent_list))), **kwargs)
 
-        db_start = time.time()
+        self.db_start = time.time()
         print("Creating DB pool...")
-        db_url = self.internal_config.get("database_url", "")
-        if not db_url:
-            db_url = os.environ.get("DATABASE_URL", "")
+        self.db_url = self.internal_config.get("database_url", "")
+        if not self.db_url:
+            self.db_url = os.environ.get("DATABASE_URL", "")
         self.connections = kwargs.get("connections", 10)  # Max DB pool connections
-        self.pool: \
-            asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(db_url + "?sslmode=require", max_size=self.connections))
-
-        self.loop.run_until_complete(database_handle.introduce_tables(self.pool, self.cog_handler.db_tables))
-        self.loop.run_until_complete(database_handle.insert_cog_db_columns_if_not_exists(self.pool, self.cog_handler.db_tables))
-        print(f"DB took {time.time() - db_start} seconds to connect to")
-
-        self.global_prefix = self.internal_config.get("global_prefix",
-                                                      None)  # Stores the global prefix, or None if not set / using guild specific one
 
         self.online = False  # Start at False, changes to True once fully initialised
         self.LOCAL_HOST = False if os.environ.get("REMOTE", None) else True
@@ -83,10 +76,8 @@ class AdamBot(Bot):
         self._init_time = time.time()
 
         print(f"BOT INITIALISED {self._init_time - start_time} seconds")
-        self.start_up(kwargs)  # kwargs passed here specifically to prevent leak of sensitive stuff passed in
 
-    async def close(self,
-                    ctx: commands.Context = None) -> None:  # ctx = None because this is also called upon CTRL+C in command line
+    async def shutdown(self, ctx: commands.Context = None) -> None:  # ctx = None because this is also called upon CTRL+C in command line
         """
         Procedure that closes down AdamBot, using the standard client.close() command, as well as some database handling methods.
         """
@@ -130,13 +121,13 @@ class AdamBot(Bot):
         config_file.close()
         return config
 
-    def start_up(self, kwargs: dict) -> None:
+    async def start_up(self) -> None:
         """
         Command that starts AdamBot, is run in AdamBot.__init__
         """
 
         print("Loading cogs...")
-        self.cog_handler.load_cogs()
+        await self.cog_handler.load_cogs()
         self.cog_load = time.time()
         print(
             f"\nLoaded all cogs in {self.cog_load - self._init_time} seconds ({self.cog_load - self.start_time} seconds total)")
@@ -149,14 +140,21 @@ class AdamBot(Bot):
         if not token:
             token = os.environ.get("TOKEN", "")
 
-        token = token if token else kwargs.get("token", "")
+        token = token if token else self.kwargs.get("token", "")
         if not token:
             print("No token provided!")
             return
 
         self.internal_config = []
+        self.pool: \
+            asyncpg.pool.Pool = await asyncpg.create_pool(self.db_url + "?sslmode=require", max_size=self.connections)
+
+        await database_handle.introduce_tables(self.pool, self.cog_handler.db_tables)
+        await database_handle.insert_cog_db_columns_if_not_exists(self.pool, self.cog_handler.db_tables)
+        print(f"DB took {time.time() - self.db_start} seconds to connect to")
+
         try:
-            self.run(token)
+            await self.start(token)
         except Exception as e:
             print(
                 f"Something went wrong handling the token!\nThe error was {type(e).__name__}: {e}")  # overridden close cleans this up neatly

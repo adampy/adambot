@@ -71,5 +71,5 @@ class Utils(commands.Cog):
         last_active_list.insert(0, message.author)
 
 
-def setup(bot) -> None:
-    bot.add_cog(Utils(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Utils(bot))

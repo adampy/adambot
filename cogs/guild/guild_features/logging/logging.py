@@ -383,5 +383,5 @@ class Logging(commands.Cog):
                 await ichannel.send(embed=invite_log)
 
 
-def setup(bot) -> None:
-    bot.add_cog(Logging(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Logging(bot))

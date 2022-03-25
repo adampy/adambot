@@ -398,5 +398,5 @@ class Config(commands.Cog):
             await ctx.send("You are not staff!")
 
 
-def setup(bot) -> None:
-    bot.add_cog(Config(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Config(bot))

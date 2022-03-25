@@ -18,7 +18,7 @@ class Eval(commands.Cog):
         return chunks
 
     @commands.command(name="eval", pass_context=True)
-    @is_dev
+    @is_dev()
     async def evaluate(self, ctx: commands.Context, *, command: str = "") -> None:  # command is kwarg to stop it flooding the console when no input is provided
         """
         Allows evaluating strings of code (intended for testing).
@@ -61,7 +61,7 @@ class Eval(commands.Cog):
             await ctx.send(f"```{ctx.prefix}help sql```")
 
     @sql.command(pass_context=True)
-    @is_dev
+    @is_dev()
     async def execute(self, ctx: commands.Context, *, command: str) -> None:
         async with self.bot.pool.acquire() as connection:
             try:
@@ -70,7 +70,7 @@ class Eval(commands.Cog):
                 await ctx.send(f"EXCEPTION: {e}")
 
     @sql.command(pass_context=True)
-    @is_dev
+    @is_dev()
     async def fetch(self, ctx: commands.Context, *, command: str) -> None:
         async with self.bot.pool.acquire() as connection:
             try:
@@ -86,5 +86,5 @@ class Eval(commands.Cog):
                 await ctx.send(f"EXCEPTION: {e}")
 
 
-def setup(bot) -> None:
-    bot.add_cog(Eval(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Eval(bot))

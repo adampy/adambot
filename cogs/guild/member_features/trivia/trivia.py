@@ -243,7 +243,7 @@ class Trivia(commands.Cog):
         del self.trivia_sessions[ctx.guild.id]  # Delete it from dict, and memory
 
     @trivia.command(aliases=["answers", "cheat"])
-    @is_staff
+    @is_staff()
     async def answer(self, ctx: commands.Context) -> None:
         """
         Command that allows staff to see the correct answer
@@ -285,5 +285,5 @@ class Trivia(commands.Cog):
         await session.trivia_end_leaderboard(reset=False)
 
 
-def setup(bot) -> None:
-    bot.add_cog(Trivia(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Trivia(bot))

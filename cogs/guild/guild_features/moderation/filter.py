@@ -179,7 +179,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def add(self, ctx: commands.Context, *, text: str) -> None:
         """
         Allows adding a filtered phrase for the guild. Staff role needed.
@@ -200,7 +200,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def add_ignore(self, ctx: commands.Context, *, text: str) -> None:
         """
         Allows adding a phrase that will be ignored by the filter.
@@ -248,7 +248,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def remove(self, ctx: commands.Context, *, text: str) -> None:
         """
         Allows removing a filtered phrase. Staff role needed.
@@ -269,7 +269,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def remove_ignore(self, ctx: commands.Context, *, text: str) -> None:
         """
         Allows removing a phrase ignored by the filter. Staff role needed.
@@ -287,7 +287,7 @@ class Filter(commands.Cog):
 
     @filter.command(name="list")
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def list_filter(self, ctx: commands.Context) -> None:
         """
         Lists filtered phrases for a guild. Staff role needed.
@@ -297,7 +297,7 @@ class Filter(commands.Cog):
 
     @filter.command()
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def list_ignore(self, ctx: commands.Context) -> None:
         """
         Lists ignored phrases for a guild. Staff role needed.
@@ -307,7 +307,7 @@ class Filter(commands.Cog):
 
     @filter.command(name="clear")
     @commands.guild_only()
-    @is_staff
+    @is_staff()
     async def clear_filter(self, ctx: commands.Context) -> None:
         """
         Allows clearing the list of filtered and ignored phrases for the guild. Staff role needed.
@@ -318,5 +318,5 @@ class Filter(commands.Cog):
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter cleared!", desc=f"The filter for **{ctx.guild.name}** has been cleared!")
 
 
-def setup(bot) -> None:
-    bot.add_cog(Filter(bot))
+async def setup(bot) -> None:
+    await bot.add_cog(Filter(bot))
