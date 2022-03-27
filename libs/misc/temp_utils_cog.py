@@ -55,20 +55,37 @@ class Utils(commands.Cog):
                 del page
                 break
 
+    async def last_active_handle(self, ctx: discord.Message | discord.Interaction) -> None:
+        """
+        Helper method to maintain the lists of last active members for a given guild.
+        """
+
+        user = ctx.author if type(ctx) == discord.Message else ctx.user
+
+        if type(ctx.channel) == discord.DMChannel or user.bot:
+            return
+        if ctx.guild.id not in self.bot.last_active:
+            self.bot.last_active[ctx.guild.id] = []  # create the dict key for that guild if it doesn't exist
+        last_active_list = self.bot.last_active[ctx.guild.id]
+        if user in last_active_list:
+            last_active_list.remove(user)
+        last_active_list.insert(0, user)
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         """
-        Event that has checks that stop bots from executing commands
+        Event listener that updates the list of last active members for a given guild
         """
 
-        if type(message.channel) == discord.DMChannel or message.author.bot:
-            return
-        if message.guild.id not in self.bot.last_active:
-            self.bot.last_active[message.guild.id] = []  # create the dict key for that guild if it doesn't exist
-        last_active_list = self.bot.last_active[message.guild.id]
-        if message.author in last_active_list:
-            last_active_list.remove(message.author)
-        last_active_list.insert(0, message.author)
+        await self.last_active_handle(message)
+
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction) -> None:
+        """
+        Same purpose as `on_message` but for interactions, which do not necessarily have triggering messages.
+        """
+
+        await self.last_active_handle(interaction)
 
 
 async def setup(bot) -> None:

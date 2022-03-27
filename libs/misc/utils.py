@@ -252,7 +252,7 @@ async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> Optiona
             user = await commands.MemberConverter().convert(ctx, args)
         except commands.errors.MemberNotFound:
             # for the love of god
-            lists = [bot.last_active[ctx.guild.id], ctx.guild.members]
+            lists = [bot.last_active.get(ctx.guild.id, []), ctx.guild.members]
             attribs = ["display_name", "name"]
             for list_ in lists:
                 for attrib in attribs:
@@ -594,7 +594,7 @@ def get_user_avatar_url(member: discord.Member, mode: int = 0) -> list[str]:
             return []
 
 
-async def interaction_context(bot, interaction):
+async def interaction_context(bot, interaction: discord.Interaction) -> commands.Context:
     """
     Can't get proper context from interaction and the standard `get_context` requires a message
 
@@ -620,4 +620,4 @@ async def interaction_context(bot, interaction):
 
     setattr(message, "author", interaction.user)
     setattr(message, "guild", interaction.guild)
-    return discord.ext.commands.Context(bot=bot, message=message, view=None)
+    return commands.Context(bot=bot, message=message, view=None)
