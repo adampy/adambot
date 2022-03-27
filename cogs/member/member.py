@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import Embed, Colour, Status
+from discord import Embed, Colour, Status, app_commands
 import re
 from datetime import datetime, timedelta
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
@@ -12,6 +12,8 @@ class Member(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
+        #await self.bot.tree.add_command(self.userinfo_slash)
+        await self.bot.tree.sync()
         await self.bot.tasks.register_task_type("reminder", self.handle_remind, needs_extra_columns={
             "member_id": "bigint",
             "channel_id": "bigint",
@@ -195,7 +197,33 @@ class Member(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
-    async def userinfo(self, ctx: commands.Context, *, args: str = "") -> None:
+    async def userinfo(self, ctx: commands.Context, *, args: discord.Member | str = "") -> None:
+        await ctx.send(embed=await self.userinfo_embed_construct(ctx, args))
+
+    @app_commands.command(name="userinfo")
+    async def userinfo_slash(self, interaction, *, args: discord.Member | str = ""):
+        message = discord.Message(channel=self.bot.get_channel(interaction.channel_id),
+                                  state=None,
+                                  data={"id": -1,
+                                        "attachments": [],
+                                        "embeds": [],
+                                        "created_at": datetime.now(),
+                                        "edited_timestamp": datetime.utcnow().isoformat(),
+                                        "type": discord.MessageType.default,
+                                        "pinned": False,
+                                        "flags": {},
+                                        "mention_everyone": False,
+                                        "tts": False,
+                                        "content": "",
+                                        "nonce": None,
+                                        "stickers": [],
+                                        "components": []})
+        setattr(message, "author", interaction.user)
+        setattr(message, "guild", interaction.guild)
+        ctx = discord.ext.commands.Context(bot=self.bot, message=message, view=None)
+        await interaction.response.send_message(embed=await self.userinfo_embed_construct(ctx, args))
+
+    async def userinfo_embed_construct(self, ctx, args):
         """
         Information about you or a user
         """
@@ -211,10 +239,10 @@ class Member(commands.Cog):
             if user is None and args.isdigit():
                 user = await self.bot.fetch_user(int(args))  # allows getting some limited info about a user that isn't a member of the guild
             if user is None:
-                await ctx.send(embed=Embed(title="Userinfo",
+                #await ctx.send(embed=)
+                return Embed(title="Userinfo",
                                            description=f":x:  **Sorry {ctx.author.display_name} we could not find that user!**",
-                                           color=Colour.from_rgb(255, 7, 58)))
-                return
+                                           color=Colour.from_rgb(255, 7, 58))
 
         is_member = isinstance(user, discord.Member)
         if is_member:
@@ -235,17 +263,19 @@ class Member(commands.Cog):
             data = Embed(colour=user.colour)
 
         data.add_field(name="User ID", value=f"{user.id}")
-        user_created = self.bot.correct_time(user.created_at).strftime(self.bot.ts_format)
-        since_created = (ctx.message.created_at - user.created_at).days
+        user_created = self.bot.correct_time(user.created_at.replace(tzinfo=None)).strftime(self.bot.ts_format)
+        #since_created = (ctx.message.created_at - user.created_at).days
+        now = datetime.utcnow()
+        since_created = (now - user.created_at.replace(tzinfo=None)).days
         created_on = f"{user_created}\n({since_created} days ago)"
         data.add_field(name="Joined Discord on", value=created_on)
 
         if is_member:
 
-            joined_at = user.joined_at
+            joined_at = user.joined_at.replace(tzinfo=None)
 
             if joined_at is not None:
-                since_joined = (ctx.message.created_at - joined_at).days
+                since_joined = (now - joined_at).days
                 user_joined = self.bot.correct_time(joined_at).strftime(self.bot.ts_format)
 
             else:
@@ -255,7 +285,7 @@ class Member(commands.Cog):
             voice_state = user.voice
 
             member_number = (
-                    sorted(guild.members, key=lambda m: m.joined_at or ctx.message.created_at).index(user)
+                    sorted(guild.members, key=lambda m: m.joined_at or now).index(user)
                     + 1
             )
 
@@ -317,7 +347,8 @@ class Member(commands.Cog):
         data.set_author(name=name, icon_url=avatar)
         data.set_thumbnail(url=avatar)
 
-        await ctx.send(embed=data)
+        return data
+        #await ctx.send(embed=data)
 
 # -----------------------REMIND------------------------------
     async def handle_remind(self, data: dict) -> None:
@@ -454,3 +485,4 @@ class Member(commands.Cog):
 
 async def setup(bot) -> None:
     await bot.add_cog(Member(bot))
+    #await bot.tree.sync()
