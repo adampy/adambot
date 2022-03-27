@@ -200,8 +200,9 @@ class Member(commands.Cog):
         await ctx.send(embed=await self.userinfo_embed_construct(ctx, args))
 
     @app_commands.command(name="userinfo")
-    async def userinfo_slash(self, interaction, *, args: str = ""):   # can't do both types because it isn't supported
-        await interaction.response.send_message(embed=await self.userinfo_embed_construct(await self.bot.interaction_context(self.bot, interaction), args))
+    @app_commands.describe(member="The member to get the userinfo of. Can be name or mention")
+    async def userinfo_slash(self, interaction, *, member: str = ""):   # can't do both types because it isn't supported
+        await interaction.response.send_message(embed=await self.userinfo_embed_construct(await self.bot.interaction_context(self.bot, interaction), member))
 
     async def userinfo_embed_construct(self, ctx, args):
         """

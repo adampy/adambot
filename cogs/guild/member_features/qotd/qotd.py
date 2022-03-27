@@ -8,35 +8,31 @@ from typing import Any, Callable
 from inspect import signature  # Used in @qotd_perms decorator
 import asyncio
 
-
-def qotd_perms(func: Callable) -> Callable:
+def qotd_perms() -> Callable:
     """
     Decorator that allows the command to only be executed by people with QOTD perms / staff / administrators.
     This needs to be placed underneath the @command.command() decorator, and can only be used for commands in a cog
 
     Usage:
         @commands.command()
-        @qotd_perms
+        @qotd_perms()
         async def ping(self, ctx):
             await ctx.send("Pong!")
     """
 
-    async def decorator(cog, ctx: commands.Context, *args, **kwargs) -> Any | Message:
-        while not cog.bot.online:
+    async def predicate(ctx) -> bool:
+        while not ctx.bot.online:
             await asyncio.sleep(1)  # Wait else DB won't be available
 
-        qotd_role_id = await cog.bot.get_config_key(ctx, "qotd_role")
-        staff_role_id = await cog.bot.get_config_key(ctx, "staff_role")
+        qotd_role_id = await ctx.bot.get_config_key(ctx, "qotd_role")
+        staff_role_id = await ctx.bot.get_config_key(ctx, "staff_role")
         role_ids = [y.id for y in ctx.author.roles]
         if qotd_role_id in role_ids or staff_role_id in role_ids or ctx.author.guild_permissions.administrator:
-            return await func(cog, ctx, *args, **kwargs)
+            return True
         else:
-            return await DefaultEmbedResponses.invalid_perms(cog.bot, ctx)
-    
-    decorator.__name__ = func.__name__
-    decorator.__signature__ = signature(func)
-    return decorator
-
+            await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
+            return False
+    return commands.check(predicate)
 
 class QOTD(commands.Cog):
     def __init__(self, bot) -> None:
@@ -94,8 +90,8 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True)
     @commands.guild_only()
-    @qotd_perms
-    async def list(self, ctx: commands.Context, page_num: int = 1) -> None:
+    @qotd_perms()
+    async def list(self, ctx, page_num: int = 1) -> None:
         async with self.bot.pool.acquire() as connection:
             qotds = await connection.fetch("SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id", ctx.guild.id)
 
@@ -119,7 +115,7 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True, aliases=["remove"])
     @commands.guild_only()
-    @qotd_perms
+    @qotd_perms()
     async def delete(self, ctx: commands.Context, *question_ids: str) -> None:
         async with self.bot.pool.acquire() as connection:
             for question_id in question_ids:
@@ -143,7 +139,7 @@ class QOTD(commands.Cog):
 
     @qotd.command(pass_context=True, aliases=["choose"])
     @commands.guild_only()
-    @qotd_perms
+    @qotd_perms()
     async def pick(self, ctx: commands.Context, question_id: str) -> None:
         qotd_channel_id = await self.bot.get_config_key(ctx, "qotd_channel")
         if qotd_channel_id is None:
