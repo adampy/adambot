@@ -12,7 +12,6 @@ class Member(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
-        #await self.bot.tree.add_command(self.userinfo_slash)
         await self.bot.tree.sync()
         await self.bot.tasks.register_task_type("reminder", self.handle_remind, needs_extra_columns={
             "member_id": "bigint",
@@ -201,27 +200,8 @@ class Member(commands.Cog):
         await ctx.send(embed=await self.userinfo_embed_construct(ctx, args))
 
     @app_commands.command(name="userinfo")
-    async def userinfo_slash(self, interaction, *, args: discord.Member | str = ""):
-        message = discord.Message(channel=self.bot.get_channel(interaction.channel_id),
-                                  state=None,
-                                  data={"id": -1,
-                                        "attachments": [],
-                                        "embeds": [],
-                                        "created_at": datetime.now(),
-                                        "edited_timestamp": datetime.utcnow().isoformat(),
-                                        "type": discord.MessageType.default,
-                                        "pinned": False,
-                                        "flags": {},
-                                        "mention_everyone": False,
-                                        "tts": False,
-                                        "content": "",
-                                        "nonce": None,
-                                        "stickers": [],
-                                        "components": []})
-        setattr(message, "author", interaction.user)
-        setattr(message, "guild", interaction.guild)
-        ctx = discord.ext.commands.Context(bot=self.bot, message=message, view=None)
-        await interaction.response.send_message(embed=await self.userinfo_embed_construct(ctx, args))
+    async def userinfo_slash(self, interaction, *, args: str = ""):   # can't do both types because it isn't supported
+        await interaction.response.send_message(embed=await self.userinfo_embed_construct(await self.bot.interaction_context(self.bot, interaction), args))
 
     async def userinfo_embed_construct(self, ctx, args):
         """
@@ -239,7 +219,6 @@ class Member(commands.Cog):
             if user is None and args.isdigit():
                 user = await self.bot.fetch_user(int(args))  # allows getting some limited info about a user that isn't a member of the guild
             if user is None:
-                #await ctx.send(embed=)
                 return Embed(title="Userinfo",
                                            description=f":x:  **Sorry {ctx.author.display_name} we could not find that user!**",
                                            color=Colour.from_rgb(255, 7, 58))
@@ -485,4 +464,3 @@ class Member(commands.Cog):
 
 async def setup(bot) -> None:
     await bot.add_cog(Member(bot))
-    #await bot.tree.sync()

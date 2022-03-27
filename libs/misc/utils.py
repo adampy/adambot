@@ -7,6 +7,7 @@ from math import ceil
 from datetime import timedelta
 from io import BytesIO, StringIO
 import asyncio
+from datetime import datetime
 
 
 class EmbedPages:
@@ -591,3 +592,32 @@ def get_user_avatar_url(member: discord.Member, mode: int = 0) -> list[str]:
             return [account_avatar_url, guild_avatar_url]
         case _:
             return []
+
+
+async def interaction_context(bot, interaction):
+    """
+    Can't get proper context from interaction and the standard `get_context` requires a message
+
+    However this breaks stuff that e.g. relies on MemberConverters.
+    """
+
+    message = discord.Message(channel=bot.get_channel(interaction.channel_id),
+                              state=None,
+                              data={"id": -1,
+                                    "attachments": [],
+                                    "embeds": [],
+                                    "created_at": datetime.now(),
+                                    "edited_timestamp": datetime.utcnow().isoformat(),
+                                    "type": discord.MessageType.default,
+                                    "pinned": False,
+                                    "flags": {},
+                                    "mention_everyone": False,
+                                    "tts": False,
+                                    "content": "",
+                                    "nonce": None,
+                                    "stickers": [],
+                                    "components": []})
+
+    setattr(message, "author", interaction.user)
+    setattr(message, "guild", interaction.guild)
+    return discord.ext.commands.Context(bot=bot, message=message, view=None)
