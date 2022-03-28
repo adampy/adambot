@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 from discord import Embed, Colour, Message, File
 from discord.ext import commands
@@ -232,7 +234,7 @@ async def send_text_file(text: str, channel: discord.TextChannel | discord.Threa
     await channel.send(file=File(buf, filename=f"{filename}.{extension}"))
 
 
-async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> discord.Member | None:
+async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> Optional[discord.Member]:
     """
     Moves hell on Earth to get a guild member object from a given string
     Makes use of last_active, a priority temp list that stores member objects of

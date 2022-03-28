@@ -658,5 +658,5 @@ class Role(commands.Cog):
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Roles removed successfully!", desc=f"All roles have been removed from {member.mention}" + (f" except for **{(', '.join(fail[:len(fail) - 1]) + f' and {fail[len(fail) - 1]}') if len(fail) > 1 else fail[0]}**, which could not be removed." if fail else ""))
 
 
-async def setup(bot):
+async def setup(bot) -> None:
     await bot.add_cog(Role(bot))

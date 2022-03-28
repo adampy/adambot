@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 from discord import Embed, Colour
 from discord.ext import commands
@@ -205,7 +207,7 @@ class Trivia(commands.Cog):
         await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Available trivias", desc=desc)
 
     @trivia.command(pass_context=True)
-    async def start(self, ctx: commands.Context, trivia: str | None = None) -> None:
+    async def start(self, ctx: commands.Context, trivia: Optional[str] = None) -> None:
         """
         Command that starts a new trivia game in the currently set trivia channel
         """
