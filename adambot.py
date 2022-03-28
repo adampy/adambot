@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, when_mentioned_or, when_mentioned
@@ -170,7 +172,7 @@ class AdamBot(Bot):
         if not hasattr(ctx.cog, "on_command_error"):  # don't re-raise if ext handling
             raise error  # re-raise error so cogs can mess around but not block every single error. Does duplicate traceback but error tracebacks are a bloody mess anyway
 
-    def correct_time(self, conv_time: datetime.datetime | None = None,
+    def correct_time(self, conv_time: Optional[datetime.datetime] = None,
                      timezone_: str = "system") -> datetime.datetime:
         if not conv_time:
             conv_time = datetime.datetime.now()

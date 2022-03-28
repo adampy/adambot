@@ -1,4 +1,6 @@
 from math import ceil
+from typing import Optional
+
 import discord
 from discord.ext import commands
 from libs.misc.decorators import is_staff
@@ -147,7 +149,7 @@ class Filter(commands.Cog):
         if not ctx.invoked_subcommand:
             await ctx.reply(f"Type `{ctx.prefix}help filter` to get info!")
 
-    async def clean_up(self, ctx: commands.Context, text: str, key: str, spoiler: bool = True) -> discord.Message | None:
+    async def clean_up(self, ctx: commands.Context, text: str, key: str, spoiler: bool = True) -> Optional[discord.Message]:
         """
         Strictly only cleans up one list. Cross-checks occur specifically within their own scopes.
         This makes sure space isn't wasted by adding random garbage to the filter that will already be in effect anyway

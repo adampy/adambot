@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 from discord.ext import commands
 import asyncio
@@ -85,7 +87,7 @@ class Starboard:
         self.embed_colour = new_starboard_data["embed_colour"]
         self.allow_self_star = new_starboard_data["allow_self_star"]
 
-    async def try_get_entry(self, message_id: int) -> Entry | None:
+    async def try_get_entry(self, message_id: int) -> Optional[Entry]:
         """
         Returns either a starboard entry or None if it doesn't exist
         """
@@ -175,7 +177,7 @@ class StarboardCog(commands.Cog):
                 results.append(starboard)
         return results
 
-    async def _try_get_starboard(self, channel_id: int) -> Starboard | None:
+    async def _try_get_starboard(self, channel_id: int) -> Optional[Starboard]:
         """
         Return the starboard for the given text channel or None if it doesn't exist
         """
