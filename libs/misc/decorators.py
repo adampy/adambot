@@ -1,8 +1,25 @@
 import asyncio
 from typing import Callable
-
 from discord.ext import commands
-from .utils import DefaultEmbedResponses, DEVS
+from .utils import DEVS
+
+"""
+The rationale behind these error classes is to basically abstract the error embed
+out of the actual decorators themselves. Having the error embed handled in the 
+decorator causes issues with anything that runs checks on the commands without
+actually invoking it (e.g. stuff like the help command). So we raise an error
+which will get passed over to on_command_error if the command has been invoked.
+"""
+
+
+class MissingStaffError(commands.CheckFailure):
+    def __init__(self, message=None, *args):
+        super().__init__(message=message, *args)
+
+
+class MissingDevError(commands.CheckFailure):
+    def __init__(self, message=None, *args):
+        super().__init__(message=message, *args)
 
 
 def is_staff() -> Callable:
@@ -27,8 +44,7 @@ def is_staff() -> Callable:
         if staff_role_id in [y.id for y in ctx.author.roles] or ctx.author.guild_permissions.administrator:
             return True
         else:
-            await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
-            return False
+            raise MissingStaffError
     return commands.check(predicate)
 
 
@@ -50,7 +66,6 @@ def is_dev() -> Callable:
         if ctx.author.id in DEVS:
             return True
         else:
-            await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
-            return False
+            raise MissingDevError
     return commands.check(predicate)
 

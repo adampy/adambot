@@ -169,8 +169,8 @@ class AdamBot(Bot):
         self.online = True
 
     async def on_command_error(self, ctx: commands.Context, error) -> None:
-        if not hasattr(ctx.cog, "on_command_error"):  # don't re-raise if ext handling
-            raise error  # re-raise error so cogs can mess around but not block every single error. Does duplicate traceback but error tracebacks are a bloody mess anyway
+        if isinstance(error, MissingStaffError) or isinstance(error, MissingDevError):
+            await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
 
     def correct_time(self, conv_time: Optional[datetime.datetime] = None,
                      timezone_: str = "system") -> datetime.datetime:
