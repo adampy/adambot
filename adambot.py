@@ -124,7 +124,7 @@ class AdamBot(Bot):
         if hasattr(self, "pool"):
             self.pool.terminate()  # TODO: Make this more graceful
         c_s = "Closing connection to Discord..."
-        (await ctx.send(c_s) if is_ctx else await ctx.response.send_message(c_s), print(c_s)) if ctx else print(c_s)
+        (await ctx.channel.send(c_s), print(c_s)) if ctx else print(c_s)
         try:
             await self.change_presence(status=discord.Status.offline)
         except AttributeError:
