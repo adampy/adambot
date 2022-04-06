@@ -22,7 +22,7 @@ class SpotifyHandlers:
         is_ctx = type(ctx) is commands.Context
 
         author = ctx.author if is_ctx else ctx.user
-        if user is None or len(user) == 0:
+        if not user or (type(user) is str and len(user) == 0):
             user = ctx.author if is_ctx else ctx.user
         elif type(user) is str:
             user = await self.bot.get_spaced_member(ctx, self.bot, args=user)
