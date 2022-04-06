@@ -1,15 +1,19 @@
 # REQUIRES D.PY V2
 
-import discord
-from discord.ext import commands
-from discord import Embed, Colour
-import inspect
-import asyncio
-import asyncpg
 import ast
-from libs.misc.decorators import is_staff
-from typing import Callable, Any
+import asyncio
 import copy
+import inspect
+from typing import Callable, Any
+
+import asyncpg
+import discord
+from discord import Embed, Colour
+from discord.ext import commands
+
+from libs.misc.decorators import is_staff
+
+from adambot import AdamBot
 
 """
 Potential TODOs:
@@ -34,7 +38,8 @@ class NoSendContext(commands.Context):
     async def send(self, *args, **kwargs) -> None:
         return
 
-    async def reply(self, *args, **kwargs) -> None:  # override reply as well since e.g. stuff like DefaultEmbedResponses replies now
+    async def reply(self, *args,
+                    **kwargs) -> None:  # override reply as well since e.g. stuff like DefaultEmbedResponses replies now
         return
 
     class channel(discord.TextChannel):
@@ -63,10 +68,12 @@ class Checks:  # could also be possible to tidy the wait_for's up if they can be
 
         def check(m: discord.Message) -> bool:
             return m.channel == ctx.channel and m.author == ctx.author
+
         return check
 
     @staticmethod
-    def generate_emoji_check(ctx: commands.Context, emoji_list: list = None, message: discord.Message = None) -> Callable:
+    def generate_emoji_check(ctx: commands.Context, emoji_list: list = None,
+                             message: discord.Message = None) -> Callable:
         """
         This methods generates a check function which can be used to check:
             - That a reaction is of an emoji in a given list
@@ -101,11 +108,12 @@ class Checks:  # could also be possible to tidy the wait_for's up if they can be
                 return check_
 
             return check3
+
         return range_check(lower_, upper_)
 
 
 class Actions(commands.Cog):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: AdamBot) -> None:
         self.bot = bot
         self.actions = {}
 
@@ -127,7 +135,8 @@ class Actions(commands.Cog):
                         for action in actions:
                             action = dict(action)
 
-                            await self.register_action(guild.id, action["action_name"], ast.literal_eval(action["action"]))
+                            await self.register_action(guild.id, action["action_name"],
+                                                       ast.literal_eval(action["action"]))
 
             except asyncpg.exceptions.UndefinedTableError:
                 print("Actions table doesn't exist yet, waiting 1 second")
@@ -153,7 +162,8 @@ class Actions(commands.Cog):
     @action.command(name="delete", aliases=["remove"])
     @commands.guild_only()
     @is_staff()
-    async def delete_action(self, ctx: commands.Context, name: str = "") -> None:  # Actual deleting is handled by remove_action
+    async def delete_action(self, ctx: commands.Context,
+                            name: str = "") -> None:  # Actual deleting is handled by remove_action
         """
         Command to delete an action for a guild
 
@@ -161,14 +171,17 @@ class Actions(commands.Cog):
         """
 
         if not name:
-            await ctx.send(embed=Embed(title="You need to provide an action name to be removed", colour=self.bot.ERROR_RED))  # move this to embed responses once timezone stuff is sorted
+            await ctx.send(embed=Embed(title="You need to provide an action name to be removed",
+                                       colour=self.bot.ERROR_RED))  # move this to embed responses once timezone stuff is sorted
 
         elif name not in self.actions[ctx.guild.id]:
-            await ctx.send(embed=Embed(title="Could not delete the requested action", description="No action with the given name exists!", colour=self.bot.ERROR_RED))
+            await ctx.send(embed=Embed(title="Could not delete the requested action",
+                                       description="No action with the given name exists!", colour=self.bot.ERROR_RED))
 
         else:
             await self.remove_action(ctx.guild.id, name)
-            await ctx.send(embed=Embed(title="Successfully deleted action!", description=f"{name} has been removed!", colour=self.bot.SUCCESS_GREEN))
+            await ctx.send(embed=Embed(title="Successfully deleted action!", description=f"{name} has been removed!",
+                                       colour=self.bot.SUCCESS_GREEN))
 
     @action.command()
     @commands.guild_only()
@@ -183,14 +196,16 @@ class Actions(commands.Cog):
         for action in list(self.actions[ctx.guild.id].keys()):
             await self.remove_action(ctx.guild.id, action)
 
-        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"Successfully deleted all actions for {ctx.guild}")
+        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx,
+                                                           f"Successfully deleted all actions for {ctx.guild}")
 
     @action.command()
     @commands.guild_only()
     @is_staff()
     async def raw(self, ctx: commands.Context, name: str) -> None:
         if name not in self.actions[ctx.guild.id]:
-            await ctx.send(embed=Embed(title="Could not show data for the requested action", description="No action with the given name exists!", colour=self.bot.ERROR_RED))
+            await ctx.send(embed=Embed(title="Could not show data for the requested action",
+                                       description="No action with the given name exists!", colour=self.bot.ERROR_RED))
         else:
             await ctx.send(f"```{self.actions[ctx.guild.id][name]}```")
 
@@ -201,7 +216,9 @@ class Actions(commands.Cog):
         Fetches a list of actions for the context guild
         """
 
-        await ctx.send(embed=Embed(title=f"{ctx.guild.name}'s actions", description="\n".join(self.actions[ctx.guild.id].keys()) if self.actions[ctx.guild.id] else "Nothing to show here!"))
+        await ctx.send(embed=Embed(title=f"{ctx.guild.name}'s actions",
+                                   description="\n".join(self.actions[ctx.guild.id].keys()) if self.actions[
+                                       ctx.guild.id] else "Nothing to show here!"))
 
     @staticmethod
     async def try_conversion(ctx: commands.Context, value, annotation, name: str = "value") -> Any:
@@ -212,7 +229,8 @@ class Actions(commands.Cog):
         """
 
         try:
-            result = await commands.run_converters(ctx, annotation, value, inspect.Parameter(name, inspect.Parameter.POSITIONAL_ONLY))
+            result = await commands.run_converters(ctx, annotation, value,
+                                                   inspect.Parameter(name, inspect.Parameter.POSITIONAL_ONLY))
         except Exception:
             return
         return result
@@ -239,7 +257,8 @@ class Actions(commands.Cog):
 
         self.bot.all_commands["base_action_handler"].aliases.append(name)
         self.actions[guild_id][name] = action
-        self.bot.remove_command("base_action_handler")  # behaviour has changed so sticking to documented methods for now
+        self.bot.remove_command(
+            "base_action_handler")  # behaviour has changed so sticking to documented methods for now
         self.bot.add_command(self.base_action_handler)
 
     async def propagate_action(self, ctx: commands.Context, name: str, action: dict) -> None:
@@ -249,7 +268,8 @@ class Actions(commands.Cog):
 
         async with self.bot.pool.acquire() as connection:
             try:
-                await connection.execute("INSERT INTO actions (guild_id, action_name, action) values ($1, $2, $3)", ctx.guild.id, str(name), str(action))
+                await connection.execute("INSERT INTO actions (guild_id, action_name, action) values ($1, $2, $3)",
+                                         ctx.guild.id, str(name), str(action))
             except Exception as e:
                 raise e
             await self.register_action(ctx.guild.id, name, action)
@@ -266,7 +286,8 @@ class Actions(commands.Cog):
 
         async with self.bot.pool.acquire() as connection:
             try:
-                await connection.execute("DELETE FROM actions WHERE guild_id = ($1) AND action_name = ($2)", guild_id, name)
+                await connection.execute("DELETE FROM actions WHERE guild_id = ($1) AND action_name = ($2)", guild_id,
+                                         name)
             except Exception as e:
                 raise e
         del self.actions[guild_id][name]
@@ -301,7 +322,8 @@ class Actions(commands.Cog):
             return
 
         action = copy.deepcopy(action)
-        clean_ctx = await self.bot.get_context(ctx.message, cls=NoSendContext)  # not entirely sure yet how to override ctx.message.channel without making all hell break loose
+        clean_ctx = await self.bot.get_context(ctx.message,
+                                               cls=NoSendContext)  # not entirely sure yet how to override ctx.message.channel without making all hell break loose
 
         arg_index = 0
         for f, command in enumerate(action["commands"]):
@@ -313,7 +335,8 @@ class Actions(commands.Cog):
             arg_list = list(command["command_obj"].clean_params)
 
             argspec = inspect.getfullargspec(command["command_obj"].callback)
-            argspec = argspec._replace(kwonlydefaults={}) if argspec.kwonlydefaults is None else argspec  # makes things simpler later on
+            argspec = argspec._replace(
+                kwonlydefaults={}) if argspec.kwonlydefaults is None else argspec  # makes things simpler later on
 
             var_arg = argspec.varargs
 
@@ -327,7 +350,10 @@ class Actions(commands.Cog):
                 if command["var_arg_pos"] is not None or consume_pos is not None:
                     break
 
-            clean_params = list(command["command_obj"].clean_params)[:command["var_arg_pos"] + 1] if command["var_arg_pos"] is not None else (list(command["command_obj"].clean_params)[:consume_pos + 1] if consume_pos is not None else command["command_obj"].clean_params)
+            clean_params = list(command["command_obj"].clean_params)[:command["var_arg_pos"] + 1] if command[
+                                                                                                         "var_arg_pos"] is not None else (
+                list(command["command_obj"].clean_params)[:consume_pos + 1] if consume_pos is not None else command[
+                    "command_obj"].clean_params)
 
             for x, arg in enumerate(clean_params):
                 command["var_arg_pos"] = x if arg == var_arg else None
@@ -367,7 +393,8 @@ class Actions(commands.Cog):
                         command["var_args"].append(needed_arg)
 
                 elif arg_index < len(args):
-                    if arg in argspec.kwonlyargs and arg not in argspec.kwonlydefaults and f == len(action["commands"]) - 1 and arg_index != len(args) - 1:  # i.e. *, args type arg
+                    if arg in argspec.kwonlyargs and arg not in argspec.kwonlydefaults and f == len(
+                            action["commands"]) - 1 and arg_index != len(args) - 1:  # i.e. *, args type arg
                         command["arg_values"][arg_list[x]] = " ".join(args[arg_index:])
 
                     elif arg != var_arg:
@@ -381,15 +408,23 @@ class Actions(commands.Cog):
                     arg_index += 1
 
                 else:
-                    await ctx.send(embed=Embed(title=":x: Missing argument!", description=f"{command['command']} is missing a value for {arg} ({self.bot.ordinal(f + 1)} command)", colour=self.bot.ERROR_RED))
+                    await ctx.send(embed=Embed(title=":x: Missing argument!",
+                                               description=f"{command['command']} is missing a value for {arg} ({self.bot.ordinal(f + 1)} command)",
+                                               colour=self.bot.ERROR_RED))
                     return
 
-                annotation = command["command_obj"].clean_params[list(command["command_obj"].clean_params)[x]].annotation
+                annotation = command["command_obj"].clean_params[
+                    list(command["command_obj"].clean_params)[x]].annotation
 
                 if annotation is not inspect._empty:
                     if arg != var_arg and arg in command["arg_values"]:  # is there any point doing converters for *args? probs get passed as a tuple anyway
                         # reply won't necessarily be in arg_values
-                        command["arg_values"][arg] = await commands.run_converters(ctx, annotation, str(command["arg_values"][arg]), command["command_obj"].clean_params[list(command["command_obj"].clean_params)[x]])
+                        command["arg_values"][arg] = await commands.run_converters(ctx, annotation,
+                                                                                   str(command["arg_values"][arg]),
+                                                                                   command["command_obj"].clean_params[
+                                                                                       list(command[
+                                                                                                "command_obj"].clean_params)[
+                                                                                           x]])
 
             sorted_parts = []
             for part in command["var_args"]:
@@ -411,7 +446,7 @@ class Actions(commands.Cog):
                     try:
                         channel = self.bot.get_channel(output["channel_id"])
                     except Exception as e:
-                        await ctx.send(e)
+                        await ctx.send(str(e))
                         continue
 
                 split_content = output["content"].split()
@@ -469,19 +504,23 @@ class Actions(commands.Cog):
         commands_ = []
         command_objs = []
 
-        await ctx.send(embed=Embed(title=":information_source: Action name needed", description="Enter a name for your action", colour=Colour.from_rgb(250, 95, 85)))
+        await ctx.send(
+            embed=Embed(title=":information_source: Action name needed", description="Enter a name for your action",
+                        colour=Colour.from_rgb(250, 95, 85)))
 
         try:
             name_msg = await self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx), timeout=300)
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
+                                                             desc="Command cancelled due to timeout")
             return
 
         name = name_msg.content.replace(" ", "")
         pot_cmd = self.bot.get_command(name)
 
         if pot_cmd and (name in self.actions[ctx.guild.id] or pot_cmd.callback.__name__ != "base_action_handler"):
-            await ctx.send(embed=Embed(title=":x: Invalid action name!", description="An action name cannot be the same as an existing command or action (including aliases)"))
+            await ctx.send(embed=Embed(title=":x: Invalid action name!",
+                                       description="An action name cannot be the same as an existing command or action (including aliases)"))
             return
 
         result = None
@@ -492,9 +531,11 @@ class Actions(commands.Cog):
         await staff_check.add_reaction(self.bot.EmojiEnum.FALSE)
 
         try:
-            response = await self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.TRUE], staff_check), timeout=300)
+            response = await self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [
+                self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.TRUE], staff_check), timeout=300)
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
+                                                             desc="Command cancelled due to timeout")
             return
 
         await self.try_remove_reactions(staff_check)
@@ -507,18 +548,23 @@ class Actions(commands.Cog):
             await ctx.send(embed=Embed(title=":information_source: This action won't be marked as staff only"))
 
         while not isinstance(result, tuple):  # adding a reaction returns a tuple because... that makes sense
-            hi = await ctx.send(embed=Embed(title=":information_source: Add a command", description=f"Type the name of the {'first' if not result else 'next'} command you want to add, or click the reaction to finish", colour=Colour.from_rgb(238, 130, 238)))
+            hi = await ctx.send(embed=Embed(title=":information_source: Add a command",
+                                            description=f"Type the name of the {'first' if not result else 'next'} command you want to add, or click the reaction to finish",
+                                            colour=Colour.from_rgb(238, 130, 238)))
             await hi.add_reaction(self.bot.EmojiEnum.FALSE)
 
             try:
                 done, pending = await asyncio.wait([
                     self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx), timeout=300),
-                    self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE], hi), timeout=300)
+                    self.bot.wait_for("reaction_add",
+                                      check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE], hi),
+                                      timeout=300)
                 ], return_when=asyncio.FIRST_COMPLETED)
 
                 result = done.pop().result()
             except(asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
+                                                                 desc="Command cancelled due to timeout")
                 return
 
             for future in done:
@@ -542,10 +588,13 @@ class Actions(commands.Cog):
 
                 command = self.bot.get_command(result.content)
                 if not command:
-                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't find command!", desc="That command wasn't found!")
+                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't find command!",
+                                                                     desc="That command wasn't found!")
 
                 elif command.name == "base_action_handler":  # circular check
-                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "You can't add other actions to a new action!", desc="Try adding a command!")
+                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx,
+                                                                     "You can't add other actions to a new action!",
+                                                                     desc="Try adding a command!")
 
                 else:
                     argspec = inspect.getfullargspec(command.callback)
@@ -560,7 +609,8 @@ class Actions(commands.Cog):
                     """
 
                     for v, arg in enumerate(list(command.clean_params)):
-                        pos = v if (arg == var_arg or (arg in argspec.kwonlyargs and arg not in argspec.kwonlydefaults)) else pos
+                        pos = v if (arg == var_arg or (
+                                    arg in argspec.kwonlyargs and arg not in argspec.kwonlydefaults)) else pos
 
                         if pos is not None:  # specifically is not None rather than just if pos since pos=0 means false
                             break
@@ -578,28 +628,34 @@ class Actions(commands.Cog):
                     given_args = {}
                     seen_args = sum([len(command.clean_params) for command in command_objs]) > 0
                     for x, param in enumerate(requested_args, start=1):
-                        annotation = command.clean_params[param].annotation  # manipulate wanted as list then just refer back to dict by key for param props
+                        annotation = command.clean_params[
+                            param].annotation  # manipulate wanted as list then just refer back to dict by key for param props
                         if annotation is None or annotation == discord.Member:
-                            message = await ctx.send(embed=Embed(title=f":information_source: Managing  command values ({param})",
-                                                             description=f"React with {self.bot.EmojiEnum.TRUE} if we should look for a reply author to use for this value first"
-                                                                         f"\nNote that you will be next prompted to enter a value to fallback on if no reply is found"))  # should this only be done for annotations that could match it? for example: only for discord.Member or None type annotations
+                            message = await ctx.send(
+                                embed=Embed(title=f":information_source: Managing  command values ({param})",
+                                            description=f"React with {self.bot.EmojiEnum.TRUE} if we should look for a reply author to use for this value first"
+                                                        f"\nNote that you will be next prompted to enter a value to fallback on if no reply is found"))  # should this only be done for annotations that could match it? for example: only for discord.Member or None type annotations
 
-                        # any potential complications with this? e.g. having A B C where B could be a reply author or not
-                        # i.e. you could end up with a reply and passing A C or no reply and passing A B C, which could get confusing
-                        # todo: look at making reuse of reply args more clear, it even confused me at first
+                            # any potential complications with this? e.g. having A B C where B could be a reply author or not
+                            # i.e. you could end up with a reply and passing A C or no reply and passing A B C, which could get confusing
+                            # todo: look at making reuse of reply args more clear, it even confused me at first
 
                             await message.add_reaction(self.bot.EmojiEnum.TRUE)
                             await message.add_reaction(self.bot.EmojiEnum.FALSE)
                             try:
-                                response_ = await self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.TRUE], message), timeout=300)
+                                response_ = await self.bot.wait_for("reaction_add",
+                                                                    check=Checks.generate_emoji_check(ctx, [
+                                                                        self.bot.EmojiEnum.FALSE,
+                                                                        self.bot.EmojiEnum.TRUE], message), timeout=300)
                             except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-                                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+                                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
+                                                                                 desc="Command cancelled due to timeout")
                                 return
 
                             await self.try_remove_reactions(message)
 
                             if response_[0].emoji == self.bot.EmojiEnum.TRUE:
-                                command_props["reply_args"].append(x-1)
+                                command_props["reply_args"].append(x - 1)
 
                         # handle annotation checking here at some point, method from v2 needed for this
 
@@ -612,7 +668,9 @@ class Actions(commands.Cog):
                                 text += f"React with {self.bot.EmojiEnum.RECYCLE} to reuse a value from a previous command"
 
                             useable_value = True
-                            message = await ctx.send(embed=Embed(title=f":information_source: Managing command values ({param})", description=text, colour=Colour.from_rgb(255, 165, 0)))
+                            message = await ctx.send(
+                                embed=Embed(title=f":information_source: Managing command values ({param})",
+                                            description=text, colour=Colour.from_rgb(255, 165, 0)))
                             await message.add_reaction(self.bot.EmojiEnum.FALSE)
 
                             if seen_args > 0:
@@ -620,13 +678,16 @@ class Actions(commands.Cog):
 
                             try:
                                 done, pending = await asyncio.wait([
-                                    self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx), timeout=300),
-                                    self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.RECYCLE], message), timeout=300)
+                                    self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx),
+                                                      timeout=300),
+                                    self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [
+                                        self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.RECYCLE], message), timeout=300)
                                 ], return_when=asyncio.FIRST_COMPLETED)
 
                                 result_ = done.pop().result()
                             except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-                                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+                                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
+                                                                                 desc="Command cancelled due to timeout")
                                 return
 
                             for future in done:
@@ -640,13 +701,15 @@ class Actions(commands.Cog):
                             if isinstance(result_, discord.Message):
                                 if annotation != inspect._empty:  # conversion will always fail on _empty, although it's pointless anyway
                                     try:
-                                        await commands.run_converters(ctx, annotation, result_.content, command.clean_params[param])  # , inspect.Parameter(param, inspect.Parameter.POSITIONAL_ONLY, annotation=annotation))
+                                        await commands.run_converters(ctx, annotation, result_.content,
+                                                                      command.clean_params[
+                                                                          param])  # , inspect.Parameter(param, inspect.Parameter.POSITIONAL_ONLY, annotation=annotation))
                                     except commands.CommandError:
                                         useable_value = False
                                         await ctx.send(embed=Embed(title=f"Error using that value for ({param})",
-                                                               description="The value given is not of the type needed\nHINT: Values that need to be a member must be a name, mention or user ID of a member, other types of values are invalid"))
+                                                                   description="The value given is not of the type needed\nHINT: Values that need to be a member must be a name, mention or user ID of a member, other types of values are invalid"))
                                 if useable_value:
-                                    given_args[f"{x-1}"] = result_.content
+                                    given_args[f"{x - 1}"] = result_.content
 
                             elif result_[0].emoji == self.bot.EmojiEnum.RECYCLE:
                                 arg_command_names = []
@@ -654,85 +717,118 @@ class Actions(commands.Cog):
                                     if len(command.clean_params) > 0:
                                         arg_command_names.append((z, command.qualified_name))
 
-                                text = "\n".join([f"{y[0]}: *{y[1]}*" for y in list(enumerate([q[1] for q in arg_command_names], start=1))])
-                                await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
-                                                           description=f"Please send the number corresponding to the command that you want to reuse a value from:\n{text}",
-                                                           colour=Colour.from_rgb(0, 250, 154)))
+                                text = "\n".join([f"{y[0]}: *{y[1]}*" for y in
+                                                  list(enumerate([q[1] for q in arg_command_names], start=1))])
+                                await ctx.send(
+                                    embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
+                                                description=f"Please send the number corresponding to the command that you want to reuse a value from:\n{text}",
+                                                colour=Colour.from_rgb(0, 250, 154)))
 
                                 try:
-                                    response = await self.bot.wait_for("message", check=Checks.generate_range_check(ctx, 0, len(arg_command_names)), timeout=300)
+                                    response = await self.bot.wait_for("message",
+                                                                       check=Checks.generate_range_check(ctx, 0,
+                                                                                                         len(arg_command_names)),
+                                                                       timeout=300)
                                 except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-                                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+                                    await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
+                                                                                     desc="Command cancelled due to timeout")
                                     return
 
                                 response_command = int(response.content)
-                                params_ = self.bot.get_command(commands_[arg_command_names[response_command - 1][0]]["command"]).clean_params
+                                params_ = self.bot.get_command(
+                                    commands_[arg_command_names[response_command - 1][0]]["command"]).clean_params
                                 params = len(params_)
                                 response_arg = 1
 
                                 if params > 1:
-                                    await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
-                                                               description=f"There are {params} values for this command. Enter a number from 1-{params} to select which value you want to reuse",
-                                                               colour=Colour.from_rgb(0, 250, 154)))  # make this bit a bit nicer?
+                                    await ctx.send(
+                                        embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
+                                                    description=f"There are {params} values for this command. Enter a number from 1-{params} to select which value you want to reuse",
+                                                    colour=Colour.from_rgb(0, 250, 154)))  # make this bit a bit nicer?
 
                                     try:
-                                        response_arg = await self.bot.wait_for("message", check=Checks.generate_range_check(ctx, 0, params), timeout=300)
+                                        response_arg = await self.bot.wait_for("message",
+                                                                               check=Checks.generate_range_check(ctx, 0,
+                                                                                                                 params),
+                                                                               timeout=300)
                                     except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-                                        await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+                                        await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
+                                                                                         desc="Command cancelled due to timeout")
                                         return
                                     response_arg = int(response_arg.content)
 
                                 else:
-                                    await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})", description="Only detected one value for this command, using this.", colour=Colour.from_rgb(0, 250, 154)))
+                                    await ctx.send(
+                                        embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
+                                                    description="Only detected one value for this command, using this.",
+                                                    colour=Colour.from_rgb(0, 250, 154)))
 
                                 sel_default = commands_[response_command - 1]["defaults"].get(str(response_arg - 1))
                                 if sel_default and annotation != inspect._empty:
                                     try:
-                                        await commands.run_converters(ctx, annotation, sel_default, command.clean_params[param])
+                                        await commands.run_converters(ctx, annotation, sel_default,
+                                                                      command.clean_params[param])
                                     except commands.CommandError:
                                         useable_value = False
                                         await ctx.send(embed=Embed(title=f"Error using that value for ({param})",
                                                                    description="The value selected for reuse is not of the type needed\nHINT: Values that need to be a member must be a name, mention or user ID of a member, other types of values are invalid"))
 
                                 if useable_value:
-                                    command_props["reuse"][str(x-1)] = f"{arg_command_names[response_command - 1][0]},{response_arg - 1}"
-                                    await ctx.send(embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})", description=f"We will now reuse this command's {self.bot.ordinal(response_arg)} value for this value.", colour=Colour.from_rgb(0, 250, 154)))
+                                    command_props["reuse"][
+                                        str(x - 1)] = f"{arg_command_names[response_command - 1][0]},{response_arg - 1}"
+                                    await ctx.send(
+                                        embed=Embed(title=f"{self.bot.EmojiEnum.RECYCLE} Reusing value for ({param})",
+                                                    description=f"We will now reuse this command's {self.bot.ordinal(response_arg)} value for this value.",
+                                                    colour=Colour.from_rgb(0, 250, 154)))
 
-                        await ctx.send(embed=Embed(title="Processed value successfully!", description=f"**{command.name}**'s '({param})' has been successfully added", colour=self.bot.SUCCESS_GREEN))
+                        await ctx.send(embed=Embed(title="Processed value successfully!",
+                                                   description=f"**{command.name}**'s '({param})' has been successfully added",
+                                                   colour=self.bot.SUCCESS_GREEN))
 
                     command_props["defaults"] = given_args
 
-                    silence = await ctx.send(embed=Embed(title=f"Silence command?", description=f"React with {self.bot.EmojiEnum.TRUE} to silence this command's output, or {self.bot.EmojiEnum.FALSE} to not.\nThis will remove *most* of a command's standard output\n\n**WARNING: This can break commands that e.g. wait on response, but can be cleaner for commands that output success/error messages**", colour=Colour.from_rgb(221, 160, 221)))
+                    silence = await ctx.send(embed=Embed(title=f"Silence command?",
+                                                         description=f"React with {self.bot.EmojiEnum.TRUE} to silence this command's output, or {self.bot.EmojiEnum.FALSE} to not.\nThis will remove *most* of a command's standard output\n\n**WARNING: This can break commands that e.g. wait on response, but can be cleaner for commands that output success/error messages**",
+                                                         colour=Colour.from_rgb(221, 160, 221)))
                     await silence.add_reaction(self.bot.EmojiEnum.TRUE)
                     await silence.add_reaction(self.bot.EmojiEnum.FALSE)
 
                     try:
-                        response = await self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.TRUE], silence), timeout=300)
+                        response = await self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [
+                            self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.TRUE], silence), timeout=300)
                     except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
-                        await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out", desc="Command cancelled due to timeout")
+                        await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
+                                                                         desc="Command cancelled due to timeout")
                         return
 
                     command_props["silent"] = True if response[0].emoji == self.bot.EmojiEnum.TRUE else False
 
                     await self.try_remove_reactions(silence)
 
-                    await ctx.send(embed=Embed(title=f"Successfully applied option", description=f"The command will now {'not' if not command_props['silent'] else ''} be silenced"))
+                    await ctx.send(embed=Embed(title=f"Successfully applied option",
+                                               description=f"The command will now {'not' if not command_props['silent'] else ''} be silenced"))
 
                     result_ = []
                     while True:
 
-                        output = await ctx.send(embed=Embed(title=f"Add {'more ' if command_props['outputs'] else ''}outputs to this command?", description=f"Type a channel name to start, react with {self.bot.EmojiEnum.SPEAKING} send in the channel the command is used in, or react with :x: to cancel"))
+                        output = await ctx.send(embed=Embed(
+                            title=f"Add {'more ' if command_props['outputs'] else ''}outputs to this command?",
+                            description=f"Type a channel name to start, react with {self.bot.EmojiEnum.SPEAKING} send in the channel the command is used in, or react with :x: to cancel"))
                         await output.add_reaction(self.bot.EmojiEnum.FALSE)
                         await output.add_reaction(self.bot.EmojiEnum.SPEAKING)
 
-                        channel_conv = await self.try_conversion(ctx, getattr(result_, "content", None), discord.TextChannel, "content")
-                        thread_conv = await self.try_conversion(ctx, getattr(result_, "content", None), discord.Thread, "content")
+                        channel_conv = await self.try_conversion(ctx, getattr(result_, "content", None),
+                                                                 discord.TextChannel, "content")
+                        thread_conv = await self.try_conversion(ctx, getattr(result_, "content", None), discord.Thread,
+                                                                "content")
                         while not channel_conv and not thread_conv:  # can't have async checks
 
                             try:
                                 done, pending = await asyncio.wait([
-                                    self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx), timeout=300),
-                                    self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.SPEAKING], output), timeout=300)
+                                    self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx),
+                                                      timeout=300),
+                                    self.bot.wait_for("reaction_add", check=Checks.generate_emoji_check(ctx, [
+                                        self.bot.EmojiEnum.FALSE, self.bot.EmojiEnum.SPEAKING], output), timeout=300)
                                 ], return_when=asyncio.FIRST_COMPLETED)
 
                                 result_ = done.pop().result()
@@ -755,19 +851,26 @@ class Actions(commands.Cog):
                         if isinstance(result_, discord.Message) or result_[0].emoji == self.bot.EmojiEnum.SPEAKING:
                             if isinstance(result_, discord.Message):
                                 if channel_conv:
-                                    channel = await commands.run_converters(ctx, discord.TextChannel, result_.content, inspect.Parameter("content", inspect.Parameter.POSITIONAL_ONLY))
+                                    channel = await commands.run_converters(ctx, discord.TextChannel, result_.content,
+                                                                            inspect.Parameter("content",
+                                                                                              inspect.Parameter.POSITIONAL_ONLY))
                                 else:
-                                    channel = await commands.run_converters(ctx, discord.Thread, result_.content, inspect.Parameter("content", inspect.Parameter.POSITIONAL_ONLY))
+                                    channel = await commands.run_converters(ctx, discord.Thread, result_.content,
+                                                                            inspect.Parameter("content",
+                                                                                              inspect.Parameter.POSITIONAL_ONLY))
                                 channel_id = channel.id
                             else:
                                 channel_id = 0
 
-                            await ctx.send(embed=Embed(title=f"Successfully selected channel!", description="Type a message to send to this channel once the command is complete"
-                                                                                                            "\nTIP: You can use markers like <1.1.mention> in your message, which will take mention from the 1st value from the 1st command"
-                                                                                                            "This is useful for mentioning users or channels after your command is complete"))
+                            await ctx.send(embed=Embed(title=f"Successfully selected channel!",
+                                                       description="Type a message to send to this channel once the command is complete"
+                                                                   "\nTIP: You can use markers like <1.1.mention> in your message, which will take mention from the 1st value from the 1st command"
+                                                                   "This is useful for mentioning users or channels after your command is complete"))
 
                             try:
-                                response = await self.bot.wait_for("message", check=Checks.generate_std_message_check(ctx), timeout=300)
+                                response = await self.bot.wait_for("message",
+                                                                   check=Checks.generate_std_message_check(ctx),
+                                                                   timeout=300)
                             except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError):
                                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Timed out",
                                                                                  desc="Command cancelled due to timeout")
@@ -794,8 +897,9 @@ class Actions(commands.Cog):
         if commands_:
             action["commands"] = commands_
             await self.propagate_action(ctx, name, action)
-            await ctx.send(embed=Embed(title="Added action successfully!", description=f"{name} has been added as a new action!"))
+            await ctx.send(
+                embed=Embed(title="Added action successfully!", description=f"{name} has been added as a new action!"))
 
 
-async def setup(bot) -> None:
+async def setup(bot: AdamBot) -> None:
     await bot.add_cog(Actions(bot))

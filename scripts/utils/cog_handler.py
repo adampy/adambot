@@ -1,6 +1,7 @@
 import json
-import discord
 import os
+
+import discord
 
 
 class CogHandler:
@@ -54,7 +55,8 @@ class CogHandler:
                         other_params = table_schema.get("other_params", [])
                         migrate = table_schema.get("migrate", {})
                         if fields and type(fields) is list:
-                            self.db_tables.append({"name": key, "fields": fields, "other_params": other_params, "migrate": migrate})
+                            self.db_tables.append(
+                                {"name": key, "fields": fields, "other_params": other_params, "migrate": migrate})
 
                 config_keys = cog_config.get("config_keys", {})
                 if config_keys:
@@ -62,7 +64,9 @@ class CogHandler:
                         key_ = config_keys.get(key)
                         migrate = key_.get("migrate_from", "")
                         if migrate:
-                            self.db_tables[[self.db_tables.index(table) for table in self.db_tables if table["name"] == "config"][0]]["migrate"][key] = migrate  # hint: should be moved to 2d dict ;)
+                            self.db_tables[
+                                [self.db_tables.index(table) for table in self.db_tables if table["name"] == "config"][
+                                    0]]["migrate"][key] = migrate  # hint: should be moved to 2d dict ;)
 
                 if final in self.core_cogs:
                     self.cog_list[final]["core"] = True
@@ -106,7 +110,7 @@ class CogHandler:
                 for key in self.cog_list[name].get("config_keys", []):
                     data = self.cog_list[name]["config_keys"][key]
                     print(f"Sent config key {key} in for validation (requested by cog {name})")
-                    self.bot.config_cog.register_config_key(key, data["validator"], data["description"])
+                    self.bot.register_config_key(key, data["validator"], data["description"])
                 await self.bot.load_extension(name)
                 print(f"\n[+]    {name}")
             except Exception as e:
@@ -120,7 +124,9 @@ class CogHandler:
         for name in self.cog_list:
             result = await self.load_cog(name)
             if not result[0]:
-                print(f"\n\n\n[-]   {name} could not be loaded due to an error! " + f"See the error below for more details\n\n{type(result[1]).__name__}: {result[1]}" if result[1] else "")
+                print(
+                    f"\n\n\n[-]   {name} could not be loaded due to an error! " + f"See the error below for more details\n\n{type(result[1]).__name__}: {result[1]}" if
+                    result[1] else "")
                 if name in self.core_cogs:
                     print(f"Exiting since a core cog could not be loaded...")
                     exit()

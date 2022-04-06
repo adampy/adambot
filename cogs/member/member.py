@@ -1,337 +1,264 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
-from discord import Embed, Colour, Status, app_commands
-import re
-from datetime import datetime, timedelta
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+
+from . import member_handlers
 
 
 class Member(commands.Cog):
     def __init__(self, bot) -> None:
+        """
+        Sets up the member cog with a provided bot.
+
+        Loads and initialises the MemberHandlers class
+        """
+
         self.bot = bot
+        self.Handlers = member_handlers.MemberHandlers(bot)
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
-        await self.bot.tree.sync()
-        await self.bot.tasks.register_task_type("reminder", self.handle_remind, needs_extra_columns={
-            "member_id": "bigint",
-            "channel_id": "bigint",
-            "guild_id": "bigint",
-            "reason": "varchar(255)"})
+        """
+        A method which listens for the bot to be ready.
 
-# -----------------------QUOTE------------------------------
+        Syncs the application commands here.
+        """
 
-    @commands.command(pass_context=True)
+        await self.bot.tree.sync()  # possibly doesn't need to be done on every start
+        await self.bot.tasks.register_task_type("reminder",
+                                                self.handle_remind,
+                                                needs_extra_columns=
+                                                    {
+                                                        "member_id": "bigint",
+                                                        "channel_id": "bigint",
+                                                        "guild_id": "bigint",
+                                                        "reason": "varchar(255)"
+                                                    }
+                                                )
+
+    # -----------------------QUOTE------------------------------
+
+    @commands.command()
+    @commands.guild_only()
     async def quote(self, ctx: commands.Context, messageid: int, channel: discord.TextChannel | discord.Thread) -> None:
         """
-        Quote a message to remember it.
+        Quote a message from its ID.
+        Channel can be a standard channel or a thread.
         """
 
-        try:
-            msg = await channel.fetch_message(messageid)
-        except Exception:
-            await ctx.send(f"```{ctx.prefix}quote <message_id> [channel_id]```")
-            return
+        await self.Handlers.quote(ctx, int(messageid), channel)
 
-        user = msg.author
-        image = None
-        repl = re.compile(r"/(\[.+?)(\(.+?\))/")
-        edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ""
+    @app_commands.command(
+        name="quote",
+        description="Quote a message from a specified channel or thread"
+    )
+    @app_commands.describe(
+        messageid="The ID of the message to quote",
+        channel="The channel or thread to retrieve this message from"
+    )
+    async def quote_slash(self, interaction: discord.Interaction, messageid: str,
+                          channel: discord.TextChannel | app_commands.AppCommandThread) -> None:  # for some bizarre reason discord.Thread is not the type used in the transformer
+        """
+        Slash command equivalent of the classic quote command
+        """
 
-        content = re.sub(repl, r"\1​\2", msg.content)
+        await self.Handlers.quote(interaction, messageid, await channel.fetch())
 
-        if msg.attachments:
-            image = msg.attachments[0].url
-
-        embed = Embed(title="Quote link",
-                      url=f"https://discordapp.com/channels/{channel.id}/{messageid}",
-                      color=user.color,
-                      timestamp=msg.created_at)
-
-        if image:
-            embed.set_image(url=image)
-        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}", icon_url=get_user_avatar_url(user, mode=1)[0])
-        embed.description = f"❝ {content} ❞" + edited
-        await ctx.send(embed=embed)
-
-        try:
-            await ctx.message.delete()
-        except Exception as e:
-            print(e)
-
-# -----------------------FUN------------------------------
+    # -----------------------FUN------------------------------
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
+        """
+        Listener to update the bruh counter.
+        """
+
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
 
-        if "bruh" in message.content.lower() and not message.author.bot and True not in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
+        if "bruh" in message.content.lower() and not message.author.bot and True not in [
+            message.content.startswith(prefix) for prefix in
+            await self.bot.get_used_prefixes(message)]:  # fix prefix detection
             async with self.bot.pool.acquire() as connection:
                 await connection.execute("UPDATE config SET bruhs=bruhs + 1 WHERE guild_id=($1)", message.guild.id)
         return
 
     @commands.command(aliases=["bruh"])
+    @commands.guild_only()
     async def bruhs(self, ctx: commands.Context) -> None:
-        """See how many bruh moments we"ve had"""
-        async with self.bot.pool.acquire() as connection:
-            global_bruhs = await connection.fetchval("SELECT SUM(bruhs) FROM config;")
-            guild_bruhs = await connection.fetchval("SELECT bruhs FROM config WHERE guild_id=($1)", ctx.guild.id)
+        """
+        Display the number of "bruhs" recorded for the context guild.
+        """
 
-        await ctx.send(f"•**Global** bruh moments: **{global_bruhs}**\n•**{ctx.guild.name}** bruh moments: **{guild_bruhs}**")
+        await ctx.send(await self.Handlers.bruhs(ctx.guild))
+
+    @app_commands.command(
+        name="bruhs",
+        description="Find out how many bruhs have been recorded in this server"
+    )
+    async def bruhs_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash command equivalent of the classic bruhs command.
+        """
+
+        await interaction.response.send_message(self.Handlers.bruhs(interaction.guild))
 
     @commands.command()
+    @commands.guild_only()
     async def cool(self, ctx: commands.Context, *, text: str) -> None:
         """
         MaKe YoUr MeSsAgE cOoL
         """
 
-        new = ""
-        uppercase = True
-        for index, letter in enumerate(text):
-            ascii_num = ord(letter)
-            try:
-                if not (65 <= ascii_num <= 90 or 97 <= ascii_num <= 122):
-                    new += letter
-                    continue
-
-                if uppercase:
-                    new += letter.upper()
-                else:
-                    new += letter.lower()
-                uppercase = not uppercase
-            except Exception:
-                new += letter
-
-        await ctx.send(new)
+        await ctx.send(await self.Handlers.cool(text))
         await ctx.message.delete()
 
+    @app_commands.command(
+        name="cool",
+        description="MaKe YoUr TeXt CoOl"
+    )
+    @app_commands.describe(
+        text="The text to make cool"
+    )
+    async def cool_slash(self, interaction: discord.Interaction, text: str) -> None:
+        """
+        Slash command equivalent of the classic command "cool"
+        """
+
+        await interaction.response.send_message(await self.Handlers.cool(text))
+
     @commands.command()
+    @commands.guild_only()
     async def cringe(self, ctx: commands.Context) -> None:
+        """
+        A classic command that sends the cringe video.
+        """
+
         await ctx.message.delete()
-        await ctx.send("https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4")
+        await ctx.send(await self.Handlers.cringe())
+
+    @app_commands.command(
+        name="cringe",
+        description="Post the cringe video"
+    )
+    async def cringe_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash command equivalent of the classic command "cringe"
+        """
+
+        await interaction.response.send_message(await self.Handlers.cringe())
 
     @commands.command()
-    async def spamping(self, ctx: commands.Context, amount: str, user: discord.Member | discord.Role, *, message) -> None:
+    @commands.guild_only()
+    async def spamping(self, ctx: commands.Context, amount: str, user: discord.Member | discord.Role, *,
+                       message: str) -> None:
         """
-        For annoying certain people
+        Repeatedly pings with a specified message.
+        Can be used for users or roles.
+
+        Requires administrator permissions or the "spamping_access" key to be configured for the context guild
         """
 
-        if not amount.isdigit() or (amount.isdigit() and int(amount) > 100):
-            await ctx.send("`amount` given must be an integer less than or equal to 100!")
-            return
+        await ctx.message.delete()
+        await self.Handlers.spamping(ctx, amount, user, message)
 
-        if ctx.author.guild_permissions.administrator or await self.bot.get_config_key(ctx, "spamping_access"):  # Only allow command if in private server or admin
-            await ctx.message.delete()
-            msg = f"{message} {user.mention}"
-            for i in range(int(amount)):
-                await ctx.send(msg)
-        else:
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+    @app_commands.command(
+        name="spamping",
+        description="Spam ping a user or role"
+    )
+    @app_commands.describe(
+        amount="The amount of pings to perform",
+        user="The user or role to spamping",
+        message="The message to accompany each ping"
+    )
+    async def spamping_slash(self, interaction: discord.Interaction, amount: int, user: discord.Member | discord.Role,
+                             message: str) -> None:
+        await self.Handlers.spamping(interaction, amount, user, message)
 
     @commands.command()
-    async def ghostping(self, ctx: commands.Context, amount: str, user: discord.Member) -> None:
+    @commands.guild_only()
+    async def ghostping(self, ctx: commands.Context, amount: str, user: discord.Member | discord.Role) -> None:
         """
-        For sending a ghostping to annoy certain people
+        A classic command for ghostpinging a given user or role in all of a specified guild's channels
         """
 
-        if not amount.isdigit() or (amount.isdigit() and int(amount) > 100):
-            await ctx.send("`amount` given must be an integer less than or equal to 100!")
-            return
+        await ctx.message.delete()
+        await self.Handlers.ghostping(ctx, user, amount)
 
-        if ctx.author.guild_permissions.administrator or await self.bot.get_config_key(ctx, "spamping_access"):  # Only allow command if in private server or admin
-            await ctx.message.delete()
-            for i in range(int(amount)):
-                for channel in [channel for channel in ctx.guild.channels if type(channel) in [discord.TextChannel, discord.Thread]]:
-                    try:
-                        msg = await channel.send(user.mention)
-                        await msg.delete()
-                    except discord.Forbidden:
-                        pass
-        else:
-            await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
+    @app_commands.command(
+        name="ghostping",
+        description="Ghost ping a user or role"
+    )
+    @app_commands.describe(
+        amount="The amount of pings to perform",
+        member="The member or role to ghostping"
+    )
+    async def ghostping_slash(self, interaction: discord.Interaction, amount: int,
+                              member: discord.Member | discord.Role) -> None:
+        """
+        Slash command equivalent for the classic command "ghostping"
+        """
+
+        await self.Handlers.ghostping(interaction, member, amount)
 
     # -----------------------USER AND SERVER INFO------------------------------
 
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.guild_only()
     async def serverinfo(self, ctx: commands.Context) -> None:
         """
-        Information about the server.
+        A classic command to display information about the context guild
         """
 
-        guild = ctx.message.guild
-        time_ = guild.created_at
-        time_since = discord.utils.utcnow() - time_
+        await ctx.send(embed=await self.Handlers.serverinfo(ctx.guild, ctx.author))
 
-        join = Embed(title=f"**__{str(guild)}__**",
-                     description=f"Created at {self.bot.correct_time(time_).strftime(self.bot.ts_format)}. That's {time_since.days} days ago!",
-                     color=Colour.from_rgb(21, 125, 224))
-        icon_url = get_guild_icon_url(guild)
-        if icon_url:
-            join.set_thumbnail(url=icon_url)
+    @app_commands.command(
+        name="serverinfo",
+        description="Display the server info"
+    )
+    async def serverinfo_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash command equivalent of the classic command "serverinfo"
+        """
 
-        join.add_field(name="Users Online",
-                       value=f"{len([x for x in guild.members if x.status != Status.offline])}/{len(guild.members)}")
-        if ctx.guild.rules_channel:  # only community
-            join.add_field(name="Rules Channel", value=f"{ctx.guild.rules_channel.mention}")
-        join.add_field(name="Text Channels", value=f"{len(guild.text_channels)}")
-        join.add_field(name="Voice Channels", value=f"{len(guild.voice_channels)}")
-
-        join.add_field(name="Roles", value=f"{len(guild.roles)}")
-        join.add_field(name="Owner", value=f"{str(guild.owner)}")
-        join.add_field(name="Server ID", value=f"{guild.id}")
-
-        join.add_field(name="Emoji slots filled", value=f"{len(ctx.guild.emojis)}/{ctx.guild.emoji_limit}")
-        join.add_field(name="Sticker slots filled", value=f"{len(ctx.guild.stickers)}/{ctx.guild.sticker_limit}")
-        join.add_field(name="Upload size limit", value=f"{guild.filesize_limit/1048576} MB")
-
-        join.add_field(name="Boost level", value=f"{ctx.guild.premium_tier} ({ctx.guild.premium_subscription_count} boosts, {len(ctx.guild.premium_subscribers)} boosters)")
-        join.add_field(name="Default Notification Level", value=f"{self.bot.make_readable(guild.default_notifications.name)}")
-        join.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
-                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
-
-        await ctx.send(embed=join)
+        await interaction.response.send_message(
+            embed=await self.Handlers.serverinfo(interaction.guild, interaction.user))
 
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def userinfo(self, ctx: commands.Context, *, args: discord.Member | str = "") -> None:
-        await ctx.send(embed=await self.userinfo_embed_construct(ctx, args))
-
-    @app_commands.command(name="userinfo")
-    @app_commands.describe(member="The member to get the userinfo of. Can be name or mention")
-    async def userinfo_slash(self, interaction, *, member: str = ""):   # can't do both types because it isn't supported
-        await interaction.response.send_message(embed=await self.userinfo_embed_construct(await self.bot.interaction_context(self.bot, interaction), member))
-
-    async def userinfo_embed_construct(self, ctx, args):
         """
-        Information about you or a user
+        A classic command to display information about a specified member
         """
 
-        author = ctx.author
-        guild = ctx.guild
+        await ctx.send(embed=await self.Handlers.userinfo(ctx, args))
 
-        if len(args) == 0:
-            user = author
-        else:
-            user = await self.bot.get_spaced_member(ctx, self.bot, args=args)
-            args = args.replace("<", "").replace(">", "").replace("@", "").replace("!", "")
-            if user is None and args.isdigit():
-                user = await self.bot.fetch_user(int(args))  # allows getting some limited info about a user that isn't a member of the guild
-            if user is None:
-                return Embed(title="Userinfo",
-                                           description=f":x:  **Sorry {ctx.author.display_name} we could not find that user!**",
-                                           color=Colour.from_rgb(255, 7, 58))
+    @app_commands.command(
+        name="userinfo",
+        description="Display userinfo for a given user"
+    )
+    @app_commands.describe(
+        member="The member to get the userinfo of"
+    )
+    @app_commands.checks.bot_has_permissions(embed_links=True)
+    async def userinfo_slash(self, interaction: discord.Interaction, member: str = "") -> None:
+        """
+        Slash command equivalent of the classic command "userinfo"
+        """
 
-        is_member = isinstance(user, discord.Member)
-        if is_member:
-            statuses = ""
-            if user.desktop_status != discord.Status.offline:
-                statuses += f"{getattr(self.bot.EmojiEnum, str(user.desktop_status).upper())} Desktop "
-            if user.web_status != discord.Status.offline:
-                statuses += f"{getattr(self.bot.EmojiEnum, str(user.web_status).upper())} Web "
-            if user.mobile_status != discord.Status.offline:
-                statuses += f"{getattr(self.bot.EmojiEnum, str(user.mobile_status).upper())} Mobile"
-            if not statuses:
-                statuses = "in offline status"
-            else:
-                statuses = f"using {statuses}"
+        await interaction.response.send_message(
+            embed=await self.Handlers.userinfo(await self.bot.interaction_context(self.bot, interaction), member))
 
-            data = Embed(description=f"Chilling {statuses}" if is_member else "", colour=user.colour)
-        else:
-            data = Embed(colour=user.colour)
+    # -----------------------REMIND------------------------------
 
-        data.add_field(name="User ID", value=f"{user.id}")
-        user_created = self.bot.correct_time(user.created_at.replace(tzinfo=None)).strftime(self.bot.ts_format)
-        #since_created = (ctx.message.created_at - user.created_at).days
-        now = datetime.utcnow()
-        since_created = (now - user.created_at.replace(tzinfo=None)).days
-        created_on = f"{user_created}\n({since_created} days ago)"
-        data.add_field(name="Joined Discord on", value=created_on)
-
-        if is_member:
-
-            joined_at = user.joined_at.replace(tzinfo=None)
-
-            if joined_at is not None:
-                since_joined = (now - joined_at).days
-                user_joined = self.bot.correct_time(joined_at).strftime(self.bot.ts_format)
-
-            else:
-                since_joined = "?"
-                user_joined = "Unknown"
-
-            voice_state = user.voice
-
-            member_number = (
-                    sorted(guild.members, key=lambda m: m.joined_at or now).index(user)
-                    + 1
-            )
-
-            joined_on = f"{user_joined}\n({since_joined} days ago)"
-
-            data.add_field(name="Joined this server on", value=joined_on)
-            data.add_field(name="Position", value=f"#{member_number}/{len(guild.members)}")
-            for activity in user.activities:
-                if isinstance(activity, discord.Spotify):
-                    diff = discord.utils.utcnow() - activity.start  # timedeltas have stupid normalisation of days, seconds, milliseconds because that make sense
-                    data.add_field(name="Listening to Spotify",
-                               value=f"{activity.title} by {activity.artist} on {activity.album} ({self.bot.time_str(diff.seconds + diff.days * 86400)} elapsed)", inline=False)
-
-                elif isinstance(activity, discord.CustomActivity):
-                    data.add_field(name="Custom Status", value=f"{activity.name}", inline=False)
-
-                else:
-                    """
-                    It's worth noting that all activities normally have details attached, but Game objects do NOT have details
-                    Rationale: memory optimisation
-                    """
-                    if activity.start:
-                        diff = discord.utils.utcnow() - activity.start
-                        diff = f"({self.bot.time_str(diff.seconds + diff.days * 86400)} elapsed)"
-                    else:
-                        diff = ""
-                    data.add_field(name=f"{type(activity).__name__}", value=f"{activity.name} {diff}\n{'' if not hasattr(activity, 'details') else activity.details}", inline=False)
-
-            roles = user.roles[1:]
-            if roles:
-                disp_roles = ", ".join([role.mention for role in roles[:-11:-1]])
-                if len(roles) > 10:
-                    disp_roles += f" (+{len(roles) - 10} roles)"
-                data.add_field(name="Roles", value=disp_roles, inline=False)
-
-            else:
-                data.add_field(name="Roles", value="No roles currently!")
-
-            if voice_state and voice_state.channel:
-                data.add_field(
-                    name="Current voice channel",
-                    value=f"{voice_state.channel.mention} ID: {voice_state.channel.id}",
-                    inline=False,
-                )
-
-        data.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (self.bot.correct_time()).strftime(
-                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
-        flags = user.public_flags.all()  # e.g. hypesquad stuff
-        if flags:
-            desc = []
-            for flag in flags:
-                desc.append(self.bot.make_readable(flag.name))  # PyCharm likes to complain about this but it's an enum so... it's perfectly valid
-            desc = ", ".join(desc)
-            data.add_field(name="Special flags", value=desc, inline=False)
-
-        name = f"{user} ~ {user.display_name}"
-
-        avatar = get_user_avatar_url(user, mode=1)[0]
-        data.set_author(name=name, icon_url=avatar)
-        data.set_thumbnail(url=avatar)
-
-        return data
-        #await ctx.send(embed=data)
-
-# -----------------------REMIND------------------------------
     async def handle_remind(self, data: dict) -> None:
+        """
+        A method to handle the sending of reminders when they are due
+
+        If the members DMs are closed, the reminder is sent in the channel the command
+        was invoked in.
+        """
+
         try:
             member = self.bot.get_user(data["member_id"])
             message = f"You told me to remind you about this:\n{data['reason']}"
@@ -343,13 +270,11 @@ class Member(commands.Cog):
         except Exception as e:
             print(f"REMIND: {type(e).__name__}: {e}")
 
-    @commands.command(pass_context=True, aliases=["rm", "remindme"])
+    @commands.command(aliases=["rm", "remindme"])
     @commands.guild_only()
     async def remind(self, ctx: commands.Context, *, args: str) -> None:
         """
-        Command that is executed when a user wants to be reminded of something.
-        If the members DMs are closed, the reminder is sent in the channel the command
-        was invoked in.
+        A classic command for user reminders
         """
 
         timeperiod = ""
@@ -357,110 +282,141 @@ class Member(commands.Cog):
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["time", "reason"], blank_as_flag="reason")
             timeperiod = parsed_args["time"]
             reason = parsed_args["reason"]
+            await self.Handlers.remind(ctx, timeperiod, reason=reason)
         if not args or not timeperiod:
             await ctx.send(f"```{ctx.prefix}remind <sentence...> -t <time>```")
             return
 
-        str_tp = self.bot.time_str(timeperiod)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
-        str_reason = "*Reminder:* " + (reason if reason else "(Not specified)")
-        reminder = "*When:* " + str_tp + " ago\n" + str_reason
+    @app_commands.command(
+        name="remind",
+        description="Set up a reminder"
+    )
+    @app_commands.describe(
+        time="The delay for the reminder in a format like 1w2d3h1m2s",
+        reason="Reason for the reminder"
+    )
+    async def remind_slash(self, interaction: discord.Interaction, time: str, reason: str = "") -> None:
+        """
+        Slash command equivalent of the classic command "remind"
+        """
 
-        if len(reminder) >= 256:
-            await ctx.send("Please shorten your reminder to under 256 characters.")
-            return
+        await self.Handlers.remind(interaction, self.bot.time_arg(time), reason=reason)
 
-        await self.bot.tasks.submit_task("reminder", datetime.utcnow() + timedelta(seconds=timeperiod),
-                                         {"member_id": ctx.author.id, "channel_id": ctx.channel.id,
-                                          "guild_id": ctx.guild.id, "reason": reminder})
+    # -----------------------AVATAR------------------------------
 
-        await ctx.send(
-            f":ok_hand: You'll be reminded in {str_tp} via a DM! (or in this channel if your DMs are closed)")
-
-# -----------------------AVATAR------------------------------
-
-    @commands.command(pass_context=True, aliases=["pfp"])
+    @commands.command(aliases=["pfp"])
+    @commands.guild_only()
     async def avatar(self, ctx: commands.Context, member: discord.Member | discord.User = None) -> None:
-        if not member:
-            member = ctx.author
+        """
+        A classic command which gets the avatar(s) of a specified member
+        """
 
-        avatar_urls = get_user_avatar_url(member, mode=2)
+        await ctx.send(await self.Handlers.avatar(member if member else ctx.author))
 
-        if len(avatar_urls) == 1 or avatar_urls[0] == avatar_urls[1]:
-            await ctx.send(avatar_urls[0])
-        else:
-            await ctx.send(f"**ACCOUNT AVATAR:**\n{avatar_urls[0]}")
-            await ctx.send(f"**SERVER AVATAR:**\n{avatar_urls[1]}")
+    @app_commands.command(
+        name="avatar",
+        description="Display the avatar for a specified user"
+    )
+    @app_commands.describe(
+        member="The member to get the avatar(s) of"
+    )
+    async def avatar_slash(self, interaction, member: discord.Member | discord.User = None) -> None:
+        """
+        Slash command equivalent of the classic command "avatar"
+        """
 
-# -----------------------COUNTDOWNS------------------------------
+        await interaction.response.send_message(await self.Handlers.avatar(member if member else interaction.user))
 
-    @commands.command(pass_context=True, aliases=["results", "gcseresults", "alevelresults"])
+    # -----------------------COUNTDOWNS------------------------------
+
+    @commands.command(aliases=["results", "gcseresults", "alevelresults"])
+    @commands.guild_only()
     async def resultsday(self, ctx: commands.Context, hour: str = "") -> None:
-        if ctx.invoked_with in ["resultsday", "gcseresults", "results", None]:
-            which = "GCSE"
-        else:
-            which = "A-Level"
-        if not hour:
-            hour = 10
-        else:
-            try:
-                hour = int(hour)
-            except ValueError:
-                await ctx.send("You must choose an integer between 0 and 23 for the command to work!")
+        """
+        A classic command which displays a countdown embed for the specified results day
+        """
 
-        if not 0 <= hour < 24:
-            await ctx.send("The hour must be between 0 and 23!")
-            return
+        which = "GCSE" if ctx.invoked_with in ["resultsday", "gcseresults", "results", None] else "A-Level"
+        await self.Handlers.resultsday(ctx, hour, which=which)
 
-        if hour == 12:
-            string = "noon"
-        elif hour == 0:
-            string = "0:00AM"
-        elif hour >= 12:
-            string = f"{hour - 12}PM"
-        else:
-            string = f"{hour}AM"
-        rn = self.bot.correct_time()
-        if which == "GCSE":
-            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=18, hour=hour, minute=0, second=0))
-        else:
-            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=11, hour=hour, minute=0, second=0))
-        embed = Embed(title=f"Countdown until {which} results day at {string} (on {time_.day}/{time_.month}/{time_.year})",
-                      color=Colour.from_rgb(148, 0, 211))
+    @app_commands.command(
+        name="results",
+        description="Display the countdown to GCSE results day"
+    )
+    @app_commands.describe(
+        hour="The hour to countdown to on results day"
+    )
+    async def resultsday_slash(self, interaction: discord.Interaction, hour: int = 10) -> None:
+        """
+        Slash command equivalent of the classic command "resultday" for GCSE
+        """
 
-        if rn > time_:
-            embed.description = "Results have already been released!"
-        else:
-            time_ = time_ - rn
-            m, s = divmod(time_.seconds, 60)
-            h, m = divmod(m, 60)
-            embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining"
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
-        icon_url = get_guild_icon_url(ctx.guild)
-        if icon_url:
-            embed.set_thumbnail(url=icon_url)
-        await ctx.send(embed=embed)
+        await self.Handlers.resultsday(interaction, hour)
 
-    @commands.command(pass_context=True, aliases=["exams", "alevels"])
+    @app_commands.command(
+        name="alevelresults",
+        description="Display the countdown to A-Level results day"
+    )
+    @app_commands.describe(
+        hour="The hour to countdown to on results day"
+    )
+    async def aresultsday_slash(self, interaction: discord.Interaction, hour: int = 10) -> None:
+        """
+        Slash command equivalent of the classic command "resultday" for A-Level
+        """
+
+        await self.Handlers.resultsday(interaction, hour, which="A-Level")
+
+    @commands.command(aliases=["exams", "alevels"])
+    @commands.guild_only()
     async def gcses(self, ctx: commands.Context) -> None:
-        embed = Embed(title="Information on UK exams", color=Colour.from_rgb(148, 0, 211))
-        now = self.bot.correct_time()
-        time_ = self.bot.correct_time(datetime(year=2022, month=5, day=16, hour=9, minute=0, second=0))
-        if now > time_:
-            embed.description = "Exams have already started!"
-        else:
-            time_ = time_ - now
-            m, s = divmod(time_.seconds, 60)
-            h, m = divmod(m, 60)
-            embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining until the first exam (RS Paper 1)"
+        """
+        A classic command that shows a countdown embed for the specified type of exams.
+        """
 
-        embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + (
-                    self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
-        await ctx.send(embed=embed)
+        await self.Handlers.gcses(ctx, command=ctx.invoked_with)
 
-    @commands.command(pass_context=True)
+    @app_commands.command(
+        name="gcses",
+        description="Display the countdown to the first GCSE exam"
+    )
+    async def gcses_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash command equivalent of the classic command "gcses" for GCSE
+        """
+
+        await self.Handlers.gcses(interaction)
+
+    @app_commands.command(
+        name="alevels",
+        description="Display the countdown to the first A-Level exam"
+    )
+    async def alevels_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash command equivalent of the classic command "gcses" for A-Level
+        """
+
+        await self.Handlers.gcses(interaction, command="alevels")
+
+    @commands.command()
+    @commands.guild_only()
     async def code(self, ctx: commands.Context) -> None:
-        await ctx.send(f"Adam-Bot code can be found here: {self.bot.CODE_URL}")
+        """
+        A classic command to send a link to the code for the project.
+        """
+
+        await ctx.send(await self.Handlers.code())
+
+    @app_commands.command(
+        name="code",
+        description="Get the link to the code for this bot"
+    )
+    async def code_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash equivalent of the classic command "code"
+        """
+
+        await interaction.response.send_message(await self.Handlers.code())
 
 
 async def setup(bot) -> None:

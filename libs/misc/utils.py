@@ -1,26 +1,27 @@
+import asyncio
+from datetime import datetime
+from datetime import timedelta
+from io import BytesIO, StringIO
+from math import ceil
 from typing import Optional
 
 import discord
 from discord import Embed, Colour, Message, File
 from discord.ext import commands
-from math import ceil
-from datetime import timedelta
-from io import BytesIO, StringIO
-import asyncio
-from datetime import datetime
 
 
 class EmbedPages:
-    def __init__(self, page_type: int, data: list, title: str, colour: Colour, bot, initiator: discord.Member, channel: discord.TextChannel | discord.Thread, desc: str = "", thumbnail_url: str = "",
-                 footer: str = "", icon_url: str = "") -> None:
+    def __init__(self, page_type: int, data: dict, title: str, colour: Colour, bot, initiator: discord.Member,
+                 channel: discord.TextChannel | discord.Thread, desc: str = "", thumbnail_url: str = "",
+                 footer: str = "", icon_url: str = "", ctx: commands.Context | discord.Interaction = None) -> None:
         self.bot = bot
         self.data = data
         self.title = title
         self.page_type = page_type
         self.top_limit = 0
         self.timeout = 300  # 300 seconds, or 5 minutes
-        self.embed: Embed = None  # Embed(title=title + ": Page 1", color=colour, desc=desc)
-        self.message: Message = None
+        self.embed: Optional[Embed] = None  # Embed(title=title + ": Page 1", color=colour, desc=desc)
+        self.message: Optional[Message] = None
         self.page_num = 1
         self.initiator = initiator  # Here to stop others using the embed
         self.channel = channel
@@ -31,6 +32,8 @@ class EmbedPages:
         self.thumbnail_url = thumbnail_url
         self.icon_url = icon_url
         self.colour = colour
+
+        self.ctx = ctx
 
     async def set_page(self, page_num: int) -> None:
         """
@@ -49,15 +52,17 @@ class EmbedPages:
         # Clear previous data
         self.embed = Embed(title=f"{self.title} (Page {page_num}/{self.top_limit})", color=self.colour,
                            description=self.desc)
-        
+
         if self.footer and self.icon_url:
             self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
         elif self.footer:
-            self.embed.set_footer(text=self.footer)  # TODO: Is there a more efficient way to cover the cases where either a footer or icon_url is given but not both?
+            self.embed.set_footer(
+                text=self.footer)  # TODO: Is there a more efficient way to cover the cases where either a footer or icon_url is given but not both?
         elif self.icon_url:
             self.embed.set_footer(icon_url=self.icon_url)
         if self.thumbnail_url:
-            self.embed.set_thumbnail(url=self.thumbnail_url)  # NOTE: I WAS CHANGING ALL GUILD ICONS AND AVATARS SO THEY WORK WITH THE DEFAULTS I.E. NO AVATAR OR NO GUILD ICON
+            self.embed.set_thumbnail(
+                url=self.thumbnail_url)  # NOTE: I WAS CHANGING ALL GUILD ICONS AND AVATARS SO THEY WORK WITH THE DEFAULTS I.E. NO AVATAR OR NO GUILD ICON
 
         # Gettings the wanted data
         self.page_num = page_num
@@ -109,12 +114,15 @@ class EmbedPages:
                 starboard = self.data[i]
                 channel = self.bot.get_channel(starboard.channel.id)
                 custom_emoji = self.bot.get_emoji(starboard.emoji_id) if starboard.emoji_id else None
-                colour = starboard.embed_colour if starboard.embed_colour else "#" + "".join([str(hex(component)).replace("0x", "").upper() for component in self.bot.GOLDEN_YELLOW.to_rgb()])
-                
+                colour = starboard.embed_colour if starboard.embed_colour else "#" + "".join(
+                    [str(hex(component)).replace("0x", "").upper() for component in self.bot.GOLDEN_YELLOW.to_rgb()])
+
                 sub_fields = f"• Minimum stars: {starboard.minimum_stars}\n"  # Add star subfield
-                sub_fields += "• Emoji: " + (starboard.emoji if starboard.emoji else f"<:{custom_emoji.name}:{custom_emoji.id}>")  # Add either the standard emoji, or the custom one
+                sub_fields += "• Emoji: " + (
+                    starboard.emoji if starboard.emoji else f"<:{custom_emoji.name}:{custom_emoji.id}>")  # Add either the standard emoji, or the custom one
                 sub_fields += "\n• Colour: " + colour
-                sub_fields += "\n• Allow self starring (author can star their own message): " + str(starboard.allow_self_star)
+                sub_fields += "\n• Allow self starring (author can star their own message): " + str(
+                    starboard.allow_self_star)
                 self.embed.add_field(name=f"#{channel.name}", value=sub_fields, inline=False)
 
     async def previous_page(self) -> None:
@@ -156,7 +164,11 @@ class EmbedPages:
         Sends the embed message. The message is deleted after 300 seconds (5 minutes).
         """
 
-        self.message = await self.channel.send(embed=self.embed)
+        is_ctx = type(self.ctx) is commands.Context
+        self.message = await self.channel.send(embed=self.embed) if type(
+            self.ctx) is not discord.Interaction else await self.ctx.response.send_message(embed=self.embed)
+        self.message = self.message if is_ctx else await self.ctx.original_message()
+
         await self.message.add_reaction(EmojiEnum.MIN_BUTTON)
         await self.message.add_reaction(EmojiEnum.LEFT_ARROW)
         await self.message.add_reaction(EmojiEnum.RIGHT_ARROW)
@@ -174,7 +186,11 @@ class EmbedPages:
         Edits the message to the current self.embed and updates self.message
         """
 
-        await self.message.edit(embed=self.embed)
+        if type(self.ctx) is not discord.Interaction:
+            await self.message.edit(embed=self.embed)
+        else:
+            msg = await self.ctx.original_message()
+            await msg.edit(embed=self.embed)
 
 
 class PageTypes:
@@ -213,7 +229,8 @@ DEVS = [
 CODE_URL = "https://github.com/adampy/adambot"
 
 
-async def send_image_file(fig, channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "png") -> None:
+async def send_image_file(ctx: commands.Context | discord.Interaction, fig,
+                          channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "png") -> None:
     """
     Send data to a channel with filename `filename`
     """
@@ -221,10 +238,12 @@ async def send_image_file(fig, channel: discord.TextChannel | discord.Thread, fi
     buf = BytesIO()
     fig.savefig(buf)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f"{filename}.{extension}"))
+    file = File(buf, filename=f"{filename}.{extension}")
+    await channel.send(file=file) if type(ctx) is commands.Context else await ctx.response.send_message(file=file)
 
 
-async def send_text_file(text: str, channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "txt") -> None:
+async def send_text_file(ctx: commands.Context | discord.Interaction, text: str,
+                         channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "txt") -> None:
     """
     Send a text data to a channel with filename `filename`
     """
@@ -232,10 +251,11 @@ async def send_text_file(text: str, channel: discord.TextChannel | discord.Threa
     buf = StringIO()
     buf.write(text)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f"{filename}.{extension}"))
+    file = File(buf, filename=f"{filename}.{extension}")
+    await channel.send(file=file) if type(ctx) is commands.Context else await ctx.response.send_message(file=file)
 
 
-async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> Optional[discord.Member]:
+async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> discord.Member | None:
     """
     Moves hell on Earth to get a guild member object from a given string
     Makes use of last_active, a priority temp list that stores member objects of
@@ -453,7 +473,8 @@ def time_str(seconds: int) -> str:  # rewrite before code police get dispatched
     seconds -= hours * 60 * 60
     minutes = seconds // 60
     seconds -= minutes * 60
-    seconds = round(seconds, 0 if str(seconds).endswith(".0") else 1)  # don't think the last bit needs to be as complex for all time units but oh well
+    seconds = round(seconds, 0 if str(seconds).endswith(
+        ".0") else 1)  # don't think the last bit needs to be as complex for all time units but oh well
 
     output = ""
     if weeks:
@@ -492,79 +513,116 @@ SUCCESS_GREEN = Colour.from_rgb(57, 255, 20)
 INFORMATION_BLUE = Colour.from_rgb(32, 141, 177)
 GOLDEN_YELLOW = Colour.from_rgb(252, 172, 66)
 
+
 # EMBED RESPONSES
 
 
 class DefaultEmbedResponses:
     @staticmethod
-    async def invalid_perms(bot, ctx: commands.Context, thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def invalid_perms(bot, ctx: commands.Context | discord.Interaction, thumbnail_url: str = "",
+                            bare: bool = False, respond_to_interaction=True) -> discord.Message:
         """
         Internal procedure that is executed when a user has invalid perms
         """
 
-        embed = Embed(title=f":x: You do not have permissions to do that!", description="Only people with permissions (usually staff) can use this command!",
+        is_ctx = type(ctx) is commands.Context
+
+        user = ctx.author if is_ctx else ctx.user
+
+        embed = Embed(title=f":x: You do not have permissions to do that!",
+                      description="Only people with permissions (usually staff) can use this command!",
                       color=ERROR_RED)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
+            embed=embed) if (respond_to_interaction and not ctx.response.is_done()) else ctx.channel.send(embed=embed)
 
     @staticmethod
-    async def error_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def error_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
+                          thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> discord.Message:
+        is_ctx = type(ctx) is commands.Context
+
+        user = ctx.author if is_ctx else ctx.user
         embed = Embed(title=f":x: {title}", description=desc, color=ERROR_RED)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            if is_ctx:
+                embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                    bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
+            embed=embed) if (respond_to_interaction and not ctx.response.is_done()) else ctx.channel.send(embed=embed)
 
     @staticmethod
-    async def success_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def success_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
+                            thumbnail_url: str = "", bare: bool = False,
+                            respond_to_interaction=True) -> discord.Message:
+        is_ctx = type(ctx) is commands.Context
+
+        user = ctx.author if is_ctx else ctx.user
+
         embed = Embed(title=f":white_check_mark: {title}", description=desc, color=SUCCESS_GREEN)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-              bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
+            embed=embed) if (respond_to_interaction and not ctx.response.is_done()) else ctx.channel.send(embed=embed)
 
     @staticmethod
-    async def information_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def information_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
+                                thumbnail_url: str = "", bare: bool = False,
+                                respond_to_interaction=True) -> discord.Message:
+        is_ctx = type(ctx) is commands.Context
+
+        user = ctx.author if is_ctx else ctx.user
+
         embed = Embed(title=f":information_source: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
+            embed=embed) if respond_to_interaction else ctx.channel.send(embed=embed)
 
     @staticmethod
-    async def question_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def question_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
+                             thumbnail_url: str = "", bare: bool = False,
+                             respond_to_interaction=True) -> discord.Message:
+        is_ctx = type(ctx) is commands.Context
+
+        user = ctx.author if is_ctx else ctx.user
+
         embed = Embed(title=f":grey_question: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
+            embed=embed) if (respond_to_interaction and not ctx.response.is_done()) else ctx.channel.send(embed=embed)
 
 
 def get_guild_icon_url(guild: discord.Guild) -> str:
     """
     Returns either a `str` which corresponds to `guild`'s icon. If none is present, an empty string is returned
     """
+
     return guild.icon if hasattr(guild, "icon") else ""
 
 
-def get_user_avatar_url(member: discord.Member, mode: int = 0) -> list[str]:
+def get_user_avatar_url(member: discord.Member | discord.User, mode: int = 0) -> list[str]:
     """
     Returns a `str` which corresponds to `user`'s current avatar url
 
@@ -581,7 +639,8 @@ def get_user_avatar_url(member: discord.Member, mode: int = 0) -> list[str]:
     else:
         account_avatar_url = account_avatar_url.url
 
-    guild_avatar_url = account_avatar_url if (not hasattr(member, "guild_avatar") or not hasattr(member.guild_avatar, "url") or not member.guild_avatar.url) else member.guild_avatar.url
+    guild_avatar_url = account_avatar_url if (not hasattr(member, "guild_avatar") or not hasattr(member.guild_avatar,
+                                                                                                 "url") or not member.guild_avatar.url) else member.guild_avatar.url
 
     match mode:  # OMG A SWITCH CASE
         case 0:
