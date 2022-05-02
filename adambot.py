@@ -27,15 +27,14 @@ class AdamTree(discord.app_commands.tree.CommandTree):
     def map(self, error: AppCommandError, method: Callable) -> None:
         self.maps[error] = method
 
-    async def on_error(self, interaction: Interaction, command: Optional[Union[Command, ContextMenu]],
-                       error: AppCommandError) -> None:
+    async def on_error(self, interaction: Interaction, error: AppCommandError) -> None:
 
         if isinstance(error, MissingStaffSlashError) or isinstance(error, MissingDevError):
             await DefaultEmbedResponses.invalid_perms(self.client, interaction)
         else:
             mapped_method = self.maps.get(error.__class__, None)
             if callable(mapped_method):
-                await mapped_method(interaction, command, error)
+                await mapped_method(interaction, error)
             else:
                 raise error
 

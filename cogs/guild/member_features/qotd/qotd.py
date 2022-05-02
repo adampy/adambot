@@ -2,6 +2,7 @@ from typing import Callable, Optional
 
 import discord
 from discord import app_commands
+from discord.app_commands import AppCommandError
 from discord.ext import commands
 
 from libs.misc.utils import DefaultEmbedResponses
@@ -69,7 +70,7 @@ class QOTD(commands.Cog):
         self.Handlers = qotd_handlers.QOTDHandlers(bot)
         self.bot.tree.map(MissingQOTDSlashError, self.qotd_error_slash_handler)
 
-    async def qotd_error_slash_handler(self, interaction, command, error) -> None:
+    async def qotd_error_slash_handler(self, interaction: discord.Interaction, error: AppCommandError) -> None:
         await DefaultEmbedResponses.invalid_perms(self.bot, interaction)
 
     @commands.Cog.listener()
