@@ -35,7 +35,8 @@ TRIVIAS = [
     "usstateabbreviations",
     "worldcapitals",
     "worldflags",
-    "WW2"
+    "WW2",
+    "morsecode"
 ]
 
 SETTINGS = {
