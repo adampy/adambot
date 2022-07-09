@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 import time
-from typing import Union
 
 import asyncpg
 import pandas
@@ -14,7 +13,7 @@ from tzlocal import get_localzone
 
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
 from libs.misc.decorators import *
-from libs.misc.utils import DefaultEmbedResponses
+from libs.misc.utils import DefaultEmbedResponses, ContextTypes, get_context_type
 from scripts.utils import cog_handler
 
 
@@ -72,6 +71,8 @@ class AdamBot(Bot):
 
     def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args,
                  **kwargs) -> None:
+        self.ContextType = ContextTypes
+        self.get_context_type = get_context_type
         self.internal_config = self.load_internal_config(config_path)
         self.cog_handler = cog_handler.CogHandler(self)
         self.kwargs = kwargs
@@ -115,19 +116,32 @@ class AdamBot(Bot):
         Procedure that closes down AdamBot, using the standard client.close() command, as well as some database handling methods.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.get_context_type(ctx)
+
         self.online = False  # This is set to false to prevent DB things going on in the background once bot closed
         user = f"{self.user.mention} " if self.user else ""
         p_s = f"Beginning process of shutting {user}down. DB pool shutting down..."
-        (await ctx.send(p_s) if is_ctx else await ctx.response.send_message(p_s), print(p_s)) if ctx else print(p_s)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(p_s)
+        elif ctx_type == self.ContextTypes.Interaction:
+            await ctx.response.send_message(p_s)
+        print(p_s)
+
         if hasattr(self, "pool"):
             self.pool.terminate()  # TODO: Make this more graceful
+
         c_s = "Closing connection to Discord..."
-        (await ctx.channel.send(c_s), print(c_s)) if ctx else print(c_s)
+
+        if ctx_type != self.ContextTypes.Unknown:
+            await ctx.channel.send(c_s)
+        print(c_s)
+
         try:
             await self.change_presence(status=discord.Status.offline)
         except AttributeError:
             pass  # hasattr returns true but then you get yelled at if you use it
+
         await super().close()
         time.sleep(1)  # stops bs RuntimeError spam at the end
         print(f"Bot closed after {time.time() - self.start_time} seconds")
@@ -202,6 +216,8 @@ class AdamBot(Bot):
         self.online = True
 
     async def on_command_error(self, ctx: commands.Context, error) -> None:
+        print(error)  # added back for the sake of retaining sanity when debugging
+
         if isinstance(error, MissingStaffError) or isinstance(error, MissingDevError):
             await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
 

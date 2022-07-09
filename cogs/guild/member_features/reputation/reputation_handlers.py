@@ -7,17 +7,27 @@ from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 from adambot import AdamBot
 
+
 class ReputationHandlers:
     def __init__(self, bot: AdamBot) -> None:
         self.bot = bot
+        self.ContextTypes = self.bot.ContextTypes
 
     async def get_leaderboard(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Constructs and sends an embed containing the reputation leaderboard for the context guild.
         """
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         async with self.bot.pool.acquire() as connection:
             leaderboard = await connection.fetch(
                 "SELECT member_id, reps FROM rep WHERE guild_id = $1 ORDER BY reps DESC", ctx.guild.id)
@@ -95,8 +105,15 @@ class ReputationHandlers:
         Handler for the award commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         if args:
             if type(args) == discord.Member:
@@ -116,7 +133,7 @@ class ReputationHandlers:
             if args:
                 failed.add_field(name="Requested user", value=args)
 
-            if is_ctx:
+            if ctx_type == self.ContextTypes.Context:
                 failed.add_field(name="Information",
                                  value=f"\nTo award rep to someone, type \n`{ctx.prefix}rep Member_Name`\nor\n`{ctx.prefix}rep @Member`\n"
                                        f"Pro tip: If e.g. fred roberto was recently active you can type `{ctx.prefix}rep fred`\n\nTo see the other available rep commands type `{ctx.prefix}help rep`",
@@ -125,7 +142,11 @@ class ReputationHandlers:
                 text=f"Requested by: {author.display_name} ({author})\n" + (self.bot.correct_time()).strftime(
                     self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
-            await ctx.send(embed=failed) if is_ctx else await ctx.response.send_message(embed=failed)
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(embed=failed)
+            else:
+                await ctx.author.send(embed=failed)
+
             return
         nick = user.display_name
 
@@ -183,6 +204,15 @@ class ReputationHandlers:
         Handler for the all commands. (No this isn't a typo ;) )
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE from rep WHERE guild_id = $1", ctx.guild.id)
 
@@ -195,7 +225,7 @@ class ReputationHandlers:
         channel = self.bot.get_channel(channel_id)
         embed = Embed(title="Reputation Points Reset", color=Colour.from_rgb(177, 252, 129))
         embed.add_field(name="Member", value="**EVERYONE**")
-        embed.add_field(name="Staff", value=str(ctx.author if type(ctx) is commands.Context else ctx.user))
+        embed.add_field(name="Staff", value=author)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
@@ -204,6 +234,15 @@ class ReputationHandlers:
         """
         Handler for the set commands.
         """
+
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         if type(rep) is str and not rep.isdigit():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The reputation points must be a number!")
@@ -220,7 +259,7 @@ class ReputationHandlers:
         channel = self.bot.get_channel(channel_id)
         embed = Embed(title="Reputation Points Set", color=Colour.from_rgb(177, 252, 129))
         embed.add_field(name="Member", value=str(user))
-        embed.add_field(name="Staff", value=str(ctx.author if type(ctx) is commands.Context else ctx.user))
+        embed.add_field(name="Staff", value=author)
         embed.add_field(name="New Rep", value=new_reps)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
@@ -229,6 +268,15 @@ class ReputationHandlers:
         """
         Handler for the hardset commands.
         """
+
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         if not user_id.isdigit():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The user's ID must be a valid ID!")
@@ -253,10 +301,11 @@ class ReputationHandlers:
         channel_id = await self.bot.get_config_key(ctx, "log_channel")
         if channel_id is None:
             return
+
         channel = self.bot.get_channel(channel_id)
         embed = Embed(title="Reputation Points Set (Hard set)", color=Colour.from_rgb(177, 252, 129))
         embed.add_field(name="Member", value=user_id)
-        embed.add_field(name="Staff", value=str(ctx.author if type(ctx) is commands.Context else ctx.user))
+        embed.add_field(name="Staff", value=author)
         embed.add_field(name="New Rep", value=new_reps)
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
@@ -267,9 +316,15 @@ class ReputationHandlers:
         Handler for the check commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
-        author = ctx.author if is_ctx else ctx.user
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         if not args:
             user = author if not member else member
         else:
@@ -306,7 +361,10 @@ class ReputationHandlers:
             self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
         embed.set_thumbnail(url=get_user_avatar_url(user, mode=1)[0])
 
-        await ctx.send(embed=embed) if is_ctx else await ctx.response.send_message(embed=embed)
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(embed=embed)
+        else:
+            await ctx.response.send_message(embed=embed)
 
     async def data(self, ctx: commands.Context | discord.Interaction) -> None:
         """

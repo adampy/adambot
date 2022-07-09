@@ -14,6 +14,7 @@ class StarboardHandlers:
     def __init__(self, bot, cog) -> None:
         self.bot = bot
         self.cog = cog
+        self.ContextTypes = self.bot.ContextTypes
 
     # --- Starboard embed ---
     async def make_starboard_embed(self, message: discord.Message, stars: int, emoji: discord.Emoji,
@@ -128,7 +129,7 @@ class StarboardHandlers:
             custom_emoji = True
         except commands.errors.EmojiNotFound:
             # If here, emoji is either a standard emoji, or a custom one from another guild
-            match = re.match(r"<(a?):([a-zA-Z0-9]{1,32}):([0-9]{15,20})>$",
+            match = re.match(r"<(a?):([a-zA-Z\d]{1,32}):(\d{15,20})>$",
                              emoji)  # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
             if not match:
                 custom_emoji = False
@@ -242,8 +243,14 @@ class StarboardHandlers:
         Handler for the view commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         starboards = await self._get_starboards(ctx.guild.id)
         embed = self.bot.EmbedPages(
@@ -258,6 +265,7 @@ class StarboardHandlers:
             icon_url=get_user_avatar_url(author, mode=1)[0],
             footer=f"Requested by: {author.display_name} ({author})\n" + self.bot.correct_time().strftime(
                 self.bot.ts_format),
+            ctx=ctx
         )
 
         await embed.set_page(1)

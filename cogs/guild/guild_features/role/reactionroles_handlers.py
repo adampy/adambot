@@ -12,6 +12,7 @@ from adambot import AdamBot
 class ReactionrolesHandlers:
     def __init__(self, bot: AdamBot) -> None:
         self.bot = bot
+        self.ContextTypes = self.bot.ContextTypes
 
     async def _get_roles(self, payload) -> Optional[list]:
         """
@@ -36,14 +37,16 @@ class ReactionrolesHandlers:
     async def add(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str, role: discord.Role,
                   inverse: bool | str = None, message_id: int | str = None) -> None:
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
 
         if not ctx.guild.me.guild_permissions.manage_roles:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have manage-role permissions!",
                                                              desc="I need these permissions to create the reaction role.")
             return
 
-        if is_ctx and not message_id:
+        if ctx_type == self.ContextTypes.Context and not message_id:
             message_id = ctx.message.reference.message_id
 
         # Check if custom emoji
@@ -54,7 +57,7 @@ class ReactionrolesHandlers:
                 custom_emoji = True
             except commands.errors.EmojiNotFound:
                 # If here, emoji is either a standard emoji, or a custom one from another guild
-                match = re.match(r"<(a?):([a-zA-Z0-9]{1,32}):([0-9]{15,20})>$",
+                match = re.match(r"<(a?):([a-zA-Z\d]{1,32}):(\d{15,20})>$",
                                  emoji)  # True if custom emoji (obtained from https://github.com/Rapptz/discord.py/blob/master/discord/ext/commands/converter.py)
                 if match:
                     await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx,
@@ -93,9 +96,11 @@ class ReactionrolesHandlers:
 
     async def remove(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str,
                      message_id: int | str = None) -> None:
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
 
-        if is_ctx and not message_id:
+        if ctx_type == self.ContextTypes.Context and not message_id:
             message_id = ctx.message.reference.message_id
 
         # Check if custom emoji
@@ -129,9 +134,11 @@ class ReactionrolesHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
     async def delete(self, ctx: commands.Context | discord.Interaction, message_id=None) -> None:
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
 
-        if is_ctx and not message_id:
+        if ctx_type == self.ContextTypes.Context and not message_id:
             message_id = ctx.message.reference.message_id
 
         async with self.bot.pool.acquire() as connection:
@@ -150,7 +157,9 @@ class ReactionrolesHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
     async def showreactionroles(self, ctx: commands.Context | discord.Interaction) -> None:
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
 
         async with self.bot.pool.acquire() as connection:
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)
@@ -180,4 +189,7 @@ class ReactionrolesHandlers:
             embed.add_field(name=f"{message_id} (in #{message_channels[message_id]})",
                             value=message_reactions[message_id])
 
-        await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(embed=embed)
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.reply(embed=embed)
+        else:
+            await ctx.response.send_message(embed=embed)

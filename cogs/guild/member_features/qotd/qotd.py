@@ -20,17 +20,29 @@ class MissingQOTDSlashError(app_commands.CheckFailure):
 
 
 async def qotd_predicate(ctx: commands.Context | discord.Interaction):
-    is_ctx = type(ctx) is commands.Context
-    bot = ctx.bot if is_ctx else ctx.client
-    author = ctx.author if is_ctx else ctx.user
+    if isinstance(ctx, discord.Interaction):
+        bot = ctx.client
+    elif isinstance(ctx, commands.Context):
+        bot = ctx.bot
+    else:
+        return
+
+    ctx_type = bot.get_context_type(ctx)
+
+    if ctx_type == bot.ContextTypes.Context:
+        author = ctx.author
+    else:
+        author = ctx.user
 
     qotd_role_id = await bot.get_config_key(ctx, "qotd_role")
     staff_role_id = await bot.get_config_key(ctx, "staff_role")
     role_ids = [y.id for y in author.roles]
     if qotd_role_id in role_ids or staff_role_id in role_ids or author.guild_permissions.administrator:
         return True
+    elif ctx_type == bot.ContextTypes.Context:
+        raise MissingQOTDError
     else:
-        raise MissingQOTDError if is_ctx else MissingQOTDSlashError
+        raise MissingQOTDSlashError
 
 
 def qotd_perms() -> Callable:

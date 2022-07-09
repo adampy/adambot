@@ -12,6 +12,7 @@ class DemographicsHandlers:
     def __init__(self, bot: AdamBot, cog: commands.Cog) -> None:  # note that this should really be of type Demographics but circular dependency needs to be resolved first
         self.bot = bot
         self.cog = cog
+        self.ContextTypes = self.bot.ContextTypes
 
     async def viewroles(self, ctx: commands.Context | discord.Interaction) -> None:
         """
@@ -20,11 +21,19 @@ class DemographicsHandlers:
         Responds with a list of role names for roles that are tracked within the context guild.
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
         role_ids = await self.cog._get_roles(ctx.guild)
         roles = [ctx.guild.get_role(x).name for x in role_ids]
         message = "Currently tracked roles are: " + ", ".join(roles)
 
-        await ctx.send(message) if type(ctx) is commands.Context else await ctx.response.send_message(message)
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(message)
+        else:
+            await ctx.response.send_message(message)
 
     async def addrole(self, ctx: commands.Context | discord.Interaction, role: discord.Role, sample_rate: int) -> None:
         """
@@ -33,16 +42,26 @@ class DemographicsHandlers:
         Adds a role to be sampled for the context guild.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
-        author = ctx.author if is_ctx else ctx.user
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         def check(m: discord.Message) -> bool:
             return m.author == author and m.channel == ctx.channel
 
         if role.id in await self.cog._get_roles(ctx.guild):
             message = "This role is already being tracked!"
-            await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
+
             return
 
         question = await ctx.channel.send(
@@ -51,20 +70,37 @@ class DemographicsHandlers:
             response = await self.bot.wait_for("message", check=check, timeout=300)  # 5 minute timeout
         except asyncio.TimeoutError:
             message = "Demographic command timed out. :sob:"
-            await question.edit(content=message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await question.edit(content=message)
+            else:
+                await ctx.response.send_message(message)
+
             return
 
         if response.content.lower() == "yes":
             # Add to DB
             await self.cog._add_role(role, sample_rate)
             message = f"{role.name} has been added to the demographics, it'll be sampled for the first time at midnight today!"
-            await ctx.channel.send(message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
+
         elif response.content.lower() == "no":
             message = f"{role.name} has not been added. :sob:"
-            await ctx.channel.send(message) if is_ctx else await ctx.response.send_message(message)
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
+
         else:
             message = "Unknown response, please try again. :sob:"
-            await question.edit(content=message) if is_ctx else await ctx.response.send_message(message)
+            if ctx_type == self.ContextTypes.Context:
+                await question.edit(content=message)
+            else:
+                await ctx.response.send_message(message)
 
     async def removerole(self, ctx: commands.Context | discord.Interaction, role: discord.Role) -> None:
         """
@@ -73,16 +109,27 @@ class DemographicsHandlers:
         Removes a role from being sampled for the context guild.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
 
-        author = ctx.author if is_ctx else ctx.user
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         def check(m: discord.Message) -> bool:
             return m.author == author and m.channel == ctx.channel
 
         if role.id not in await self.cog._get_roles(ctx.guild):
             message = "This role is not currently being tracked!"
-            await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
+
             return
 
         question = await ctx.channel.send(
@@ -91,17 +138,30 @@ class DemographicsHandlers:
             response = await self.bot.wait_for("message", check=check, timeout=300)  # 5 minute timeout
         except asyncio.TimeoutError:
             message = "Demographic command timed out. :sob:"
-            await question.edit(content=message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
+
             return
 
         if response.content.lower() == "yes":
             # Remove from DB
             await self.cog._remove_role(role)
             message = f"{role.name}, and all its previous samples, have been removed from the demographics"
-            await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
         else:
             message = "No action taken."
-            await question.edit(content=message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await question.edit(content=message)
+            else:
+                await ctx.response.send_message(message)
 
     async def takesample(self, ctx: commands.Context | discord.Interaction, role: discord.Role) -> None:
         """
@@ -110,9 +170,15 @@ class DemographicsHandlers:
         Takes a sample immediately for a given role within a context guild.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
 
-        author = ctx.author if is_ctx else ctx.user
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         guild_tracked_roles = await self.cog._get_roles(ctx.guild)
         if not role:
@@ -126,30 +192,49 @@ class DemographicsHandlers:
                 response = await self.bot.wait_for("message", check=check, timeout=300)  # 5 minute timeout
             except asyncio.TimeoutError:
                 message = "Demographic command timed out. :sob:"
-                await question.edit(content=message) if is_ctx else await ctx.response.send_message(message)
+
+                if ctx_type == self.ContextTypes.Context:
+                    await question.edit(content=message)
+                else:
+                    await ctx.response.send_message(message)
+
                 return
 
             if response.content.lower() == "yes":
                 for role in guild_tracked_roles:
                     await self.cog._require_sample(ctx.guild.get_role(role))
                 message = "All roles sampled! :ok_hand:"
-                await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
             elif response.content.lower() == "no":
                 message = "Operation cancelled."
-                await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
             else:
                 message = "Unknown response - operation cancelled."
-                await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
+
             return  # return here means return does not need to be placed inside each condition
 
         if role.id not in guild_tracked_roles:
             message = "This role is not currently being tracked!"
-            await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
+
             return
 
         await self.cog._require_sample(role)
         message = "A sample has been taken, it may take a few seconds to be registered in the database. :ok_hand:"
-        await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(message)
+        else:
+            await ctx.response.send_message(message)
 
     async def removeallsamples(self, ctx: commands.Context | discord.Interaction) -> None:
         """
@@ -158,12 +243,21 @@ class DemographicsHandlers:
         Removes all samples for a context guild.
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
         async with self.bot.pool.acquire() as connection:
             await connection.execute(
                 "DELETE FROM demographic_samples WHERE role_reference IN (SELECT id FROM demographic_roles WHERE guild_id = $1);",
                 ctx.guild.id)  # Removes samples for that guild
+
         message = "All samples have been deleted. :sob:"
-        await ctx.send(message) if type(ctx) is commands.Context else await ctx.response.send_message(message)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(message)
+        else:
+            await ctx.response.send_message(message)
 
     async def show(self, ctx: commands.Context | discord.Interaction) -> None:
         """
@@ -171,6 +265,10 @@ class DemographicsHandlers:
 
         Shows the numbers of members with each tracked role within a context guild.
         """
+
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
         tracked_roles = [ctx.guild.get_role(r) for r in await self.cog._get_roles(ctx.guild) if
                          ctx.guild.get_role(r) is not None]
@@ -185,7 +283,11 @@ class DemographicsHandlers:
             message += f"\n•**{n}** {role.name}"
 
         message += f"\n*Note: do `{ctx.prefix}demographics chart` to view change in demographics over time!*"
-        await ctx.send(message) if type(ctx) is commands.Context else await ctx.response.send_message(message)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(message)
+        else:
+            await ctx.response.send_message(message)
 
     async def chart(self, ctx: commands.Context | discord.Interaction) -> None:
         """

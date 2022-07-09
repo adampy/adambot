@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from datetime import timedelta
+from enum import Enum
 from io import BytesIO, StringIO
 from math import ceil
 from typing import Optional
@@ -164,10 +165,15 @@ class EmbedPages:
         Sends the embed message. The message is deleted after 300 seconds (5 minutes).
         """
 
-        is_ctx = type(self.ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(self.ctx)
+
         self.message = await self.channel.send(embed=self.embed) if type(
             self.ctx) is not discord.Interaction else await self.ctx.response.send_message(embed=self.embed)
-        self.message = self.message if is_ctx else await self.ctx.original_message()
+
+        if ctx_type == self.bot.ContextTypes.Context:
+            self.message = self.message
+        elif ctx_type == self.bot.ContextTypes.Interaction:
+            self.message = await self.ctx.original_message()
 
         await self.message.add_reaction(EmojiEnum.MIN_BUTTON)
         await self.message.add_reaction(EmojiEnum.LEFT_ARROW)
@@ -186,7 +192,11 @@ class EmbedPages:
         Edits the message to the current self.embed and updates self.message
         """
 
-        if type(self.ctx) is not discord.Interaction:
+        ctx_type = get_context_type(self.ctx)
+        if ctx_type is ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
             await self.message.edit(embed=self.embed)
         else:
             msg = await self.ctx.original_message()
@@ -235,11 +245,19 @@ async def send_image_file(ctx: commands.Context | discord.Interaction, fig,
     Send data to a channel with filename `filename`
     """
 
+    ctx_type = get_context_type(ctx)
+    if ctx_type is ContextTypes.Unknown:
+        return
+
     buf = BytesIO()
     fig.savefig(buf)
     buf.seek(0)
     file = File(buf, filename=f"{filename}.{extension}")
-    await channel.send(file=file) if type(ctx) is commands.Context else await ctx.response.send_message(file=file)
+
+    if ctx_type == ContextTypes.Context:
+        await channel.send(file=file)
+    else:
+        await ctx.response.send_message(file=file)
 
 
 async def send_text_file(ctx: commands.Context | discord.Interaction, text: str,
@@ -248,11 +266,19 @@ async def send_text_file(ctx: commands.Context | discord.Interaction, text: str,
     Send a text data to a channel with filename `filename`
     """
 
+    ctx_type = get_context_type(ctx)
+    if ctx_type is ContextTypes.Unknown:
+        return
+
     buf = StringIO()
     buf.write(text)
     buf.seek(0)
     file = File(buf, filename=f"{filename}.{extension}")
-    await channel.send(file=file) if type(ctx) is commands.Context else await ctx.response.send_message(file=file)
+
+    if ctx_type == ContextTypes.Context:
+        await channel.send(file=file)
+    else:
+        await ctx.response.send_message(file=file)
 
 
 async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> discord.Member | None:
@@ -520,14 +546,19 @@ GOLDEN_YELLOW = Colour.from_rgb(252, 172, 66)
 class DefaultEmbedResponses:
     @staticmethod
     async def invalid_perms(bot, ctx: commands.Context | discord.Interaction, thumbnail_url: str = "",
-                            bare: bool = False, respond_to_interaction=True) -> discord.Message:
+                            bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
         """
         Internal procedure that is executed when a user has invalid perms
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
 
-        user = ctx.author if is_ctx else ctx.user
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
 
         embed = Embed(title=f":x: You do not have permissions to do that!",
                       description="Only people with permissions (usually staff) can use this command!",
@@ -538,34 +569,54 @@ class DefaultEmbedResponses:
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
-        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
-            embed=embed) if (respond_to_interaction and not ctx.response.is_done()) else ctx.channel.send(embed=embed)
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
     @staticmethod
     async def error_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
-                          thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> discord.Message:
-        is_ctx = type(ctx) is commands.Context
+                          thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
 
-        user = ctx.author if is_ctx else ctx.user
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
+
         embed = Embed(title=f":x: {title}", description=desc, color=ERROR_RED)
         if not bare:
-            if is_ctx:
+            if ctx_type == ContextTypes.Context:
                 embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
                     bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
 
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
-        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
-            embed=embed) if (respond_to_interaction and not ctx.response.is_done()) else ctx.channel.send(embed=embed)
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
     @staticmethod
     async def success_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
-                            thumbnail_url: str = "", bare: bool = False,
-                            respond_to_interaction=True) -> discord.Message:
-        is_ctx = type(ctx) is commands.Context
+                            thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
 
-        user = ctx.author if is_ctx else ctx.user
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
 
         embed = Embed(title=f":white_check_mark: {title}", description=desc, color=SUCCESS_GREEN)
         if not bare:
@@ -574,16 +625,25 @@ class DefaultEmbedResponses:
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
-        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
-            embed=embed) if (respond_to_interaction and not ctx.response.is_done()) else ctx.channel.send(embed=embed)
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
     @staticmethod
     async def information_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
-                                thumbnail_url: str = "", bare: bool = False,
-                                respond_to_interaction=True) -> discord.Message:
-        is_ctx = type(ctx) is commands.Context
+                                thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
 
-        user = ctx.author if is_ctx else ctx.user
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
 
         embed = Embed(title=f":information_source: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
@@ -592,16 +652,26 @@ class DefaultEmbedResponses:
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
-        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
-            embed=embed) if respond_to_interaction else ctx.channel.send(embed=embed)
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
     @staticmethod
     async def question_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
                              thumbnail_url: str = "", bare: bool = False,
-                             respond_to_interaction=True) -> discord.Message:
-        is_ctx = type(ctx) is commands.Context
+                             respond_to_interaction=True) -> None | discord.Message:
 
-        user = ctx.author if is_ctx else ctx.user
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
 
         embed = Embed(title=f":grey_question: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
@@ -610,8 +680,12 @@ class DefaultEmbedResponses:
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
-        return await ctx.reply(embed=embed) if is_ctx else await ctx.response.send_message(
-            embed=embed) if (respond_to_interaction and not ctx.response.is_done()) else ctx.channel.send(embed=embed)
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
 
 def get_guild_icon_url(guild: discord.Guild) -> str:
@@ -680,3 +754,17 @@ async def interaction_context(bot, interaction: discord.Interaction) -> commands
     setattr(message, "author", interaction.user)
     setattr(message, "guild", interaction.guild)
     return commands.Context(bot=bot, message=message, view=None)
+
+
+class ContextTypes(Enum):
+    Unknown = 0
+    Context = 1
+    Interaction = 2
+
+
+def get_context_type(ctx: commands.Context | discord.Interaction) -> ContextTypes:
+    if issubclass(ctx.__class__, commands.Context):
+        return ContextTypes.Context
+    elif issubclass(ctx.__class__, discord.Interaction):
+        return ContextTypes.Interaction
+    return ContextTypes.Unknown

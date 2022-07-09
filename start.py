@@ -18,5 +18,6 @@ args = parser.parse_args()
 try:
     asyncio.run(AdamBot(start_time, token=args.token, connections=args.connections,
             command_prefix=args.prefix).start_up())
-except Exception:
+except Exception as e:
+    print(e)
     pass  # shush

@@ -9,14 +9,21 @@ class SupportHandlers:
     def __init__(self, bot, cog) -> None:
         self.bot = bot
         self.cog = cog
+        self.ContextTypes = self.bot.ContextTypes
 
     async def accept(self, ctx: commands.Context | discord.Interaction, ticket: str | int) -> None:
         """
         Handler for the accept commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         try:
             ticket = int(ticket)
@@ -68,6 +75,10 @@ class SupportHandlers:
         Handler for the connections commands.
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
         current = []
         waiting = []
         newline = "\n"
@@ -87,7 +98,11 @@ class SupportHandlers:
         x = newline.join(current)
         y = newline.join(waiting)
         string = f"__**Current connections**__{newline}{x}{newline}__**Waiting connections**__{newline}{y}"
-        await ctx.send(string) if type(ctx) is commands.Context else await ctx.response.send_message(string)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(string)
+        else:
+            await ctx.response.send_message(string)
 
     async def on_message(self, message: discord.Message) -> None:
         """

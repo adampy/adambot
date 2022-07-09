@@ -13,6 +13,7 @@ from libs.misc.utils import get_user_avatar_url
 
 from adambot import AdamBot
 
+
 class BotHandlers:
     def __init__(self, bot: AdamBot) -> None:
         """
@@ -20,6 +21,8 @@ class BotHandlers:
         """
 
         self.bot = bot
+
+        self.ContextTypes = self.bot.ContextTypes
 
         self.remote_url = os.environ.get("AB_REMOTE_URL")
         self.given_commit_hash = os.environ.get("AB_COMMIT_HASH")
@@ -64,6 +67,11 @@ class BotHandlers:
         Constructs and sends the botinfo embed.
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
         app_info = await self.bot.application_info()
         embed = Embed(title=f"Bot info for ({self.bot.user})",
                       description=app_info.description if app_info.description else "", colour=0x87CEEB)
@@ -87,13 +95,18 @@ class BotHandlers:
         if hasattr(app_info, "icon"):
             embed.set_thumbnail(url=app_info.icon.url)
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + (self.bot.correct_time()).strftime(
             self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
-        await ctx.send(embed=embed) if is_ctx else await ctx.response.send_message(embed=embed)
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(embed=embed)
+        else:
+            await ctx.response.send_message(embed=embed)
 
     async def host(self, ctx: commands.Context | discord.Interaction) -> None:
         """
@@ -102,9 +115,17 @@ class BotHandlers:
         Allows a user to check if the bot is currently hosted locally or remotely.
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
         string = f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now."
 
-        await ctx.send(string) if type(ctx) is commands.Context else await ctx.response.send_message(string)
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(string)
+        else:
+            await ctx.response.send_message(string)
 
     async def ping(self, ctx: commands.Context | discord.Interaction) -> None:
         """
@@ -113,9 +134,17 @@ class BotHandlers:
         Allows a user to view the bot's current latency
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
         string = f"Pong! ({round(self.bot.latency * 1000)} ms)"
 
-        await ctx.send(string) if type(ctx) is commands.Context else await ctx.response.send_message(string)
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(string)
+        else:
+            await ctx.response.send_message(string)
 
     async def uptime(self, ctx: commands.Context | discord.Interaction) -> None:
         """
@@ -123,6 +152,11 @@ class BotHandlers:
 
         Allows a user to view how long the bot has been running for
         """
+
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
         seconds = round(time.time() - self.bot.start_time)  # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
@@ -132,4 +166,7 @@ class BotHandlers:
 
         string = f"Current uptime session has lasted **{time_string}**, or **{seconds}** seconds. ({markdown_time})"
 
-        await ctx.send(string) if type(ctx) is commands.Context else await ctx.response.send_message(string)
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(string)
+        else:
+            await ctx.response.send_message(string)

@@ -11,6 +11,7 @@ from libs.misc.utils import get_user_avatar_url
 class WaitingroomHandlers:
     def __init__(self, bot, cog):
         self.bot = bot
+        self.ContextTypes = self.bot.ContextTypes
         self.cog = cog
 
     async def testwelcome(self, ctx: commands.Context | discord.Interaction,
@@ -19,28 +20,44 @@ class WaitingroomHandlers:
         Handler for the testwelcome commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
         msg = await self.bot.get_config_key(ctx, "welcome_msg")
         if msg is None:
             message = "A welcome message has not been set."
-            await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(message)
+            else:
+                await ctx.response.send_message(message)
             return
 
         message = await self.cog.get_parsed_welcome_message(msg,
                                                             to_ping or ctx.author)  # to_ping or author means the author unless to_ping is provided.
-        await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(message)
+        else:
+            await ctx.response.send_message(message)
 
     async def lurker(self, ctx: commands.Context | discord.Interaction, phrase: str) -> None:
         """
         Handler for the lurker commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
 
-        if not is_ctx:
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Interaction:
             await ctx.response.send_message(":ok_hand:")
-
-        author = ctx.author if is_ctx else ctx.user
+            author = ctx.user
+        else:
+            author = ctx.author
 
         phrase = phrase.split(" ")
         # Get default phrase if there is one, but the one given in the command overrides the config one
@@ -115,8 +132,15 @@ class WaitingroomHandlers:
         Handler for the lurker_kick commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Interaction:
+            author = ctx.user
+        else:
+            author = ctx.author
 
         def check(m: discord.Message) -> bool:
             return m.channel == ctx.channel and m.author == author

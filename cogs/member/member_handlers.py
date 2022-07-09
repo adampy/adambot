@@ -11,6 +11,7 @@ from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 class MemberHandlers:
     def __init__(self, bot) -> None:
         self.bot = bot
+        self.ContextTypes = self.bot.ContextTypes
 
     async def quote(self, ctx: commands.Context | discord.Interaction, messageid: int | str,
                     channel: discord.TextChannel | discord.Thread | app_commands.AppCommandThread) -> None:
@@ -18,6 +19,10 @@ class MemberHandlers:
         Handler method for the classic and slash quote commands.
         Fetches and displays a specified message from its ID and a channel ID if it exists.
         """
+
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
 
         try:
             msg = await channel.fetch_message(int(messageid))
@@ -47,7 +52,7 @@ class MemberHandlers:
                          icon_url=get_user_avatar_url(user, mode=1)[0])
         embed.description = f"❝ {content} ❞" + edited
 
-        if type(ctx) is commands.Context:
+        if ctx_type == self.ContextTypes.Context:
             await ctx.send(embed=embed)
 
             try:
@@ -112,7 +117,14 @@ class MemberHandlers:
         Pings a given user role with a given message a specified number of times.
         """
 
-        author = ctx.author if type(ctx) is commands.Context else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         try:
             amount = int(amount)
@@ -143,7 +155,14 @@ class MemberHandlers:
         Ghost-pings a given user role with a given message a specified number of times.
         """
 
-        author = ctx.author if type(ctx) is commands.Context else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         try:
             amount = int(amount)
@@ -357,6 +376,15 @@ class MemberHandlers:
         Submits a reminder task with a given reason and time.
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         str_tp = self.bot.time_str(time)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
         str_reason = "*Reminder:* " + (reason if reason else "(Not specified)")
         reminder = "*When:* " + str_tp + " ago\n" + str_reason
@@ -366,8 +394,6 @@ class MemberHandlers:
                                                              desc="Please shorten your reminder to under 244 characters")
             return
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
         await self.bot.tasks.submit_task("reminder", datetime.utcnow() + timedelta(seconds=time),
                                          {"member_id": author.id, "channel_id": ctx.channel.id,
                                           "guild_id": ctx.guild.id, "reason": reminder})
@@ -406,6 +432,15 @@ class MemberHandlers:
         Constructs and displays the countdown embed.
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         embed = Embed(title="Information on UK exams", color=Colour.from_rgb(148, 0, 211))
         now = self.bot.correct_time()
         time_ = self.bot.correct_time(datetime(year=2022, month=5, day=16, hour=9, minute=0, second=0))
@@ -420,11 +455,13 @@ class MemberHandlers:
             else:
                 embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining until the first A-level exam (Economics Paper 1)"
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
         embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + (
             self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
-        await ctx.send(embed=embed) if is_ctx else await ctx.response.send_message(embed=embed)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(embed=embed)
+        else:
+            await ctx.response.send_message(embed=embed)
 
     async def resultsday(self, ctx: commands.Context | discord.Interaction, hour: int | str = 10, which="GCSE") -> None:
         """
@@ -432,6 +469,15 @@ class MemberHandlers:
 
         Constructs and displays the countdown embed.
         """
+
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type is self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         try:
             hour = int(hour)
@@ -468,12 +514,14 @@ class MemberHandlers:
             h, m = divmod(m, 60)
             embed.description = f"{time_.days} days {h} hours {m} minutes {s} seconds remaining"
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
         embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + (
             self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
         icon_url = get_guild_icon_url(ctx.guild)
         if icon_url:
             embed.set_thumbnail(url=icon_url)
-        await ctx.send(embed=embed) if is_ctx else await ctx.response.send_message(embed=embed)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(embed=embed)
+        else:
+            await ctx.response.send_message(embed=embed)

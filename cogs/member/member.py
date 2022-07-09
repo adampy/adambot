@@ -28,13 +28,13 @@ class Member(commands.Cog):
         await self.bot.tasks.register_task_type("reminder",
                                                 self.handle_remind,
                                                 needs_extra_columns=
-                                                    {
-                                                        "member_id": "bigint",
-                                                        "channel_id": "bigint",
-                                                        "guild_id": "bigint",
-                                                        "reason": "varchar(255)"
-                                                    }
-                                                )
+                                                {
+                                                    "member_id": "bigint",
+                                                    "channel_id": "bigint",
+                                                    "guild_id": "bigint",
+                                                    "reason": "varchar(255)"
+                                                }
+        )
 
     # -----------------------QUOTE------------------------------
 
@@ -75,9 +75,7 @@ class Member(commands.Cog):
         if type(message.channel) == discord.DMChannel or message.author.bot:
             return
 
-        if "bruh" in message.content.lower() and not message.author.bot and True not in [
-            message.content.startswith(prefix) for prefix in
-            await self.bot.get_used_prefixes(message)]:  # fix prefix detection
+        if "bruh" in message.content.lower() and not message.author.bot and True not in [message.content.startswith(prefix) for prefix in await self.bot.get_used_prefixes(message)]:  # fix prefix detection
             async with self.bot.pool.acquire() as connection:
                 await connection.execute("UPDATE config SET bruhs=bruhs + 1 WHERE guild_id=($1)", message.guild.id)
         return

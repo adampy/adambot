@@ -26,6 +26,7 @@ class CheckedRoleChangeResult:  # Used for the results of the `Role.checked_role
 class RoleHandlers:
     def __init__(self, bot: AdamBot) -> None:
         self.bot = bot
+        self.ContextTypes = self.bot.ContextTypes
 
     async def checked_role_change(self, ctx: commands.Context | discord.Interaction, role: discord.Role,
                                   member: discord.Member, action: str, tracker: discord.Message = None,
@@ -43,8 +44,14 @@ class RoleHandlers:
         if action not in ["add", "remove"]:
             return
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         verb = "added" if action == "add" else "removed"
         reason = f"Requested by {author}"
@@ -79,7 +86,7 @@ class RoleHandlers:
 
             except errors.NotFound as e:
                 if "Role" in str(e):
-                    if is_ctx:
+                    if ctx_type == self.ContextTypes.Context:
                         await tracker.delete()
                     await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Operation aborted!",
                                                                      desc=f"The role to be {verb} is no longer available!")
@@ -92,7 +99,7 @@ class RoleHandlers:
                 return_check = CheckedRoleChangeResult.CRITICAL_ERROR
 
         elif tracker:
-            if is_ctx:
+            if ctx_type == self.ContextTypes.Context:
                 await tracker.delete()
 
         return return_check
@@ -175,8 +182,15 @@ class RoleHandlers:
         Handler for the info commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         if type(role) is not discord.Role:
             role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
             if len(role) > 1:
@@ -198,15 +212,24 @@ class RoleHandlers:
         embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + self.bot.correct_time().strftime(
             self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
-        await ctx.send(embed=embed) if is_ctx else await ctx.response.send_message(embed=embed)
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(embed=embed)
+        else:
+            await ctx.response.send_message(embed=embed)
 
     async def list_server_roles(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the list commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         embed = self.bot.EmbedPages(
             self.bot.PageTypes.ROLE_LIST,
@@ -219,7 +242,8 @@ class RoleHandlers:
             thumbnail_url=get_guild_icon_url(ctx.guild),
             icon_url=get_user_avatar_url(author, mode=1)[0],
             footer=f"Requested by: {author.display_name} ({author})\n" + self.bot.correct_time().strftime(
-                self.bot.ts_format)
+                self.bot.ts_format),
+            ctx=ctx
         )
 
         await embed.set_page(1)
@@ -229,7 +253,10 @@ class RoleHandlers:
         """
         Handler for the members commands.
         """
-        is_ctx = type(ctx) is commands.Context
+
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
         if type(role) is not discord.Role:
             possible = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
@@ -242,8 +269,12 @@ class RoleHandlers:
         message = "\n".join([f"`{member.id} **{member.name}**`" for member in role.members]) + \
                   f"\n------------------------------------\n:white_check_mark: I found **{len(role.members)}** member{'' if len(role.members) == 1 else 's'} with the **{role.name}** role."
 
-        await self.bot.send_text_file(ctx, message, ctx.channel, "roles", "txt") if len(
-            message) > 2000 else await ctx.send(message) if is_ctx else await ctx.response.send_message(message)
+        if len(message) > 2000:
+            await self.bot.send_text_file(ctx, message, ctx.channel, "roles", "txt")
+        elif ctx_type == self.ContextTypes.Context:
+            await ctx.send(message)
+        else:
+            await ctx.response.send_message(message)
 
     async def add(self, ctx: commands.Context | discord.Interaction, role: discord.Role | str,
                   member: discord.Member) -> None:
@@ -283,7 +314,9 @@ class RoleHandlers:
         Handler for the swap commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
         if type(swap_from) is not discord.Role:
             swap_from = await self.find_closest_role(ctx, swap_from, verbosity=Verbosity.ALL)
@@ -307,7 +340,7 @@ class RoleHandlers:
                                                              desc="Nobody has this role!")
             return
 
-        if is_ctx:
+        if ctx_type == self.ContextTypes.Context:
             tracker = await ctx.reply(f"Swapped **0/{len(swap_from.members)}**")
         else:
             await ctx.response.send_message(f"Swapped **0/{len(swap_from.members)}**")
@@ -331,7 +364,7 @@ class RoleHandlers:
             if result_2 == CheckedRoleChangeResult.HAS_ROLE:
                 already_got_dest_role += 1
 
-        if is_ctx:
+        if ctx_type == self.ContextTypes.Context:
             await tracker.delete()
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Operation successful",
                                                            desc=f"Successfully swapped **{done}** members from {swap_from.mention} to {swap_to.mention}"
@@ -346,7 +379,9 @@ class RoleHandlers:
         Handler for the removeall commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
         if type(role) is not discord.Role:
             role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
@@ -357,7 +392,7 @@ class RoleHandlers:
         if len(role.members):
             members = role.members
 
-            if is_ctx:
+            if ctx_type == self.ContextTypes.Context:
                 tracker = await ctx.reply(f"Removed role from **0/{len(members)}** members")
             else:
                 await ctx.response.send_message(f"Removed role from **0/{len(members)}** members")
@@ -375,7 +410,7 @@ class RoleHandlers:
                 elif result == CheckedRoleChangeResult.MISSING_ROLE:
                     fail += 1
 
-            if is_ctx:
+            if ctx_type == self.ContextTypes.Context:
                 await tracker.delete()
 
             await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Operation completed!",
@@ -393,7 +428,9 @@ class RoleHandlers:
         Handler for the addall commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
         if type(ref_role) is not discord.Role:
             ref_role = await self.find_closest_role(ctx, ref_role, verbosity=Verbosity.ALL)
@@ -419,7 +456,7 @@ class RoleHandlers:
 
         members = ref_role.members
 
-        if is_ctx:
+        if ctx_type == self.ContextTypes.Context:
             tracker = await ctx.reply(f"Added role to **0/{len(members)}** members")
         else:
             await ctx.response.send_message(f"Added role to **0/{len(members)}** members")
@@ -437,7 +474,7 @@ class RoleHandlers:
             elif result == CheckedRoleChangeResult.HAS_ROLE:
                 fail += 1
 
-        if is_ctx:
+        if ctx_type == self.ContextTypes.Context:
             await tracker.delete()
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Operation completed!",
                                                            desc=f"Successfully added {add_role.mention} to **{done}** members with {ref_role.mention} "

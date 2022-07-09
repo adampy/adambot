@@ -10,6 +10,7 @@ from adambot import AdamBot
 class SpotifyHandlers:
     def __init__(self, bot: AdamBot) -> None:
         self.bot = bot
+        self.ContextTypes = self.bot.ContextTypes
 
     async def spotify(self, ctx: commands.Context | discord.Interaction,
                       user: discord.Member | discord.User | str = "") -> None:
@@ -19,11 +20,17 @@ class SpotifyHandlers:
         Constructs and send the spotifyinfo embeds.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
 
-        author = ctx.author if is_ctx else ctx.user
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         if not user or (type(user) is str and len(user) == 0):
-            user = ctx.author if is_ctx else ctx.user
+            user = author
         elif type(user) is str:
             user = await self.bot.get_spaced_member(ctx, self.bot, args=user)
 
@@ -34,7 +41,11 @@ class SpotifyHandlers:
                 fail_embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + (
                     self.bot.correct_time()).strftime(self.bot.ts_format),
                                       icon_url=get_user_avatar_url(author, mode=1)[0])
-                await ctx.send(embed=fail_embed) if is_ctx else await ctx.response.send_message(embed=fail_embed)
+
+                if ctx_type == self.ContextTypes.Context:
+                    await ctx.send(embed=fail_embed)
+                else:
+                    await ctx.response.send_message(embed=fail_embed)
                 return
 
         spotify_activity = None
@@ -47,9 +58,15 @@ class SpotifyHandlers:
             fail_embed = Embed(title=f"Spotify info for {user}",
                                description="The user isn't currently listening to Spotify\n*(note that this can't be detected unless Spotify is visible on the status)*",
                                colour=user.colour)
+
             fail_embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + (
                 self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
-            await ctx.send(embed=fail_embed) if is_ctx else await ctx.response.send_message(embed=fail_embed)
+
+            if ctx_type == self.ContextTypes.Context:
+                await ctx.send(embed=fail_embed)
+            else:
+                await ctx.response.send_message(embed=fail_embed)
+
             return
 
         duration = spotify_activity.duration.seconds
@@ -73,4 +90,8 @@ class SpotifyHandlers:
         embed.set_author(name=f"{user}", icon_url=get_user_avatar_url(user, mode=1)[0])
         embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + (
             self.bot.correct_time()).strftime(self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
-        await ctx.message.channel.send(embed=embed) if is_ctx else await ctx.response.send_message(embed=embed)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(embed=embed)
+        else:
+            await ctx.response.send_message(embed=embed)

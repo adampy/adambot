@@ -6,7 +6,7 @@ import asyncpg
 import discord
 from discord.ext import commands
 
-from libs.misc.utils import get_guild_icon_url, get_user_avatar_url
+from libs.misc.utils import get_guild_icon_url, get_user_avatar_url, ContextTypes, get_context_type
 
 from adambot import AdamBot
 
@@ -29,13 +29,22 @@ class ConfigHandlers:
         self.cog = cog
         self.Validation = Validation
 
-    async def is_staff(self, ctx: commands.Context | discord.Interaction) -> bool:
+    async def is_staff(self, ctx: commands.Context | discord.Interaction) -> None | bool:
         """
         Method that checks if a user is staff in their guild or not. `ctx` may be `discord.Message` or `discord.ext.commands.Context`
         """
+
+        ctx_type = get_context_type(ctx)
+        if ctx_type is ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         try:
             staff_role_id = await self.get_config_key(ctx, "staff_role")
-            author = ctx.author if type(ctx) is commands.Context else ctx.user
             return staff_role_id in [y.id for y in author.roles] or author.guild_permissions.administrator
         except Exception:  # usually ends up being a KeyError. would be neater if all that's relevant can be caught instead
             return False  # prevents daft spam before bot is ready with configs
@@ -151,8 +160,16 @@ class ConfigHandlers:
             await connection.execute(sql, *data.values())
 
     async def what_prefixes(self, ctx: commands.Context | discord.Interaction) -> None:
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
         msg = await self.bot.get_used_prefixes(ctx)
-        await ctx.send(msg) if type(ctx) is commands.Context else await ctx.response.send_message(msg)
+
+        if ctx_type == ContextTypes.Context:
+            await ctx.send(str(msg))
+        else:
+            await ctx.response.send_message(str(msg))
 
     async def view(self, ctx: commands.Context | discord.Interaction) -> None:
         """
@@ -166,7 +183,7 @@ class ConfigHandlers:
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
-        data = copy.deepcopy(self.bot.CONFIG)
+        data = copy.deepcopy(self.cog.CONFIG)
         config_dict = self.bot.configs[ctx.guild.id]
 
         for key in config_dict.keys():
@@ -199,14 +216,21 @@ class ConfigHandlers:
             thumbnail_url=get_guild_icon_url(ctx.guild),
             icon_url=get_user_avatar_url(ctx.author, mode=1)[0],
             footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(
-                self.bot.ts_format)
+                self.bot.ts_format),
+            ctx=ctx
         )
         await embed.set_page(1)  # Default first page
         await embed.send()
 
     async def set(self, ctx: commands.Context | discord.Interaction, key: str = "", value: str = "") -> None:
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = get_context_type(ctx)
+        if ctx_type is ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         if not (author.guild_permissions.administrator or await self.is_staff(ctx)):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
@@ -296,8 +320,14 @@ class ConfigHandlers:
 
     async def remove(self, ctx: commands.Context | discord.Interaction, key: str) -> None:
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = get_context_type(ctx)
+        if ctx_type is ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         if not (author.guild_permissions.administrator or await self.is_staff(ctx)):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
@@ -315,8 +345,14 @@ class ConfigHandlers:
 
     async def current(self, ctx: commands.Context | discord.Interaction, key: str) -> None:
 
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+        ctx_type = get_context_type(ctx)
+        if ctx_type is ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         if not (author.guild_permissions.administrator or await self.is_staff(ctx)):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)

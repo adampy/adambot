@@ -72,12 +72,12 @@ class WaitingRoom(commands.Cog):
 
     @commands.group(aliases=["lurker"])
     @is_staff()
-    async def lurkers(self, ctx: commands.Context, *phrase: str) -> None:
+    async def lurkers(self, ctx: commands.Context, *, phrase: str = "") -> None:
         """
         Ping all the people without a role so you can grab their attention. Optional, first argument is `message` is the phrase you want to send to lurkers.
         """
 
-        await self.Handlers.lurker(ctx, *phrase)
+        await self.Handlers.lurker(ctx, phrase)
 
     @app_commands.command(
         name="lurkers",
@@ -87,7 +87,7 @@ class WaitingRoom(commands.Cog):
         phrase="The phrase to mention lurkers with"
     )
     @is_staff_slash()
-    async def lurkers_slash(self, interaction: discord.Interaction, phrase: str) -> None:
+    async def lurkers_slash(self, interaction: discord.Interaction, phrase: str = "") -> None:
         """
         Slash equivalent of the lurkers command.
         """

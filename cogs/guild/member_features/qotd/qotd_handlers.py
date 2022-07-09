@@ -14,24 +14,36 @@ from adambot import AdamBot
 class QOTDHandlers:
     def __init__(self, bot: AdamBot) -> None:
         self.bot = bot
+        self.ContextTypes = self.bot.ContextTypes
 
     async def submit(self, ctx: commands.Context | discord.Interaction, qotd: str) -> None:
         """
         Handler for the submit commands.
         """
 
-        is_ctx = type(ctx) is commands.Context
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         if len(qotd) > 255:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not submit question!",
                                                              desc="Question over **255** characters, please **shorten** before trying the command again.")
             return
 
-        if not qotd and is_ctx:
+        if not qotd and ctx_type == self.ContextTypes.Context:
             await ctx.send(f"```{ctx.prefix}qotd submit <question>```")
             return
 
-        member = ctx.author.id if is_ctx else ctx.user.id
+        if ctx_type == self.ContextTypes.Context:
+            member = ctx.author.id
+        else:
+            member = ctx.user.id
+
         is_staff = await self.bot.is_staff(ctx)
 
         today = datetime.datetime.utcnow().date()
@@ -53,7 +65,7 @@ class QOTDHandlers:
                                          qotd, member, ctx.guild.id)
                 qotd_id = await connection.fetchval("SELECT MAX(id) FROM qotd WHERE guild_id = $1", ctx.guild.id)
 
-                if is_ctx:
+                if ctx_type == self.ContextTypes.Context:
                     await ctx.message.delete()
 
                 await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Successfully submitted QOTD!",
@@ -64,7 +76,7 @@ class QOTDHandlers:
                     log = self.bot.get_channel(log_channel_id)
                     embed = Embed(title=":grey_question: QOTD Submitted", color=Colour.from_rgb(177, 252, 129))
                     embed.add_field(name="ID", value=qotd_id)
-                    embed.add_field(name="Author", value=ctx.author if is_ctx else ctx.user)
+                    embed.add_field(name="Author", value=author)
                     embed.add_field(name="Question", value=qotd, inline=True)
                     embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
                     await log.send(embed=embed)
@@ -73,8 +85,16 @@ class QOTDHandlers:
         """
         Handler for the list commands.
         """
-        is_ctx = type(ctx) is commands.Context
-        author = ctx.author if is_ctx else ctx.user
+
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         async with self.bot.pool.acquire() as connection:
             qotds = await connection.fetch("SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id", ctx.guild.id)
 
@@ -104,6 +124,15 @@ class QOTDHandlers:
         Handler for the delete commands.
         """
 
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
+
         question_ids = question_ids.split(" ")
 
         info = ""
@@ -119,8 +148,7 @@ class QOTDHandlers:
                         log = self.bot.get_channel(log_channel_id)
                         embed = Embed(title=":grey_question: QOTD Deleted", color=Colour.from_rgb(177, 252, 129))
                         embed.add_field(name="ID", value=question_id)
-                        embed.add_field(name="Staff",
-                                        value=str(ctx.author if type(ctx) is commands.Context else ctx.user))
+                        embed.add_field(name="Staff", value=author)
                         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
                         await log.send(embed=embed)
 
@@ -135,6 +163,15 @@ class QOTDHandlers:
         """
         Handler for the pick commands.
         """
+
+        ctx_type = self.bot.get_context_type(ctx)
+        if ctx_type == self.ContextTypes.Unknown:
+            return
+
+        if ctx_type == self.ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.user
 
         qotd_channel_id = await self.bot.get_config_key(ctx, "qotd_channel")
         if qotd_channel_id is None:
@@ -179,6 +216,6 @@ class QOTDHandlers:
             embed.add_field(name="ID", value=question_data[0])
             embed.add_field(name="Author", value=str(member))
             embed.add_field(name="Question", value=question, inline=True)
-            embed.add_field(name="Picked by", value=str(ctx.author if type(ctx) is commands.Context else ctx.user))
+            embed.add_field(name="Picked by", value=author)
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
             await log.send(embed=embed)

@@ -119,8 +119,7 @@ class TriviaSession:
                     valid_attempt
                     and True in [answer.lower() in m.content.lower() for answer in
                                  self.answers]  # List contains True or False for each answer depending on if its present in the response
-                    and self.question_number == current_question_number
-                # Ensures that the question numbers are the same, if they aren't the same the question as been skipped
+                    and self.question_number == current_question_number  # Ensures that the question numbers are the same, if they aren't the same the question as been skipped
             )
 
         try:

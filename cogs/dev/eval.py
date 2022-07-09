@@ -7,6 +7,7 @@ from . import eval_handlers
 
 from adambot import AdamBot
 
+
 class Eval(commands.Cog):
 
     def __init__(self, bot: AdamBot) -> None:
