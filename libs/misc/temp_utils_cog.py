@@ -1,17 +1,17 @@
 import discord
 from discord.ext import commands
-from . import utils
+from . import embed_pages, utils
 
 """
 As the name of the cog suggests, this cog is supposed to be a TEMPORARY part of a solution.
 utils will be getting rewritten/restructured as appropriate in the future, but this is a part of an effort to improve upon the general structure of the project.
 """
 
-
 class Utils(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
         self.bot.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
+        self.bot.__dict__.update(embed_pages.__dict__)
 
         self.bot.pages = []
         self.bot.flag_handler = self.bot.flags()
