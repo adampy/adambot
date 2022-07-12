@@ -185,3 +185,10 @@ class EmbedPages(discord.ui.View):
         await interaction.response.defer()
         self.clear_items()
         await interaction.delete_original_message() # TODO: Check raises
+
+class EmbedPageHook(discord.ext.commands.Cog):
+    def __init__(self, bot) -> None:
+        bot.__dict__.update(globals()) # Bring the embed pages into the bot
+
+async def setup(bot) -> None:
+    await bot.add_cog(EmbedPageHook(bot))

@@ -1,0 +1,4 @@
+{
+    "loader": "./embed_pages",
+    "intents": ["guild_messages", "guild_reactions", "members"]
+  }

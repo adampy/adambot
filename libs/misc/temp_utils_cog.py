@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from . import embed_pages, utils
+from . import utils
 
 """
 As the name of the cog suggests, this cog is supposed to be a TEMPORARY part of a solution.
@@ -11,7 +11,6 @@ class Utils(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
         self.bot.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
-        self.bot.__dict__.update(embed_pages.__dict__) # Bring the embed pages into the bot
 
         self.bot.flag_handler = self.bot.flags()
         self.bot.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.bot.flag_methods.str_time_to_seconds})
