@@ -1,33 +1,22 @@
 import discord
 from .utils import PageTypes, EmojiEnum # TODO: Move this into here
-from discord import Embed, Message, Colour
+from discord import Embed, Colour
 from datetime import timedelta
 from math import ceil
-import asyncio
 
-class NewEmbedPageButton(discord.ui.Button['NewEmbedPages']):
+class EmbedPageButton(discord.ui.Button['EmbedPages']):
     def __init__(self, emoji: EmojiEnum, func, label: str | None = None, style: discord.ButtonStyle = discord.ButtonStyle.primary):
         super().__init__(style=style, label=label, emoji=emoji)
-        self.emoji = emoji
         self.func = func
 
     async def callback(self, interaction: discord.Interaction):
         # Defer interactions from anyone but original initiator
         if interaction.user != self.view.initiator:
             await interaction.response.defer()
-
+            return
         await self.func(interaction)
-        #await interaction.response.edit_message(content=string, view=self.view)
 
-
-# class EmbedPageButton(discord.ui.Button['EmbedPages']):
-#    def __init__(self, emoji):
-#        super().__init__(style=discord.ButtonStyle.primary, label='\u200b', emoji=emoji, row=0)
-
-#    async def callback(self, interaction: discord.Interaction):
-#        await interaction.response.edit_message(content="Updated message string", view=self.view)
-
-class NewEmbedPages(discord.ui.View):
+class EmbedPages(discord.ui.View):
     def __init__(self, page_type: int, data: list, title: str, colour: Colour, bot, initiator: discord.Member, channel: discord.TextChannel | discord.Thread, desc: str = "", thumbnail_url: str = "",
                  footer: str = "", icon_url: str = "") -> None:
         super().__init__(timeout=300) # Initialise view
@@ -37,7 +26,6 @@ class NewEmbedPages(discord.ui.View):
         self.page_type = page_type
         self.top_limit = 0
         self.embed: Embed = None  # Embed(title=title + ": Page 1", color=colour, desc=desc)
-        self.message: Message = None
         self.page_num = 1
         self.initiator = initiator  # Here to stop others using the embed
         self.channel = channel
@@ -49,12 +37,12 @@ class NewEmbedPages(discord.ui.View):
         self.icon_url = icon_url
         self.colour = colour
 
-        # Initialise view and add reactions
-        self.add_item(NewEmbedPageButton(EmojiEnum.MIN_BUTTON, self.first_page, label="First page"))
-        self.add_item(NewEmbedPageButton(EmojiEnum.LEFT_ARROW, self.previous_page, label="Previous page"))
-        self.add_item(NewEmbedPageButton(EmojiEnum.RIGHT_ARROW, self.next_page, label="Next page"))
-        self.add_item(NewEmbedPageButton(EmojiEnum.MAX_BUTTON, self.last_page, label="Last page"))
-        self.add_item(NewEmbedPageButton(EmojiEnum.CLOSE, self.close, style=discord.ButtonStyle.danger, label="Close"))
+        # Add reactions
+        self.add_item(EmbedPageButton(EmojiEnum.MIN_BUTTON, self.first_page, label="First page"))
+        self.add_item(EmbedPageButton(EmojiEnum.LEFT_ARROW, self.previous_page, label="Previous page"))
+        self.add_item(EmbedPageButton(EmojiEnum.RIGHT_ARROW, self.next_page, label="Next page"))
+        self.add_item(EmbedPageButton(EmojiEnum.MAX_BUTTON, self.last_page, label="Last page"))
+        self.add_item(EmbedPageButton(EmojiEnum.CLOSE, self.close, style=discord.ButtonStyle.danger, label="Close"))
 
     async def set_page(self, page_num: int) -> None:
         """
@@ -178,18 +166,16 @@ class NewEmbedPages(discord.ui.View):
 
     async def send(self) -> None:
         """
-        Sends the embed message. The message is deleted after 300 seconds (5 minutes).
+        Sends the embed message. The interaction times out after 300 seconds (5 minutes).
         """
 
-        self.message = await self.channel.send(embed=self.embed, view=self)
-        self.bot.pages.append(self)
+        await self.channel.send(embed=self.embed, view=self)
 
     async def edit(self, interaction: discord.Interaction) -> None:
         """
-        Edits the message to the current self.embed and updates self.message
+        Edits the interaction's original message to represent the current self.embed
         """
 
-        await self.message.edit(embed=self.embed)
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     async def close(self, interaction: discord.Interaction) -> None:
