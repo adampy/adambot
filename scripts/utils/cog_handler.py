@@ -11,7 +11,6 @@ class CogHandler:
         self.core_cogs = [
             "core.config.config",
             "core.tasks.tasks",
-            "libs.misc.temp_utils_cog", # as the name suggests, this is temporary, will be moved/split up at some point, just not right now
             "libs.misc.embed_pages"
         ]
 

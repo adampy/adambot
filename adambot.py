@@ -12,8 +12,10 @@ from tzlocal import get_localzone
 import pandas
 import json
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
+from libs.misc.decorators import MissingStaffError, MissingDevError
 from scripts.utils import cog_handler
 
+import libs.misc.utils as utils
 
 class AdamBot(Bot):
     async def get_context(self, message: discord.Message, *, cls=commands.Context) -> commands.Context:
@@ -76,6 +78,7 @@ class AdamBot(Bot):
         self.ts_format = "%A %d/%m/%Y %H:%M:%S"
         self.start_time = start_time
         self._init_time = time.time()
+        self.last_active = {}  # Used for ensuring bots do not respond or invoke commands
 
         print(f"BOT INITIALISED {self._init_time - start_time} seconds")
 
@@ -128,6 +131,11 @@ class AdamBot(Bot):
         Command that starts AdamBot, is run in AdamBot.__init__
         """
 
+        print("Loading utils into the bot instance...")
+        self.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
+        print("Setting flag handlers...")
+        self.set_flag_handlers()
+
         print("Loading cogs...")
         await self.cog_handler.load_cogs()
         self.cog_load = time.time()
@@ -162,15 +170,40 @@ class AdamBot(Bot):
                 f"Something went wrong handling the token!\nThe error was {type(e).__name__}: {e}")  # overridden close cleans this up neatly
 
     async def on_ready(self) -> None:
+        """
+        Event that sets the bot instance's status and online presence
+        """
         self.login_time = time.time()
         print(f"Bot logged into Discord ({self.login_time - self.start_time} seconds total)")
         await self.change_presence(activity=discord.Game(name=f"in {len(self.guilds)} servers | Type `help` for help"),
                                    status=discord.Status.online)
         self.online = True
 
+    async def on_message(self, message: discord.Message) -> None:
+        """
+        Event that has checks that stop bots from executing commands
+        """
+
+        if type(message.channel) == discord.DMChannel or message.author.bot:
+            return
+        if message.guild.id not in self.last_active:
+            self.last_active[message.guild.id] = []  # create the dict key for that guild if it doesn't exist
+        last_active_list = self.last_active[message.guild.id]
+        if message.author in last_active_list:
+            last_active_list.remove(message.author)
+        last_active_list.insert(0, message.author)
+
+        # Now run commands, due to overriding of default bot `on_message` doesn't do this automatically
+        await self.process_commands(message)
+
     async def on_command_error(self, ctx: commands.Context, error) -> None:
         if isinstance(error, MissingStaffError) or isinstance(error, MissingDevError):
-            await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
+            await self.DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
+
+    def set_flag_handlers(self) -> None:
+        self.flag_handler = self.flags()
+        self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
+        self.flag_handler.set_flag("reason", {"flag": "r"})
 
     def correct_time(self, conv_time: Optional[datetime.datetime] = None,
                      timezone_: str = "system") -> datetime.datetime:
