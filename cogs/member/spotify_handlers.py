@@ -2,9 +2,8 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 
-from libs.misc.utils import get_user_avatar_url
-
 from adambot import AdamBot
+from libs.misc.utils import get_user_avatar_url
 
 
 class SpotifyHandlers:

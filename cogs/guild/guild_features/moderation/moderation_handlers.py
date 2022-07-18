@@ -6,9 +6,8 @@ from discord import Embed, Colour, app_commands
 from discord.ext import commands
 from discord.utils import get
 
-from libs.misc.utils import get_user_avatar_url
-
 from adambot import AdamBot
+from libs.misc.utils import get_user_avatar_url
 
 
 class ModerationHandlers:

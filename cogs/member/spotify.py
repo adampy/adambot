@@ -2,9 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from . import spotify_handlers
-
 from adambot import AdamBot
+from . import spotify_handlers
 
 
 class Spotify(commands.Cog):

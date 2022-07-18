@@ -1,10 +1,8 @@
 import discord
 from discord.ext import commands
 
-from .trivia_session import TRIVIAS, TriviaSession
-
-
 from adambot import AdamBot
+from .trivia_session import TRIVIAS, TriviaSession
 
 
 class TriviaHandlers:

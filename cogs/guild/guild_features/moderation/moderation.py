@@ -1,9 +1,8 @@
 from discord.ext.commands import has_permissions
-from libs.misc.decorators import *
-
-from . import moderation_handlers
 
 from adambot import AdamBot
+from libs.misc.decorators import *
+from . import moderation_handlers
 
 
 class Moderation(commands.Cog):

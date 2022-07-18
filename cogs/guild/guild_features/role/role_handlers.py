@@ -4,9 +4,8 @@ import discord
 from discord import Embed, errors
 from discord.ext import commands
 
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
-
 from adambot import AdamBot
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
 class Verbosity:  # Using enum.Enum means that ">" and "<" operations cannot be performed, e.g. Verbosity.ALL > Verbosity.MINIMAL

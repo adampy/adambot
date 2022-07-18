@@ -2,10 +2,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from adambot import AdamBot
 from libs.misc.decorators import is_dev, is_dev_slash
 from . import eval_handlers
-
-from adambot import AdamBot
 
 
 class Eval(commands.Cog):

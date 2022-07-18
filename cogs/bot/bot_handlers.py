@@ -9,9 +9,8 @@ import requests
 from discord import Embed
 from discord.ext import commands
 
-from libs.misc.utils import get_user_avatar_url
-
 from adambot import AdamBot
+from libs.misc.utils import get_user_avatar_url
 
 
 class BotHandlers:

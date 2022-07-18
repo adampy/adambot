@@ -3,9 +3,8 @@ import matplotlib.pyplot as plt
 from discord import Embed, Colour
 from discord.ext import commands
 
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
-
 from adambot import AdamBot
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
 class ReputationHandlers:

@@ -6,9 +6,8 @@ import asyncpg
 import discord
 from discord.ext import commands
 
-from libs.misc.utils import get_guild_icon_url, get_user_avatar_url, ContextTypes, get_context_type
-
 from adambot import AdamBot
+from libs.misc.utils import get_guild_icon_url, get_user_avatar_url, ContextTypes, get_context_type
 
 
 class Validation(Enum):

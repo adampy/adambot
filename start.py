@@ -1,5 +1,6 @@
-import time
 import asyncio
+import time
+
 start_time = time.time()
 from scripts.utils.handle_dependencies import handle_dependencies
 handle_dependencies()

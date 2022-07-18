@@ -4,10 +4,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from adambot import AdamBot
 from libs.misc.decorators import is_staff, is_staff_slash
 from . import demographics_handlers
-
-from adambot import AdamBot
 
 
 class Demographics(commands.Cog):

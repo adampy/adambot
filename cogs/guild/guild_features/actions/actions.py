@@ -11,9 +11,8 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 
-from libs.misc.decorators import is_staff
-
 from adambot import AdamBot
+from libs.misc.decorators import is_staff
 
 """
 Potential TODOs:

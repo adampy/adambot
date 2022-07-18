@@ -1,4 +1,5 @@
-from typing import Callable, Optional
+from typing import Callable
+from typing import Optional
 
 import discord
 from discord import app_commands
@@ -87,6 +88,11 @@ class QOTD(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error) -> None:
+        if isinstance(error, MissingQOTDError):
+            await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error):
         if isinstance(error, MissingQOTDError):
             await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
 

@@ -1,12 +1,10 @@
-import asyncio
-import csv
-import random
-import urllib.request as request
-from datetime import datetime
-from typing import Optional
-
 import discord
 from discord import Embed, Colour
+import urllib.request as request
+import csv
+import random
+import asyncio
+from datetime import datetime
 
 TRIVIAS = [
     "cars",
@@ -32,7 +30,8 @@ TRIVIAS = [
     "usstateabbreviations",
     "worldcapitals",
     "worldflags",
-    "WW2"
+    "WW2",
+    "morsecode"
 ]
 
 SETTINGS = {
@@ -95,7 +94,7 @@ class TriviaSession:
         self.started_at = datetime.utcnow()
         self.bot.loop.create_task(self.ask_next_question())
 
-    async def ask_next_question(self) -> Optional[bool]:
+    async def ask_next_question(self) -> None:
         """
         Method that asks the next question
         """
@@ -111,7 +110,7 @@ class TriviaSession:
         self.questions.pop(rand_indx)
         await self.channel.send(f"**Question number {self.question_number}**!\n\n{self.question}")
 
-        def check(m: discord.Message) -> bool:
+        def check(m: discord.Message) -> None | bool:
             valid_attempt = not m.author.bot and m.channel == self.channel
             if valid_attempt:
                 self.attempts_at_current_question += 1
@@ -119,7 +118,8 @@ class TriviaSession:
                     valid_attempt
                     and True in [answer.lower() in m.content.lower() for answer in
                                  self.answers]  # List contains True or False for each answer depending on if its present in the response
-                    and self.question_number == current_question_number  # Ensures that the question numbers are the same, if they aren't the same the question as been skipped
+                    and self.question_number == current_question_number
+            # Ensures that the question numbers are the same, if they aren't the same the question as been skipped
             )
 
         try:
