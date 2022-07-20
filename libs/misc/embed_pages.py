@@ -1,8 +1,10 @@
 from datetime import timedelta
 from math import ceil
+from typing import Optional
 
 import discord
 from discord import Embed, Colour
+from discord.ext import commands
 
 from .utils import PageTypes, EmojiEnum  # TODO: Move this into here
 
@@ -19,16 +21,17 @@ class EmbedPageButton(discord.ui.Button['EmbedPages']):
             return
         await self.func(interaction)
 
+
 class EmbedPages(discord.ui.View):
     def __init__(self, page_type: int, data: list, title: str, colour: Colour, bot, initiator: discord.Member, channel: discord.TextChannel | discord.Thread, desc: str = "", thumbnail_url: str = "",
-                 footer: str = "", icon_url: str = "") -> None:
-        super().__init__(timeout=300) # Initialise view
+                 footer: str = "", icon_url: str = "", ctx: commands.Context | discord.Interaction = None) -> None:
+        super().__init__(timeout=300)  # Initialise view
         self.bot = bot
         self.data = data
         self.title = title
         self.page_type = page_type
         self.top_limit = 0
-        self.embed: Embed = None  # Embed(title=title + ": Page 1", color=colour, desc=desc)
+        self.embed: Optional[Embed] = None  # Embed(title=title + ": Page 1", color=colour, desc=desc)
         self.page_num = 1
         self.initiator = initiator  # Here to stop others using the embed
         self.channel = channel
@@ -39,6 +42,8 @@ class EmbedPages(discord.ui.View):
         self.thumbnail_url = thumbnail_url
         self.icon_url = icon_url
         self.colour = colour
+
+        self.ctx = ctx
 
         # Add reactions
         self.add_item(EmbedPageButton(EmojiEnum.MIN_BUTTON, self.first_page, label="First page"))
@@ -172,7 +177,11 @@ class EmbedPages(discord.ui.View):
         Sends the embed message. The interaction times out after 300 seconds (5 minutes).
         """
 
-        await self.channel.send(embed=self.embed, view=self)
+        ctx_type = self.bot.get_context_type(self.ctx)
+        if ctx_type == self.bot.ContextTypes.Context or (ctx_type == self.bot.ContextTypes.Interaction and self.ctx.response.is_done()) or not self.ctx:
+            await self.channel.send(embed=self.embed, view=self)
+        else:
+            await self.ctx.response.send_message(embed=self.embed, view=self)
 
     async def edit(self, interaction: discord.Interaction) -> None:
         """
@@ -185,13 +194,16 @@ class EmbedPages(discord.ui.View):
         """
         Clears all of the buttons from the view
         """
+
         await interaction.response.defer()
         self.clear_items()
-        await interaction.delete_original_message() # TODO: Check raises
+        await interaction.delete_original_message()  # TODO: Check raises
+
 
 class EmbedPageHook(discord.ext.commands.Cog):
     def __init__(self, bot) -> None:
-        bot.__dict__.update(globals()) # Bring the embed pages into the bot
+        bot.__dict__.update(globals())  # Bring the embed pages into the bot
+
 
 async def setup(bot) -> None:
     await bot.add_cog(EmbedPageHook(bot))

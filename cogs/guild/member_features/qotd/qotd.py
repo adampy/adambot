@@ -91,11 +91,6 @@ class QOTD(commands.Cog):
         if isinstance(error, MissingQOTDError):
             await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
 
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error):
-        if isinstance(error, MissingQOTDError):
-            await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
-
     @commands.group()
     async def qotd(self, ctx: commands.Context) -> None:
         """

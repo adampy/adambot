@@ -178,7 +178,16 @@ class ConfigHandlers:
          3. Pass the dict into EmbedPages for formatting
         """
 
-        if not (ctx.author.guild_permissions.administrator or await self.is_staff(ctx)):
+        ctx_type = get_context_type(ctx)
+        if ctx_type is ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            author = ctx.author
+        else:
+            author = ctx.guild.get_member(ctx.user.id)  # users do not have guild permissions, only members
+
+        if not (author.guild_permissions.administrator or await self.is_staff(ctx)):
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             return
 
@@ -207,14 +216,14 @@ class ConfigHandlers:
             self.bot.PageTypes.CONFIG,
             data,
             f":tools:  {ctx.guild.name} ({ctx.guild.id}) configuration",
-            ctx.author.colour,
+            author.colour,  # another reason why a member object is needed
             self.bot,
-            ctx.author,
+            author,
             ctx.channel,
             desc=desc,
             thumbnail_url=get_guild_icon_url(ctx.guild),
-            icon_url=get_user_avatar_url(ctx.author, mode=1)[0],
-            footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(
+            icon_url=get_user_avatar_url(author, mode=1)[0],
+            footer=f"Requested by: {author.display_name} ({author})\n" + self.bot.correct_time().strftime(
                 self.bot.ts_format),
             ctx=ctx
         )
@@ -383,7 +392,13 @@ class ConfigHandlers:
             prefix = await self.get_config_key(ctx, "prefix")
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Current value of prefix", prefix)
         else:
-            if not (ctx.author.guild_permissions.administrator or await self.is_staff(ctx)):
+            ctx_type = get_context_type(ctx)
+            if ctx_type == ContextTypes.Context:
+                author = ctx.author
+            else:
+                author = ctx.guild.get_member(ctx.user.id)
+
+            if not (author.guild_permissions.administrator or await self.is_staff(ctx)):
                 await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
             else:
                 await ctx.invoke(self.bot.get_command("config set"), "prefix", new_prefix)
