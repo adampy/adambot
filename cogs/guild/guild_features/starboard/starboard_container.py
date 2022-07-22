@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 
 
@@ -85,7 +87,7 @@ class StarboardContainer:
         self.embed_colour = new_starboard_data["embed_colour"]
         self.allow_self_star = new_starboard_data["allow_self_star"]
 
-    async def try_get_entry(self, message_id: int) -> Entry | None:
+    async def try_get_entry(self, message_id: int) -> Optional[Entry]:
         """
         Returns either a starboard entry or None if it doesn't exist
         """

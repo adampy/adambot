@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 import time
-from typing import Callable
+from typing import Callable, Optional
 
 import asyncpg
 import discord
@@ -255,7 +255,7 @@ class AdamBot(Bot):
         self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
         self.flag_handler.set_flag("reason", {"flag": "r"})
 
-    def correct_time(self, conv_time: datetime.datetime | None = None,
+    def correct_time(self, conv_time: Optional[datetime.datetime] = None,
                      timezone_: str = "system") -> datetime.datetime:
         if not conv_time:
             conv_time = datetime.datetime.now()

@@ -10,7 +10,7 @@ from .utils import PageTypes, EmojiEnum  # TODO: Move this into here
 
 
 class EmbedPageButton(discord.ui.Button['EmbedPages']):
-    def __init__(self, emoji: EmojiEnum, func, label: str | None = None, style: discord.ButtonStyle = discord.ButtonStyle.primary):
+    def __init__(self, emoji: EmojiEnum, func, label: Optional[str] = None, style: discord.ButtonStyle = discord.ButtonStyle.primary):
         super().__init__(style=style, label=label, emoji=emoji)
         self.func = func
 

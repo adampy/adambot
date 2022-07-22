@@ -66,7 +66,7 @@ class StarboardHandlers:
                 results.append(starboard)
         return results
 
-    async def _try_get_starboard(self, channel_id: int) -> StarboardContainer | None:
+    async def _try_get_starboard(self, channel_id: int) -> Optional[StarboardContainer]:
         """
         Return the starboard for the given text channel or None if it doesn't exist
         """
