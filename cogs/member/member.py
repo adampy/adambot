@@ -20,11 +20,8 @@ class Member(commands.Cog):
     async def on_ready(self) -> None:
         """
         A method which listens for the bot to be ready.
-
-        Syncs the application commands here.
         """
 
-        await self.bot.tree.sync()  # possibly doesn't need to be done on every start
         await self.bot.tasks.register_task_type("reminder",
                                                 self.handle_remind,
                                                 needs_extra_columns=
@@ -40,7 +37,7 @@ class Member(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    async def quote(self, ctx: commands.Context, messageid: int, channel: discord.TextChannel | discord.Thread) -> None:
+    async def quote(self, ctx: commands.Context, messageid: int, channel: int | discord.TextChannel | discord.Thread) -> None:
         """
         Quote a message from its ID.
         Channel can be a standard channel or a thread.
@@ -62,7 +59,7 @@ class Member(commands.Cog):
         Slash command equivalent of the classic quote command
         """
 
-        await self.Handlers.quote(interaction, messageid, await channel.fetch())
+        await self.Handlers.quote(interaction, messageid, channel)
 
     # -----------------------FUN------------------------------
 
@@ -98,7 +95,7 @@ class Member(commands.Cog):
         Slash command equivalent of the classic bruhs command.
         """
 
-        await interaction.response.send_message(self.Handlers.bruhs(interaction.guild))
+        await interaction.response.send_message(await self.Handlers.bruhs(interaction.guild))
 
     @commands.command()
     @commands.guild_only()

@@ -17,16 +17,6 @@ class Spotify(commands.Cog):
         self.bot = bot
         self.Handlers = spotify_handlers.SpotifyHandlers(bot)
 
-    @commands.Cog.listener()
-    async def on_ready(self) -> None:
-        """
-        A method which listens for the bot to be ready.
-
-        Syncs the application commands here.
-        """
-
-        await self.bot.tree.sync()  # possibly doesn't need to be done on every start
-
     @commands.command(name="spotify", aliases=["spotifyinfo"])
     async def spotify_info(self, ctx: commands.Context, *, args: discord.Member | discord.User | str = "") -> None:
         """

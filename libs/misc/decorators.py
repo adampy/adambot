@@ -55,7 +55,7 @@ async def staff_predicate(ctx: commands.Context | discord.Interaction) -> Option
     else:
         author = ctx.user
 
-    staff_role_id = await ctx.bot.get_config_key(ctx, "staff_role")
+    staff_role_id = await bot.get_config_key(ctx, "staff_role")
 
     if staff_role_id in [y.id for y in author.roles] or author.guild_permissions.administrator:
         return True

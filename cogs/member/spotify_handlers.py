@@ -26,7 +26,7 @@ class SpotifyHandlers:
         if ctx_type == self.ContextTypes.Context:
             author = ctx.author
         else:
-            author = ctx.user
+            author = ctx.guild.get_member(ctx.user.id)
 
         if not user or (type(user) is str and len(user) == 0):
             user = author

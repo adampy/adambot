@@ -34,7 +34,6 @@ class Demographics(commands.Cog):
         Syncs the application commands here.
         """
 
-        await self.bot.tree.sync()  # possibly doesn't need to be done on every start
         await self.bot.tasks.register_task_type("demographic_sample", self.handle_demographic_sample,
                                                 needs_extra_columns={"demographic_role_id": "bigint"})
 
@@ -266,8 +265,7 @@ class Demographics(commands.Cog):
 
     @demographics.command()
     @commands.guild_only()
-    async def show(self,
-                   ctx: commands.Context) -> None:  # DO NOT REMOVE THIS METHOD (if you plan on removing, remove dependency in demographics command group declaration)
+    async def show(self, ctx: commands.Context) -> None:  # DO NOT REMOVE THIS METHOD (if you plan on removing, remove dependency in demographics command group declaration)
         """
         View server demographics.
         """

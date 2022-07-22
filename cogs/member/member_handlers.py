@@ -14,7 +14,7 @@ class MemberHandlers:
         self.ContextTypes = self.bot.ContextTypes
 
     async def quote(self, ctx: commands.Context | discord.Interaction, messageid: int | str,
-                    channel: discord.TextChannel | discord.Thread | app_commands.AppCommandThread) -> None:
+                    channel: int | discord.TextChannel | discord.Thread | app_commands.AppCommandThread) -> None:
         """
         Handler method for the classic and slash quote commands.
         Fetches and displays a specified message from its ID and a channel ID if it exists.
@@ -23,6 +23,11 @@ class MemberHandlers:
         ctx_type = self.bot.get_context_type(ctx)
         if ctx_type is self.ContextTypes.Unknown:
             return
+
+        if type(channel) is int:
+            channelid = channel
+        else:
+            channelid = channel.id
 
         try:
             msg = await channel.fetch_message(int(messageid))
@@ -42,7 +47,7 @@ class MemberHandlers:
             image = msg.attachments[0].url
 
         embed = Embed(title="Quote link",
-                      url=f"https://discordapp.com/channels/{channel.id}/{messageid}",
+                      url=f"https://discordapp.com/channels/{channelid}/{messageid}",
                       color=user.color,
                       timestamp=msg.created_at)
 

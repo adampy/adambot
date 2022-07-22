@@ -186,17 +186,16 @@ class DemographicsHandlers:
             def check(m: discord.Message) -> bool:
                 return m.author == author and m.channel == ctx.channel
 
+            if ctx_type == self.ContextTypes.Interaction:
+                await ctx.response.send_message(":thumbsup:")
+
             question = await ctx.channel.send(
                 f"No role given, would you like to take a sample of all this guild's roles? (Type either 'yes' or 'no')")
             try:
                 response = await self.bot.wait_for("message", check=check, timeout=300)  # 5 minute timeout
             except asyncio.TimeoutError:
                 message = "Demographic command timed out. :sob:"
-
-                if ctx_type == self.ContextTypes.Context:
-                    await question.edit(content=message)
-                else:
-                    await ctx.response.send_message(message)
+                await question.edit(content=message)
 
                 return
 
@@ -211,10 +210,7 @@ class DemographicsHandlers:
             else:
                 message = "Unknown response - operation cancelled."
 
-            if ctx_type == self.ContextTypes.Context:
-                await ctx.send(message)
-            else:
-                await ctx.response.send_message(message)
+            await ctx.channel.send(message)
 
             return  # return here means return does not need to be placed inside each condition
 
@@ -282,7 +278,7 @@ class DemographicsHandlers:
                 double_newline = False  # Adds an extra new line on the first iteration
             message += f"\n•**{n}** {role.name}"
 
-        message += f"\n*Note: do `{ctx.prefix}demographics chart` to view change in demographics over time!*"
+        message += f"\n*Note: do `{ctx.prefix if ctx_type == self.ContextTypes.Context else '/'}demographics chart` to view change in demographics over time!*"
 
         if ctx_type == self.ContextTypes.Context:
             await ctx.send(message)

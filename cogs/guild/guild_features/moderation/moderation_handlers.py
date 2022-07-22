@@ -181,9 +181,9 @@ class ModerationHandlers:
 
         tracker = None
         invites = await ctx.guild.invites()
-
         if type(members) is str:
             all_members = members.split(" ")
+            all_members = [member.replace("<@", "").replace("!", ""). replace(">", "") for member in all_members]
             all_members = [member for member in all_members if len(str(member)) == 18 and str(member).isnumeric()]
         else:
             all_members = [members]
@@ -193,7 +193,7 @@ class ModerationHandlers:
         else:
             massban = len(all_members) > 1
 
-        if type(members) is str:
+        if type(members) is str and ctx_type == self.ContextTypes.Context:  # parsing is only needed in the classic command
             parsed_args = self.bot.flag_handler.separate_args(members, fetch=["time", "reason"],
                                                               blank_as_flag="reason" if not massban else None)
             timeperiod = parsed_args["time"] if not timeperiod else timeperiod
@@ -531,7 +531,7 @@ class ModerationHandlers:
         embed = Embed(title="Member Muted", color=Colour.from_rgb(172, 32, 31))
         embed.add_field(name="Member", value=f"{member.mention} ({member.id})")
         embed.add_field(name="Moderator", value=author)
-        embed.add_field(name="Reason", value=reason)
+        embed.add_field(name="Reason", value=reasonstring)
         embed.add_field(name="Expires",
                         value=timestring.replace("until ", "") if timestring != "indefinitely" else "Never")
         embed.set_thumbnail(url=get_user_avatar_url(member, mode=1)[0])

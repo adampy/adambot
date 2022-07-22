@@ -173,19 +173,19 @@ class Config(commands.Cog):
     @commands.guild_only()
     async def prefix(self, ctx: commands.Context, new_prefix: str = "") -> None:
         """
-        View the current prefix or change it
+        Change the current prefix
         """
 
         await self.Handlers.prefix(ctx, new_prefix=new_prefix)
 
     @app_commands.command(
         name="prefix",
-        description="View or set the server-specific prefix"
+        description="Set the server-specific prefix"
     )
     @app_commands.describe(
         new_prefix="The new prefix to set for this server"
     )
-    async def prefix_slash(self, interaction: discord.Interaction, new_prefix: str = "") -> None:
+    async def prefix_slash(self, interaction: discord.Interaction, new_prefix: str) -> None:
         """
         Slash equivalent of the classic command prefix.
         """
