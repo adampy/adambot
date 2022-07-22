@@ -16,7 +16,7 @@ from tzlocal import get_localzone
 
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
 import libs.misc.utils as utils
-from libs.misc.decorators import MissingStaffError, MissingDevError, MissingStaffSlashError
+from libs.misc.decorators import MissingStaffError, MissingDevError, MissingStaffSlashError, MissingDevSlashError
 from libs.misc.utils import DefaultEmbedResponses, ContextTypes, get_context_type
 from scripts.utils import cog_handler
 
@@ -28,11 +28,19 @@ class AdamTree(discord.app_commands.tree.CommandTree):
         super().__init__(client)
 
     def map(self, error: AppCommandError, method: Callable) -> None:
+        """
+        Allows for mapping custom AppCommandErrors to custom handler methods.
+        """
+
         self.maps[error] = method
 
     async def on_error(self, interaction: Interaction, error: AppCommandError) -> None:
+        """
+        Custom error handler for AppCommandErrors. If a custom handler is mapped to the error, it will be called.
+        Otherwise, the error will be raised as normal.
+        """
 
-        if isinstance(error, MissingStaffSlashError) or isinstance(error, MissingDevError):
+        if isinstance(error, MissingStaffSlashError) or isinstance(error, MissingDevSlashError):
             await DefaultEmbedResponses.invalid_perms(self.client, interaction)
         else:
             mapped_method = self.maps.get(error.__class__, None)
