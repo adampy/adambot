@@ -410,9 +410,9 @@ class Member(commands.Cog):
             string = f"{hour}AM"
         rn = self.bot.correct_time()
         if which == "GCSE":
-            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=18, hour=hour, minute=0, second=0))
+            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=25, hour=hour, minute=0, second=0))
         else:
-            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=11, hour=hour, minute=0, second=0))
+            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=18, hour=hour, minute=0, second=0))
         embed = Embed(title=f"Countdown until {which} results day at {string} (on {time_.day}/{time_.month}/{time_.year})",
                       color=Colour.from_rgb(148, 0, 211))
 
