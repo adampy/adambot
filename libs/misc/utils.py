@@ -239,6 +239,7 @@ class flags:
                 str(self.flags[blank_as_flag]["flag"]) if (blank_as_flag in self.flags) else "") + " " + args
         if args.startswith(self.flag_prefix):
             args = " " + args
+
         args = args.split(f" {self.flag_prefix}")
         args = [a.split(" ") for a in args]
         if not args[0][0]:
@@ -271,10 +272,11 @@ def time_arg(arg: str) -> int:  # rewrite
     Given a time argument gets the time in seconds
     """
 
+    if len(arg) == 0 or type(arg) is not str:
+        return 0
+
     total = 0
     times = arg.split(" ")
-    if len(times) == 0:
-        return 0
     for item in times:
         if item[-1] == "w":
             total += 7 * 24 * 60 * 60 * int(item[:-1])

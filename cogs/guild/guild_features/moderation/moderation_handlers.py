@@ -193,11 +193,11 @@ class ModerationHandlers:
         else:
             massban = len(all_members) > 1
 
-        if type(members) is str and ctx_type == self.ContextTypes.Context:  # parsing is only needed in the classic command
+        if type(members) is str and ctx_type == self.ContextTypes.Context:  # parsing is only needed in the classic command#
             parsed_args = self.bot.flag_handler.separate_args(members, fetch=["time", "reason"],
-                                                              blank_as_flag="reason" if not massban else None)
+                                                              blank_as_flag="reason" if not massban else "")
             timeperiod = parsed_args["time"] if not timeperiod else timeperiod
-            timeperiod: int = self.bot.time_arg(timeperiod)
+            timeperiod: int = self.bot.time_arg(timeperiod) if timeperiod else None
             reason = parsed_args["reason"] if parsed_args["reason"] and reason == "No reason provided" else reason
 
         if massban:
@@ -211,7 +211,6 @@ class ModerationHandlers:
         already_banned = []
         not_found = []
         could_not_notify = []
-
         ban = 0
         for ban, member_ in enumerate(all_members, start=1):
             if massban:
@@ -249,6 +248,7 @@ class ModerationHandlers:
                     return
                 else:
                     continue
+                    
             if await self.is_user_banned(ctx, member):
                 already_banned.append(member.mention)
                 if not massban:
@@ -283,6 +283,7 @@ class ModerationHandlers:
             embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
             await channel.send(embed=embed)
+
         if massban:
             # chr(10) used for \n since you can't have backslash characters in f string fragments
             message = (
