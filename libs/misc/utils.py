@@ -1,179 +1,11 @@
+from datetime import datetime
+from enum import Enum
+from io import BytesIO, StringIO
 from typing import Optional
 
 import discord
-from discord import Embed, Colour, Message, File
+from discord import Embed, Colour, File
 from discord.ext import commands
-from math import ceil
-from datetime import timedelta
-from io import BytesIO, StringIO
-import asyncio
-
-
-class EmbedPages:
-    def __init__(self, page_type: int, data: list, title: str, colour: Colour, bot, initiator: discord.Member, channel: discord.TextChannel | discord.Thread, desc: str = "", thumbnail_url: str = "",
-                 footer: str = "", icon_url: str = "") -> None:
-        self.bot = bot
-        self.data = data
-        self.title = title
-        self.page_type = page_type
-        self.top_limit = 0
-        self.timeout = 300  # 300 seconds, or 5 minutes
-        self.embed: Embed = None  # Embed(title=title + ": Page 1", color=colour, desc=desc)
-        self.message: Message = None
-        self.page_num = 1
-        self.initiator = initiator  # Here to stop others using the embed
-        self.channel = channel
-
-        # These are for formatting the embed
-        self.desc = desc
-        self.footer = footer
-        self.thumbnail_url = thumbnail_url
-        self.icon_url = icon_url
-        self.colour = colour
-
-    async def set_page(self, page_num: int) -> None:
-        """
-        Changes the embed accordingly
-        """
-
-        if self.page_type == PageTypes.REP:
-            self.data = [x for x in self.data if self.channel.guild.get_member(x[0]) is not None]
-            page_length = 10
-        elif self.page_type == PageTypes.ROLE_LIST:
-            page_length = 10
-        else:
-            page_length = 5
-        self.top_limit = ceil(len(self.data) / page_length)
-
-        # Clear previous data
-        self.embed = Embed(title=f"{self.title} (Page {page_num}/{self.top_limit})", color=self.colour,
-                           description=self.desc)
-        
-        if self.footer and self.icon_url:
-            self.embed.set_footer(text=self.footer, icon_url=self.icon_url)
-        elif self.footer:
-            self.embed.set_footer(text=self.footer)  # TODO: Is there a more efficient way to cover the cases where either a footer or icon_url is given but not both?
-        elif self.icon_url:
-            self.embed.set_footer(icon_url=self.icon_url)
-        if self.thumbnail_url:
-            self.embed.set_thumbnail(url=self.thumbnail_url)  # NOTE: I WAS CHANGING ALL GUILD ICONS AND AVATARS SO THEY WORK WITH THE DEFAULTS I.E. NO AVATAR OR NO GUILD ICON
-
-        # Gettings the wanted data
-        self.page_num = page_num
-        page_num -= 1
-        for i in range(page_length * page_num, min(page_length * page_num + page_length, len(self.data))):
-            if self.page_type == PageTypes.QOTD:
-                question_id = self.data[i][0]
-                question = self.data[i][1]
-                member_id = int(self.data[i][2])
-                user = await self.bot.fetch_user(member_id)
-                date = (self.data[i][3] + timedelta(hours=1)).strftime("%H:%M on %d/%m/%y")
-
-                self.embed.add_field(name=f"{question}",
-                                     value=f"ID **{question_id}** submitted on {date} by {user.name if user else '*MEMBER NOT FOUND*'} ({member_id})",
-                                     inline=False)
-
-            elif self.page_type == PageTypes.WARN:
-                staff = await self.bot.fetch_user(self.data[i][2])
-                member = await self.bot.fetch_user(self.data[i][1])
-
-                if member:
-                    member_string = f"{str(member)} ({self.data[i][1]}) Reason: {self.data[i][4]}"
-                else:
-                    member_string = f"DELETED USER ({self.data[i][1]}) Reason: {self.data[i][4]}"
-
-                if staff:
-                    staff_string = f"{str(staff)} ({self.data[i][2]})"
-                else:
-                    staff_string = f"DELETED USER ({self.data[i][2]})"
-
-                self.embed.add_field(name=f"**{self.data[i][0]}** : {member_string}",
-                                     value=f"{self.data[i][3].strftime('On %d/%m/%Y at %I:%M %p')} by {staff_string}",
-                                     inline=False)
-
-            elif self.page_type == PageTypes.REP:
-                member = self.channel.guild.get_member(self.data[i][0])
-                self.embed.add_field(name=f"{member.display_name}", value=f"{self.data[i][1]}", inline=False)
-
-            elif self.page_type == PageTypes.CONFIG:
-                config_key = list(self.data.keys())[i]  # Change the index into the key
-                config_option = self.data[config_key]  # Get the current value list from the key
-                name = f"• {str(config_key)} ({config_option[1]})"  # Config name that appears on the embed
-                self.embed.add_field(name=name, value=config_option[2], inline=False)
-
-            elif self.page_type == PageTypes.ROLE_LIST:
-                self.embed.add_field(name=self.data[i].name, value=self.data[i].mention, inline=False)
-
-            elif self.page_type == PageTypes.STARBOARD_LIST:
-                starboard = self.data[i]
-                channel = self.bot.get_channel(starboard.channel.id)
-                custom_emoji = self.bot.get_emoji(starboard.emoji_id) if starboard.emoji_id else None
-                colour = starboard.embed_colour if starboard.embed_colour else "#" + "".join([str(hex(component)).replace("0x", "").upper() for component in self.bot.GOLDEN_YELLOW.to_rgb()])
-                
-                sub_fields = f"• Minimum stars: {starboard.minimum_stars}\n"  # Add star subfield
-                sub_fields += "• Emoji: " + (starboard.emoji if starboard.emoji else f"<:{custom_emoji.name}:{custom_emoji.id}>")  # Add either the standard emoji, or the custom one
-                sub_fields += "\n• Colour: " + colour
-                sub_fields += "\n• Allow self starring (author can star their own message): " + str(starboard.allow_self_star)
-                self.embed.add_field(name=f"#{channel.name}", value=sub_fields, inline=False)
-
-    async def previous_page(self) -> None:
-        """
-        Moves the embed to the previous page
-        """
-
-        if self.page_num != 1:  # Cannot go to previous page if already on first page
-            await self.set_page(self.page_num - 1)
-            await self.edit()
-
-    async def next_page(self) -> None:
-        """
-        Moves the embed to the next page
-        """
-
-        if self.page_num != self.top_limit:  # Can only move next if not on the limit
-            await self.set_page(self.page_num + 1)
-            await self.edit()
-
-    async def first_page(self) -> None:
-        """
-        Moves the embed to the first page
-        """
-
-        await self.set_page(1)
-        await self.edit()
-
-    async def last_page(self) -> None:
-        """
-        Moves the embed to the last page
-        """
-
-        await self.set_page(self.top_limit)
-        await self.edit()
-
-    async def send(self) -> None:
-        """
-        Sends the embed message. The message is deleted after 300 seconds (5 minutes).
-        """
-
-        self.message = await self.channel.send(embed=self.embed)
-        await self.message.add_reaction(EmojiEnum.MIN_BUTTON)
-        await self.message.add_reaction(EmojiEnum.LEFT_ARROW)
-        await self.message.add_reaction(EmojiEnum.RIGHT_ARROW)
-        await self.message.add_reaction(EmojiEnum.MAX_BUTTON)
-        await self.message.add_reaction(EmojiEnum.CLOSE)
-        self.bot.pages.append(self)
-        try:
-            await asyncio.sleep(self.timeout)
-            await self.message.clear_reactions()
-        except discord.HTTPException:  # Removing reactions failed (perhaps message already deleted)
-            pass
-
-    async def edit(self) -> None:
-        """
-        Edits the message to the current self.embed and updates self.message
-        """
-
-        await self.message.edit(embed=self.embed)
 
 
 class PageTypes:
@@ -206,32 +38,51 @@ class EmojiEnum:
 DEVS = [
     394978551985602571,  # Adam C
     420961337448071178,  # Hodor
-    686967704116002827,  # Xp
 ]
 
 CODE_URL = "https://github.com/adampy/adambot"
 
 
-async def send_image_file(fig, channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "png") -> None:
+async def send_image_file(ctx: commands.Context | discord.Interaction, fig,
+                          channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "png") -> None:
     """
     Send data to a channel with filename `filename`
     """
 
+    ctx_type = get_context_type(ctx)
+    if ctx_type is ContextTypes.Unknown:
+        return
+
     buf = BytesIO()
     fig.savefig(buf)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f"{filename}.{extension}"))
+    file = File(buf, filename=f"{filename}.{extension}")
+
+    if ctx_type == ContextTypes.Context:
+        await channel.send(file=file)
+    else:
+        await ctx.response.send_message(file=file)
 
 
-async def send_text_file(text: str, channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "txt") -> None:
+async def send_text_file(ctx: commands.Context | discord.Interaction, text: str,
+                         channel: discord.TextChannel | discord.Thread, filename: str, extension: str = "txt") -> None:
     """
     Send a text data to a channel with filename `filename`
     """
 
+    ctx_type = get_context_type(ctx)
+    if ctx_type is ContextTypes.Unknown:
+        return
+
     buf = StringIO()
     buf.write(text)
     buf.seek(0)
-    await channel.send(file=File(buf, filename=f"{filename}.{extension}"))
+    file = File(buf, filename=f"{filename}.{extension}")
+
+    if ctx_type == ContextTypes.Context:
+        await channel.send(file=file)
+    else:
+        await ctx.response.send_message(file=file)
 
 
 async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> Optional[discord.Member]:
@@ -251,7 +102,7 @@ async def get_spaced_member(ctx: commands.Context, bot, *, args: str) -> Optiona
             user = await commands.MemberConverter().convert(ctx, args)
         except commands.errors.MemberNotFound:
             # for the love of god
-            lists = [bot.last_active[ctx.guild.id], ctx.guild.members]
+            lists = [bot.last_active.get(ctx.guild.id, []), ctx.guild.members]
             attribs = ["display_name", "name"]
             for list_ in lists:
                 for attrib in attribs:
@@ -452,7 +303,8 @@ def time_str(seconds: int) -> str:  # rewrite before code police get dispatched
     seconds -= hours * 60 * 60
     minutes = seconds // 60
     seconds -= minutes * 60
-    seconds = round(seconds, 0 if str(seconds).endswith(".0") else 1)  # don't think the last bit needs to be as complex for all time units but oh well
+    seconds = round(seconds, 0 if str(seconds).endswith(
+        ".0") else 1)  # don't think the last bit needs to be as complex for all time units but oh well
 
     output = ""
     if weeks:
@@ -491,79 +343,164 @@ SUCCESS_GREEN = Colour.from_rgb(57, 255, 20)
 INFORMATION_BLUE = Colour.from_rgb(32, 141, 177)
 GOLDEN_YELLOW = Colour.from_rgb(252, 172, 66)
 
+
 # EMBED RESPONSES
 
 
 class DefaultEmbedResponses:
     @staticmethod
-    async def invalid_perms(bot, ctx: commands.Context, thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def invalid_perms(bot, ctx: commands.Context | discord.Interaction, thumbnail_url: str = "",
+                            bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
         """
         Internal procedure that is executed when a user has invalid perms
         """
 
-        embed = Embed(title=f":x: You do not have permissions to do that!", description="Only people with permissions (usually staff) can use this command!",
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
+
+        embed = Embed(title=f":x: You do not have permissions to do that!",
+                      description="Only people with permissions (usually staff) can use this command!",
                       color=ERROR_RED)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
     @staticmethod
-    async def error_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def error_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
+                          thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
+
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
+
         embed = Embed(title=f":x: {title}", description=desc, color=ERROR_RED)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            if ctx_type == ContextTypes.Context:
+                embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                    bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
     @staticmethod
-    async def success_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def success_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
+                            thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
+
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
+
         embed = Embed(title=f":white_check_mark: {title}", description=desc, color=SUCCESS_GREEN)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-              bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
     @staticmethod
-    async def information_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def information_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
+                                thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
+
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
+
         embed = Embed(title=f":information_source: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
     @staticmethod
-    async def question_embed(bot, ctx: commands.Context, title: str, desc: str = "", thumbnail_url: str = "", bare: bool = False) -> discord.Message:
+    async def question_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
+                             thumbnail_url: str = "", bare: bool = False,
+                             respond_to_interaction=True) -> None | discord.Message:
+
+        ctx_type = get_context_type(ctx)
+        if ctx_type == ContextTypes.Unknown:
+            return
+
+        if ctx_type == ContextTypes.Context:
+            user = ctx.author
+        else:
+            user = ctx.user
+
         embed = Embed(title=f":grey_question: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
-            embed.set_footer(text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + bot.correct_time().strftime(
-             bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
-        response = await ctx.reply(embed=embed)
-        return response
+
+        if ctx_type == ContextTypes.Context:
+            return await ctx.reply(embed=embed)
+        elif respond_to_interaction and not ctx.response.is_done():
+            return await ctx.response.send_message(embed=embed)
+        else:
+            return await ctx.channel.send(embed=embed)
 
 
 def get_guild_icon_url(guild: discord.Guild) -> str:
     """
     Returns either a `str` which corresponds to `guild`'s icon. If none is present, an empty string is returned
     """
+
     return guild.icon if hasattr(guild, "icon") else ""
 
 
-def get_user_avatar_url(member: discord.Member, mode: int = 0) -> list[str]:
+def get_user_avatar_url(member: discord.Member | discord.User, mode: int = 0) -> list[str]:
     """
     Returns a `str` which corresponds to `user`'s current avatar url
 
@@ -580,7 +517,8 @@ def get_user_avatar_url(member: discord.Member, mode: int = 0) -> list[str]:
     else:
         account_avatar_url = account_avatar_url.url
 
-    guild_avatar_url = account_avatar_url if (not hasattr(member, "guild_avatar") or not hasattr(member.guild_avatar, "url") or not member.guild_avatar.url) else member.guild_avatar.url
+    guild_avatar_url = account_avatar_url if (not hasattr(member, "guild_avatar") or not hasattr(member.guild_avatar,
+                                                                                                 "url") or not member.guild_avatar.url) else member.guild_avatar.url
 
     match mode:  # OMG A SWITCH CASE
         case 0:
@@ -591,3 +529,46 @@ def get_user_avatar_url(member: discord.Member, mode: int = 0) -> list[str]:
             return [account_avatar_url, guild_avatar_url]
         case _:
             return []
+
+
+async def interaction_context(bot, interaction: discord.Interaction) -> commands.Context:
+    """
+    Can't get proper context from interaction and the standard `get_context` requires a message
+
+    However this breaks stuff that e.g. relies on MemberConverters.
+    """
+
+    message = discord.Message(channel=bot.get_channel(interaction.channel_id),
+                              state=None,
+                              data={"id": -1,
+                                    "attachments": [],
+                                    "embeds": [],
+                                    "created_at": datetime.now(),
+                                    "edited_timestamp": datetime.utcnow().isoformat(),
+                                    "type": discord.MessageType.default,
+                                    "pinned": False,
+                                    "flags": {},
+                                    "mention_everyone": False,
+                                    "tts": False,
+                                    "content": "",
+                                    "nonce": None,
+                                    "stickers": [],
+                                    "components": []})
+
+    setattr(message, "author", interaction.user)
+    setattr(message, "guild", interaction.guild)
+    return commands.Context(bot=bot, message=message, view=None)
+
+
+class ContextTypes(Enum):
+    Unknown = 0
+    Context = 1
+    Interaction = 2
+
+
+def get_context_type(ctx: commands.Context | discord.Interaction) -> ContextTypes:
+    if issubclass(ctx.__class__, commands.Context):
+        return ContextTypes.Context
+    elif issubclass(ctx.__class__, discord.Interaction):
+        return ContextTypes.Interaction
+    return ContextTypes.Unknown

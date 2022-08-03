@@ -1,18 +1,31 @@
+import ast  # using ast for literal_eval, stops code injection
+import asyncio
 from math import ceil
 from typing import Optional
 
-import discord
-from discord.ext import commands
-from libs.misc.decorators import is_staff
-import asyncio
-import ast  # using ast for literal_eval, stops code injection
 import asyncpg
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+from adambot import AdamBot
+from libs.misc.decorators import is_staff, is_staff_slash
+from . import filter_handlers
 
 
 class Filter(commands.Cog):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: AdamBot) -> None:
+        """
+        Sets up the filter cog with a provided bot.
+
+        Loads and initialises the FilterHandlers class
+        """
+
         self.filters = {}
         self.bot = bot
+        self.Handlers = filter_handlers.FilterHandlers(bot, self)
+
+    filter_slash = app_commands.Group(name="filter", description="View the server filter")
 
     async def check_is_command(self, message: discord.Message) -> bool:
         """
@@ -28,7 +41,8 @@ class Filter(commands.Cog):
                 content = content.replace(prefix, "")
                 break
 
-        is_command = True if (await self.bot.is_staff(ctx) and content.startswith("filter") and content != message.content) else False
+        is_command = True if (await self.bot.is_staff(ctx) and content.startswith(
+            "filter") and content != message.content) else False
 
         return is_command
 
@@ -40,13 +54,15 @@ class Filter(commands.Cog):
         async with self.bot.pool.acquire() as connection:
             prop = await connection.fetchval("SELECT filters FROM filter WHERE guild_id = $1", guild.id)
             if not prop:
-                await connection.execute("INSERT INTO filter (guild_id, filters) VALUES ($1, $2)", guild.id, "{'filtered':[], 'ignored':[]}")
+                await connection.execute("INSERT INTO filter (guild_id, filters) VALUES ($1, $2)", guild.id,
+                                         "{'filtered':[], 'ignored':[]}")
                 self.filters[guild.id] = {"filtered": [], "ignored": []}
 
             else:
                 prop = ast.literal_eval(prop)
                 if type(prop) is not dict or not ("filtered" in prop and "ignored" in prop):
-                    await connection.execute("UPDATE filter SET filters = $1 WHERE guild_id = $2", "{'filtered':[], 'ignored':[]}", guild.id)
+                    await connection.execute("UPDATE filter SET filters = $1 WHERE guild_id = $2",
+                                             "{'filtered':[], 'ignored':[]}", guild.id)
                     self.filters[guild.id] = {"filtered": [], "ignored": []}
                 else:
                     self.filters[guild.id] = prop
@@ -57,7 +73,8 @@ class Filter(commands.Cog):
         """
 
         async with self.bot.pool.acquire() as connection:
-            await connection.execute("UPDATE filter SET filters = $1 WHERE guild_id = $2", str(self.filters[guild.id]), guild.id)
+            await connection.execute("UPDATE filter SET filters = $1 WHERE guild_id = $2", str(self.filters[guild.id]),
+                                     guild.id)
 
     # ---LISTENERS---
 
@@ -81,7 +98,8 @@ class Filter(commands.Cog):
         Handles messages that are being sent.
         """
 
-        if not self.bot.is_ready() or type(message.channel) not in [discord.TextChannel, discord.Thread]:  # Only filter on TextChannels
+        if not self.bot.is_ready() or type(message.channel) not in [discord.TextChannel,
+                                                                    discord.Thread]:  # Only filter on TextChannels
             return  # sometimes barfs on startup
 
         await self.handle_message(message)
@@ -92,7 +110,8 @@ class Filter(commands.Cog):
         Handles message edits for people trying to get around the filter.
         """
 
-        if not self.bot.is_ready() or type(before.channel) not in [discord.TextChannel, discord.Thread]:  # Only filter on TextChannels
+        if not self.bot.is_ready() or type(before.channel) not in [discord.TextChannel,
+                                                                   discord.Thread]:  # Only filter on TextChannels
             return  # sometimes barfs on startup
         await self.handle_message(after)
 
@@ -113,26 +132,30 @@ class Filter(commands.Cog):
                 msg = msg.replace(ignore.lower(), "")
 
             tripped = [phrase.lower() for phrase in filters["filtered"] if phrase.lower() in msg]
-            disp_tripped = "||" + (" ,".join([f"'{trip}'" for trip in tripped[:10]])) + (f"(+ {len(tripped) - 10} more)" if len(tripped) > 10 else "") + "||"
+            disp_tripped = "||" + (" ,".join([f"'{trip}'" for trip in tripped[:10]])) + (
+                f"(+ {len(tripped) - 10} more)" if len(tripped) > 10 else "") + "||"
             if tripped and not is_command:
                 # case insensitive is probably the best idea
                 await message.delete()
 
                 log_channel = self.bot.get_channel(await self.bot.get_config_key(ctx, "filter_log_channel"))
-                log_channel = self.bot.get_channel(await self.bot.get_config_key(ctx, "log_channel")) if not log_channel else log_channel
+                log_channel = self.bot.get_channel(
+                    await self.bot.get_config_key(ctx, "log_channel")) if not log_channel else log_channel
                 if log_channel:
                     embeds = []
                     chunks = ceil(len(message.content) / 1020)
 
                     for i in range(1, chunks + 1):
                         embed = discord.Embed(title=":x: Message Filtered", color=discord.Colour.from_rgb(255, 7, 58))
-                        embed.add_field(name="User", value=f"{str(message.author)} ({message.author.id})" or "undetected", inline=True)
+                        embed.add_field(name="User",
+                                        value=f"{str(message.author)} ({message.author.id})" or "undetected",
+                                        inline=True)
                         embed.add_field(name="Filtered phrases", value=disp_tripped)
                         embed.add_field(name="Message ID", value=message.id, inline=True)
                         embed.add_field(name="Channel", value=message.channel.mention, inline=True)
                         embed.add_field(name=f"Message {f'part {i}' if i > 1 else ''}",
                                         value=f"||{message.content[1020 * (i - 1):1020 * i]}||" if (hasattr(message,
-                                                                                                   "content") and message.content) else "(No detected text content)",
+                                                                                                            "content") and message.content) else "(No detected text content)",
                                         inline=False)
                         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
 
@@ -149,7 +172,7 @@ class Filter(commands.Cog):
         if not ctx.invoked_subcommand:
             await ctx.reply(f"Type `{ctx.prefix}help filter` to get info!")
 
-    async def clean_up(self, ctx: commands.Context, text: str, key: str, spoiler: bool = True) -> Optional[discord.Message]:
+    async def clean_up(self, ctx: commands.Context, text: str, key: str, spoiler: bool = True) -> Optional[str]:
         """
         Strictly only cleans up one list. Cross-checks occur specifically within their own scopes.
         This makes sure space isn't wasted by adding random garbage to the filter that will already be in effect anyway
@@ -162,7 +185,8 @@ class Filter(commands.Cog):
 
         disp_text = f"||{text}||" if spoiler else text
         if True in [phrase in text for phrase in self.filters[ctx.guild.id][key]]:
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Redundant phrase wasn't added!", desc=f"{disp_text} wasn't added to the {key} list since it contains another phrase that has already been added")
+            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Redundant phrase wasn't added!",
+                                                             desc=f"{disp_text} wasn't added to the {key} list since it contains another phrase that has already been added")
             return
 
         check = [text in phrase for phrase in self.filters[ctx.guild.id][key]]  # de-duplicate
@@ -175,7 +199,8 @@ class Filter(commands.Cog):
 
         message = f"Added *{disp_text}* to the {key} list!"
         the_list = "\n".join([f"•  *{word}*" if key == "ignored" else f"•  ||*{word}*||" for word in removed])
-        message = message if not the_list else (message + f"\n\nRemoved some redundant phrases from the {key} list too:\n\n{the_list}")
+        message = message if not the_list else (
+                    message + f"\n\nRemoved some redundant phrases from the {key} list too:\n\n{the_list}")
 
         return message
 
@@ -187,18 +212,22 @@ class Filter(commands.Cog):
         Allows adding a filtered phrase for the guild. Staff role needed.
         """
 
-        text = text.lower()
+        await self.Handlers.add(ctx, text)
 
-        if text not in self.filters[ctx.guild.id]["filtered"]:
-            message = await self.clean_up(ctx, text, "filtered")
-            if not message:
-                return
+    @filter_slash.command(
+        name="add",
+        description="Add a phrase to the server's filter"
+    )
+    @app_commands.describe(
+        text="The phrase to add to the server's filter"
+    )
+    @is_staff_slash()
+    async def add_slash(self, interaction: discord.Interaction, text: str) -> None:
+        """
+        Slash equivalent of the classic command add.
+        """
 
-            self.filters[ctx.guild.id]["filtered"].append(text.lower())
-            await self.propagate_new_guild_filter(ctx.guild)
-            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter added!", desc=message)
-        else:
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That's already in the filtered list!")
+        await self.Handlers.add(interaction, text)
 
     @filter.command()
     @commands.guild_only()
@@ -210,43 +239,22 @@ class Filter(commands.Cog):
         Staff role needed.
         """
 
-        text = text.lower()
+        await self.Handlers.add_ignore(ctx, text)
 
-        if text not in self.filters[ctx.guild.id]["ignored"]:
-            message = await self.clean_up(ctx, text, "ignored", spoiler=False)
-            if not message:
-                return
-
-            if True not in [phrase in text for phrase in self.filters[ctx.guild.id]["filtered"]]:
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Didn't add redundant phrase to ignored list", desc="The phrase wasn't added since it would have no effect, as it has no filtered phrases within it")
-                return
-
-            if True in [phrase == text for phrase in self.filters[ctx.guild.id]["filtered"]]:
-                await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't add that phrase to the ignored list", desc="A phrase cannot be both in the filtered list and the ignored list at the same time!")
-                return
-
-            self.filters[ctx.guild.id]["ignored"].append(text)
-            await self.propagate_new_guild_filter(ctx.guild)
-            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Phrase added to ignored list!", desc=message)
-        else:
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "That's already in the ignored list!")
-
-    async def generic_remove(self, ctx: commands.Context, text: str, key: str, desc: str = "") -> None:
+    @filter_slash.command(
+        name="add_ignore",
+        description="Add a phrase to be ignored when handling filtering on this server"
+    )
+    @app_commands.describe(
+        text="The phrase to be added to the ignore list of the filter"
+    )
+    @is_staff_slash()
+    async def add_ignore_slash(self, interaction: discord.Interaction, text: str) -> None:
         """
-        Method to allow removal of a phrase from either list. Saves almost-duplicate code.
+        Slash equivalent of the classic command add_ignore.
         """
 
-        text = text.lower()
-        if key not in ["filtered", "ignored"]:
-            return  # get ignored
-
-        if text not in self.filters[ctx.guild.id][key]:
-            await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, f"That phrase is not in the {key} list!", desc)
-
-        else:
-            del self.filters[ctx.guild.id][key][self.filters[ctx.guild.id][key].index(text)]
-            await self.propagate_new_guild_filter(ctx.guild)
-            await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Phrase removed", desc=f"{text} removed from {key} list!\n{desc}")
+        await self.Handlers.add_ignore(interaction, text)
 
     @filter.command()
     @commands.guild_only()
@@ -256,18 +264,22 @@ class Filter(commands.Cog):
         Allows removing a filtered phrase. Staff role needed.
         """
 
-        text = text.lower()
-        remove = [a for a in self.filters[ctx.guild.id]["ignored"]]
-        for phrase in self.filters[ctx.guild.id]["ignored"]:
-            for phrasee in self.filters[ctx.guild.id]["filtered"]:
-                if phrasee in phrase and phrasee != text:  # not checking for what we're removing
-                    del remove[remove.index(phrase)]
+        await self.Handlers.remove(ctx, text)
 
-        for removal in remove:
-            del self.filters[ctx.guild.id]["ignored"][self.filters[ctx.guild.id]["ignored"].index(removal)]
+    @filter_slash.command(
+        name="remove",
+        description="Remove a phrase from the filter for this server"
+    )
+    @app_commands.describe(
+        text="The phrase to be removed from the filter"
+    )
+    @is_staff_slash()
+    async def remove_slash(self, interaction: discord.Interaction, text: str) -> None:
+        """
+        Slash equivalent of the classic command remove
+        """
 
-        msg = "\n".join([f"•  *{word}*" for word in remove]) if remove else ""
-        await self.generic_remove(ctx, text, "filtered", desc=f"Removed some redundant phrases from the ignored list too:\n\n{msg}" if msg else "")
+        await self.Handlers.remove(interaction, text)
 
     @filter.command()
     @commands.guild_only()
@@ -277,15 +289,22 @@ class Filter(commands.Cog):
         Allows removing a phrase ignored by the filter. Staff role needed.
         """
 
-        await self.generic_remove(ctx, text.lower(), "ignored")
+        await self.Handlers.remove_ignore(ctx, text)
 
-    async def list_generic(self, ctx: commands.Context, key: str, spoiler: bool = True) -> None:
+    @filter_slash.command(
+        name="remove_ignore",
+        description="Remove an ignored filter phrase for this server"
+    )
+    @app_commands.describe(
+        text="The phrase to remove from the ignore list"
+    )
+    @is_staff_slash()
+    async def remove_ignore_slash(self, interaction: discord.Interaction, text: str) -> None:
+        """
+        Slash equivalent of the classic command remove_ignore.
+        """
 
-        if key not in ["filtered", "ignored"]:
-            return  # get ignored
-
-        msg_content = ("\n".join([f"• ||{word}||" if spoiler else word for word in self.filters[ctx.guild.id][key]])) if self.filters[ctx.guild.id][key] else "Nothing to show here!"
-        await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, f"{ctx.guild.name} {key} phrases list", desc=msg_content)
+        await self.Handlers.remove_ignore(interaction, text)
 
     @filter.command(name="list")
     @commands.guild_only()
@@ -295,7 +314,19 @@ class Filter(commands.Cog):
         Lists filtered phrases for a guild. Staff role needed.
         """
 
-        await self.list_generic(ctx, "filtered")
+        await self.Handlers.list_filter(ctx)
+
+    @filter_slash.command(
+        name="list",
+        description="List all the filtered phrases for this server"
+    )
+    @is_staff_slash()
+    async def list_filter_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash equivalent of the classic command filter.
+        """
+
+        await self.Handlers.list_filter(interaction)
 
     @filter.command()
     @commands.guild_only()
@@ -305,7 +336,19 @@ class Filter(commands.Cog):
         Lists ignored phrases for a guild. Staff role needed.
         """
 
-        await self.list_generic(ctx, "ignored", spoiler=False)
+        await self.Handlers.list_filter_ignore(ctx)
+
+    @filter_slash.command(
+        name="list_ignore",
+        description="List all the ignored phrases for this server"
+    )
+    @is_staff_slash()
+    async def list_ignore_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash equivalent of the classic command list_ignore.
+        """
+
+        await self.Handlers.list_filter_ignore(interaction)
 
     @filter.command(name="clear")
     @commands.guild_only()
@@ -315,10 +358,20 @@ class Filter(commands.Cog):
         Allows clearing the list of filtered and ignored phrases for the guild. Staff role needed.
         """
 
-        self.filters[ctx.guild.id] = {"filtered": [], "ignored": []}
-        await self.propagate_new_guild_filter(ctx.guild)
-        await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Filter cleared!", desc=f"The filter for **{ctx.guild.name}** has been cleared!")
+        await self.Handlers.clear_filter(ctx)
+
+    @filter_slash.command(
+        name="clear",
+        description="Clear the filter for this server"
+    )
+    @is_staff_slash()
+    async def clear_filter_slash(self, interaction: discord.Interaction) -> None:
+        """
+        Slash equivalent of the classic command clear.
+        """
+
+        await self.Handlers.clear_filter(interaction)
 
 
-async def setup(bot) -> None:
+async def setup(bot: AdamBot) -> None:
     await bot.add_cog(Filter(bot))

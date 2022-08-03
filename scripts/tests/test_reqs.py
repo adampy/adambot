@@ -1,14 +1,18 @@
 from pathlib import Path
+
 try:
     import pkg_resources
 except ImportError:  # is part of setuptools
     import sys
     import subprocess
+
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", "setuptools", "--user"])
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", "setuptools", "--user"])
         print("Please restart the project for changes to take effect.")
     except Exception as e:
-        print(f"Something has gone horribly wrong and the dependencies cannot be tested, please check your Python installation\n{type(e).__name__}: {e}")
+        print(
+            f"Something has gone horribly wrong and the dependencies cannot be tested, please check your Python installation\n{type(e).__name__}: {e}")
     finally:
         exit(1)
 

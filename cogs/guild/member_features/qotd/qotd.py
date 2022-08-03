@@ -1,16 +1,49 @@
+from typing import Callable
+from typing import Optional
+
+import discord
+from discord import app_commands
+from discord.app_commands import AppCommandError
 from discord.ext import commands
-import datetime
-from discord import Embed, Colour
-from random import choice
-from math import inf
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url, DefaultEmbedResponses
-from typing import Any, Callable
-import asyncio
+
+from libs.misc.utils import DefaultEmbedResponses
+from . import qotd_handlers
 
 
 class MissingQOTDError(commands.CheckFailure):
     def __init__(self, message=None, *args):
         super().__init__(message=message, *args)
+
+
+class MissingQOTDSlashError(app_commands.CheckFailure):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+async def qotd_predicate(ctx: commands.Context | discord.Interaction):
+    if isinstance(ctx, discord.Interaction):
+        bot = ctx.client
+    elif isinstance(ctx, commands.Context):
+        bot = ctx.bot
+    else:
+        return
+
+    ctx_type = bot.get_context_type(ctx)
+
+    if ctx_type == bot.ContextTypes.Context:
+        author = ctx.author
+    else:
+        author = ctx.user
+
+    qotd_role_id = await bot.get_config_key(ctx, "qotd_role")
+    staff_role_id = await bot.get_config_key(ctx, "staff_role")
+    role_ids = [y.id for y in author.roles]
+    if qotd_role_id in role_ids or staff_role_id in role_ids or author.guild_permissions.administrator:
+        return True
+    elif ctx_type == bot.ContextTypes.Context:
+        raise MissingQOTDError
+    else:
+        raise MissingQOTDSlashError
 
 
 def qotd_perms() -> Callable:
@@ -25,172 +58,155 @@ def qotd_perms() -> Callable:
             await ctx.send("Pong!")
     """
 
-    async def predicate(ctx) -> bool:
-        while not ctx.bot.online:
-            await asyncio.sleep(1)  # Wait else DB won't be available
+    async def predicate(ctx) -> Optional[bool]:
+        return await qotd_predicate(ctx)
 
-        qotd_role_id = await ctx.bot.get_config_key(ctx, "qotd_role")
-        staff_role_id = await ctx.bot.get_config_key(ctx, "staff_role")
-        role_ids = [y.id for y in ctx.author.roles]
-        if qotd_role_id in role_ids or staff_role_id in role_ids or ctx.author.guild_permissions.administrator:
-            return True
-        else:
-            raise MissingQOTDError
     return commands.check(predicate)
+
+
+def qotd_slash_perms() -> Callable:
+    async def predicate(interaction: discord.Interaction) -> Optional[bool]:
+        return await qotd_predicate(interaction)
+
+    return app_commands.check(predicate)
 
 
 class QOTD(commands.Cog):
     def __init__(self, bot) -> None:
+        """
+        Sets up the QOTD cog with a provided bot.
+
+        Loads and initialises the QOTDHandlers class
+        """
+
         self.bot = bot
+        self.Handlers = qotd_handlers.QOTDHandlers(bot)
+        self.bot.tree.map(MissingQOTDSlashError, self.qotd_error_slash_handler)
+
+    async def qotd_error_slash_handler(self, interaction: discord.Interaction, error: AppCommandError) -> None:
+        await DefaultEmbedResponses.invalid_perms(self.bot, interaction)
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error):
+    async def on_command_error(self, ctx: commands.Context, error) -> None:
         if isinstance(error, MissingQOTDError):
             await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
 
     @commands.group()
     async def qotd(self, ctx: commands.Context) -> None:
+        """
+        Command group for the qotd commands.
+        """
+
         if ctx.invoked_subcommand is None:
             await ctx.send(f"```{ctx.prefix}qotd submit <question>```")
 
-    @qotd.command(pass_context=True)
+    qotd_slash = app_commands.Group(name="qotd", description="View, submit and manage the servers QOTDs")
+
+    @qotd.command()
     @commands.guild_only()
     async def submit(self, ctx: commands.Context, *, qotd: str) -> None:
         """
-        Submit a QOTD
+        Submit a QOTD.
+
+        Can be limited by the config key `qotd_limit`
         """
 
-        if len(qotd) > 255:
-            await ctx.send("Question over **255** characters, please **shorten** before trying the command again.")
-            return
+        await self.Handlers.submit(ctx, qotd)
 
-        if not qotd:
-            await ctx.send(f"```{ctx.prefix}qotd submit <question>```")
-            return
+    @qotd_slash.command(
+        name="submit",
+        description="Submit a QOTD"
+    )
+    @app_commands.describe(
+        qotd="The question you want to ask"
+    )
+    async def submit_slash(self, interaction: discord.Interaction, qotd: str) -> None:
+        """
+        Slash equivalent of the classic command submit.
+        """
 
-        member = ctx.author.id
-        is_staff = await self.bot.is_staff(ctx)
+        await self.Handlers.submit(interaction, qotd)
 
-        today = datetime.datetime.utcnow().date()
-        today_date = datetime.datetime(today.year, today.month, today.day)
-        async with self.bot.pool.acquire() as connection:
-            submitted_today = await connection.fetch("SELECT * FROM qotd WHERE submitted_by = ($1) AND submitted_at > ($2) AND guild_id = $3", member, today_date, ctx.guild.id)
-
-            limit = await self.bot.get_config_key(ctx, "qotd_limit")
-            if limit is None or limit == 0:  # Account for a limit set to 0 and a non-changed limit
-                limit = inf  # math.inf
-
-            if len(submitted_today) >= limit and not is_staff:  # Staff bypass
-                await ctx.send(f"You can only submit {limit} QOTD per day - this is to prevent spam.")
-            else:
-                await connection.execute("INSERT INTO qotd (question, submitted_by, guild_id) VALUES ($1, $2, $3)", qotd, member, ctx.guild.id)
-                qotd_id = await connection.fetchval("SELECT MAX(id) FROM qotd WHERE guild_id = $1", ctx.guild.id)
-                await ctx.message.delete()
-                await ctx.send(f":thumbsup: Thank you for submitting your QOTD. Your QOTD ID is **{qotd_id}**.", delete_after=20)
-
-                log_channel_id = await self.bot.get_config_key(ctx, "log_channel")
-                if log_channel_id is not None:
-                    log = self.bot.get_channel(log_channel_id)
-                    embed = Embed(title=":grey_question: QOTD Submitted", color=Colour.from_rgb(177, 252, 129))
-                    embed.add_field(name="ID", value=qotd_id)
-                    embed.add_field(name="Author", value=ctx.author)
-                    embed.add_field(name="Question", value=qotd, inline=True)
-                    embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-                    await log.send(embed=embed)
-
-    @qotd.command(pass_context=True)
+    @qotd.command(name="list")
     @commands.guild_only()
     @qotd_perms()
-    async def list(self, ctx, page_num: int = 1) -> None:
-        async with self.bot.pool.acquire() as connection:
-            qotds = await connection.fetch("SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id", ctx.guild.id)
+    async def qotd_list(self, ctx: commands.Context, page_num: int = 1) -> None:
+        """
+        Get a list of all of the QOTDs within the context guild.
+        """
 
-        if len(qotds) > 0:
-            embed = self.bot.EmbedPages(
-                self.bot.PageTypes.QOTD,
-                qotds,
-                f"{ctx.guild.name}'s QOTDs",
-                Colour.from_rgb(177, 252, 129),
-                self.bot,
-                ctx.author,
-                ctx.channel,
-                thumbnail_url=get_guild_icon_url(ctx.guild),
-                icon_url=get_user_avatar_url(ctx.author, mode=1)[0],
-                footer=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(self.bot.ts_format)
-            )
-            await embed.set_page(int(page_num))
-            await embed.send()
-        else:
-            await ctx.send("No QOTD have been submitted in this guild before.")
+        await self.Handlers.qotd_list(ctx, page_num=page_num)
 
-    @qotd.command(pass_context=True, aliases=["remove"])
+    @qotd_slash.command(
+        name="list",
+        description="List the server's QOTDs"
+    )
+    @app_commands.describe(
+        page_num="The page number of the QOTD embed to start on"
+    )
+    @qotd_slash_perms()
+    async def qotd_list_slash(self, interaction: discord.Interaction, page_num: int = 1) -> None:
+        """
+        Slash equivalent of the classic command list.
+        """
+
+        await self.Handlers.qotd_list(interaction, page_num=page_num)
+
+    @qotd.command(aliases=["remove"])
     @commands.guild_only()
     @qotd_perms()
-    async def delete(self, ctx: commands.Context, *question_ids: str) -> None:
-        async with self.bot.pool.acquire() as connection:
-            for question_id in question_ids:
-                try:
-                    await connection.execute("DELETE FROM qotd WHERE id = ($1) AND guild_id = $2", int(question_id), ctx.guild.id)
-                    await ctx.send(f"QOTD ID **{question_id}** has been deleted.")
+    async def delete(self, ctx: commands.Context, *, question_ids: str) -> None:
+        """
+        Delete one or more of the server's QOTDs.
 
-                    log_channel_id = await self.bot.get_config_key(ctx, "log_channel")
-                    if log_channel_id is not None:
-                        log = self.bot.get_channel(log_channel_id)
-                        embed = Embed(title=":grey_question: QOTD Deleted", color=Colour.from_rgb(177, 252, 129))
-                        embed.add_field(name="ID", value=question_id)
-                        embed.add_field(name="Staff", value=str(ctx.author))
-                        embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-                        await log.send(embed=embed)
-                        
-                except ValueError:
-                    await ctx.send("Question ID must be an integer!")
-                except Exception as e:
-                    await ctx.send(f"Error whilst deleting question ID {question_id}: {e}")
+        IDs are supplied as 1 2 3 4 to delete multiple QOTDs.
 
-    @qotd.command(pass_context=True, aliases=["choose"])
+        QOTD perms required.
+        """
+
+        await self.Handlers.delete(ctx, question_ids)
+
+    @qotd_slash.command(
+        name="delete",
+        description="Delete QOTDs"
+    )
+    @app_commands.describe(
+        question_ids="The question(s) to delete by their IDs (written like 1 2 3 4)"
+    )
+    @qotd_slash_perms()
+    async def delete_slash(self, interaction: discord.Interaction, question_ids: str) -> None:
+        """
+        Slash equivalent of the classic command delete.
+        """
+
+        await self.Handlers.delete(interaction, question_ids)
+
+    @qotd.command(aliases=["choose"])
     @commands.guild_only()
     @qotd_perms()
     async def pick(self, ctx: commands.Context, question_id: str) -> None:
-        qotd_channel_id = await self.bot.get_config_key(ctx, "qotd_channel")
-        if qotd_channel_id is None:
-            await ctx.send("You cannot pick a QOTD because a QOTD channel has not been set :sob:")
-            return
-        qotd_channel = self.bot.get_channel(qotd_channel_id)
-            
-        async with self.bot.pool.acquire() as connection:
-            if question_id.lower() == "random":
-                questions = await connection.fetch("SELECT * FROM qotd WHERE guild_id = $1", ctx.guild.id)
-            else:
-                questions = await connection.fetch("SELECT * FROM qotd WHERE id = $1 AND guild_id = $2", int(question_id), ctx.guild.id)
-            if not questions:  # If no questions are returned
-                if question_id.lower() == "random":
-                    await ctx.send("No QOTD have been submitted in this guild before.")
-                else:
-                    await ctx.send(f"Question with ID {question_id} not found. Please try again.")
-                return
-            
-            else:
-                question_data = choice(questions)
+        """
+        Choose one of the context guild's QOTDs.
 
-            question = question_data[1]
-            member = await self.bot.fetch_user(question_data[2])
-            message = f"**QOTD**\n{question} - Credit to {member.mention}"
+        QOTD perms required.
+        """
 
-            await connection.execute("DELETE FROM qotd WHERE id = ($1) AND guild_id = $2", question_data[0], ctx.guild.id)
+        await self.Handlers.pick(ctx, question_id)
 
-        await ctx.send(":ok_hand:")
-        await qotd_channel.send(message)
+    @qotd_slash.command(
+        name="pick",
+        description="Pick a QOTD"
+    )
+    @app_commands.describe(
+        question_id="The question ID of the question to pick, or 'random' to pick a random question"
+    )
+    @qotd_slash_perms()
+    async def pick_slash(self, interaction: discord.Interaction, question_id: str) -> None:
+        """
+        Slash equivalent of the classic command pick.
+        """
 
-        log_channel_id = await self.bot.get_config_key(ctx, "log_channel")
-        if log_channel_id is not None:
-            log = self.bot.get_channel(log_channel_id)
-            embed = Embed(title=":grey_question: QOTD Picked", color=Colour.from_rgb(177, 252, 129))
-            embed.add_field(name="ID", value=question_data[0])
-            embed.add_field(name="Author", value=str(member))
-            embed.add_field(name="Question", value=question, inline=True)
-            embed.add_field(name="Picked by", value=str(ctx.author))
-            embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
-            await log.send(embed=embed)
+        await self.Handlers.pick(interaction, question_id)
 
 
 async def setup(bot) -> None:

@@ -1,8 +1,9 @@
-from discord.ext import commands
 import asyncio
-import asyncpg
 import datetime
 from typing import Callable
+
+import asyncpg
+from discord.ext import commands
 
 
 class Tasks(commands.Cog):

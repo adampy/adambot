@@ -1,6 +1,9 @@
-import asyncio
-from typing import Callable
+from typing import Callable, Optional
+
+import discord
+from discord import app_commands
 from discord.ext import commands
+
 from .utils import DEVS
 
 """
@@ -13,13 +16,72 @@ which will get passed over to on_command_error if the command has been invoked.
 
 
 class MissingStaffError(commands.CheckFailure):
-    def __init__(self, message=None, *args):
-        super().__init__(message=message, *args)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+
+class MissingStaffSlashError(app_commands.CheckFailure):
+    def __init__(self, *args) -> None:
+        super().__init__(*args)
 
 
 class MissingDevError(commands.CheckFailure):
-    def __init__(self, message=None, *args):
-        super().__init__(message=message, *args)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+
+class MissingDevSlashError(app_commands.CheckFailure):
+    def __init__(self, *args) -> None:
+        super().__init__(*args)
+
+
+def get_bot(ctx: commands.Context | discord.Interaction):
+    if isinstance(ctx, discord.Interaction):
+        return ctx.client
+    elif isinstance(ctx, commands.Context):
+        return ctx.bot
+
+
+async def staff_predicate(ctx: commands.Context | discord.Interaction) -> Optional[bool]:
+    bot = get_bot(ctx)
+
+    ctx_type = bot.get_context_type(ctx)
+
+    if ctx_type == bot.ContextType.Unknown:
+        return
+
+    if ctx_type == bot.ContextTypes.Context:
+        author = ctx.author
+    else:
+        author = ctx.user
+
+    staff_role_id = await bot.get_config_key(ctx, "staff_role")
+
+    if staff_role_id in [y.id for y in author.roles] or author.guild_permissions.administrator:
+        return True
+    elif ctx_type == bot.ContextTypes.Context:
+        raise MissingStaffError
+    else:
+        raise MissingStaffSlashError
+
+
+async def dev_predicate(ctx: commands.Context | discord.Interaction) -> Optional[bool]:
+    bot = get_bot(ctx)
+
+    ctx_type = bot.get_context_type(ctx)
+
+    if ctx_type == bot.ContextType.Unknown:
+        return
+
+    if ctx_type == bot.ContextTypes.Context:
+        author = ctx.author
+    else:
+        author = ctx.user
+
+    if author.id in DEVS:
+        return True
+    else:
+        raise MissingDevError
 
 
 def is_staff() -> Callable:
@@ -36,16 +98,17 @@ def is_staff() -> Callable:
             await ctx.send("Pong!")
     """
 
-    async def predicate(ctx) -> bool:
-        while not ctx.bot.online:
-            await asyncio.sleep(1)  # Wait else DB won't be available
+    async def predicate(ctx: commands.Context) -> Optional[bool]:
+        return await staff_predicate(ctx)
 
-        staff_role_id = await ctx.bot.get_config_key(ctx, "staff_role")
-        if staff_role_id in [y.id for y in ctx.author.roles] or ctx.author.guild_permissions.administrator:
-            return True
-        else:
-            raise MissingStaffError
     return commands.check(predicate)
+
+
+def is_staff_slash() -> Callable:
+    async def predicate(interaction: discord.Interaction) -> Optional[bool]:
+        return await staff_predicate(interaction)
+
+    return app_commands.check(predicate)
 
 
 def is_dev() -> Callable:
@@ -62,10 +125,14 @@ def is_dev() -> Callable:
             await ctx.send("Pong!")
     """
 
-    async def predicate(ctx) -> bool:
-        if ctx.author.id in DEVS:
-            return True
-        else:
-            raise MissingDevError
+    async def predicate(ctx: commands.Context) -> bool:
+        return await dev_predicate(ctx)
+
     return commands.check(predicate)
 
+
+def is_dev_slash() -> Callable:
+    async def predicate(interaction: discord.Interaction) -> Optional[bool]:
+        return await dev_predicate(interaction)
+
+    return app_commands.check(predicate)

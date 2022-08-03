@@ -1,9 +1,10 @@
 import subprocess
 import sys
+
 from ..tests import test_reqs
 
 
-def handle_dependencies():
+def handle_dependencies() -> None:
     output = test_reqs.get_unsat_requirements()  # check for unsatisfied requirements - these need to be resolved
     missing = [str(f[0]) for f in output if f[1] == test_reqs.DEPENDENCY.IS_MISSING]
     conflicted = [str(g[0]) for g in output if g[1] == test_reqs.DEPENDENCY.IS_CONFLICTED]
@@ -21,7 +22,8 @@ def handle_dependencies():
 
         print("Checking for pip update, please wait...")
 
-        outdated_packages = subprocess.check_output([sys.executable, "-m", "pip", "list", "-o"]).decode("utf-8").split("\n")  # NOTE: this is HELLA slow so it's a good job it'll mostly only be run once
+        outdated_packages = subprocess.check_output([sys.executable, "-m", "pip", "list", "-o"]).decode("utf-8").split(
+            "\n")  # NOTE: this is HELLA slow so it's a good job it'll mostly only be run once
         installed_packages = subprocess.check_output([sys.executable, "-m", "pip", "list"]).decode("utf-8").split("\n")
         if not [k for k in installed_packages if k.startswith("wheel ")]:
             outdated_packages.append("wheel not-installed installed")
@@ -33,14 +35,16 @@ def handle_dependencies():
                 helpful_update.append([*parsed])
         if helpful_update:
             try:
-                upgrade_helpfuls = input(f"Install & upgrade the following core packages:\n\n{chr(10).join([f'{package[0]} {package[1]} -> {package[2]}' for package in helpful_update])}\n\nThis may reduce installation issues. (Y/N) ").lower()
+                upgrade_helpfuls = input(
+                    f"Install & upgrade the following core packages:\n\n{chr(10).join([f'{package[0]} {package[1]} -> {package[2]}' for package in helpful_update])}\n\nThis may reduce installation issues. (Y/N) ").lower()
             except EOFError:  # for remote systems where input is not allowed
                 upgrade_helpfuls = "y"
 
             if upgrade_helpfuls == "y":
                 for helpful in helpful_update:
                     try:
-                        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", helpful[0], "--user"])
+                        subprocess.check_call(
+                            [sys.executable, "-m", "pip", "install", "--upgrade", helpful[0], "--user"])
                     except Exception as e:
                         print(f"WARNING: Something went wrong with upgrading {helpful}\n{type(e).__name__}: {e}")
         try:

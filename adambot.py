@@ -1,18 +1,53 @@
-from typing import Optional
+import datetime
+import json
+import os
+import time
+from typing import Callable, Optional
 
+import asyncpg
 import discord
+import pandas
+import pytz
+from discord import Interaction
+from discord.app_commands import AppCommandError
 from discord.ext import commands
 from discord.ext.commands import Bot, when_mentioned_or, when_mentioned
-import asyncpg
-import os
-import pytz
-import datetime
-import time
 from tzlocal import get_localzone
-import pandas
-import json
+
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
+import libs.misc.utils as utils
+from libs.misc.decorators import MissingStaffError, MissingDevError, MissingStaffSlashError, MissingDevSlashError
+from libs.misc.utils import DefaultEmbedResponses, ContextTypes, get_context_type
 from scripts.utils import cog_handler
+
+
+class AdamTree(discord.app_commands.tree.CommandTree):
+    def __init__(self, client: discord.Client) -> None:
+        self.client = client
+        self.maps = {}
+        super().__init__(client)
+
+    def map(self, error: AppCommandError, method: Callable) -> None:
+        """
+        Allows for mapping custom AppCommandErrors to custom handler methods.
+        """
+
+        self.maps[error] = method
+
+    async def on_error(self, interaction: Interaction, error: AppCommandError) -> None:
+        """
+        Custom error handler for AppCommandErrors. If a custom handler is mapped to the error, it will be called.
+        Otherwise, the error will be raised as normal.
+        """
+
+        if isinstance(error, MissingStaffSlashError) or isinstance(error, MissingDevSlashError):
+            await DefaultEmbedResponses.invalid_perms(self.client, interaction)
+        else:
+            mapped_method = self.maps.get(error.__class__, None)
+            if callable(mapped_method):
+                await mapped_method(interaction, error)
+            else:
+                raise error
 
 
 class AdamBot(Bot):
@@ -27,12 +62,14 @@ class AdamBot(Bot):
 
         watch_prefixes = [await self.get_config_key(message, "prefix") if message.guild else None, self.global_prefix]
         if watch_prefixes != [None] * len(watch_prefixes):
-            return when_mentioned_or(*tuple([prefix for prefix in watch_prefixes if type(prefix) is str]))(self, message)  # internal conf prefix or guild conf prefix can be used
+            return when_mentioned_or(*tuple([prefix for prefix in watch_prefixes if type(prefix) is str]))(self,
+                                                                                                           message)  # internal conf prefix or guild conf prefix can be used
         else:
             # Config tables aren't loaded yet or internal config doesn't specify another prefix, temporarily set to mentions only
             return when_mentioned(self, message)
 
-    async def get_used_prefixes(self, message: discord.Message) -> list[str]:
+    async def get_used_prefixes(self, ctx: commands.Context | discord.Interaction | discord.Message | discord.Guild) -> \
+            list[str]:
         """
         Gets the prefixes that can be used to invoke a command in the guild where the message is from
         """
@@ -40,29 +77,35 @@ class AdamBot(Bot):
         if not hasattr(self, "get_config_key"):
             return []  # config cog not loaded yet
 
-        guild_prefix = await self.get_config_key(message, "prefix")
+        guild_prefix = await self.get_config_key(ctx, "prefix")
         return [prefix for prefix in [self.user.mention, self.global_prefix if self.global_prefix else None,
                                       guild_prefix if guild_prefix else None] if type(prefix) is str]
 
     def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args,
                  **kwargs) -> None:
+        self.ContextType = ContextTypes
+        self.get_context_type = get_context_type
         self.internal_config = self.load_internal_config(config_path)
         self.cog_handler = cog_handler.CogHandler(self)
         self.kwargs = kwargs
         self.global_prefix = self.internal_config.get("global_prefix")
-        self.kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(command_prefix)
+        self.kwargs["command_prefix"] = self.determine_prefix if not command_prefix else when_mentioned_or(
+            command_prefix)
 
         self.cog_handler.preload_core_cogs()
 
         cog_dict = pandas.json_normalize(self.internal_config.get("cogs", {}), sep=".").to_dict(orient="records")[0]
         if cog_dict:
-            self.cog_handler.preload_cogs(pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[0])
+            self.cog_handler.preload_cogs(
+                pandas.json_normalize(self.internal_config["cogs"], sep=".").to_dict(orient="records")[0])
         else:
             print("[X]    No cogs specified.")
 
-        super().__init__(*args, intents=self.cog_handler.make_intents(list(dict.fromkeys(self.cog_handler.intent_list))), **kwargs)
-
+        super().__init__(*args,
+                         intents=self.cog_handler.make_intents(list(dict.fromkeys(self.cog_handler.intent_list))),
+                         tree_cls=AdamTree, **kwargs)
         self.db_start = time.time()
+
         print("Creating DB pool...")
         self.db_url = self.internal_config.get("database_url", "")
         if not self.db_url:
@@ -76,26 +119,42 @@ class AdamBot(Bot):
         self.ts_format = "%A %d/%m/%Y %H:%M:%S"
         self.start_time = start_time
         self._init_time = time.time()
+        self.last_active = {}  # Used for ensuring bots do not respond or invoke commands
 
         print(f"BOT INITIALISED {self._init_time - start_time} seconds")
 
-    async def shutdown(self, ctx: commands.Context = None) -> None:  # ctx = None because this is also called upon CTRL+C in command line
+    async def shutdown(self,
+                       ctx: commands.Context | discord.Interaction = None) -> None:  # ctx = None because this is also called upon CTRL+C in command line
         """
         Procedure that closes down AdamBot, using the standard client.close() command, as well as some database handling methods.
         """
 
+        ctx_type = self.get_context_type(ctx)
+
         self.online = False  # This is set to false to prevent DB things going on in the background once bot closed
         user = f"{self.user.mention} " if self.user else ""
         p_s = f"Beginning process of shutting {user}down. DB pool shutting down..."
-        (await ctx.send(p_s), print(p_s)) if ctx else print(p_s)
+
+        if ctx_type == self.ContextTypes.Context:
+            await ctx.send(p_s)
+        elif ctx_type == self.ContextTypes.Interaction:
+            await ctx.response.send_message(p_s)
+        print(p_s)
+
         if hasattr(self, "pool"):
             self.pool.terminate()  # TODO: Make this more graceful
+
         c_s = "Closing connection to Discord..."
-        (await ctx.send(c_s), print(c_s)) if ctx else print(c_s)
+
+        if ctx_type != self.ContextTypes.Unknown:
+            await ctx.channel.send(c_s)
+        print(c_s)
+
         try:
             await self.change_presence(status=discord.Status.offline)
         except AttributeError:
             pass  # hasattr returns true but then you get yelled at if you use it
+
         await super().close()
         time.sleep(1)  # stops bs RuntimeError spam at the end
         print(f"Bot closed after {time.time() - self.start_time} seconds")
@@ -127,6 +186,11 @@ class AdamBot(Bot):
         """
         Command that starts AdamBot, is run in AdamBot.__init__
         """
+
+        print("Loading utils into the bot instance...")
+        self.__dict__.update(utils.__dict__)  # Bring all of utils into the bot - prevents referencing utils in cogs
+        print("Setting flag handlers...")
+        self.set_flag_handlers()
 
         print("Loading cogs...")
         await self.cog_handler.load_cogs()
@@ -162,15 +226,42 @@ class AdamBot(Bot):
                 f"Something went wrong handling the token!\nThe error was {type(e).__name__}: {e}")  # overridden close cleans this up neatly
 
     async def on_ready(self) -> None:
+        """
+        Event that sets the bot instance's status and online presence
+        """
         self.login_time = time.time()
         print(f"Bot logged into Discord ({self.login_time - self.start_time} seconds total)")
+        await self.tree.sync()
         await self.change_presence(activity=discord.Game(name=f"in {len(self.guilds)} servers | Type `help` for help"),
                                    status=discord.Status.online)
         self.online = True
 
+    async def on_message(self, message: discord.Message) -> None:
+        """
+        Event that has checks that stop bots from executing commands
+        """
+
+        if type(message.channel) == discord.DMChannel or message.author.bot:
+            return
+        if message.guild.id not in self.last_active:
+            self.last_active[message.guild.id] = []  # create the dict key for that guild if it doesn't exist
+        last_active_list = self.last_active[message.guild.id]
+        if message.author in last_active_list:
+            last_active_list.remove(message.author)
+        last_active_list.insert(0, message.author)
+
+        # Now run commands, due to overriding of default bot `on_message` doesn't do this automatically
+        await self.process_commands(message)
+
     async def on_command_error(self, ctx: commands.Context, error) -> None:
+        print(error)  # added back for the sake of retaining sanity when debugging
         if isinstance(error, MissingStaffError) or isinstance(error, MissingDevError):
-            await DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
+            await self.DefaultEmbedResponses.invalid_perms(ctx.bot, ctx)
+
+    def set_flag_handlers(self) -> None:
+        self.flag_handler = self.flags()
+        self.flag_handler.set_flag("time", {"flag": "t", "post_parse_handler": self.flag_methods.str_time_to_seconds})
+        self.flag_handler.set_flag("reason", {"flag": "r"})
 
     def correct_time(self, conv_time: Optional[datetime.datetime] = None,
                      timezone_: str = "system") -> datetime.datetime:

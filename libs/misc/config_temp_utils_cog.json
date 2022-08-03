@@ -1,4 +1,0 @@
-{
-  "loader": "./temp_utils_cog",
-  "intents": ["guild_messages", "guild_reactions", "members"]
-}
