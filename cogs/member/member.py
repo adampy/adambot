@@ -326,7 +326,7 @@ class Member(commands.Cog):
 
     @commands.command(aliases=["results", "gcseresults", "alevelresults"])
     @commands.guild_only()
-    async def resultsday(self, ctx: commands.Context, hour: str = "") -> None:
+    async def resultsday(self, ctx: commands.Context, hour: str = "10") -> None:
         """
         A classic command which displays a countdown embed for the specified results day
         """
