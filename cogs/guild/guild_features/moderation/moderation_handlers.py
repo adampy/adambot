@@ -61,15 +61,9 @@ class ModerationHandlers:
         Handler for the purge commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
         channel = ctx.channel
 
         if (type(limit) is str and limit.isdigit()) or type(limit) is int:
@@ -117,14 +111,9 @@ class ModerationHandlers:
         Handler for the kick commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if ctx.guild.me.top_role < member.top_role:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not kick member!",
@@ -165,14 +154,9 @@ class ModerationHandlers:
         Handler for the ban commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if not ctx.guild.me.guild_permissions.ban_members:
             await self.bot.DefaultEmbedResponses(self.bot, ctx, "Could not proceed with the ban!",
@@ -335,14 +319,9 @@ class ModerationHandlers:
         Handler for the unban commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
@@ -371,14 +350,9 @@ class ModerationHandlers:
         Handler for the slowmode commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if not ctx.channel.permissions_for(author).manage_channels:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not add a slowmode here!",
@@ -408,14 +382,9 @@ class ModerationHandlers:
         Handler for the say commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         await channel.send(text[5:] if text.startswith("/tts") else text,
                            tts=text.startswith("/tts ") and channel.permissions_for(author).send_tts_messages)
@@ -476,14 +445,9 @@ class ModerationHandlers:
         Handler for the mute commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         role = get(member.guild.roles, id=await self.bot.get_config_key(member, "muted_role"))
         if not role:

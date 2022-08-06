@@ -19,13 +19,10 @@ class SpotifyHandlers:
         Constructs and send the spotifyinfo embeds.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
+        if ctx_type != self.ContextTypes.Context:
             author = ctx.guild.get_member(ctx.user.id)
 
         if not user or (type(user) is str and len(user) == 0):

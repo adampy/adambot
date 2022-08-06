@@ -17,7 +17,7 @@ from tzlocal import get_localzone
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
 import libs.misc.utils as utils
 from libs.misc.decorators import MissingStaffError, MissingDevError, MissingStaffSlashError, MissingDevSlashError
-from libs.misc.utils import DefaultEmbedResponses, ContextTypes, get_context_type
+from libs.misc.utils import DefaultEmbedResponses, ContextTypes, unbox_context
 from scripts.utils import cog_handler
 
 
@@ -84,7 +84,7 @@ class AdamBot(Bot):
     def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args,
                  **kwargs) -> None:
         self.ContextType = ContextTypes
-        self.get_context_type = get_context_type
+        self.unbox_context = unbox_context
         self.internal_config = self.load_internal_config(config_path)
         self.cog_handler = cog_handler.CogHandler(self)
         self.kwargs = kwargs
@@ -129,7 +129,9 @@ class AdamBot(Bot):
         Procedure that closes down AdamBot, using the standard client.close() command, as well as some database handling methods.
         """
 
-        ctx_type = self.get_context_type(ctx)
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
+            return
 
         self.online = False  # This is set to false to prevent DB things going on in the background once bot closed
         user = f"{self.user.mention} " if self.user else ""

@@ -20,8 +20,8 @@ class MemberHandlers:
         Fetches and displays a specified message from its ID and a channel ID if it exists.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if type(channel) is int:
@@ -36,7 +36,6 @@ class MemberHandlers:
                                                              desc="Could not find a message with the given ID!")
             return
 
-        user = msg.author
         image = None
         repl = re.compile(r"/(\[.+?)(\(.+?\))/")
         edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ""
@@ -53,8 +52,8 @@ class MemberHandlers:
 
         if image:
             embed.set_image(url=image)
-        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}",
-                         icon_url=get_user_avatar_url(user, mode=1)[0])
+        embed.set_footer(text=f"Sent by {author.name}#{author.discriminator}",
+                         icon_url=get_user_avatar_url(author, mode=1)[0])
         embed.description = f"❝ {content} ❞" + edited
 
         if ctx_type == self.ContextTypes.Context:
@@ -122,14 +121,9 @@ class MemberHandlers:
         Pings a given user role with a given message a specified number of times.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         try:
             amount = int(amount)
@@ -160,14 +154,9 @@ class MemberHandlers:
         Ghost-pings a given user role with a given message a specified number of times.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         try:
             amount = int(amount)
@@ -381,14 +370,9 @@ class MemberHandlers:
         Submits a reminder task with a given reason and time.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         str_tp = self.bot.time_str(time)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
         str_reason = "*Reminder:* " + (reason if reason else "(Not specified)")
@@ -437,14 +421,9 @@ class MemberHandlers:
         Constructs and displays the countdown embed.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         embed = Embed(title="Information on UK exams", color=Colour.from_rgb(148, 0, 211))
         now = self.bot.correct_time()
@@ -475,14 +454,9 @@ class MemberHandlers:
         Constructs and displays the countdown embed.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         try:
             hour = int(hour)

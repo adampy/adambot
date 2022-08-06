@@ -21,9 +21,8 @@ class DemographicsHandlers:
         Responds with a list of role names for roles that are tracked within the context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         role_ids = await self.cog._get_roles(ctx.guild)
@@ -42,14 +41,9 @@ class DemographicsHandlers:
         Adds a role to be sampled for the context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         def check(m: discord.Message) -> bool:
             return m.author == author and m.channel == ctx.channel
@@ -109,15 +103,9 @@ class DemographicsHandlers:
         Removes a role from being sampled for the context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         def check(m: discord.Message) -> bool:
             return m.author == author and m.channel == ctx.channel
@@ -170,15 +158,9 @@ class DemographicsHandlers:
         Takes a sample immediately for a given role within a context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         guild_tracked_roles = await self.cog._get_roles(ctx.guild)
         if not role:
@@ -239,8 +221,8 @@ class DemographicsHandlers:
         Removes all samples for a context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         async with self.bot.pool.acquire() as connection:
@@ -262,8 +244,8 @@ class DemographicsHandlers:
         Shows the numbers of members with each tracked role within a context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         tracked_roles = [ctx.guild.get_role(r) for r in await self.cog._get_roles(ctx.guild) if

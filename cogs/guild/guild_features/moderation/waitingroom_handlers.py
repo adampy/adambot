@@ -20,9 +20,8 @@ class WaitingroomHandlers:
         Handler for the testwelcome commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         msg = await self.bot.get_config_key(ctx, "welcome_msg")
@@ -36,7 +35,7 @@ class WaitingroomHandlers:
             return
 
         message = await self.cog.get_parsed_welcome_message(msg,
-                                                            to_ping or ctx.author)  # to_ping or author means the author unless to_ping is provided.
+                                                            to_ping or author)  # to_ping or author means the author unless to_ping is provided.
 
         if ctx_type == self.ContextTypes.Context:
             await ctx.send(message)
@@ -48,16 +47,12 @@ class WaitingroomHandlers:
         Handler for the lurker commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if ctx_type == self.ContextTypes.Interaction:
             await ctx.response.send_message(":ok_hand:")
-            author = ctx.user
-        else:
-            author = ctx.author
 
         phrase = phrase.split(" ")
         # Get default phrase if there is one, but the one given in the command overrides the config one
@@ -132,15 +127,9 @@ class WaitingroomHandlers:
         Handler for the lurker_kick commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Interaction:
-            author = ctx.user
-        else:
-            author = ctx.author
 
         def check(m: discord.Message) -> bool:
             return m.channel == ctx.channel and m.author == author

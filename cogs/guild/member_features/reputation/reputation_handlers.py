@@ -17,15 +17,9 @@ class ReputationHandlers:
         Constructs and sends an embed containing the reputation leaderboard for the context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         async with self.bot.pool.acquire() as connection:
             leaderboard = await connection.fetch(
@@ -104,15 +98,9 @@ class ReputationHandlers:
         Handler for the award commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if args:
             if type(args) == discord.Member:
@@ -203,14 +191,9 @@ class ReputationHandlers:
         Handler for the all commands. (No this isn't a typo ;) )
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE from rep WHERE guild_id = $1", ctx.guild.id)
@@ -234,14 +217,9 @@ class ReputationHandlers:
         Handler for the set commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if type(rep) is str and not rep.isdigit():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The reputation points must be a number!")
@@ -268,14 +246,9 @@ class ReputationHandlers:
         Handler for the hardset commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if not user_id.isdigit():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The user's ID must be a valid ID!")
@@ -315,14 +288,9 @@ class ReputationHandlers:
         Handler for the check commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if not args:
             user = author if not member else member

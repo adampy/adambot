@@ -16,14 +16,9 @@ class SupportHandlers:
         Handler for the accept commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         try:
             ticket = int(ticket)
@@ -75,8 +70,8 @@ class SupportHandlers:
         Handler for the connections commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         current = []

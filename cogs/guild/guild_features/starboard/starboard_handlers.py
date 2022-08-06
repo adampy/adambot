@@ -243,14 +243,9 @@ class StarboardHandlers:
         Handler for the view commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         starboards = await self._get_starboards(ctx.guild.id)
         embed = self.bot.EmbedPages(

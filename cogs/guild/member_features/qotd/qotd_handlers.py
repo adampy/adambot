@@ -20,14 +20,9 @@ class QOTDHandlers:
         Handler for the submit commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if len(qotd) > 255:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not submit question!",
@@ -38,11 +33,7 @@ class QOTDHandlers:
             await ctx.send(f"```{ctx.prefix}qotd submit <question>```")
             return
 
-        if ctx_type == self.ContextTypes.Context:
-            member = ctx.author.id
-        else:
-            member = ctx.user.id
-
+        member = author.id
         is_staff = await self.bot.is_staff(ctx)
 
         today = datetime.datetime.utcnow().date()
@@ -85,14 +76,9 @@ class QOTDHandlers:
         Handler for the list commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         async with self.bot.pool.acquire() as connection:
             qotds = await connection.fetch("SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id", ctx.guild.id)
@@ -123,14 +109,9 @@ class QOTDHandlers:
         Handler for the delete commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         question_ids = question_ids.split(" ")
 
@@ -163,14 +144,9 @@ class QOTDHandlers:
         Handler for the pick commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         qotd_channel_id = await self.bot.get_config_key(ctx, "qotd_channel")
         if qotd_channel_id is None:

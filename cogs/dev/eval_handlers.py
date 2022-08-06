@@ -27,9 +27,8 @@ class EvalHandlers:
         If something doesn't output correctly try wrapping in str()
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.bot.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         try:
@@ -64,9 +63,8 @@ class EvalHandlers:
         Handler for the execute commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.bot.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         async with self.bot.pool.acquire() as connection:
@@ -85,9 +83,8 @@ class EvalHandlers:
         Handler for the fetch commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.bot.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         async with self.bot.pool.acquire() as connection:

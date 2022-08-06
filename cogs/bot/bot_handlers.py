@@ -66,9 +66,8 @@ class BotHandlers:
         Constructs and sends the botinfo embed.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         app_info = await self.bot.application_info()
@@ -94,11 +93,6 @@ class BotHandlers:
         if hasattr(app_info, "icon"):
             embed.set_thumbnail(url=app_info.icon.url)
 
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
         embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + (self.bot.correct_time()).strftime(
             self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
@@ -114,9 +108,8 @@ class BotHandlers:
         Allows a user to check if the bot is currently hosted locally or remotely.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         string = f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now."
@@ -133,9 +126,8 @@ class BotHandlers:
         Allows a user to view the bot's current latency
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         string = f"Pong! ({round(self.bot.latency * 1000)} ms)"
@@ -152,9 +144,8 @@ class BotHandlers:
         Allows a user to view how long the bot has been running for
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         seconds = round(time.time() - self.bot.start_time)  # Rounds to the nearest integer

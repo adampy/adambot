@@ -43,14 +43,9 @@ class RoleHandlers:
         if action not in ["add", "remove"]:
             return
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         verb = "added" if action == "add" else "removed"
         reason = f"Requested by {author}"
@@ -181,14 +176,9 @@ class RoleHandlers:
         Handler for the info commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if type(role) is not discord.Role:
             role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
@@ -221,14 +211,9 @@ class RoleHandlers:
         Handler for the list commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         embed = self.bot.EmbedPages(
             self.bot.PageTypes.ROLE_LIST,
@@ -253,8 +238,8 @@ class RoleHandlers:
         Handler for the members commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if type(role) is not discord.Role:
@@ -313,8 +298,8 @@ class RoleHandlers:
         Handler for the swap commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if type(swap_from) is not discord.Role:
@@ -378,8 +363,8 @@ class RoleHandlers:
         Handler for the removeall commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if type(role) is not discord.Role:
@@ -427,8 +412,8 @@ class RoleHandlers:
         Handler for the addall commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if type(ref_role) is not discord.Role:

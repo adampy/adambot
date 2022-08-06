@@ -17,14 +17,9 @@ class WarningHandlers:
         Handles getting the warns for a specific member
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         async with self.bot.pool.acquire() as connection:
             warns = await connection.fetch("SELECT * FROM warn WHERE member_id = ($1) AND guild_id = $2 ORDER BY id;",
@@ -57,14 +52,9 @@ class WarningHandlers:
         Handler for the warn commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         parsed_args = self.bot.flag_handler.separate_args(reason, fetch=["reason"], blank_as_flag="reason")
         reason = parsed_args["reason"]
@@ -94,14 +84,9 @@ class WarningHandlers:
         Handler for the warns commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if await self.bot.is_staff(ctx):
             if not member:
@@ -146,8 +131,8 @@ class WarningHandlers:
         Handler for the warnremove commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx) # TODO: Is this potentially a redundant check?
+        if not author:
             return
 
         warnings = warnings.split(" ") if type(warnings) is str else warnings

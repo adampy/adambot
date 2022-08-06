@@ -36,8 +36,8 @@ class ReactionrolesHandlers:
     async def add(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str, role: discord.Role,
                   inverse: bool | str = None, message_id: int | str = None) -> None:
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if not ctx.guild.me.guild_permissions.manage_roles:
@@ -95,8 +95,8 @@ class ReactionrolesHandlers:
 
     async def remove(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str,
                      message_id: int | str = None) -> None:
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if ctx_type == self.ContextTypes.Context and not message_id:
@@ -133,8 +133,8 @@ class ReactionrolesHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
     async def delete(self, ctx: commands.Context | discord.Interaction, message_id=None) -> None:
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         if ctx_type == self.ContextTypes.Context and not message_id:
@@ -156,8 +156,8 @@ class ReactionrolesHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
     async def showreactionroles(self, ctx: commands.Context | discord.Interaction) -> None:
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
+        ctx_type, author = self.bot.unbox_context(ctx)
+        if not author:
             return
 
         async with self.bot.pool.acquire() as connection:
@@ -166,8 +166,8 @@ class ReactionrolesHandlers:
         embed = discord.Embed(title=f":information_source: {ctx.guild.name} reaction roles",
                               color=self.bot.INFORMATION_BLUE)
         embed.set_footer(
-            text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(
-                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            text=f"Requested by: {author.display_name} ({author})\n" + self.bot.correct_time().strftime(
+                self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
         message_reactions = {}  # ID -> str (to put in embed)
         message_channels = {}  # ID -> discord.TextChannel

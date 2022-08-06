@@ -45,12 +45,11 @@ def get_bot(ctx: commands.Context | discord.Interaction):
 async def staff_predicate(ctx: commands.Context | discord.Interaction) -> Optional[bool]:
     # Get prereqs
     bot = get_bot(ctx)
-    ctx_type = bot.get_context_type(ctx)
-    if ctx_type == bot.ContextType.Unknown:
+    ctx_type, author = bot.unbox_context(ctx)
+    if not author:
         return
 
     # Raise MissingStaff if author doesn't have staff
-    author = ctx.author if ctx_type == bot.ContextTypes.Context else ctx.user
     staff_role_id = await bot.get_config_key(ctx, "staff_role")
 
     if staff_role_id in [y.id for y in author.roles] or author.guild_permissions.administrator:
@@ -64,12 +63,11 @@ async def staff_predicate(ctx: commands.Context | discord.Interaction) -> Option
 async def dev_predicate(ctx: commands.Context | discord.Interaction) -> Optional[bool]:
     # Get prereqs
     bot = get_bot(ctx)
-    ctx_type = bot.get_context_type(ctx)
-    if ctx_type == bot.ContextType.Unknown:
+    ctx_type, author = bot.unbox_context(ctx)
+    if not author:
         return
 
     # Raise MissingDev if author doesn't have staff
-    author = ctx.author if ctx_type == bot.ContextTypes.Context else ctx.user
     if author.id in DEVS:
         return True
     elif ctx_type == bot.ContextTypes.Context:
