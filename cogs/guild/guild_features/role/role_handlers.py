@@ -5,7 +5,8 @@ from discord import Embed, errors
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+from libs.misc.decorators import unbox_context
+from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
 
 
 class Verbosity:  # Using enum.Enum means that ">" and "<" operations cannot be performed, e.g. Verbosity.ALL > Verbosity.MINIMAL
@@ -27,7 +28,9 @@ class RoleHandlers:
         self.bot = bot
         self.ContextTypes = self.bot.ContextTypes
 
-    async def checked_role_change(self, ctx: commands.Context | discord.Interaction, role: discord.Role,
+    @unbox_context
+    async def checked_role_change(self, ctx_type: ContextTypes, author: discord.User | discord.Member,
+                                  ctx: commands.Context | discord.Interaction, role: discord.Role,
                                   member: discord.Member, action: str, tracker: discord.Message = None,
                                   part_of_more: bool = False, single_output: bool = True) -> Optional[int | float]:
         """
@@ -41,10 +44,6 @@ class RoleHandlers:
         """
 
         if action not in ["add", "remove"]:
-            return
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
             return
 
         verb = "added" if action == "add" else "removed"
@@ -171,14 +170,11 @@ class RoleHandlers:
 
         return possible
 
-    async def info(self, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
+    @unbox_context
+    async def info(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
         """
         Handler for the info commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if type(role) is not discord.Role:
             role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
@@ -206,14 +202,11 @@ class RoleHandlers:
         else:
             await ctx.response.send_message(embed=embed)
 
-    async def list_server_roles(self, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context
+    async def list_server_roles(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the list commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         embed = self.bot.EmbedPages(
             self.bot.PageTypes.ROLE_LIST,
@@ -233,14 +226,11 @@ class RoleHandlers:
         await embed.set_page(1)
         await embed.send()
 
-    async def members(self, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
+    @unbox_context
+    async def members(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
         """
         Handler for the members commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if type(role) is not discord.Role:
             possible = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
@@ -292,15 +282,12 @@ class RoleHandlers:
 
         await self.checked_role_change(ctx, role, member, "remove")
 
-    async def swap(self, ctx: commands.Context | discord.Interaction, swap_from: discord.Role | str,
+    @unbox_context
+    async def swap(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, swap_from: discord.Role | str,
                    swap_to: discord.Role | str) -> None:
         """
         Handler for the swap commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if type(swap_from) is not discord.Role:
             swap_from = await self.find_closest_role(ctx, swap_from, verbosity=Verbosity.ALL)
@@ -358,14 +345,11 @@ class RoleHandlers:
                                                                 + (
                                                                     "" if already_got_dest_role == 0 else f" ({already_got_dest_role} already had {swap_to.mention})"))
 
-    async def removeall(self, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
+    @unbox_context
+    async def removeall(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
         """
         Handler for the removeall commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if type(role) is not discord.Role:
             role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
@@ -406,15 +390,12 @@ class RoleHandlers:
 
         await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Nothing to do!", desc="Nobody has this role!")
 
-    async def addall(self, ctx: commands.Context | discord.Interaction, ref_role: discord.Role | str,
+    @unbox_context
+    async def addall(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, ref_role: discord.Role | str,
                      add_role: discord.Role | str) -> None:
         """
         Handler for the addall commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if type(ref_role) is not discord.Role:
             ref_role = await self.find_closest_role(ctx, ref_role, verbosity=Verbosity.ALL)

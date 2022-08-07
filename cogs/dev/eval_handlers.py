@@ -5,6 +5,8 @@ import discord
 from discord.ext import commands
 
 from adambot import AdamBot
+from libs.misc.decorators import unbox_context
+from libs.misc.utils import ContextTypes
 
 
 class EvalHandlers:
@@ -19,17 +21,14 @@ class EvalHandlers:
             text = text[2000:]
         return chunks
 
-    async def evaluate(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
+    @unbox_context
+    async def evaluate(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the evaluate commands.
 
         Allows evaluating strings of code (intended for testing).
         If something doesn't output correctly try wrapping in str()
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         try:
             output = eval(command)
@@ -58,14 +57,11 @@ class EvalHandlers:
             e.replace(os.getcwd(), ".")
             await ctx.channel.send(e)
 
-    async def execute(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
+    @unbox_context
+    async def execute(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the execute commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         async with self.bot.pool.acquire() as connection:
             try:
@@ -78,14 +74,11 @@ class EvalHandlers:
                 else:
                     await ctx.response.send_message(msg)
 
-    async def fetch(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
+    @unbox_context
+    async def fetch(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the fetch commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         async with self.bot.pool.acquire() as connection:
             try:

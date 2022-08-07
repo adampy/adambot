@@ -2,6 +2,9 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 
+from libs.misc.decorators import unbox_context
+from libs.misc.utils import ContextTypes
+
 from .support_connection import MessageOrigin
 
 
@@ -11,14 +14,11 @@ class SupportHandlers:
         self.cog = cog
         self.ContextTypes = self.bot.ContextTypes
 
-    async def accept(self, ctx: commands.Context | discord.Interaction, ticket: str | int) -> None:
+    @unbox_context
+    async def accept(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, ticket: str | int) -> None:
         """
         Handler for the accept commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         try:
             ticket = int(ticket)
@@ -65,14 +65,11 @@ class SupportHandlers:
                 return
             await channel.send(embed=embed)
 
-    async def connections(self, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context
+    async def connections(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the connections commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         current = []
         waiting = []

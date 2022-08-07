@@ -1,8 +1,9 @@
 import discord
 from discord import Colour
 from discord.ext import commands
+from libs.misc.decorators import unbox_context
 
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
 
 
 class WarningHandlers:
@@ -11,15 +12,12 @@ class WarningHandlers:
         self.cog = cog
         self.ContextTypes = self.bot.ContextTypes
 
-    async def _warnlist_member(self, ctx: commands.Context | discord.Interaction, member: discord.Member,
+    @unbox_context
+    async def _warnlist_member(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, member: discord.Member,
                                page_num: int = 1) -> None:
         """
         Handles getting the warns for a specific member
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         async with self.bot.pool.acquire() as connection:
             warns = await connection.fetch("SELECT * FROM warn WHERE member_id = ($1) AND guild_id = $2 ORDER BY id;",
@@ -47,14 +45,11 @@ class WarningHandlers:
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Couldn't find any warnings!",
                                                                    desc=f"No warnings recorded for {member.mention}!")
 
-    async def warn(self, ctx: commands.Context | discord.Interaction, member: discord.Member, reason: str = "") -> None:
+    @unbox_context
+    async def warn(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, member: discord.Member, reason: str = "") -> None:
         """
         Handler for the warn commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         parsed_args = self.bot.flag_handler.separate_args(reason, fetch=["reason"], blank_as_flag="reason")
         reason = parsed_args["reason"]
@@ -78,15 +73,12 @@ class WarningHandlers:
         except Exception as e:
             print(e)
 
-    async def warns(self, ctx: commands.Context | discord.Interaction,
+    @unbox_context
+    async def warns(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction,
                     member: discord.Member | discord.User = None) -> None:
         """
         Handler for the warns commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if await self.bot.is_staff(ctx):
             if not member:
@@ -126,14 +118,11 @@ class WarningHandlers:
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't find anything!",
                                                                  desc="You don't have permission to view other people's warns.")
 
-    async def warnremove(self, ctx: commands.Context | discord.Interaction, warnings: str):
+    @unbox_context
+    async def warnremove(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, warnings: str):
         """
         Handler for the warnremove commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx) # TODO: Is this potentially a redundant check?
-        if not author:
-            return
 
         warnings = warnings.split(" ") if type(warnings) is str else warnings
         async with self.bot.pool.acquire() as connection:

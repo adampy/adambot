@@ -4,7 +4,8 @@ from discord import Embed, Colour
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+from libs.misc.decorators import unbox_context
+from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
 
 
 class ReputationHandlers:
@@ -12,14 +13,11 @@ class ReputationHandlers:
         self.bot = bot
         self.ContextTypes = self.bot.ContextTypes
 
-    async def get_leaderboard(self, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context
+    async def get_leaderboard(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
         """
         Constructs and sends an embed containing the reputation leaderboard for the context guild.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         async with self.bot.pool.acquire() as connection:
             leaderboard = await connection.fetch(
@@ -92,15 +90,12 @@ class ReputationHandlers:
                     new_reps = reps
                 return new_reps
 
-    async def award(self, ctx: commands.Context | discord.Interaction, args: discord.Member | discord.User | str = "",
+    @unbox_context
+    async def award(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, args: discord.Member | discord.User | str = "",
                     member: discord.Member = "") -> None:
         """
         Handler for the award commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if args:
             if type(args) == discord.Member:
@@ -186,14 +181,11 @@ class ReputationHandlers:
 
         await self.get_leaderboard(ctx)
 
-    async def all(self, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context
+    async def all(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the all commands. (No this isn't a typo ;) )
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         async with self.bot.pool.acquire() as connection:
             await connection.execute("DELETE from rep WHERE guild_id = $1", ctx.guild.id)
@@ -211,15 +203,12 @@ class ReputationHandlers:
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    async def set(self, ctx: commands.Context | discord.Interaction, user: discord.Member | discord.User,
+    @unbox_context
+    async def set(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, user: discord.Member | discord.User,
                   rep: str | int) -> None:
         """
         Handler for the set commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if type(rep) is str and not rep.isdigit():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The reputation points must be a number!")
@@ -241,14 +230,11 @@ class ReputationHandlers:
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    async def hardset(self, ctx: commands.Context | discord.Interaction, user_id: str, rep: int | str) -> None:
+    @unbox_context
+    async def hardset(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, user_id: str, rep: int | str) -> None:
         """
         Handler for the hardset commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if not user_id.isdigit():
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "The user's ID must be a valid ID!")
@@ -282,15 +268,12 @@ class ReputationHandlers:
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    async def check(self, ctx: commands.Context | discord.Interaction, args: str = "",
+    @unbox_context
+    async def check(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, args: str = "",
                     member: discord.Member | discord.User = "") -> None:
         """
         Handler for the check commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if not args:
             user = author if not member else member

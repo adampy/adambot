@@ -7,7 +7,8 @@ from discord import Embed, Colour
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+from libs.misc.decorators import unbox_context
+from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
 
 
 class QOTDHandlers:
@@ -15,14 +16,11 @@ class QOTDHandlers:
         self.bot = bot
         self.ContextTypes = self.bot.ContextTypes
 
-    async def submit(self, ctx: commands.Context | discord.Interaction, qotd: str) -> None:
+    @unbox_context
+    async def submit(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, qotd: str) -> None:
         """
         Handler for the submit commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if len(qotd) > 255:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not submit question!",
@@ -71,14 +69,11 @@ class QOTDHandlers:
                     embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
                     await log.send(embed=embed)
 
-    async def qotd_list(self, ctx: commands.Context | discord.Interaction, page_num: int = 1) -> None:
+    @unbox_context
+    async def qotd_list(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, page_num: int = 1) -> None:
         """
         Handler for the list commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         async with self.bot.pool.acquire() as connection:
             qotds = await connection.fetch("SELECT * FROM qotd WHERE guild_id = $1 ORDER BY id", ctx.guild.id)
@@ -104,14 +99,11 @@ class QOTDHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Nothing here!",
                                                              desc="This server does not currently have any QOTDs!")
 
-    async def delete(self, ctx: commands.Context | discord.Interaction, question_ids: str) -> None:
+    @unbox_context
+    async def delete(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, question_ids: str) -> None:
         """
         Handler for the delete commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         question_ids = question_ids.split(" ")
 
@@ -139,14 +131,11 @@ class QOTDHandlers:
 
         await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Finished deleting QOTDs", desc=info)
 
-    async def pick(self, ctx: commands.Context | discord.Interaction, question_id: str | int) -> None:
+    @unbox_context
+    async def pick(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, question_id: str | int) -> None:
         """
         Handler for the pick commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         qotd_channel_id = await self.bot.get_config_key(ctx, "qotd_channel")
         if qotd_channel_id is None:

@@ -4,8 +4,9 @@ import datetime
 import discord
 from discord import Embed, Colour
 from discord.ext import commands
+from libs.misc.decorators import unbox_context
 
-from libs.misc.utils import get_user_avatar_url
+from libs.misc.utils import ContextTypes, get_user_avatar_url
 
 
 class WaitingroomHandlers:
@@ -14,15 +15,12 @@ class WaitingroomHandlers:
         self.ContextTypes = self.bot.ContextTypes
         self.cog = cog
 
-    async def testwelcome(self, ctx: commands.Context | discord.Interaction,
+    @unbox_context
+    async def testwelcome(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction,
                           to_ping: discord.Member | discord.User = None) -> None:
         """
         Handler for the testwelcome commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         msg = await self.bot.get_config_key(ctx, "welcome_msg")
         if msg is None:
@@ -42,14 +40,11 @@ class WaitingroomHandlers:
         else:
             await ctx.response.send_message(message)
 
-    async def lurker(self, ctx: commands.Context | discord.Interaction, phrase: str) -> None:
+    @unbox_context
+    async def lurker(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, phrase: str) -> None:
         """
         Handler for the lurker commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if ctx_type == self.ContextTypes.Interaction:
             await ctx.response.send_message(":ok_hand:")
@@ -122,14 +117,11 @@ class WaitingroomHandlers:
                 await ctx.channel.send(f"""{author.mention} To save time, you can provide a default message to be displayed on the lurker command, i.e. you don't need to type out the phrase each time.
         You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
 
-    async def lurker_kick(self, ctx: commands.Context | discord.Interaction, days: int | str = 7) -> None:
+    @unbox_context
+    async def lurker_kick(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, days: int | str = 7) -> None:
         """
         Handler for the lurker_kick commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         def check(m: discord.Message) -> bool:
             return m.channel == ctx.channel and m.author == author

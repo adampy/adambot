@@ -177,11 +177,9 @@ class EmbedPages(discord.ui.View):
         Sends the embed message. The interaction times out after 300 seconds (5 minutes).
         """
 
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
+        ctx_is_context = issubclass(self.ctx.__class__, commands.Context)
 
-        if ctx_type == self.bot.ContextTypes.Context or (ctx_type == self.bot.ContextTypes.Interaction and self.ctx.response.is_done()) or not self.ctx:
+        if ctx_is_context or (not ctx_is_context and self.ctx.response.is_done()) or not self.ctx:
             await self.channel.send(embed=self.embed, view=self)
         else:
             await self.ctx.response.send_message(embed=self.embed, view=self)

@@ -7,7 +7,8 @@ from discord.ext import commands
 from discord.utils import get
 
 from adambot import AdamBot
-from libs.misc.utils import get_user_avatar_url
+from libs.misc.decorators import unbox_context
+from libs.misc.utils import ContextTypes, get_user_avatar_url
 
 
 class ModerationHandlers:
@@ -55,15 +56,13 @@ class ModerationHandlers:
 
         await self.bot.shutdown(ctx)
 
-    async def purge(self, ctx: commands.Context | discord.Interaction, limit: str | int = 5,
+    @unbox_context
+    async def purge(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, limit: str | int = 5,
                     member: discord.Member = None) -> None:
         """
         Handler for the purge commands.
         """
 
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
         channel = ctx.channel
 
         if (type(limit) is str and limit.isdigit()) or type(limit) is int:
@@ -105,15 +104,12 @@ class ModerationHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Invalid number of messages provided!",
                                                              desc=f"Please use an integer for the amount of messages to delete, not `{limit}` :ok_hand:")
 
-    async def kick(self, ctx: commands.Context | discord.Interaction, member: str | discord.Member,
+    @unbox_context
+    async def kick(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, member: str | discord.Member,
                    reason: str = "No reason provided", args: str = "") -> None:
         """
         Handler for the kick commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if ctx.guild.me.top_role < member.top_role:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not kick member!",
@@ -148,15 +144,12 @@ class ModerationHandlers:
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    async def ban(self, ctx: commands.Context | discord.Interaction, members: str | discord.Member,
+    @unbox_context
+    async def ban(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, members: str | discord.Member,
                   reason: str = "No reason provided", timeperiod: str = None) -> None:
         """
         Handler for the ban commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if not ctx.guild.me.guild_permissions.ban_members:
             await self.bot.DefaultEmbedResponses(self.bot, ctx, "Could not proceed with the ban!",
@@ -313,15 +306,12 @@ class ModerationHandlers:
         except Exception:
             pass  # go away!
 
-    async def unban(self, ctx: commands.Context | discord.Interaction, member: str, args: str = None,
+    @unbox_context
+    async def unban(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, member: str, args: str = None,
                     reason: str = "No reason provided") -> None:
         """
         Handler for the unban commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
@@ -345,14 +335,10 @@ class ModerationHandlers:
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Unbanned member successfully!",
                                                            desc=f"{member.mention} has been unbanned!")
 
-    async def slowmode(self, ctx: commands.Context | discord.Interaction, time: str | int) -> None:
+    async def slowmode(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, time: str | int) -> None:
         """
         Handler for the slowmode commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if not ctx.channel.permissions_for(author).manage_channels:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not add a slowmode here!",
@@ -376,15 +362,12 @@ class ModerationHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not add a slowmode here!",
                                                              desc="You must specify a whole number of seconds!")
 
-    async def say(self, ctx: commands.Context | discord.Interaction,
+    @unbox_context
+    async def say(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction,
                   channel: discord.TextChannel | discord.Thread | app_commands.AppCommandThread, text: str):
         """
         Handler for the say commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         await channel.send(text[5:] if text.startswith("/tts") else text,
                            tts=text.startswith("/tts ") and channel.permissions_for(author).send_tts_messages)
@@ -439,15 +422,12 @@ class ModerationHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not delete invite!",
                                                              desc=f"Invite revoking failed: {e}")
 
-    async def mute(self, ctx: commands.Context | discord.Interaction, member: discord.Member,
+    @unbox_context
+    async def mute(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, member: discord.Member,
                    reason: str = "No reason provided!", timeperiod: int | str = "", args: str = "") -> None:
         """
         Handler for the mute commands.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         role = get(member.guild.roles, id=await self.bot.get_config_key(member, "muted_role"))
         if not role:
