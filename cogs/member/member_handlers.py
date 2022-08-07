@@ -5,24 +5,22 @@ import discord
 from discord import Embed, Colour, Status, app_commands
 from discord.ext import commands
 
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+from libs.misc.decorators import unbox_context
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url, ContextTypes
 
 
 class MemberHandlers:
     def __init__(self, bot) -> None:
         self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        self.ContextTypes = bot.ContextTypes
 
-    async def quote(self, ctx: commands.Context | discord.Interaction, messageid: int | str,
+    @unbox_context
+    async def quote(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, messageid: int | str,
                     channel: int | discord.TextChannel | discord.Thread | app_commands.AppCommandThread) -> None:
         """
         Handler method for the classic and slash quote commands.
         Fetches and displays a specified message from its ID and a channel ID if it exists.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         if type(channel) is int:
             channelid = channel
@@ -47,7 +45,7 @@ class MemberHandlers:
 
         embed = Embed(title="Quote link",
                       url=f"https://discordapp.com/channels/{channelid}/{messageid}",
-                      color=user.color,
+                      color=author.color,
                       timestamp=msg.created_at)
 
         if image:
@@ -113,17 +111,14 @@ class MemberHandlers:
 
         return "https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4"
 
-    async def spamping(self, ctx: commands.Context | discord.Interaction, amount: str | int,
+    @unbox_context
+    async def spamping(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, amount: str | int,
                        user: discord.Member | discord.Role, message) -> None:
         """
         Handler for the spamping commands.
 
         Pings a given user role with a given message a specified number of times.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         try:
             amount = int(amount)
@@ -145,18 +140,15 @@ class MemberHandlers:
                 await ctx.channel.send(msg)
         else:
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-
-    async def ghostping(self, ctx: commands.Context | discord.Interaction, user: discord.Member | discord.Role,
+    
+    @unbox_context
+    async def ghostping(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, user: discord.Member | discord.Role,
                         amount: str | int) -> None:
         """
         Handler for the ghostping commands.
 
         Ghost-pings a given user role with a given message a specified number of times.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         try:
             amount = int(amount)
@@ -363,16 +355,13 @@ class MemberHandlers:
 
         return data
 
-    async def remind(self, ctx: commands.Context | discord.Interaction, time: int, reason: str = "") -> None:
+    @unbox_context
+    async def remind(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, time: int, reason: str = "") -> None:
         """
         Handler for setting up a reminder.
 
         Submits a reminder task with a given reason and time.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         str_tp = self.bot.time_str(time)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
         str_reason = "*Reminder:* " + (reason if reason else "(Not specified)")
@@ -414,16 +403,13 @@ class MemberHandlers:
         else:
             return f"**ACCOUNT AVATAR (TOP):**\n{avatar_urls[0]}\n**SERVER AVATAR (BOTTOM):**\n{avatar_urls[1]}"
 
-    async def gcses(self, ctx: commands.Context | discord.Interaction, command: str = "gcses") -> None:
+    @unbox_context
+    async def gcses(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, command: str = "gcses") -> None:
         """
         Handler for the gcses commands.
 
         Constructs and displays the countdown embed.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         embed = Embed(title="Information on UK exams", color=Colour.from_rgb(148, 0, 211))
         now = self.bot.correct_time()
@@ -447,16 +433,14 @@ class MemberHandlers:
         else:
             await ctx.response.send_message(embed=embed)
 
-    async def resultsday(self, ctx: commands.Context | discord.Interaction, hour: int | str = 10, which="GCSE") -> None:
+
+    @unbox_context
+    async def resultsday(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, hour: int | str = 10, which="GCSE") -> None:
         """
         Handler for the resultsday commands.
 
         Constructs and displays the countdown embed.
         """
-
-        ctx_type, author = self.bot.unbox_context(ctx)
-        if not author:
-            return
 
         try:
             hour = int(hour)
