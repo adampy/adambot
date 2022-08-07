@@ -365,8 +365,8 @@ class DefaultEmbedResponses:
                       description="Only people with permissions (usually staff) can use this command!",
                       color=ERROR_RED)
         if not bare:
-            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
@@ -388,8 +388,8 @@ class DefaultEmbedResponses:
         embed = Embed(title=f":x: {title}", description=desc, color=ERROR_RED)
         if not bare:
             if ctx_type == ContextTypes.Context:
-                embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                    bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+                embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                    bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
@@ -411,8 +411,8 @@ class DefaultEmbedResponses:
 
         embed = Embed(title=f":white_check_mark: {title}", description=desc, color=SUCCESS_GREEN)
         if not bare:
-            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
@@ -433,8 +433,8 @@ class DefaultEmbedResponses:
 
         embed = Embed(title=f":information_source: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
-            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
@@ -456,8 +456,8 @@ class DefaultEmbedResponses:
 
         embed = Embed(title=f":grey_question: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
-            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
