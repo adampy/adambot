@@ -5,7 +5,7 @@ from typing import Optional
 import discord
 from discord.ext import commands
 from emoji import get_emoji_regexp
-from libs.misc.decorators import unbox_context
+from libs.misc.decorators import unbox_context_args
 
 from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
 from .starboard_container import StarboardContainer
@@ -239,12 +239,13 @@ class StarboardHandlers:
                     elif entry or entry.bot_message is None:
                         await entry.update_bot_message(msg)
 
-    @unbox_context
-    async def view(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def view(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the view commands.
         """
 
+        (ctx_type, author) = self.command_args
         starboards = await self._get_starboards(ctx.guild.id)
         embed = self.bot.EmbedPages(
             self.bot.PageTypes.STARBOARD_LIST,

@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context
+from libs.misc.decorators import unbox_context_args
 from libs.misc.utils import ContextTypes
 
 
@@ -16,14 +16,15 @@ class DemographicsHandlers:
         self.cog = cog
         self.ContextTypes = self.bot.ContextTypes
 
-    @unbox_context
-    async def viewroles(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def viewroles(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the viewroles commands.
 
         Responds with a list of role names for roles that are tracked within the context guild.
         """
 
+        (ctx_type, author) = self.command_args
         role_ids = await self.cog._get_roles(ctx.guild)
         roles = [ctx.guild.get_role(x).name for x in role_ids]
         message = "Currently tracked roles are: " + ", ".join(roles)
@@ -33,13 +34,15 @@ class DemographicsHandlers:
         else:
             await ctx.response.send_message(message)
 
-    @unbox_context
-    async def addrole(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, role: discord.Role, sample_rate: int) -> None:
+    @unbox_context_args
+    async def addrole(self, ctx: commands.Context | discord.Interaction, role: discord.Role, sample_rate: int) -> None:
         """
         Handler for the addrole commands.
 
         Adds a role to be sampled for the context guild.
         """
+
+        (ctx_type, author) = self.command_args
 
         def check(m: discord.Message) -> bool:
             return m.author == author and m.channel == ctx.channel
@@ -92,13 +95,15 @@ class DemographicsHandlers:
             else:
                 await ctx.response.send_message(message)
 
-    @unbox_context
-    async def removerole(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, role: discord.Role) -> None:
+    @unbox_context_args
+    async def removerole(self, ctx: commands.Context | discord.Interaction, role: discord.Role) -> None:
         """
         Handler for the removerole commands.
 
         Removes a role from being sampled for the context guild.
         """
+
+        (ctx_type, author) = self.command_args
 
         def check(m: discord.Message) -> bool:
             return m.author == author and m.channel == ctx.channel
@@ -144,14 +149,15 @@ class DemographicsHandlers:
             else:
                 await ctx.response.send_message(message)
 
-    @unbox_context
-    async def takesample(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, role: discord.Role) -> None:
+    @unbox_context_args
+    async def takesample(self, ctx: commands.Context | discord.Interaction, role: discord.Role) -> None:
         """
         Handler for the takesample commands.
 
         Takes a sample immediately for a given role within a context guild.
         """
 
+        (ctx_type, author) = self.command_args
         guild_tracked_roles = await self.cog._get_roles(ctx.guild)
         if not role:
             # Take a sample of all roles
@@ -204,14 +210,15 @@ class DemographicsHandlers:
         else:
             await ctx.response.send_message(message)
 
-    @unbox_context
-    async def removeallsamples(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def removeallsamples(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the removeallsamples commands.
 
         Removes all samples for a context guild.
         """
 
+        (ctx_type, author) = self.command_args
         async with self.bot.pool.acquire() as connection:
             await connection.execute(
                 "DELETE FROM demographic_samples WHERE role_reference IN (SELECT id FROM demographic_roles WHERE guild_id = $1);",
@@ -224,14 +231,15 @@ class DemographicsHandlers:
         else:
             await ctx.response.send_message(message)
 
-    @unbox_context
-    async def show(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def show(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the show commands.
 
         Shows the numbers of members with each tracked role within a context guild.
         """
 
+        (ctx_type, author) = self.command_args
         tracked_roles = [ctx.guild.get_role(r) for r in await self.cog._get_roles(ctx.guild) if
                          ctx.guild.get_role(r) is not None]
         message = f"There are a total of **{ctx.guild.member_count}** users in **{ctx.guild.name}**."

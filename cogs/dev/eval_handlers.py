@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context
+from libs.misc.decorators import unbox_context_args
 from libs.misc.utils import ContextTypes
 
 
@@ -21,14 +21,16 @@ class EvalHandlers:
             text = text[2000:]
         return chunks
 
-    @unbox_context
-    async def evaluate(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
+    @unbox_context_args
+    async def evaluate(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the evaluate commands.
 
         Allows evaluating strings of code (intended for testing).
         If something doesn't output correctly try wrapping in str()
         """
+
+        (ctx_type, author) = self.command_args
 
         try:
             output = eval(command)
@@ -57,12 +59,13 @@ class EvalHandlers:
             e.replace(os.getcwd(), ".")
             await ctx.channel.send(e)
 
-    @unbox_context
-    async def execute(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
+    @unbox_context_args
+    async def execute(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the execute commands.
         """
 
+        (ctx_type, author) = self.command_args
         async with self.bot.pool.acquire() as connection:
             try:
                 await connection.execute(command)
@@ -74,12 +77,13 @@ class EvalHandlers:
                 else:
                     await ctx.response.send_message(msg)
 
-    @unbox_context
-    async def fetch(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
+    @unbox_context_args
+    async def fetch(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the fetch commands.
         """
 
+        (ctx_type, author) = self.command_args
         async with self.bot.pool.acquire() as connection:
             try:
                 records = await connection.fetch(command)

@@ -2,7 +2,7 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 
-from libs.misc.decorators import unbox_context
+from libs.misc.decorators import unbox_context_args
 from libs.misc.utils import ContextTypes
 
 from .support_connection import MessageOrigin
@@ -14,12 +14,13 @@ class SupportHandlers:
         self.cog = cog
         self.ContextTypes = self.bot.ContextTypes
 
-    @unbox_context
-    async def accept(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, ticket: str | int) -> None:
+    @unbox_context_args
+    async def accept(self, ctx: commands.Context | discord.Interaction, ticket: str | int) -> None:
         """
         Handler for the accept commands.
         """
 
+        (ctx_type, author) = self.command_args
         try:
             ticket = int(ticket)
         except ValueError:
@@ -65,8 +66,8 @@ class SupportHandlers:
                 return
             await channel.send(embed=embed)
 
-    @unbox_context
-    async def connections(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def connections(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the connections commands.
         """
@@ -91,6 +92,7 @@ class SupportHandlers:
         y = newline.join(waiting)
         string = f"__**Current connections**__{newline}{x}{newline}__**Waiting connections**__{newline}{y}"
 
+        (ctx_type, author) = self.command_args
         if ctx_type == self.ContextTypes.Context:
             await ctx.send(string)
         else:

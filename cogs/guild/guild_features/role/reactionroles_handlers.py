@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context
+from libs.misc.decorators import unbox_context_args
 from libs.misc.utils import ContextTypes, get_user_avatar_url
 
 
@@ -34,11 +34,11 @@ class ReactionrolesHandlers:
             to_return.append([role, data[i][1]])
         return to_return
 
-    @unbox_context
-    async def add(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str, role: discord.Role,
+    @unbox_context_args
+    async def add(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str, role: discord.Role,
                   inverse: bool | str = None, message_id: int | str = None) -> None:
 
-
+        (ctx_type, author) = self.command_args
         if not ctx.guild.me.guild_permissions.manage_roles:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have manage-role permissions!",
                                                              desc="I need these permissions to create the reaction role.")
@@ -92,10 +92,11 @@ class ReactionrolesHandlers:
         else:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
-    @unbox_context
-    async def remove(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str,
+    @unbox_context_args
+    async def remove(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str,
                      message_id: int | str = None) -> None:
         
+        (ctx_type, author) = self.command_args
         if ctx_type == self.ContextTypes.Context and not message_id:
             message_id = ctx.message.reference.message_id
 
@@ -129,9 +130,10 @@ class ReactionrolesHandlers:
         else:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
-    @unbox_context
-    async def delete(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, message_id=None) -> None:
+    @unbox_context_args
+    async def delete(self, ctx: commands.Context | discord.Interaction, message_id=None) -> None:
         
+        (ctx_type, author) = self.command_args
         if ctx_type == self.ContextTypes.Context and not message_id:
             message_id = ctx.message.reference.message_id
 
@@ -150,9 +152,10 @@ class ReactionrolesHandlers:
         else:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
-    @unbox_context
-    async def showreactionroles(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def showreactionroles(self, ctx: commands.Context | discord.Interaction) -> None:
         
+        (ctx_type, author) = self.command_args
         async with self.bot.pool.acquire() as connection:
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)
 

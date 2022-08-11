@@ -10,7 +10,7 @@ from discord import Embed
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context
+from libs.misc.decorators import unbox_context_args
 from libs.misc.utils import get_user_avatar_url, ContextTypes
 
 
@@ -60,13 +60,15 @@ class BotHandlers:
         self.commit_url = f"{self.remote_url}/commit/{self.commit_hash}" if type(
             self.commit_page) is not str and self.commit_page.status_code == 200 else "" if self.commit_page else ""
 
-    @unbox_context
-    async def botinfo(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def botinfo(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the botinfo commands.
 
         Constructs and sends the botinfo embed.
         """
+
+        (ctx_type, author) = self.command_args
 
         app_info = await self.bot.application_info()
         embed = Embed(title=f"Bot info for ({self.bot.user})",
@@ -99,14 +101,15 @@ class BotHandlers:
         else:
             await ctx.response.send_message(embed=embed)
 
-    @unbox_context
-    async def host(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def host(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the host commands.
 
         Allows a user to check if the bot is currently hosted locally or remotely.
         """
 
+        (ctx_type, author) = self.command_args
         string = f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now."
 
         if ctx_type == self.ContextTypes.Context:
@@ -114,14 +117,15 @@ class BotHandlers:
         else:
             await ctx.response.send_message(string)
 
-    @unbox_context
-    async def ping(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def ping(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the ping commands.
 
         Allows a user to view the bot's current latency
         """
 
+        (ctx_type, author) = self.command_args
         string = f"Pong! ({round(self.bot.latency * 1000)} ms)"
 
         if ctx_type == self.ContextTypes.Context:
@@ -129,14 +133,15 @@ class BotHandlers:
         else:
             await ctx.response.send_message(string)
 
-    @unbox_context
-    async def uptime(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction) -> None:
+    @unbox_context_args
+    async def uptime(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the uptime commands.
 
         Allows a user to view how long the bot has been running for
         """
         
+        (ctx_type, author) = self.command_args
         seconds = round(time.time() - self.bot.start_time)  # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
 

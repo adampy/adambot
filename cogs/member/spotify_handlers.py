@@ -3,7 +3,7 @@ from discord import Embed, Colour
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context
+from libs.misc.decorators import unbox_context_args
 from libs.misc.utils import get_user_avatar_url, ContextTypes
 
 
@@ -12,9 +12,8 @@ class SpotifyHandlers:
         self.bot = bot
         self.ContextTypes = self.bot.ContextTypes
 
-    @unbox_context
-    async def spotify(self, ctx_type: ContextTypes, author: discord.User | discord.Member, 
-                      ctx: commands.Context | discord.Interaction,
+    @unbox_context_args
+    async def spotify(self, ctx: commands.Context | discord.Interaction,
                       user: discord.Member | discord.User | str = "") -> None:
         """
         Handler for the spotify commands.
@@ -22,6 +21,7 @@ class SpotifyHandlers:
         Constructs and send the spotifyinfo embeds.
         """
 
+        (ctx_type, author) = self.command_args
         if ctx_type != self.ContextTypes.Context:
             author = ctx.guild.get_member(ctx.user.id)
 

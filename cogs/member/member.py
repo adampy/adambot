@@ -129,7 +129,7 @@ class Member(commands.Cog):
         """
 
         await ctx.message.delete()
-        await ctx.send(await self.Handlers.cringe())
+        await ctx.send(await self.Handlers.cringe(ctx))
 
     @app_commands.command(
         name="cringe",
@@ -140,7 +140,7 @@ class Member(commands.Cog):
         Slash command equivalent of the classic command "cringe"
         """
 
-        await interaction.response.send_message(await self.Handlers.cringe())
+        await interaction.response.send_message(await self.Handlers.cringe(interaction))
 
     @commands.command()
     @commands.guild_only()
