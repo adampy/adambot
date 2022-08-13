@@ -5,17 +5,16 @@ from typing import Optional
 import discord
 from discord.ext import commands
 from emoji import get_emoji_regexp
-from libs.misc.decorators import unbox_context_args
 
-from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 from .starboard_container import StarboardContainer
 
 
-class StarboardHandlers:
+class StarboardHandlers(CommandHandler):
     def __init__(self, bot, cog) -> None:
-        self.bot = bot
+        super().__init__(self, bot)
         self.cog = cog
-        self.ContextTypes = self.bot.ContextTypes
 
     # --- Starboard embed ---
     async def make_starboard_embed(self, message: discord.Message, stars: int, emoji: discord.Emoji,
@@ -239,7 +238,6 @@ class StarboardHandlers:
                     elif entry or entry.bot_message is None:
                         await entry.update_bot_message(msg)
 
-    @unbox_context_args
     async def view(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the view commands.

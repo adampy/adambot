@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
+from libs.misc.handler import CommandHandler
 from libs.misc.utils import get_guild_icon_url, get_user_avatar_url, ContextTypes
 
 
@@ -23,13 +23,12 @@ def get_validator(value) -> int:
     return getattr(Validation, value)
 
 
-class ConfigHandlers:
+class ConfigHandlers(CommandHandler):
     def __init__(self, bot: AdamBot, cog: commands.Cog) -> None:
-        self.bot = bot
+        super().__init__(self, bot)
         self.cog = cog
         self.Validation = Validation
 
-    @unbox_context_args
     async def is_staff(self, ctx: commands.Context | discord.Interaction) -> None | bool:
         """
         Method that checks if a user is staff in their guild or not. `ctx` may be `discord.Message` or `discord.ext.commands.Context`
@@ -152,7 +151,6 @@ class ConfigHandlers:
         async with self.bot.pool.acquire() as connection:
             await connection.execute(sql, *data.values())
 
-    @unbox_context_args
     async def what_prefixes(self, ctx: commands.Context | discord.Interaction) -> None:
         (ctx_type, author) = self.command_args
         msg = await self.bot.get_used_prefixes(ctx)
@@ -161,7 +159,6 @@ class ConfigHandlers:
         else:
             await ctx.response.send_message(str(msg))
 
-    @unbox_context_args
     async def view(self, ctx: commands.Context | discord.Interaction) -> None:
         """
          To get the config options
@@ -217,7 +214,6 @@ class ConfigHandlers:
         await embed.set_page(1)  # Default first page
         await embed.send()
 
-    @unbox_context_args
     async def set(self, ctx: commands.Context | discord.Interaction, key: str = "", value: str = "") -> None:
         (ctx_type, author) = self.command_args
         if not (author.guild_permissions.administrator or await self.is_staff(ctx)):
@@ -306,7 +302,6 @@ class ConfigHandlers:
             await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!",
                                                                f"It has been changed to '{value}'")
 
-    @unbox_context_args
     async def remove(self, ctx: commands.Context | discord.Interaction, key: str) -> None:
         (ctx_type, author) = self.command_args
         if not (author.guild_permissions.administrator or await self.is_staff(ctx)):
@@ -323,7 +318,6 @@ class ConfigHandlers:
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, f"{key} has been updated!",
                                                            "It has been changed to ***N/A***")
 
-    @unbox_context_args
     async def current(self, ctx: commands.Context | discord.Interaction, key: str) -> None:
         (ctx_type, author) = self.command_args
         if not (author.guild_permissions.administrator or await self.is_staff(ctx)):
@@ -349,7 +343,6 @@ class ConfigHandlers:
                                                                    config_dict[key] if config_dict[
                                                                        key] else "***N/A***")
 
-    @unbox_context_args
     async def prefix(self, ctx: commands.Context | discord.Interaction, new_prefix: str = "") -> None:
         (ctx_type, author) = self.command_args
         await self.add_config(ctx.guild.id)

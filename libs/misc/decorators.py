@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .utils import DEVS, unbox_context as unbox_context_function
+from .utils import DEVS, unbox_context
 
 """
 The rationale behind these error classes is to basically abstract the error embed
@@ -46,7 +46,7 @@ def get_bot(ctx: commands.Context | discord.Interaction):
 async def staff_predicate(ctx: commands.Context | discord.Interaction) -> Optional[bool]:
     # Get prereqs
     bot = get_bot(ctx)
-    ctx_type, author = bot.unbox_context(ctx)
+    ctx_type, author = unbox_context(ctx)
     if not author:
         return
 
@@ -64,7 +64,7 @@ async def staff_predicate(ctx: commands.Context | discord.Interaction) -> Option
 async def dev_predicate(ctx: commands.Context | discord.Interaction) -> Optional[bool]:
     # Get prereqs
     bot = get_bot(ctx)
-    ctx_type, author = bot.unbox_context(ctx)
+    ctx_type, author = unbox_context(ctx)
     if not author:
         return
 
@@ -139,7 +139,7 @@ def unbox_context(func) -> Callable:
     first four arguments to the function must be `self, ctx_type, author, ctx)
     """
     async def decorator(self, ctx: commands.Context | discord.Interaction, *args, **kwargs):
-        ctx_type, author = unbox_context_function(ctx)
+        ctx_type, author = unbox_context(ctx)
         if not author:
             return
         
@@ -153,29 +153,3 @@ def unbox_context(func) -> Callable:
     decorator.__signature__ = sig.replace(parameters=tuple(new_sig))
     
     return decorator
-
-def unbox_context_args(_func=None):
-    """When wrapping a handler's command, with signature `self: Handler, ctx:
-    discord.Interaction | commands.Context`, this wrapper will unbox the
-    ctx_type and author into self.command_args, which is a tuple of the form
-    `Tuple[ContextTypes, discord.User | discord.Member]` which is an attribute
-    of attribute of the handler."""
-    def decorator(func):
-        async def wrapper(self, ctx: commands.Context | discord.Interaction, *args, **kwargs):
-            ctx_type, author = unbox_context_function(ctx)
-            if not author:
-                return
-            
-            # Pass the correct arguments for the provided booleans
-            self.command_args = ctx_type, author
-            return await func(self, ctx, *args, **kwargs)
-
-
-        wrapper.__name__ = func.__name__
-        wrapper.__signature__ = inspect.signature(func)
-        return wrapper
-    
-    if _func is None:
-        return decorator
-    else:
-        return decorator(_func)

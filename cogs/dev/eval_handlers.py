@@ -5,13 +5,11 @@ import discord
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import ContextTypes
+from libs.misc.handler import CommandHandler
 
-
-class EvalHandlers:
+class EvalHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
+        super().__init__(self, bot)
 
     @staticmethod
     def split_2000(text: str) -> list[str]:
@@ -21,7 +19,6 @@ class EvalHandlers:
             text = text[2000:]
         return chunks
 
-    @unbox_context_args
     async def evaluate(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the evaluate commands.
@@ -59,7 +56,6 @@ class EvalHandlers:
             e.replace(os.getcwd(), ".")
             await ctx.channel.send(e)
 
-    @unbox_context_args
     async def execute(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the execute commands.
@@ -77,7 +73,6 @@ class EvalHandlers:
                 else:
                     await ctx.response.send_message(msg)
 
-    @unbox_context_args
     async def fetch(self, ctx: commands.Context | discord.Interaction, command: str = "") -> None:
         """
         Handler for the fetch commands.

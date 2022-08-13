@@ -6,17 +6,15 @@ from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import ContextTypes
+from libs.misc.handler import CommandHandler
 
 
-class DemographicsHandlers:
+class DemographicsHandlers(CommandHandler):
     def __init__(self, bot: AdamBot, cog: commands.Cog) -> None:  # note that this should really be of type Demographics but circular dependency needs to be resolved first
-        self.bot = bot
+        super().__init__(self, bot)
         self.cog = cog
         self.ContextTypes = self.bot.ContextTypes
 
-    @unbox_context_args
     async def viewroles(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the viewroles commands.
@@ -34,7 +32,6 @@ class DemographicsHandlers:
         else:
             await ctx.response.send_message(message)
 
-    @unbox_context_args
     async def addrole(self, ctx: commands.Context | discord.Interaction, role: discord.Role, sample_rate: int) -> None:
         """
         Handler for the addrole commands.
@@ -95,7 +92,6 @@ class DemographicsHandlers:
             else:
                 await ctx.response.send_message(message)
 
-    @unbox_context_args
     async def removerole(self, ctx: commands.Context | discord.Interaction, role: discord.Role) -> None:
         """
         Handler for the removerole commands.
@@ -149,7 +145,6 @@ class DemographicsHandlers:
             else:
                 await ctx.response.send_message(message)
 
-    @unbox_context_args
     async def takesample(self, ctx: commands.Context | discord.Interaction, role: discord.Role) -> None:
         """
         Handler for the takesample commands.
@@ -210,7 +205,6 @@ class DemographicsHandlers:
         else:
             await ctx.response.send_message(message)
 
-    @unbox_context_args
     async def removeallsamples(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the removeallsamples commands.
@@ -231,7 +225,6 @@ class DemographicsHandlers:
         else:
             await ctx.response.send_message(message)
 
-    @unbox_context_args
     async def show(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the show commands.

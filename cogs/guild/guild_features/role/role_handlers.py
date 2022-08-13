@@ -5,8 +5,8 @@ from discord import Embed, errors
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
 class Verbosity:  # Using enum.Enum means that ">" and "<" operations cannot be performed, e.g. Verbosity.ALL > Verbosity.MINIMAL
@@ -23,12 +23,10 @@ class CheckedRoleChangeResult:  # Used for the results of the `Role.checked_role
     CRITICAL_ERROR = 2
 
 
-class RoleHandlers:
+class RoleHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
-    @unbox_context_args
     async def checked_role_change(self, ctx: commands.Context | discord.Interaction, role: discord.Role,
                                   member: discord.Member, action: str, tracker: discord.Message = None,
                                   part_of_more: bool = False, single_output: bool = True) -> Optional[int | float]:
@@ -170,7 +168,6 @@ class RoleHandlers:
 
         return possible
 
-    @unbox_context_args
     async def info(self, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
         """
         Handler for the info commands.
@@ -203,7 +200,6 @@ class RoleHandlers:
         else:
             await ctx.response.send_message(embed=embed)
 
-    @unbox_context_args
     async def list_server_roles(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the list commands.
@@ -228,7 +224,6 @@ class RoleHandlers:
         await embed.set_page(1)
         await embed.send()
 
-    @unbox_context_args
     async def members(self, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
         """
         Handler for the members commands.
@@ -285,7 +280,6 @@ class RoleHandlers:
 
         await self.checked_role_change(ctx, role, member, "remove")
 
-    @unbox_context_args
     async def swap(self, ctx: commands.Context | discord.Interaction, swap_from: discord.Role | str,
                    swap_to: discord.Role | str) -> None:
         """
@@ -349,7 +343,6 @@ class RoleHandlers:
                                                                 + (
                                                                     "" if already_got_dest_role == 0 else f" ({already_got_dest_role} already had {swap_to.mention})"))
 
-    @unbox_context_args
     async def removeall(self, ctx: commands.Context | discord.Interaction, role: discord.Role | str) -> None:
         """
         Handler for the removeall commands.
@@ -395,7 +388,6 @@ class RoleHandlers:
 
         await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Nothing to do!", desc="Nobody has this role!")
 
-    @unbox_context_args
     async def addall(self, ctx: commands.Context | discord.Interaction, ref_role: discord.Role | str,
                      add_role: discord.Role | str) -> None:
         """

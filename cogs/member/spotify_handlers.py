@@ -3,16 +3,14 @@ from discord import Embed, Colour
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import get_user_avatar_url, ContextTypes
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url
 
 
-class SpotifyHandlers:
+class SpotifyHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
-    @unbox_context_args
     async def spotify(self, ctx: commands.Context | discord.Interaction,
                       user: discord.Member | discord.User | str = "") -> None:
         """

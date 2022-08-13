@@ -4,16 +4,14 @@ from discord import Embed, Colour
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
-class ReputationHandlers:
+class ReputationHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
-    @unbox_context_args
     async def get_leaderboard(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Constructs and sends an embed containing the reputation leaderboard for the context guild.
@@ -91,7 +89,6 @@ class ReputationHandlers:
                     new_reps = reps
                 return new_reps
 
-    @unbox_context_args
     async def award(self, ctx: commands.Context | discord.Interaction, args: discord.Member | discord.User | str = "",
                     member: discord.Member = "") -> None:
         """
@@ -183,7 +180,6 @@ class ReputationHandlers:
 
         await self.get_leaderboard(ctx)
 
-    @unbox_context_args
     async def all(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the all commands. (No this isn't a typo ;) )
@@ -206,7 +202,6 @@ class ReputationHandlers:
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    @unbox_context_args
     async def set(self, ctx: commands.Context | discord.Interaction, user: discord.Member | discord.User,
                   rep: str | int) -> None:
         """
@@ -234,7 +229,6 @@ class ReputationHandlers:
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    @unbox_context_args
     async def hardset(self, ctx: commands.Context | discord.Interaction, user_id: str, rep: int | str) -> None:
         """
         Handler for the hardset commands.
@@ -273,7 +267,6 @@ class ReputationHandlers:
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    @unbox_context_args
     async def check(self, ctx: commands.Context | discord.Interaction, args: str = "",
                     member: discord.Member | discord.User = "") -> None:
         """

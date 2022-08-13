@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.app_commands import AppCommandError
 from discord.ext import commands
 
-from libs.misc.utils import DefaultEmbedResponses
+from libs.misc.utils import DefaultEmbedResponses, unbox_context
 from . import qotd_handlers
 
 
@@ -28,7 +28,7 @@ async def qotd_predicate(ctx: commands.Context | discord.Interaction):
     else:
         return
 
-    ctx_type, author = bot.unbox_context(ctx)
+    ctx_type, author = unbox_context(ctx)
     if not author:
         return
 

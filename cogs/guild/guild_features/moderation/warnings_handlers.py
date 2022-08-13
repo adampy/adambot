@@ -1,18 +1,16 @@
 import discord
 from discord import Colour
 from discord.ext import commands
-from libs.misc.decorators import unbox_context_args
 
-from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
-class WarningHandlers:
+class WarningHandlers(CommandHandler):
     def __init__(self, bot, cog):
-        self.bot = bot
+        super().__init__(self, bot)
         self.cog = cog
-        self.ContextTypes = self.bot.ContextTypes
 
-    @unbox_context_args
     async def _warnlist_member(self, ctx: commands.Context | discord.Interaction, member: discord.Member,
                                page_num: int = 1) -> None:
         """
@@ -46,7 +44,6 @@ class WarningHandlers:
             await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Couldn't find any warnings!",
                                                                    desc=f"No warnings recorded for {member.mention}!")
 
-    @unbox_context_args
     async def warn(self, ctx: commands.Context | discord.Interaction, member: discord.Member, reason: str = "") -> None:
         """
         Handler for the warn commands.
@@ -75,7 +72,6 @@ class WarningHandlers:
         except Exception as e:
             print(e)
 
-    @unbox_context_args
     async def warns(self, ctx: commands.Context | discord.Interaction,
                     member: discord.Member | discord.User = None) -> None:
         """
@@ -121,7 +117,6 @@ class WarningHandlers:
                 await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Couldn't find anything!",
                                                                  desc="You don't have permission to view other people's warns.")
 
-    @unbox_context_args
     async def warnremove(self, ctx: commands.Context | discord.Interaction, warnings: str):
         """
         Handler for the warnremove commands.

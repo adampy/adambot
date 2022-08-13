@@ -5,14 +5,13 @@ import discord
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import ContextTypes, get_user_avatar_url
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url
 
 
-class ReactionrolesHandlers:
+class ReactionrolesHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
     async def _get_roles(self, payload) -> Optional[list]:
         """
@@ -34,7 +33,6 @@ class ReactionrolesHandlers:
             to_return.append([role, data[i][1]])
         return to_return
 
-    @unbox_context_args
     async def add(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str, role: discord.Role,
                   inverse: bool | str = None, message_id: int | str = None) -> None:
 
@@ -92,7 +90,6 @@ class ReactionrolesHandlers:
         else:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
-    @unbox_context_args
     async def remove(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str,
                      message_id: int | str = None) -> None:
         
@@ -130,7 +127,6 @@ class ReactionrolesHandlers:
         else:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
-    @unbox_context_args
     async def delete(self, ctx: commands.Context | discord.Interaction, message_id=None) -> None:
         
         (ctx_type, author) = self.command_args
@@ -152,7 +148,6 @@ class ReactionrolesHandlers:
         else:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
-    @unbox_context_args
     async def showreactionroles(self, ctx: commands.Context | discord.Interaction) -> None:
         
         (ctx_type, author) = self.command_args

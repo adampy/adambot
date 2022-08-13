@@ -2,19 +2,16 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import ContextTypes
+from libs.misc.handler import CommandHandler
 
 from .support_connection import MessageOrigin
 
 
-class SupportHandlers:
+class SupportHandlers(CommandHandler):
     def __init__(self, bot, cog) -> None:
-        self.bot = bot
+        super().__init__(self, bot)
         self.cog = cog
-        self.ContextTypes = self.bot.ContextTypes
 
-    @unbox_context_args
     async def accept(self, ctx: commands.Context | discord.Interaction, ticket: str | int) -> None:
         """
         Handler for the accept commands.
@@ -66,7 +63,6 @@ class SupportHandlers:
                 return
             await channel.send(embed=embed)
 
-    @unbox_context_args
     async def connections(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the connections commands.

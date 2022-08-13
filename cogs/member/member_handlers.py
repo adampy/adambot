@@ -5,17 +5,13 @@ import discord
 from discord import Embed, Colour, Status, app_commands
 from discord.ext import commands
 
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import get_user_avatar_url, get_guild_icon_url, ContextTypes
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+from libs.misc.handler import CommandHandler
 
-
-class MemberHandlers:
+class MemberHandlers(CommandHandler):
     def __init__(self, bot) -> None:
-        self.bot = bot
-        self.ContextTypes = bot.ContextTypes
-        self.command_args = None # Used to store output from `ubnox_context_args`
+        super().__init__(self, bot)
 
-    @unbox_context_args
     async def quote(self, ctx: commands.Context | discord.Interaction, messageid: int | str,
                     channel: int | discord.TextChannel | discord.Thread | app_commands.AppCommandThread) -> None:
         """
@@ -111,8 +107,7 @@ class MemberHandlers:
 
         return "https://cdn.discordapp.com/attachments/593965137266868234/829480599542562866/cringe.mp4"
 
-    @unbox_context_args
-    async def spamping(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, amount: str | int,
+    async def spamping(self, ctx: commands.Context | discord.Interaction, amount: str | int,
                        user: discord.Member | discord.Role, message) -> None:
         """
         Handler for the spamping commands.
@@ -143,7 +138,6 @@ class MemberHandlers:
         else:
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
     
-    @unbox_context_args
     async def ghostping(self, ctx: commands.Context | discord.Interaction, user: discord.Member | discord.Role,
                         amount: str | int) -> None:
         """
@@ -359,7 +353,6 @@ class MemberHandlers:
 
         return data
 
-    @unbox_context_args
     async def remind(self, ctx: commands.Context | discord.Interaction, time: int, reason: str = "") -> None:
         """
         Handler for setting up a reminder.
@@ -408,7 +401,6 @@ class MemberHandlers:
         else:
             return f"**ACCOUNT AVATAR (TOP):**\n{avatar_urls[0]}\n**SERVER AVATAR (BOTTOM):**\n{avatar_urls[1]}"
 
-    @unbox_context_args
     async def gcses(self, ctx: commands.Context | discord.Interaction, command: str = "gcses") -> None:
         """
         Handler for the gcses commands.
@@ -441,7 +433,6 @@ class MemberHandlers:
             await ctx.response.send_message(embed=embed)
 
 
-    @unbox_context_args
     async def resultsday(self, ctx: commands.Context | discord.Interaction, hour: int | str = 10, which="GCSE") -> None:
         """
         Handler for the resultsday commands.

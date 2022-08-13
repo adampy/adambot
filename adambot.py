@@ -17,7 +17,7 @@ from tzlocal import get_localzone
 import libs.db.database_handle as database_handle  # not strictly a lib rn but hopefully will be in the future
 import libs.misc.utils as utils
 from libs.misc.decorators import MissingStaffError, MissingDevError, MissingStaffSlashError, MissingDevSlashError, unbox_context as unbox_context_decorator
-from libs.misc.utils import DefaultEmbedResponses, ContextTypes, unbox_context
+from libs.misc.utils import DefaultEmbedResponses, ContextTypes
 from scripts.utils import cog_handler
 
 
@@ -84,7 +84,6 @@ class AdamBot(Bot):
     def __init__(self, start_time: float, config_path: str = "config.json", command_prefix: str = "", *args,
                  **kwargs) -> None:
         self.ContextType = ContextTypes
-        self.unbox_context = unbox_context
         self.internal_config = self.load_internal_config(config_path)
         self.cog_handler = cog_handler.CogHandler(self)
         self.kwargs = kwargs

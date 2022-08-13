@@ -10,19 +10,16 @@ from discord import Embed
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import get_user_avatar_url, ContextTypes
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url
 
 
-class BotHandlers:
+class BotHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
         """
         Initialises the class and also tries to determine the commit and branch the bot is running on where applicable
         """
-
-        self.bot = bot
-
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
         self.remote_url = os.environ.get("AB_REMOTE_URL")
         self.given_commit_hash = os.environ.get("AB_COMMIT_HASH")
@@ -60,7 +57,6 @@ class BotHandlers:
         self.commit_url = f"{self.remote_url}/commit/{self.commit_hash}" if type(
             self.commit_page) is not str and self.commit_page.status_code == 200 else "" if self.commit_page else ""
 
-    @unbox_context_args
     async def botinfo(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the botinfo commands.
@@ -101,7 +97,6 @@ class BotHandlers:
         else:
             await ctx.response.send_message(embed=embed)
 
-    @unbox_context_args
     async def host(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the host commands.
@@ -117,7 +112,6 @@ class BotHandlers:
         else:
             await ctx.response.send_message(string)
 
-    @unbox_context_args
     async def ping(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the ping commands.
@@ -133,7 +127,6 @@ class BotHandlers:
         else:
             await ctx.response.send_message(string)
 
-    @unbox_context_args
     async def uptime(self, ctx: commands.Context | discord.Interaction) -> None:
         """
         Handler for the uptime commands.

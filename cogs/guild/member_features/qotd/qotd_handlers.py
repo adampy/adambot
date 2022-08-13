@@ -7,16 +7,14 @@ from discord import Embed, Colour
 from discord.ext import commands
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
-from libs.misc.utils import ContextTypes, get_user_avatar_url, get_guild_icon_url
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
-class QOTDHandlers:
+class QOTDHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
-    @unbox_context_args
     async def submit(self, ctx: commands.Context | discord.Interaction, qotd: str) -> None:
         """
         Handler for the submit commands.
@@ -70,7 +68,6 @@ class QOTDHandlers:
                     embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
                     await log.send(embed=embed)
 
-    @unbox_context_args
     async def qotd_list(self, ctx: commands.Context | discord.Interaction, page_num: int = 1) -> None:
         """
         Handler for the list commands.
@@ -101,7 +98,6 @@ class QOTDHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Nothing here!",
                                                              desc="This server does not currently have any QOTDs!")
 
-    @unbox_context_args
     async def delete(self, ctx: commands.Context | discord.Interaction, question_ids: str) -> None:
         """
         Handler for the delete commands.
@@ -134,7 +130,6 @@ class QOTDHandlers:
 
         await self.bot.DefaultEmbedResponses.information_embed(self.bot, ctx, "Finished deleting QOTDs", desc=info)
 
-    @unbox_context_args
     async def pick(self, ctx: commands.Context | discord.Interaction, question_id: str | int) -> None:
         """
         Handler for the pick commands.

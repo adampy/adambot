@@ -4,18 +4,16 @@ import datetime
 import discord
 from discord import Embed, Colour
 from discord.ext import commands
-from libs.misc.decorators import unbox_context_args
 
-from libs.misc.utils import ContextTypes, get_user_avatar_url
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import get_user_avatar_url
 
 
-class WaitingroomHandlers:
+class WaitingroomHandlers(CommandHandler):
     def __init__(self, bot, cog):
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
         self.cog = cog
 
-    @unbox_context_args
     async def testwelcome(self, ctx: commands.Context | discord.Interaction,
                           to_ping: discord.Member | discord.User = None) -> None:
         """
@@ -41,7 +39,6 @@ class WaitingroomHandlers:
         else:
             await ctx.response.send_message(message)
 
-    @unbox_context_args
     async def lurker(self, ctx: commands.Context | discord.Interaction, phrase: str) -> None:
         """
         Handler for the lurker commands.
@@ -119,7 +116,6 @@ class WaitingroomHandlers:
                 await ctx.channel.send(f"""{author.mention} To save time, you can provide a default message to be displayed on the lurker command, i.e. you don't need to type out the phrase each time.
         You can set this by doing `{ctx.prefix}config set lurker_phrase {phrase}`""")
 
-    @unbox_context_args
     async def lurker_kick(self, ctx: commands.Context | discord.Interaction, days: int | str = 7) -> None:
         """
         Handler for the lurker_kick commands.

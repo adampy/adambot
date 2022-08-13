@@ -7,11 +7,11 @@ from discord.ext import commands
 from discord.utils import get
 
 from adambot import AdamBot
-from libs.misc.decorators import unbox_context_args
+from libs.misc.handler import CommandHandler
 from libs.misc.utils import ContextTypes, get_user_avatar_url
 
 
-class ModerationHandlers:
+class ModerationHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
         self.bot = bot
         self.ContextTypes = self.bot.ContextTypes
@@ -56,7 +56,6 @@ class ModerationHandlers:
 
         await self.bot.shutdown(ctx)
 
-    @unbox_context_args
     async def purge(self, ctx: commands.Context | discord.Interaction, limit: str | int = 5,
                     member: discord.Member = None) -> None:
         """
@@ -105,7 +104,6 @@ class ModerationHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Invalid number of messages provided!",
                                                              desc=f"Please use an integer for the amount of messages to delete, not `{limit}` :ok_hand:")
 
-    @unbox_context_args
     async def kick(self, ctx: commands.Context | discord.Interaction, member: str | discord.Member,
                    reason: str = "No reason provided", args: str = "") -> None:
         """
@@ -146,7 +144,6 @@ class ModerationHandlers:
         embed.set_footer(text=self.bot.correct_time().strftime(self.bot.ts_format))
         await channel.send(embed=embed)
 
-    @unbox_context_args
     async def ban(self, ctx: commands.Context | discord.Interaction, members: str | discord.Member,
                   reason: str = "No reason provided", timeperiod: str = None) -> None:
         """
@@ -309,7 +306,6 @@ class ModerationHandlers:
         except Exception:
             pass  # go away!
 
-    @unbox_context_args
     async def unban(self, ctx: commands.Context | discord.Interaction, member: str, args: str = None,
                     reason: str = "No reason provided") -> None:
         """
@@ -366,7 +362,6 @@ class ModerationHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not add a slowmode here!",
                                                              desc="You must specify a whole number of seconds!")
 
-    @unbox_context_args
     async def say(self, ctx: commands.Context | discord.Interaction,
                   channel: discord.TextChannel | discord.Thread | app_commands.AppCommandThread, text: str):
         """
@@ -427,7 +422,6 @@ class ModerationHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not delete invite!",
                                                              desc=f"Invite revoking failed: {e}")
 
-    @unbox_context_args
     async def mute(self, ctx: commands.Context | discord.Interaction, member: discord.Member,
                    reason: str = "No reason provided!", timeperiod: int | str = "", args: str = "") -> None:
         """
