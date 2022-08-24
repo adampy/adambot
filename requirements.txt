@@ -5,4 +5,4 @@ matplotlib
 pytz
 tzlocal==2.0.0
 pandas
-emoji
+emoji==1.7.0
