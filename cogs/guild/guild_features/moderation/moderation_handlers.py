@@ -9,6 +9,7 @@ from discord.utils import get
 from adambot import AdamBot
 from libs.misc.utils import get_user_avatar_url
 
+from re import sub
 
 class ModerationHandlers:
     def __init__(self, bot: AdamBot) -> None:
@@ -132,9 +133,12 @@ class ModerationHandlers:
             return
 
         if args:
-            parsed_args = self.bot.flag_handler.separate_args(member, fetch=["reason"], blank_as_flag="reason")
+            parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"] if parsed_args["reason"] and reason == "No reason provided" else reason
 
+        if reason is None:
+            reason = "No reason provided"
+    
         try:  # perhaps add some like `attempt_dm` thing in utils instead of this?
             await member.send(f"You have been kicked from {ctx.guild} ({reason})")
         except (discord.Forbidden, discord.HTTPException):
@@ -194,7 +198,8 @@ class ModerationHandlers:
             massban = len(all_members) > 1
 
         if type(members) is str and ctx_type == self.ContextTypes.Context:  # parsing is only needed in the classic command#
-            parsed_args = self.bot.flag_handler.separate_args(members, fetch=["time", "reason"],
+            args_without_members = sub("<@!?[0-9]{17,18}>", "", members) # Use REGEX to remove all user mentions from the args for parsing purposes
+            parsed_args = self.bot.flag_handler.separate_args(args_without_members, fetch=["time", "reason"],
                                                               blank_as_flag="reason" if not massban else "")
             timeperiod = parsed_args["time"] if not timeperiod else timeperiod
             timeperiod: int = self.bot.time_arg(timeperiod) if timeperiod else None
