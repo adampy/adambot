@@ -1,0 +1,8 @@
+version: 0.0
+os: linux
+files:
+  - source: source
+    destination: /adambot
+hooks:
+  - ApplicationStart:
+    - location: aws/startbot.sh
