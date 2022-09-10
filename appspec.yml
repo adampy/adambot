@@ -4,5 +4,5 @@ files:
   - source: source
     destination: /adambot
 hooks:
-  - ApplicationStart:
+  ApplicationStart:
     - location: aws/startbot.sh
