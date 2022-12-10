@@ -448,7 +448,7 @@ class MemberHandlers:
 
         embed = Embed(title="Information on UK exams", color=Colour.from_rgb(148, 0, 211))
         now = self.bot.correct_time()
-        time_ = self.bot.correct_time(datetime(year=2022, month=5, day=16, hour=9, minute=0, second=0))
+        time_ = self.bot.correct_time(datetime(year=2023, month=5, day=15, hour=9, minute=0, second=0))
         if now > time_:
             embed.description = "Exams have already started!"
         else:
@@ -504,9 +504,9 @@ class MemberHandlers:
             string = f"{hour}AM"
         rn = self.bot.correct_time()
         if which == "GCSE":
-            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=25, hour=hour, minute=0, second=0))
+            time_ = self.bot.correct_time(datetime(year=2023, month=8, day=24, hour=hour, minute=0, second=0))
         else:
-            time_ = self.bot.correct_time(datetime(year=2022, month=8, day=18, hour=hour, minute=0, second=0))
+            time_ = self.bot.correct_time(datetime(year=2023, month=8, day=17, hour=hour, minute=0, second=0))
         embed = Embed(
             title=f"Countdown until {which} results day at {string} (on {time_.day}/{time_.month}/{time_.year})",
             color=Colour.from_rgb(148, 0, 211))
