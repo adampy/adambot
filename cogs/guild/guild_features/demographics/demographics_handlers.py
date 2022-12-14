@@ -6,11 +6,12 @@ from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 
 from adambot import AdamBot
+from libs.misc.handler import CommandHandler
 
 
-class DemographicsHandlers:
+class DemographicsHandlers(CommandHandler):
     def __init__(self, bot: AdamBot, cog: commands.Cog) -> None:  # note that this should really be of type Demographics but circular dependency needs to be resolved first
-        self.bot = bot
+        super().__init__(self, bot)
         self.cog = cog
         self.ContextTypes = self.bot.ContextTypes
 
@@ -21,11 +22,7 @@ class DemographicsHandlers:
         Responds with a list of role names for roles that are tracked within the context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         role_ids = await self.cog._get_roles(ctx.guild)
         roles = [ctx.guild.get_role(x).name for x in role_ids]
         message = "Currently tracked roles are: " + ", ".join(roles)
@@ -42,14 +39,7 @@ class DemographicsHandlers:
         Adds a role to be sampled for the context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
+        (ctx_type, author) = self.command_args
 
         def check(m: discord.Message) -> bool:
             return m.author == author and m.channel == ctx.channel
@@ -109,15 +99,7 @@ class DemographicsHandlers:
         Removes a role from being sampled for the context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
+        (ctx_type, author) = self.command_args
 
         def check(m: discord.Message) -> bool:
             return m.author == author and m.channel == ctx.channel
@@ -170,16 +152,7 @@ class DemographicsHandlers:
         Takes a sample immediately for a given role within a context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         guild_tracked_roles = await self.cog._get_roles(ctx.guild)
         if not role:
             # Take a sample of all roles
@@ -239,10 +212,7 @@ class DemographicsHandlers:
         Removes all samples for a context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         async with self.bot.pool.acquire() as connection:
             await connection.execute(
                 "DELETE FROM demographic_samples WHERE role_reference IN (SELECT id FROM demographic_roles WHERE guild_id = $1);",
@@ -262,10 +232,7 @@ class DemographicsHandlers:
         Shows the numbers of members with each tracked role within a context guild.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         tracked_roles = [ctx.guild.get_role(r) for r in await self.cog._get_roles(ctx.guild) if
                          ctx.guild.get_role(r) is not None]
         message = f"There are a total of **{ctx.guild.member_count}** users in **{ctx.guild.name}**."

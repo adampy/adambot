@@ -7,11 +7,12 @@ from discord.ext import commands
 from discord.utils import get
 
 from adambot import AdamBot
-from libs.misc.utils import get_user_avatar_url
+from libs.misc.handler import CommandHandler
+from libs.misc.utils import ContextTypes, get_user_avatar_url
 
 from re import sub
 
-class ModerationHandlers:
+class ModerationHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
         self.bot = bot
         self.ContextTypes = self.bot.ContextTypes
@@ -62,15 +63,7 @@ class ModerationHandlers:
         Handler for the purge commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         channel = ctx.channel
 
         if (type(limit) is str and limit.isdigit()) or type(limit) is int:
@@ -118,15 +111,7 @@ class ModerationHandlers:
         Handler for the kick commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         if ctx.guild.me.top_role < member.top_role:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not kick member!",
                                                              desc=f"Can't kick {member.mention}, they have a higher role than the bot!")
@@ -169,15 +154,7 @@ class ModerationHandlers:
         Handler for the ban commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         if not ctx.guild.me.guild_permissions.ban_members:
             await self.bot.DefaultEmbedResponses(self.bot, ctx, "Could not proceed with the ban!",
                                                  desc="I don't have permissions to ban members in this server!")
@@ -340,15 +317,7 @@ class ModerationHandlers:
         Handler for the unban commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         if args:
             parsed_args = self.bot.flag_handler.separate_args(args, fetch=["reason"], blank_as_flag="reason")
             reason = parsed_args["reason"] if parsed_args["reason"] and reason == "No reason provided" else reason
@@ -371,19 +340,10 @@ class ModerationHandlers:
         await self.bot.DefaultEmbedResponses.success_embed(self.bot, ctx, "Unbanned member successfully!",
                                                            desc=f"{member.mention} has been unbanned!")
 
-    async def slowmode(self, ctx: commands.Context | discord.Interaction, time: str | int) -> None:
+    async def slowmode(self, ctx_type: ContextTypes, author: discord.User | discord.Member, ctx: commands.Context | discord.Interaction, time: str | int) -> None:
         """
         Handler for the slowmode commands.
         """
-
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         if not ctx.channel.permissions_for(author).manage_channels:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not add a slowmode here!",
@@ -413,15 +373,7 @@ class ModerationHandlers:
         Handler for the say commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         await channel.send(text[5:] if text.startswith("/tts") else text,
                            tts=text.startswith("/tts ") and channel.permissions_for(author).send_tts_messages)
 
@@ -481,15 +433,7 @@ class ModerationHandlers:
         Handler for the mute commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         role = get(member.guild.roles, id=await self.bot.get_config_key(member, "muted_role"))
         if not role:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not mute member!",

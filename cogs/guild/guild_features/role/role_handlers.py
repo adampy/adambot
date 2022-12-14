@@ -5,6 +5,7 @@ from discord import Embed, errors
 from discord.ext import commands
 
 from adambot import AdamBot
+from libs.misc.handler import CommandHandler
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 
 
@@ -22,10 +23,9 @@ class CheckedRoleChangeResult:  # Used for the results of the `Role.checked_role
     CRITICAL_ERROR = 2
 
 
-class RoleHandlers:
+class RoleHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
     async def checked_role_change(self, ctx: commands.Context | discord.Interaction, role: discord.Role,
                                   member: discord.Member, action: str, tracker: discord.Message = None,
@@ -40,17 +40,9 @@ class RoleHandlers:
             None: Oi gimme valid action
         """
 
+        (ctx_type, author) = self.command_args
         if action not in ["add", "remove"]:
             return
-
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
 
         verb = "added" if action == "add" else "removed"
         reason = f"Requested by {author}"
@@ -181,15 +173,7 @@ class RoleHandlers:
         Handler for the info commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         if type(role) is not discord.Role:
             role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
             if len(role) > 1:
@@ -221,15 +205,7 @@ class RoleHandlers:
         Handler for the list commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         embed = self.bot.EmbedPages(
             self.bot.PageTypes.ROLE_LIST,
             ctx.guild.roles[1:][::-1],
@@ -253,10 +229,7 @@ class RoleHandlers:
         Handler for the members commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         if type(role) is not discord.Role:
             possible = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
 
@@ -313,10 +286,7 @@ class RoleHandlers:
         Handler for the swap commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         if type(swap_from) is not discord.Role:
             swap_from = await self.find_closest_role(ctx, swap_from, verbosity=Verbosity.ALL)
             if len(swap_from) > 1:
@@ -378,10 +348,7 @@ class RoleHandlers:
         Handler for the removeall commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         if type(role) is not discord.Role:
             role = await self.find_closest_role(ctx, role, verbosity=Verbosity.ALL)
             if len(role) > 1:
@@ -427,10 +394,7 @@ class RoleHandlers:
         Handler for the addall commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         if type(ref_role) is not discord.Role:
             ref_role = await self.find_closest_role(ctx, ref_role, verbosity=Verbosity.ALL)
             if len(ref_role) > 1:

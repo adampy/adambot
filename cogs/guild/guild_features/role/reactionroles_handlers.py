@@ -5,13 +5,13 @@ import discord
 from discord.ext import commands
 
 from adambot import AdamBot
+from libs.misc.handler import CommandHandler
 from libs.misc.utils import get_user_avatar_url
 
 
-class ReactionrolesHandlers:
+class ReactionrolesHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
     async def _get_roles(self, payload) -> Optional[list]:
         """
@@ -36,10 +36,7 @@ class ReactionrolesHandlers:
     async def add(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str, role: discord.Role,
                   inverse: bool | str = None, message_id: int | str = None) -> None:
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         if not ctx.guild.me.guild_permissions.manage_roles:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "I do not have manage-role permissions!",
                                                              desc="I need these permissions to create the reaction role.")
@@ -95,10 +92,8 @@ class ReactionrolesHandlers:
 
     async def remove(self, ctx: commands.Context | discord.Interaction, emoji: discord.Emoji | str,
                      message_id: int | str = None) -> None:
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
+        
+        (ctx_type, author) = self.command_args
         if ctx_type == self.ContextTypes.Context and not message_id:
             message_id = ctx.message.reference.message_id
 
@@ -133,10 +128,8 @@ class ReactionrolesHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
     async def delete(self, ctx: commands.Context | discord.Interaction, message_id=None) -> None:
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
+        
+        (ctx_type, author) = self.command_args
         if ctx_type == self.ContextTypes.Context and not message_id:
             message_id = ctx.message.reference.message_id
 
@@ -156,18 +149,16 @@ class ReactionrolesHandlers:
             await self.bot.DefaultEmbedResponses.error_embed(self.bot, ctx, "Could not find the specified message!")
 
     async def showreactionroles(self, ctx: commands.Context | discord.Interaction) -> None:
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
+        
+        (ctx_type, author) = self.command_args
         async with self.bot.pool.acquire() as connection:
             data = await connection.fetch("SELECT * FROM reaction_roles WHERE guild_id = $1;", ctx.guild.id)
 
         embed = discord.Embed(title=f":information_source: {ctx.guild.name} reaction roles",
                               color=self.bot.INFORMATION_BLUE)
         embed.set_footer(
-            text=f"Requested by: {ctx.author.display_name} ({ctx.author})\n" + self.bot.correct_time().strftime(
-                self.bot.ts_format), icon_url=get_user_avatar_url(ctx.author, mode=1)[0])
+            text=f"Requested by: {author.display_name} ({author})\n" + self.bot.correct_time().strftime(
+                self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
         message_reactions = {}  # ID -> str (to put in embed)
         message_channels = {}  # ID -> discord.TextChannel

@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.app_commands import AppCommandError
 from discord.ext import commands
 
-from libs.misc.utils import DefaultEmbedResponses
+from libs.misc.utils import DefaultEmbedResponses, unbox_context
 from . import qotd_handlers
 
 
@@ -28,12 +28,9 @@ async def qotd_predicate(ctx: commands.Context | discord.Interaction):
     else:
         return
 
-    ctx_type = bot.get_context_type(ctx)
-
-    if ctx_type == bot.ContextTypes.Context:
-        author = ctx.author
-    else:
-        author = ctx.user
+    ctx_type, author = unbox_context(ctx)
+    if not author:
+        return
 
     qotd_role_id = await bot.get_config_key(ctx, "qotd_role")
     staff_role_id = await bot.get_config_key(ctx, "staff_role")

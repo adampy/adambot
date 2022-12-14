@@ -6,12 +6,11 @@ from discord import Embed, Colour, Status, app_commands
 from discord.ext import commands
 
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
+from libs.misc.handler import CommandHandler
 
-
-class MemberHandlers:
+class MemberHandlers(CommandHandler):
     def __init__(self, bot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
     async def quote(self, ctx: commands.Context | discord.Interaction, messageid: int | str,
                     channel: int | discord.TextChannel | discord.Thread | app_commands.AppCommandThread) -> None:
@@ -19,10 +18,7 @@ class MemberHandlers:
         Handler method for the classic and slash quote commands.
         Fetches and displays a specified message from its ID and a channel ID if it exists.
         """
-
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
+        (ctx_type, author) = self.command_args # Unpack command args
 
         if type(channel) is int:
             channelid = channel
@@ -36,7 +32,6 @@ class MemberHandlers:
                                                              desc="Could not find a message with the given ID!")
             return
 
-        user = msg.author
         image = None
         repl = re.compile(r"/(\[.+?)(\(.+?\))/")
         edited = f" (edited at {msg.edited_at.isoformat(' ', 'seconds')})" if msg.edited_at else ""
@@ -48,13 +43,13 @@ class MemberHandlers:
 
         embed = Embed(title="Quote link",
                       url=f"https://discordapp.com/channels/{channelid}/{messageid}",
-                      color=user.color,
+                      color=author.color,
                       timestamp=msg.created_at)
 
         if image:
             embed.set_image(url=image)
-        embed.set_footer(text=f"Sent by {user.name}#{user.discriminator}",
-                         icon_url=get_user_avatar_url(user, mode=1)[0])
+        embed.set_footer(text=f"Sent by {author.name}#{author.discriminator}",
+                         icon_url=get_user_avatar_url(author, mode=1)[0])
         embed.description = f"❝ {content} ❞" + edited
 
         if ctx_type == self.ContextTypes.Context:
@@ -78,8 +73,7 @@ class MemberHandlers:
 
         return f"•**Global** bruh moments: **{global_bruhs}**\n•**{guild.name}** bruh moments: **{guild_bruhs}**"
 
-    @staticmethod
-    async def cool(text: str) -> str:
+    async def cool(self, text: str) -> str:
         """
         A handler for the "cool" commands.
 
@@ -104,8 +98,7 @@ class MemberHandlers:
                 new += letter
         return new
 
-    @staticmethod
-    async def cringe() -> str:
+    async def cringe(self, ctx) -> str:
         """
         Handler for the "cringe" commands.
 
@@ -122,14 +115,7 @@ class MemberHandlers:
         Pings a given user role with a given message a specified number of times.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
+        (ctx_type, author) = self.command_args # Unpack command args
 
         try:
             amount = int(amount)
@@ -151,7 +137,7 @@ class MemberHandlers:
                 await ctx.channel.send(msg)
         else:
             await self.bot.DefaultEmbedResponses.invalid_perms(self.bot, ctx)
-
+    
     async def ghostping(self, ctx: commands.Context | discord.Interaction, user: discord.Member | discord.Role,
                         amount: str | int) -> None:
         """
@@ -160,14 +146,7 @@ class MemberHandlers:
         Ghost-pings a given user role with a given message a specified number of times.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
+        (ctx_type, author) = self.command_args # Unpack command args
 
         try:
             amount = int(amount)
@@ -380,15 +359,8 @@ class MemberHandlers:
 
         Submits a reminder task with a given reason and time.
         """
-
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
+        
+        (ctx_type, author) = self.command_args # Unpack command args
 
         str_tp = self.bot.time_str(time)  # runs it through a convertor because hodor's OCD cannot take seeing 100000s
         str_reason = "*Reminder:* " + (reason if reason else "(Not specified)")
@@ -415,8 +387,7 @@ class MemberHandlers:
 
         return f"Adam-Bot code can be found here: {self.bot.CODE_URL}"
 
-    @staticmethod
-    async def avatar(member: discord.Member | discord.User) -> str:
+    async def avatar(self, member: discord.Member | discord.User) -> str:
         """
         Handler for the avatar commands.
 
@@ -437,14 +408,7 @@ class MemberHandlers:
         Constructs and displays the countdown embed.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
+        (ctx_type, author) = self.command_args # Unpack command args
 
         embed = Embed(title="Information on UK exams", color=Colour.from_rgb(148, 0, 211))
         now = self.bot.correct_time()
@@ -468,6 +432,7 @@ class MemberHandlers:
         else:
             await ctx.response.send_message(embed=embed)
 
+
     async def resultsday(self, ctx: commands.Context | discord.Interaction, hour: int | str = 10, which="GCSE") -> None:
         """
         Handler for the resultsday commands.
@@ -475,14 +440,7 @@ class MemberHandlers:
         Constructs and displays the countdown embed.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
+        (ctx_type, author) = self.command_args # Unpack command args
 
         try:
             hour = int(hour)

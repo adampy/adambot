@@ -10,18 +10,16 @@ from discord import Embed
 from discord.ext import commands
 
 from adambot import AdamBot
+from libs.misc.handler import CommandHandler
 from libs.misc.utils import get_user_avatar_url
 
 
-class BotHandlers:
+class BotHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
         """
         Initialises the class and also tries to determine the commit and branch the bot is running on where applicable
         """
-
-        self.bot = bot
-
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
         self.remote_url = os.environ.get("AB_REMOTE_URL")
         self.given_commit_hash = os.environ.get("AB_COMMIT_HASH")
@@ -66,10 +64,7 @@ class BotHandlers:
         Constructs and sends the botinfo embed.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
-            return
+        (ctx_type, author) = self.command_args
 
         app_info = await self.bot.application_info()
         embed = Embed(title=f"Bot info for ({self.bot.user})",
@@ -94,11 +89,6 @@ class BotHandlers:
         if hasattr(app_info, "icon"):
             embed.set_thumbnail(url=app_info.icon.url)
 
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
         embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + (self.bot.correct_time()).strftime(
             self.bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
@@ -114,11 +104,7 @@ class BotHandlers:
         Allows a user to check if the bot is currently hosted locally or remotely.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         string = f"Adam-bot is {'**locally**' if self.bot.LOCAL_HOST else '**remotely**'} hosted right now."
 
         if ctx_type == self.ContextTypes.Context:
@@ -133,11 +119,7 @@ class BotHandlers:
         Allows a user to view the bot's current latency
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         string = f"Pong! ({round(self.bot.latency * 1000)} ms)"
 
         if ctx_type == self.ContextTypes.Context:
@@ -151,12 +133,8 @@ class BotHandlers:
 
         Allows a user to view how long the bot has been running for
         """
-
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
+        
+        (ctx_type, author) = self.command_args
         seconds = round(time.time() - self.bot.start_time)  # Rounds to the nearest integer
         time_string = self.bot.time_str(seconds)
 

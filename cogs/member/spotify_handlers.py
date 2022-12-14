@@ -3,13 +3,13 @@ from discord import Embed, Colour
 from discord.ext import commands
 
 from adambot import AdamBot
+from libs.misc.handler import CommandHandler
 from libs.misc.utils import get_user_avatar_url
 
 
-class SpotifyHandlers:
+class SpotifyHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
-        self.ContextTypes = self.bot.ContextTypes
+        super().__init__(self, bot)
 
     async def spotify(self, ctx: commands.Context | discord.Interaction,
                       user: discord.Member | discord.User | str = "") -> None:
@@ -19,13 +19,8 @@ class SpotifyHandlers:
         Constructs and send the spotifyinfo embeds.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
+        (ctx_type, author) = self.command_args
+        if ctx_type != self.ContextTypes.Context:
             author = ctx.guild.get_member(ctx.user.id)
 
         if not user or (type(user) is str and len(user) == 0):

@@ -5,11 +5,11 @@ import discord
 from discord.ext import commands
 
 from adambot import AdamBot
+from libs.misc.handler import CommandHandler
 
-
-class EvalHandlers:
+class EvalHandlers(CommandHandler):
     def __init__(self, bot: AdamBot) -> None:
-        self.bot = bot
+        super().__init__(self, bot)
 
     @staticmethod
     def split_2000(text: str) -> list[str]:
@@ -27,10 +27,7 @@ class EvalHandlers:
         If something doesn't output correctly try wrapping in str()
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.bot.ContextTypes.Unknown:
-            return
+        (ctx_type, author) = self.command_args
 
         try:
             output = eval(command)
@@ -64,11 +61,7 @@ class EvalHandlers:
         Handler for the execute commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.bot.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         async with self.bot.pool.acquire() as connection:
             try:
                 await connection.execute(command)
@@ -85,11 +78,7 @@ class EvalHandlers:
         Handler for the fetch commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-
-        if ctx_type == self.bot.ContextTypes.Unknown:
-            return
-
+        (ctx_type, author) = self.command_args
         async with self.bot.pool.acquire() as connection:
             try:
                 records = await connection.fetch(command)

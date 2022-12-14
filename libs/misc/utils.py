@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from io import BytesIO, StringIO
-from typing import Optional
+from typing import Optional, Tuple
 
 import discord
 from discord import Embed, Colour, File
@@ -49,8 +49,8 @@ async def send_image_file(ctx: commands.Context | discord.Interaction, fig,
     Send data to a channel with filename `filename`
     """
 
-    ctx_type = get_context_type(ctx)
-    if ctx_type is ContextTypes.Unknown:
+    ctx_type, author = unbox_context(ctx)
+    if not author:
         return
 
     buf = BytesIO()
@@ -70,8 +70,8 @@ async def send_text_file(ctx: commands.Context | discord.Interaction, text: str,
     Send a text data to a channel with filename `filename`
     """
 
-    ctx_type = get_context_type(ctx)
-    if ctx_type is ContextTypes.Unknown:
+    ctx_type, author = unbox_context(ctx)
+    if not author:
         return
 
     buf = StringIO()
@@ -357,21 +357,16 @@ class DefaultEmbedResponses:
         Internal procedure that is executed when a user has invalid perms
         """
 
-        ctx_type = get_context_type(ctx)
-        if ctx_type == ContextTypes.Unknown:
+        ctx_type, author = unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == ContextTypes.Context:
-            user = ctx.author
-        else:
-            user = ctx.user
 
         embed = Embed(title=f":x: You do not have permissions to do that!",
                       description="Only people with permissions (usually staff) can use this command!",
                       color=ERROR_RED)
         if not bare:
-            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
@@ -386,20 +381,15 @@ class DefaultEmbedResponses:
     async def error_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
                           thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
 
-        ctx_type = get_context_type(ctx)
-        if ctx_type == ContextTypes.Unknown:
+        ctx_type, author = unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == ContextTypes.Context:
-            user = ctx.author
-        else:
-            user = ctx.user
 
         embed = Embed(title=f":x: {title}", description=desc, color=ERROR_RED)
         if not bare:
             if ctx_type == ContextTypes.Context:
-                embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                    bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+                embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                    bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
 
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
@@ -415,19 +405,14 @@ class DefaultEmbedResponses:
     async def success_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
                             thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
 
-        ctx_type = get_context_type(ctx)
-        if ctx_type == ContextTypes.Unknown:
+        ctx_type, author = unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == ContextTypes.Context:
-            user = ctx.author
-        else:
-            user = ctx.user
 
         embed = Embed(title=f":white_check_mark: {title}", description=desc, color=SUCCESS_GREEN)
         if not bare:
-            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
@@ -442,19 +427,14 @@ class DefaultEmbedResponses:
     async def information_embed(bot, ctx: commands.Context | discord.Interaction, title: str, desc: str = "",
                                 thumbnail_url: str = "", bare: bool = False, respond_to_interaction=True) -> None | discord.Message:
 
-        ctx_type = get_context_type(ctx)
-        if ctx_type == ContextTypes.Unknown:
+        ctx_type, author = unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == ContextTypes.Context:
-            user = ctx.author
-        else:
-            user = ctx.user
 
         embed = Embed(title=f":information_source: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
-            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
@@ -470,19 +450,14 @@ class DefaultEmbedResponses:
                              thumbnail_url: str = "", bare: bool = False,
                              respond_to_interaction=True) -> None | discord.Message:
 
-        ctx_type = get_context_type(ctx)
-        if ctx_type == ContextTypes.Unknown:
+        ctx_type, author = unbox_context(ctx)
+        if not author:
             return
-
-        if ctx_type == ContextTypes.Context:
-            user = ctx.author
-        else:
-            user = ctx.user
 
         embed = Embed(title=f":grey_question: {title}", description=desc, color=INFORMATION_BLUE)
         if not bare:
-            embed.set_footer(text=f"Requested by: {user.display_name} ({user})\n" + bot.correct_time().strftime(
-                bot.ts_format), icon_url=get_user_avatar_url(user, mode=1)[0])
+            embed.set_footer(text=f"Requested by: {author.display_name} ({author})\n" + bot.correct_time().strftime(
+                bot.ts_format), icon_url=get_user_avatar_url(author, mode=1)[0])
             if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
@@ -568,9 +543,13 @@ class ContextTypes(Enum):
     Interaction = 2
 
 
-def get_context_type(ctx: commands.Context | discord.Interaction) -> ContextTypes:
+def unbox_context(ctx: commands.Context | discord.Interaction) -> Tuple[ContextTypes, discord.User | bool]:
+    """
+    Method for returning the `ContextType` and the author of the context, the
+    author is `False` when the returned `ContextType` is unknown.
+    """
     if issubclass(ctx.__class__, commands.Context):
-        return ContextTypes.Context
+        return ContextTypes.Context, ctx.author
     elif issubclass(ctx.__class__, discord.Interaction):
-        return ContextTypes.Interaction
-    return ContextTypes.Unknown
+        return ContextTypes.Interaction, ctx.user
+    return ContextTypes.Unknown, False

@@ -1,10 +1,11 @@
 from typing import Callable, Optional
+import inspect
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .utils import DEVS
+from .utils import DEVS, unbox_context
 
 """
 The rationale behind these error classes is to basically abstract the error embed
@@ -45,12 +46,11 @@ def get_bot(ctx: commands.Context | discord.Interaction):
 async def staff_predicate(ctx: commands.Context | discord.Interaction) -> Optional[bool]:
     # Get prereqs
     bot = get_bot(ctx)
-    ctx_type = bot.get_context_type(ctx)
-    if ctx_type == bot.ContextType.Unknown:
+    ctx_type, author = unbox_context(ctx)
+    if not author:
         return
 
     # Raise MissingStaff if author doesn't have staff
-    author = ctx.author if ctx_type == bot.ContextTypes.Context else ctx.user
     staff_role_id = await bot.get_config_key(ctx, "staff_role")
 
     if staff_role_id in [y.id for y in author.roles] or author.guild_permissions.administrator:
@@ -64,12 +64,11 @@ async def staff_predicate(ctx: commands.Context | discord.Interaction) -> Option
 async def dev_predicate(ctx: commands.Context | discord.Interaction) -> Optional[bool]:
     # Get prereqs
     bot = get_bot(ctx)
-    ctx_type = bot.get_context_type(ctx)
-    if ctx_type == bot.ContextType.Unknown:
+    ctx_type, author = unbox_context(ctx)
+    if not author:
         return
 
     # Raise MissingDev if author doesn't have staff
-    author = ctx.author if ctx_type == bot.ContextTypes.Context else ctx.user
     if author.id in DEVS:
         return True
     elif ctx_type == bot.ContextTypes.Context:
@@ -130,3 +129,27 @@ def is_dev_slash() -> Callable:
         return await dev_predicate(interaction)
 
     return app_commands.check(predicate)
+
+def unbox_context(func) -> Callable:
+    """
+    Decorator that wraps a function to unbox the context into `ContextType`
+    and author. Must be used to wrap functions with a signature `self,
+    ContextType, discord.User | discord.Member, commands.Context |
+    discord.Interaction, ...` where `self` is the command handler (i.e., the
+    first four arguments to the function must be `self, ctx_type, author, ctx)
+    """
+    async def decorator(self, ctx: commands.Context | discord.Interaction, *args, **kwargs):
+        ctx_type, author = unbox_context(ctx)
+        if not author:
+            return
+        
+        await func(self, ctx_type, author, ctx, *args, **kwargs)
+
+    decorator.__name__ = func.__name__
+    sig = inspect.signature(func)
+    new_sig = list(sig.parameters.values())
+    new_sig.pop(1)
+    new_sig.pop(1) # Pop out the ctx_type and author
+    decorator.__signature__ = sig.replace(parameters=tuple(new_sig))
+    
+    return decorator

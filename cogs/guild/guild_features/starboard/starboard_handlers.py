@@ -6,15 +6,15 @@ import discord
 from discord.ext import commands
 from emoji import get_emoji_regexp
 
+from libs.misc.handler import CommandHandler
 from libs.misc.utils import get_user_avatar_url, get_guild_icon_url
 from .starboard_container import StarboardContainer
 
 
-class StarboardHandlers:
+class StarboardHandlers(CommandHandler):
     def __init__(self, bot, cog) -> None:
-        self.bot = bot
+        super().__init__(self, bot)
         self.cog = cog
-        self.ContextTypes = self.bot.ContextTypes
 
     # --- Starboard embed ---
     async def make_starboard_embed(self, message: discord.Message, stars: int, emoji: discord.Emoji,
@@ -243,15 +243,7 @@ class StarboardHandlers:
         Handler for the view commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type is self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         starboards = await self._get_starboards(ctx.guild.id)
         embed = self.bot.EmbedPages(
             self.bot.PageTypes.STARBOARD_LIST,

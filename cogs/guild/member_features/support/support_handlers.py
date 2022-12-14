@@ -2,29 +2,22 @@ import discord
 from discord import Embed, Colour
 from discord.ext import commands
 
+from libs.misc.handler import CommandHandler
+
 from .support_connection import MessageOrigin
 
 
-class SupportHandlers:
+class SupportHandlers(CommandHandler):
     def __init__(self, bot, cog) -> None:
-        self.bot = bot
+        super().__init__(self, bot)
         self.cog = cog
-        self.ContextTypes = self.bot.ContextTypes
 
     async def accept(self, ctx: commands.Context | discord.Interaction, ticket: str | int) -> None:
         """
         Handler for the accept commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
-        if ctx_type == self.ContextTypes.Context:
-            author = ctx.author
-        else:
-            author = ctx.user
-
+        (ctx_type, author) = self.command_args
         try:
             ticket = int(ticket)
         except ValueError:
@@ -75,10 +68,6 @@ class SupportHandlers:
         Handler for the connections commands.
         """
 
-        ctx_type = self.bot.get_context_type(ctx)
-        if ctx_type == self.ContextTypes.Unknown:
-            return
-
         current = []
         waiting = []
         newline = "\n"
@@ -99,6 +88,7 @@ class SupportHandlers:
         y = newline.join(waiting)
         string = f"__**Current connections**__{newline}{x}{newline}__**Waiting connections**__{newline}{y}"
 
+        (ctx_type, author) = self.command_args
         if ctx_type == self.ContextTypes.Context:
             await ctx.send(string)
         else:
